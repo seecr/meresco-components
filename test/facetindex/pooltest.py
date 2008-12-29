@@ -26,7 +26,7 @@
 ## end license ##
 from unittest import TestCase
 from ctypes import c_int, c_uint, c_short, Structure
-from facetindex.docset import DocSet, libDocSet as lib
+from merescocomponents.facetindex.docset import DocSet, libDocSet as lib
 
 fwPool = c_int
 class fwPtr(Structure):

@@ -30,7 +30,7 @@ from sys import stdout
 from time import time
 from random import random, randint, sample
 
-from facetindex import DocSetList, DocSet, Trie
+from merescocomponents.facetindex import DocSetList, DocSet, Trie
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
 

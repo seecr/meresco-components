@@ -28,7 +28,7 @@
 ## end license ##
 from PyLucene import MatchAllDocsQuery, IndexSearcher, IndexWriter, IndexReader, StandardAnalyzer, Document, Term, Field
 from cq2utils import CQ2TestCase
-from facetindex import DocSet
+from merescocomponents.facetindex import DocSet
 
 class LuceneTestCase(CQ2TestCase):
 

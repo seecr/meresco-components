@@ -29,20 +29,20 @@ from PyLucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 from cq2utils import CQ2TestCase, CallTrace
 
 #from meresco.components.lucene import Document
-from facetindex.document import Document
+from merescocomponents.facetindex.document import Document
 #from meresco.components.drilldown import Drilldown, DrilldownFieldnames
-from facetindex.drilldown import Drilldown
-from facetindex.drilldownfieldnames import DrilldownFieldnames
+from merescocomponents.facetindex.drilldown import Drilldown
+from merescocomponents.facetindex.drilldownfieldnames import DrilldownFieldnames
 #from meresco.components.drilldown.drilldown import FieldMatrix
 #from meresco.components.lucene.lucene import LuceneIndex
-from facetindex.lucene import LuceneIndex
+from merescocomponents.facetindex.lucene import LuceneIndex
 #from meresco.components.lucene.lucenerawdocsets import LuceneRawDocSets
 
 from timerfortestsupport import TimerForTestSupport
 
 #from bitmatrix import Row
-from facetindex.docset import DocSet
-from facetindex.docsetlist import DocSetList
+from merescocomponents.facetindex.docset import DocSet
+from merescocomponents.facetindex.docsetlist import DocSetList
 
 class DrilldownTest(CQ2TestCase):
 

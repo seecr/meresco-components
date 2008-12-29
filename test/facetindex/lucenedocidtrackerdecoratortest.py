@@ -27,11 +27,11 @@
 from cq2utils import CQ2TestCase, CallTrace
 from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader
 from random import randint
-from facetindex.lucenedocidtracker import LuceneDocIdTrackerDecorator
+from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTrackerDecorator
 from glob import glob
 from time import time
 from cq2utils.profileit import profile
-from facetindex import LuceneIndex2, Document2 as XDocument
+from merescocomponents.facetindex import LuceneIndex2, Document2 as XDocument
 
 class LuceneDocIdTrackerDecoratorTest(CQ2TestCase):
 

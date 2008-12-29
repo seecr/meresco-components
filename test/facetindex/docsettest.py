@@ -24,7 +24,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from facetindex import DocSet
+from merescocomponents.facetindex import DocSet
 from lucenetestcase import LuceneTestCase
 
 class DocSetTest(LuceneTestCase):

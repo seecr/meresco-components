@@ -27,7 +27,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader
 from random import randint
-from facetindex.lucenedocidtracker import LuceneDocIdTracker
+from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker
 from glob import glob
 from time import time
 from cq2utils.profileit import profile

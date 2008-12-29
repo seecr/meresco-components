@@ -35,7 +35,7 @@ from shutil import rmtree
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from facetindex import Document, IDFIELD, LuceneIndex2
+from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex2
 
 from meresco.components.lucene import CQL2LuceneQuery
 from meresco.components.lucene.cqlparsetreetolucenequery import Composer

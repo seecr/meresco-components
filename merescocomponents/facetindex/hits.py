@@ -24,9 +24,9 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from facetindex.document import IDFIELD
+from document import IDFIELD
 from PyLucene import QueryFilter, IndexSearcher
-from facetindex.docset import DocSet
+from docset import DocSet
 
 
 class Hits(object):

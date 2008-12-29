@@ -27,7 +27,7 @@
 
 import unittest
 from cq2utils import CallTrace
-from facetindex.document import IDFIELD, Document, DocumentException
+from merescocomponents.facetindex.document import IDFIELD, Document, DocumentException
 
 class DocumentTest(unittest.TestCase):
 

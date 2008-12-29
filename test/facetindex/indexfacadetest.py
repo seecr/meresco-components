@@ -25,11 +25,11 @@
 #
 ## end license ##
 from PyLucene import MatchAllDocsQuery
-from facetindex import LuceneIndex2, Document2
-from facetindex import LuceneDocIdTrackerDecorator
+from merescocomponents.facetindex import LuceneIndex2, Document2
+from merescocomponents.facetindex import LuceneDocIdTrackerDecorator
 from cq2utils import CQ2TestCase, CallTrace
 
-from facetindex import IndexFacade
+from merescocomponents.facetindex import IndexFacade
 
 
 class IndexFacadeTest(CQ2TestCase):

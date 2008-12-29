@@ -34,7 +34,7 @@ from os import listdir
 from shutil import rmtree
 
 from cq2utils import CQ2TestCase, CallTrace
-from facetindex import Document, IDFIELD, LuceneIndex
+from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex
 
 print "Ik wil van deze cyclic deps af!"
 from meresco.components.lucene import CQL2LuceneQuery

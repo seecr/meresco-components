@@ -29,10 +29,10 @@ from os.path import isdir
 from os import makedirs
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
 
-from facetindex.document import IDFIELD
+from document import IDFIELD
 from meresco.framework import Observable
 
-from facetindex.docset import DocSet
+from docset import DocSet
 
 class LuceneException(Exception):
     pass

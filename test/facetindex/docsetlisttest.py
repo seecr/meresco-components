@@ -27,7 +27,7 @@
 #
 ## end license ##
 from time import time
-from facetindex import DocSetList, DocSet
+from merescocomponents.facetindex import DocSetList, DocSet
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
 from cq2utils import Wildcard
