@@ -30,8 +30,6 @@ if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
     system("cd %s/../..; python setup.py build_ext --inplace"  % abspath(dirname(__file__))) #DO_NOT_DISTRIBUTE
                                                              #DO_NOT_DISTRIBUTE
 
-print '### facetindex ###'
-
 from lucene import LuceneIndex
 from drilldown import Drilldown
 from document import Document, IDFIELD, DocumentException
@@ -39,6 +37,8 @@ from docset import DocSet
 from docsetlist import DocSetList
 from trie import Trie
 from lucenedocidtracker import LuceneDocIdTrackerDecorator
+from cql2lucenequery import CQL2LuceneQuery
+from fields2lucenedocument import Fields2LuceneDocumentTx
 
 #temp for developing incremental indexing
 from document2 import Document2

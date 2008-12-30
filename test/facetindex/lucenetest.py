@@ -36,9 +36,8 @@ from shutil import rmtree
 from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex
 
-print "Ik wil van deze cyclic deps af!"
-from meresco.components.lucene import CQL2LuceneQuery
-from meresco.components.lucene.cqlparsetreetolucenequery import Composer
+from merescocomponents.facetindex import CQL2LuceneQuery
+from merescocomponents.facetindex.cqlparsetreetolucenequery import Composer
 
 from cqlparser import parseString
 

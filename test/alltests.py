@@ -45,10 +45,15 @@ from facetindex.docsettest import DocSetTest
 from facetindex.docsetlisttest import DocSetListTest
 from facetindex.trietest import TrieTest
 from facetindex.pooltest import PoolTest
+from facetindex.cqlparsetreetolucenequerytest import CqlParseTreeToLuceneQueryTest
+from facetindex.cql2lucenequerytest import Cql2LuceneQueryTest
 
 from facetindex.documenttest import DocumentTest
 from facetindex.lucenetest import LuceneTest
 from facetindex.drilldowntest import DrilldownTest
+from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
+
+from ngram.ngramtest import NGramTest
 
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
@@ -56,6 +61,22 @@ from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
 #from facetindex.indexfacadetest import IndexFacadeTest
 #from facetindex.document2test import Document2Test
 #from facetindex.lucene2test import Lucene2Test
+
+#from oai.oaicomponenttest import OaiComponentTest
+from oai.fields2oairecordtest import Fields2OaiRecordTest
+from oai.oaijazzlucenetest import OaiJazzLuceneTest, OaiJazzLuceneIntegrationTest
+from oai.oaigetrecordtest import OaiGetRecordTest
+from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
+from oai.oailistsetstest import OaiListSetsTest
+from oai.oailisttest import OaiListTest
+from oai.oaipmhtest import OaiPmhTest
+from oai.oaitooltest import OaiToolTest
+from oai.oaiprovenancetest import OaiProvenanceTest
+from oai.resumptiontokentest import ResumptionTokenTest
+from oai.oaisetselecttest import OaiSetSelectTest
+from oai.xml2documenttest import Xml2DocumentTest  # --> Xml2Document only in use by OAI; deprecated; needs to be replaced
+                                               #     when OAI is worked on next.
+
 
 if __name__ == '__main__':
     unittest.main()

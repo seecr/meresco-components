@@ -38,8 +38,6 @@ from merescocomponents.facetindex.drilldownfieldnames import DrilldownFieldnames
 from merescocomponents.facetindex.lucene import LuceneIndex
 #from meresco.components.lucene.lucenerawdocsets import LuceneRawDocSets
 
-from timerfortestsupport import TimerForTestSupport
-
 #from bitmatrix import Row
 from merescocomponents.facetindex.docset import DocSet
 from merescocomponents.facetindex.docsetlist import DocSetList
@@ -182,3 +180,13 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([('drilldown.field1', 0, True),('drilldown.field2', 3, False)], list(observer.calledMethods[0].args[1]))
 
         self.assertEquals([('field1', [('term1',1)]),('field2', [('term2', 2)])], result)
+
+from time import sleep
+class TimerForTestSupport(object):
+    def addTimer(self, time, callback):
+        callback()
+
+        sleep(0.01)
+        return (time,callback)
+    def removeTimer(self, token):
+        pass
