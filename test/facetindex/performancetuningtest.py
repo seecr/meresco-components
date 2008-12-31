@@ -85,8 +85,8 @@ class PerformanceTuningTest(LuceneTestCase):
             t0 = time()
             docset2.combinedCardinality(docset1)
             t2 += time() - t0
-        self.assertTiming(0.04, t1, 0.2)
-        self.assertTiming(0.01, t2, 0.2)
+        self.assertTiming(0.04, t1, 0.20)
+        self.assertTiming(0.04, t2, 0.20)
 
     def testReadLuceneDocsSpeed(self):
         self.createSimpleIndexWithEmptyDocuments(1000)
