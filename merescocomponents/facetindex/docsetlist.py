@@ -29,6 +29,8 @@ from sys import maxint
 from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, cast
 from docset import DocSet, libDocSet, docsetpointer
 
+SELF = POINTER(None)
+
 def errcheck(result, func, arguments):
     if not result:
         raise IndexError('list index out of range')
@@ -39,50 +41,56 @@ class cardinality_t(Structure):
                 ('cardinality', c_uint32)]
 
 DocSetList_create = libDocSet.DocSetList_create
-DocSetList_create.restype = POINTER(None)
+DocSetList_create.argtypes = []
+DocSetList_create.restype = SELF
 
 DocSetList_delete = libDocSet.DocSetList_delete
+DocSetList_delete.argtypes = [SELF]
 DocSetList_delete.restype = None
 
 DocSetList_add = libDocSet.DocSetList_add
+DocSetList_add.argtypes = [SELF, SELF]
 DocSetList_add.restype = None
 
 DocSetList_removeDoc = libDocSet.DocSetList_removeDoc
-DocSetList_removeDoc.argtypes = [ POINTER(None), c_uint32 ]
+DocSetList_removeDoc.argtypes = [SELF, c_uint32]
 DocSetList_removeDoc.restype = None
 
 DocSetList_size = libDocSet.DocSetList_size
+DocSetList_size.argtypes = [SELF]
 DocSetList_size.restype = int
 
 DocSetList_get = libDocSet.DocSetList_get
-DocSetList_get.restype = POINTER(None)
+DocSetList_get.argtypes = [SELF, c_int]
+DocSetList_get.restype = SELF
 DocSetList_get.errcheck = errcheck
 
 DocSetList_getForTerm = libDocSet.DocSetList_getForTerm
-DocSetList_getForTerm.argtypes = [ POINTER(None), c_char_p ]
+DocSetList_getForTerm.argtypes = [SELF, c_char_p]
 DocSetList_getForTerm.restype = POINTER(None)
 
 DocSetList_combinedCardinalities = libDocSet.DocSetList_combinedCardinalities
-DocSetList_combinedCardinalities.argtypes = [POINTER(None), c_int, c_int]
-DocSetList_combinedCardinalities.restype = POINTER(None) #POINTER(cardinality_t)
+DocSetList_combinedCardinalities.argtypes = [SELF, SELF, c_uint32, c_int]
+DocSetList_combinedCardinalities.restype = SELF # *CardinalityList
 
 DocSetList_fromTermEnum = libDocSet.DocSetList_fromTermEnum
-DocSetList_fromTermEnum.restype = POINTER(None)
+DocSetList_fromTermEnum.argtypes = [py_object, py_object]
+DocSetList_fromTermEnum.restype = SELF
 
 DocSetList_sortOnCardinality = libDocSet.DocSetList_sortOnCardinality
+DocSetList_sortOnCardinality.argtypes = [SELF]
 DocSetList_sortOnCardinality.restype = None
-DocSetList_sortOnCardinality.argtypes = [POINTER(None)]
 
 CardinalityList_size = libDocSet.CardinalityList_size
-CardinalityList_size.argtypes = [POINTER(None)]
+CardinalityList_size.argtypes = [SELF]
 CardinalityList_size.restype = c_int
 
 CardinalityList_at = libDocSet.CardinalityList_at
-CardinalityList_at.argtypes = [POINTER(None), c_int]
+CardinalityList_at.argtypes = [SELF, c_int]
 CardinalityList_at.restype = POINTER(cardinality_t)
 
 CardinalityList_free = libDocSet.CardinalityList_free
-CardinalityList_free.argtypes = [POINTER(None)]
+CardinalityList_free.argtypes = [SELF]
 CardinalityList_free.restype = None
 
 class DocSetList(object):

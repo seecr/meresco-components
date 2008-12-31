@@ -37,47 +37,55 @@ import PyLucene # make sure PyLucene/Java is initialized before loading _docset.
 libDocSet = cdll.LoadLibrary(join(abspath(dirname(__file__)), '_facetindex.so'))
 
 DocSet_create = libDocSet.DocSet_create
-DocSet_create.restype = POINTER(None)
+DocSet_create.argtypes = []
+DocSet_create.restype = SELF
 
 DocSet_add = libDocSet.DocSet_add
+DocSet_add.argtypes = [SELF, c_uint32]
 DocSet_add.restype = None
 
 DocSet_remove = libDocSet.DocSet_remove
-DocSet_remove.argtypes = [ SELF, c_uint32 ]
+DocSet_remove.argtypes = [SELF, c_uint32]
 DocSet_remove.restype = None
 
 DocSet_get = libDocSet.DocSet_get
+DocSet_get.argtypes = [SELF, c_int]
 DocSet_get.restype = c_uint32
 
 DocSet_len = libDocSet.DocSet_len
+DocSet_len.argtypes = [SELF]
 DocSet_len.restype = int
 
 DocSet_term = libDocSet.DocSet_term
-DocSet_term.argtypes = [ POINTER(None) ]
+DocSet_term.argtypes = [SELF]
 DocSet_term.restype = c_char_p
 
 DocSet_setTerm = libDocSet.DocSet_setTerm
-DocSet_setTerm.argtypes = [ POINTER(None), c_char_p ]
+DocSet_setTerm.argtypes = [SELF, c_char_p]
 DocSet_setTerm.restype = None
 
 DocSet_combinedCardinality = libDocSet.DocSet_combinedCardinality
+DocSet_combinedCardinality.argtypes = [SELF, SELF]
 DocSet_combinedCardinality.restype = c_uint32
 
 DocSet_intersect = libDocSet.DocSet_intersect
-DocSet_intersect.restype = POINTER(None)
+DocSet_intersect.argtypes = [SELF, SELF]
+DocSet_intersect.restype = SELF
 
 DocSet_fromQuery = libDocSet.DocSet_fromQuery
-DocSet_fromQuery.restype = POINTER(None)
+DocSet_fromQuery.argtypes = [py_object, py_object]
+DocSet_fromQuery.restype = SELF
 
 DocSet_fromTermDocs = libDocSet.DocSet_fromTermDocs
-DocSet_fromTermDocs.argtypes = [ py_object, c_int, c_char_p ]
-DocSet_fromTermDocs.restype = POINTER(None)
+DocSet_fromTermDocs.argtypes = [py_object, c_int, c_char_p]
+DocSet_fromTermDocs.restype = SELF
 
 DocSet_forTesting = libDocSet.DocSet_forTesting
-DocSet_forTesting.argtypes = [ c_int ]
-DocSet_forTesting.restype = POINTER(None)
+DocSet_forTesting.argtypes = [c_int]
+DocSet_forTesting.restype = SELF
 
 DocSet_delete = libDocSet.DocSet_delete
+DocSet_delete.argtypes = [SELF]
 DocSet_delete.restype = None
 
 class DocSet(object):
