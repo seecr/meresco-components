@@ -300,21 +300,68 @@ class DocSetListTest(LuceneTestCase):
         d.add(DocSet('x', [2,3]))
         d.add(DocSet('y', [1,2,3]))
         unsortedResult = d.termCardinalities(DocSet('q', [1,2,3]))
+        self.assertFalse(d.sorted())
         self.assertEquals([('x', 2L), ('y', 3L)], list(unsortedResult))
         d.sortOnCardinality()
+        self.assertTrue(d.sorted())
         sortedResult = d.termCardinalities(DocSet('q', [1,2,3]))
         self.assertEquals([('y', 3L), ('x', 2L)], list(sortedResult))
 
-    def testTopList(self):
+    def testUnsortedOnAdd(self):
         d = DocSetList()
-        d.add(DocSet('a', [1,2,3]))
-        d.add(DocSet('b', [2,3,4]))
-        d.add(DocSet('c', [3,4,5]))
-        d.add(DocSet('d', [4,5,6]))
+        d.add(DocSet('x', [2,3]))
+        d.sortOnCardinality()
+        self.assertTrue(d.sorted())
+        d.add(DocSet('x', [2,3]))
+        self.assertFalse(d.sorted())
+
+    def testUnsortedOnAddDocument(self):
+        d = DocSetList()
+        d.addDocument(0, ['term0'])
+        d.sortOnCardinality()
+        self.assertTrue(d.sorted())
+        d.addDocument(0, ['term1'])
+        self.assertFalse(d.sorted())
+        d.sortOnCardinality()
+        self.assertTrue(d.sorted())
+        d.addDocument(1, ['term0'])
+        self.assertFalse(d.sorted())
+        self.assertEquals([[0, 1],[0]], list(d))
+
+    def createSomeCarefullyPreparedDocsetToTestSorting(self):
+        d = DocSetList()
+        d.add(DocSet('a', [0,1]))
+        d.add(DocSet('b', [0,1,2,3,4]))
+        d.add(DocSet('c', [0]))
+        d.add(DocSet('d', [0,1,2,3]))
+        d.add(DocSet('e', [0,1,2]))
+        d.add(DocSet('f', [1,2,3,4,5,6]))
+        return d
+
+    def testTopList(self):
+        d = self.createSomeCarefullyPreparedDocsetToTestSorting()
         unsortedResult = d.termCardinalities(DocSet('q', [3,4,5]), sorted=False)
-        self.assertEquals([('a',1),('b',2),('c',3),('d',2)], list(unsortedResult))
+        self.assertEquals([('b',2),('d',1),('f',3)], list(unsortedResult))
         d.sortOnCardinality()
         sortedResult = d.termCardinalities(DocSet('q', [3,4,5]), sorted=True)
-        self.assertEquals([('c',3),('b',2),('d',2),('a',1)], list(sortedResult))
+        self.assertEquals([('f',3),('b',2),('d',1)], list(sortedResult))
         sortedResult = d.termCardinalities(DocSet('q', [3,4,5]), sorted=True, maxResults=2)
-        self.assertEquals([('c',3),('b',2)], list(sortedResult))
+        self.assertEquals([('f',3),('b',2)], list(sortedResult))
+
+    def testAutoSort(self):
+        d = self.createSomeCarefullyPreparedDocsetToTestSorting()
+        sortedResult = d.termCardinalities(DocSet('q', [3,4,5]), sorted=True, maxResults=2)
+        self.assertEquals([('f',3),('b',2)], list(sortedResult))
+
+    def testContinueWhenNoMaximumIsGiven(self):
+        d = DocSetList()
+        d.add(DocSet('term0', [3]))
+        d.add(DocSet('term1', [0,1]))
+        d.add(DocSet('term2', [2]))
+        sortedResult = d.termCardinalities(DocSet('q', [0,1,2,3]), sorted=True)
+        self.assertEquals([('term1',2),('term0',1),('term2',1)], list(sortedResult))
+
+    def testSortWhenLessResultsThanMaximum(self):
+        d = self.createSomeCarefullyPreparedDocsetToTestSorting()
+        sortedResult = d.termCardinalities(DocSet('q', [0,1]), sorted=True, maxResults=100)
+        self.assertEquals([('b', 2L), ('d', 2L), ('e', 2L), ('a', 2L), ('f', 1L),('c', 1L)], list(sortedResult))

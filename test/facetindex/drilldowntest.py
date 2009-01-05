@@ -28,17 +28,11 @@ from PyLucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 
 from cq2utils import CQ2TestCase, CallTrace
 
-#from meresco.components.lucene import Document
 from merescocomponents.facetindex.document import Document
-#from meresco.components.drilldown import Drilldown, DrilldownFieldnames
 from merescocomponents.facetindex.drilldown import Drilldown
 from merescocomponents.facetindex.drilldownfieldnames import DrilldownFieldnames
-#from meresco.components.drilldown.drilldown import FieldMatrix
-#from meresco.components.lucene.lucene import LuceneIndex
 from merescocomponents.facetindex.lucene import LuceneIndex
-#from meresco.components.lucene.lucenerawdocsets import LuceneRawDocSets
 
-#from bitmatrix import Row
 from merescocomponents.facetindex.docset import DocSet
 from merescocomponents.facetindex.docsetlist import DocSetList
 
@@ -104,8 +98,8 @@ class DrilldownTest(CQ2TestCase):
         hits = self.index.docsetFromQuery(MatchAllDocsQuery())
         ddData = list(drilldown.drilldown(hits, [('field0', 0, False)]))
         self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
-        ddData = list(drilldown.drilldown(hits, [('field0', 0, True)]))
-        self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(ddData[0][1]))
+        result = list(drilldown.drilldown(hits, [('field0', 0, True)]))
+        self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
 
 
     def testAppendToRow(self):
