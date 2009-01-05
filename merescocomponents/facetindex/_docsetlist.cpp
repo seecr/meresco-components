@@ -83,12 +83,15 @@ DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort
             if ( cardinality ) {
                 cardinality_t t = { (*it)->term(), cardinality };
                 results->push_back(t);
-                sort(results->begin(), results->end(), cmpCardinalityResults);
                 if ( results->size() > maxResults ) {
+                    sort(results->begin(), results->end(), cmpCardinalityResults);
                     results->pop_back();
+                    minCardinality = results->back().cardinality;
                 }
-                minCardinality = results->back().cardinality;
             }
+        }
+        if ( results->size() <= maxResults ) {
+            sort(results->begin(), results->end(), cmpCardinalityResults);
         }
     } else {
         for( unsigned int i=0; i < size() && results->size() < maxResults; i++ ) {

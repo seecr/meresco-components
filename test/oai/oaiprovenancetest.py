@@ -29,7 +29,7 @@ from cq2utils.cq2testcase import CQ2TestCase
 from cq2utils.calltrace import CallTrace
 from StringIO import StringIO
 
-from meresco.framework import Observable
+from merescocore.framework import Observable
 from merescocomponents.oai.oaiprovenance import OaiProvenance
 
 class OaiProvenanceTest(CQ2TestCase):

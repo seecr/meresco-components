@@ -27,7 +27,7 @@
 
 
 from cq2utils import CQ2TestCase, CallTrace
-from meresco.framework import Observable, be
+from merescocore.framework import Observable, be
 from cStringIO import StringIO
 
 from merescocomponents.oai import OaiPmh

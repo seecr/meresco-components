@@ -106,6 +106,7 @@ class DocSetList(object):
         else:
             self._cobj = DocSetList_create()
         self._as_parameter_ = self._cobj
+        self._sorted = False
 
     def __del__(self):
         DocSetList_delete(self)
@@ -122,8 +123,11 @@ class DocSetList(object):
             return
         docset.releaseData()
         DocSetList_add(self, docset)
+        self._sorted = False
 
     def termCardinalities(self, docset, maxResults=maxint, sorted=False):
+        if sorted:
+            self.sortOnCardinality()
         p = DocSetList_combinedCardinalities(self, docset, maxResults, sorted)
         try:
             for i in xrange(CardinalityList_size(p)):
@@ -142,6 +146,7 @@ class DocSetList(object):
             if r:
                 docset = DocSet(cobj=r)
                 docset.add(docid)
+                self._sorted = False
             else:
                 docset = DocSet(term)
                 docset.add(docid)
@@ -151,4 +156,9 @@ class DocSetList(object):
         DocSetList_removeDoc(self, doc)
 
     def sortOnCardinality(self):
-        DocSetList_sortOnCardinality(self)
+        if not self._sorted:
+            DocSetList_sortOnCardinality(self)
+            self._sorted = True
+
+    def sorted(self):
+        return self._sorted

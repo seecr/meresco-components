@@ -24,7 +24,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from meresco.framework.observable import Observable
+from merescocore.framework.observable import Observable
 
 class DrilldownFieldnames(Observable):
     def __init__(self, lookup, reverse):

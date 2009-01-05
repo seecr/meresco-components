@@ -26,7 +26,7 @@
 ## end license ##
 
 from oaiverb import OaiVerb
-from meresco.framework.observable import Observable
+from merescocore.framework.observable import Observable
 
 class OaiListMetadataFormats(OaiVerb, Observable):
     """4.4 ListMetadataFormats

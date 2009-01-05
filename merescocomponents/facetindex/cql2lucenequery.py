@@ -24,7 +24,9 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from meresco.framework import Observable
+
+from merescocore.framework import Observable
+
 from meresco.components.statistics import Logger
 from cqlparsetreetolucenequery import Composer
 from clausecollector import ClauseCollector

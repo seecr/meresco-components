@@ -50,6 +50,7 @@ class Drilldown(object):
             self._fieldMatrices[fieldname].deleteDocument(docId)
 
     def indexStarted(self, indexReader):
+        t0 = time()
         termDocs = indexReader.termDocs()
         fieldNames = self._staticDrilldownFieldnames
         if not fieldNames:
@@ -60,6 +61,7 @@ class Drilldown(object):
             termEnum = indexReader.terms(Term(fieldname,''))
             self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs)
         self._actualDrilldownFieldnames = fieldNames
+        print 'indexStarted (ms)', (time()-t0)*1000
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=[]):
         if not drilldownFieldnamesAndMaximumResults:
@@ -68,7 +70,11 @@ class Drilldown(object):
         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
             if fieldname not in self._actualDrilldownFieldnames:
                 raise DrilldownException("No Docset For Field %s, legal docsets: %s" % (fieldname, self._actualDrilldownFieldnames))
-            yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
+            t0 = time()
+            try:
+                yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
+            finally:
+                print 'drilldown (ms)', fieldname, (time()-t0)*1000
 
     def rowCardinalities(self):
         for fieldname in self._actualDrilldownFieldnames:

@@ -32,7 +32,7 @@ from oaitestcase import OaiTestCase
 from merescocomponents.oai import OaiJazzLucene
 from merescocomponents.oai.oailistsets import OaiListSets
 from merescocomponents.facetindex import LuceneIndex
-from meresco.components import StorageComponent
+from merescocore.components import StorageComponent
 
 class OaiListSetsTest(OaiTestCase):
     def getSubject(self):

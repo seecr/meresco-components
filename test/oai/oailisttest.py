@@ -32,7 +32,7 @@ from cq2utils.calltrace import CallTrace
 
 from mockoaijazz import MockOaiJazz
 
-from meresco.framework import ObserverFunction
+from merescocore.framework import ObserverFunction
 from merescocomponents.oai.oailist import BATCH_SIZE, OaiList
 from merescocomponents.oai.resumptiontoken import resumptionTokenFromString, ResumptionToken
 

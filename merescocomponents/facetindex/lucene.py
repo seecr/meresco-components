@@ -28,9 +28,10 @@
 from os.path import isdir
 from os import makedirs
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
+from time import time
 
 from document import IDFIELD
-from meresco.framework import Observable
+from merescocore.framework import Observable
 
 from docset import DocSet
 
@@ -72,7 +73,11 @@ class LuceneIndex(Observable):
         self.do.indexStarted(self._reader)
 
     def docsetFromQuery(self, pyLuceneQuery):
-        return DocSet.fromQuery(self._searcher, pyLuceneQuery)
+        t0 = time()
+        try:
+            return DocSet.fromQuery(self._searcher, pyLuceneQuery)
+        finally:
+            print 'docsetFromQuery (ms): ', (time()-t0)*1000
 
     def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)

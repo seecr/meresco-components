@@ -29,7 +29,7 @@ from oaitestcase import OaiTestCase
 
 from mockoaijazz import MockOaiJazz
 
-from meresco.framework import ObserverFunction
+from merescocore.framework import ObserverFunction
 from merescocomponents.oai.oaigetrecord import OaiGetRecord
 
 from cq2utils.calltrace import CallTrace

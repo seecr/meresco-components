@@ -28,8 +28,8 @@
 from StringIO import StringIO
 from lxml.etree import parse
 
-from meresco.framework import Observable
-from meresco.components import XmlCompose
+from merescocore.framework import Observable
+from merescocore.components import XmlCompose
 
 
 PROVENANCE_TEMPLATE = """<provenance xmlns="http://www.openarchives.org/OAI/2.0/provenance"

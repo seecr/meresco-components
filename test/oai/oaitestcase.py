@@ -29,12 +29,12 @@ from cq2utils.cq2testcase import CQ2TestCase
 
 from lxml.etree import parse, XMLSchema, XMLSchemaParseError, tostring
 from cq2utils.calltrace import CallTrace
-from meresco.framework.observable import Observable
+from merescocore.framework.observable import Observable
 from StringIO import StringIO
 from os.path import join, dirname, abspath
 from glob import glob
 
-from meresco.components.xml_generic import  __file__ as xml_genericpath
+from merescocore.components.xml_generic import  __file__ as xml_genericpath
 
 
 class OaiTestCase(CQ2TestCase):

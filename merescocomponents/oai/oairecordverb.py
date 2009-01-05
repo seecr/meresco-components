@@ -29,7 +29,7 @@ from amara.binderytools import bind_string
 from StringIO import StringIO
 
 from oaiverb import OaiVerb
-from meresco.framework.generatorutils import generatorDecorate
+from merescocore.framework.generatorutils import generatorDecorate
 
 class OaiRecordVerb(OaiVerb):
 

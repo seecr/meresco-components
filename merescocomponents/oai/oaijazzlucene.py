@@ -36,8 +36,8 @@ from lxml.etree import parse
 
 from PyLucene import BooleanQuery, BooleanClause, ConstantScoreRangeQuery, Term, TermQuery, MatchAllDocsQuery
 
-from meresco.framework import Observable, Transparant, be
-from meresco.components import XmlParseAmara
+from merescocore.framework import Observable, Transparant, be
+from merescocore.components import XmlParseAmara
 from xml2document import Xml2Document
 
 def createOaiMeta(sets, prefixes, stamp, unique):

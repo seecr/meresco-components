@@ -36,9 +36,9 @@ from amara.binderytools import bind_string
 
 from merescocomponents.oai import OaiJazzLucene
 from merescocomponents.oai.xml2document import TEDDY_NS, Xml2Document
-from meresco.framework.observable import Observable
+from merescocore.framework.observable import Observable
 from merescocomponents.facetindex import Document, LuceneIndex
-from meresco.components import StorageComponent
+from merescocore.components import StorageComponent
 
 FIELDS = binderytools.bind_string("""<xmlfields xmlns:teddy="%s">
     <field1>this is field1</field1>

@@ -26,8 +26,8 @@
 ## end license ##
 from unittest import TestCase
 from cq2utils import CallTrace
-from meresco.framework import be, Transparant, Observable
-from meresco.framework import TransactionScope, ResourceManager
+from merescocore.framework import be, Transparant, Observable
+from merescocore.framework import TransactionScope, ResourceManager
 
 from merescocomponents.facetindex import Fields2LuceneDocumentTx, Document
 

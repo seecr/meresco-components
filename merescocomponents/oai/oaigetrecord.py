@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from meresco.framework.observable import Observable
+from merescocore.framework.observable import Observable
 from oairecordverb import OaiRecordVerb
 
 class OaiGetRecord(OaiRecordVerb, Observable):

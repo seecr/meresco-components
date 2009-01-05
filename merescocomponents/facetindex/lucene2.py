@@ -30,7 +30,7 @@ from os import makedirs
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter
 
 from document import IDFIELD
-from meresco.framework import Observable
+from merescocore.framework import Observable
 
 from bitmatrix import IncNumberMap
 

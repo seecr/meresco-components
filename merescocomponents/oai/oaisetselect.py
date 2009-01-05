@@ -24,7 +24,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from meresco.framework import Transparant
+from merescocore.framework import Transparant
 
 class OaiSetSelect(Transparant):
     def __init__(self, setsList):

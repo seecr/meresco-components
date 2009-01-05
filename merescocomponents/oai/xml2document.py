@@ -28,7 +28,7 @@
 from merescocomponents.facetindex import Document
 from amara import binderytools
 from amara.bindery import is_element
-from meresco.framework.observable import Observable
+from merescocore.framework.observable import Observable
 
 TEDDY_NS = "http://www.cq2.nl/teddy"
 

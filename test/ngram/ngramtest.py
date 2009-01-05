@@ -27,8 +27,8 @@
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.framework import Observable, TransactionScope, ResourceManager, be
-from meresco.components import Xml2Fields
+from merescocore.framework import Observable, TransactionScope, ResourceManager, be
+from merescocore.components import Xml2Fields
 
 from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx
 from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, LevenshteinSuggester, RatioSuggester

@@ -24,7 +24,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from meresco.framework import Transparant,  Observable
+from merescocore.framework import Transparant,  Observable
 from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
 from Levenshtein import distance, ratio
 from itertools import islice

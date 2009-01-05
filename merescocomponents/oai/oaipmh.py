@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from meresco.framework import be, Transparant, Observable
+from merescocore.framework import be, Transparant, Observable
 from oaiidentify import OaiIdentify
 from oailist import OaiList
 from oaigetrecord import OaiGetRecord
