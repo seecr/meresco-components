@@ -1,5 +1,4 @@
 python2.5-dev
 libglib2.0-dev
 python-cq2utils (>=5.3.7)
-python-meresco-core (>= 2.20)
-python-meresco-core (<< 2.21)
+python-meresco-core2.20
