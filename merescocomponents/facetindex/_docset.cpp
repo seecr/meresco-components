@@ -121,7 +121,6 @@ int DocSet::combinedCardinality(DocSet* rhs) {
         return rhs->combinedCardinality(this);
     }
     if ( rhsSize > lhsSize * SWITCHPOINT ) {
-    printf("using search\n");
         return combinedCardinalitySearch(rhs);
     }
     push_back(0xFFFFFFFF);
