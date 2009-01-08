@@ -365,3 +365,17 @@ class DocSetListTest(LuceneTestCase):
         d = self.createSomeCarefullyPreparedDocsetToTestSorting()
         sortedResult = d.termCardinalities(DocSet('q', [0,1]), sorted=True, maxResults=100)
         self.assertEquals([('b', 2L), ('d', 2L), ('e', 2L), ('a', 2L), ('f', 1L),('c', 1L)], list(sortedResult))
+
+    def testBugWithAlternatingSearchZipperCalls(self):
+        THELIST=range(193)
+        dsl = DocSetList()
+        dsl.add(DocSet('term0', THELIST))
+        set1 = DocSet(data=[])
+        set2 = DocSet(data=[0L])
+
+        list(dsl.termCardinalities(set1))
+        list(dsl.termCardinalities(set2))
+        result = list(dsl.termCardinalities(set1))
+
+        self.assertEquals([], result)
+

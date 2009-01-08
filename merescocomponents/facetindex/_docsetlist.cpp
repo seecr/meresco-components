@@ -70,7 +70,6 @@ bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
 
 CardinalityList*
 DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort) {
-    docset->push_back(0xFFFFFFFF);
     CardinalityList* results = new CardinalityList();
     results->reserve(size()+1);
     unsigned int minCardinality = 0;
@@ -102,7 +101,6 @@ DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort
             }
         }
     }
-    docset->pop_back();
     return results;
 }
 
