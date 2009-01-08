@@ -26,6 +26,7 @@
 ## end license ##
 from merescocomponents.facetindex import DocSet
 from lucenetestcase import LuceneTestCase
+from merescocomponents.facetindex.docset import DocSet_combinedCardinalitySearch
 
 class DocSetTest(LuceneTestCase):
 
@@ -126,3 +127,21 @@ class DocSetTest(LuceneTestCase):
         self.assertTrue('MultiTermDocs' in str(termDocs))
         docs = DocSet.fromTermDocs(termDocs, freq)
         self.assertEquals(range(19), list(iter(docs)))
+
+    def testSearchAlgorithm(self):
+        def assertSearchCardinality(lhList, rhList):
+            expected = len(set(lhList).intersection(rhList))
+            lhDocSet = DocSet('lhterm', lhList)
+            rhDocSet = DocSet('rhterm', rhList)
+            print 'TEST', lhList, rhList
+            self.assertEquals(expected, DocSet_combinedCardinalitySearch(lhDocSet, rhDocSet))
+            self.assertEquals(expected, DocSet_combinedCardinalitySearch(rhDocSet, lhDocSet))
+        assertSearchCardinality([0,1], [0,1,2,3])
+        assertSearchCardinality([], [])
+        assertSearchCardinality([0,1,2,3,4,5], [0,1,2,3,4,5])
+        assertSearchCardinality([0,1,2,3,4,5], [0,1,2      ])
+        assertSearchCardinality([0,1,2,3,4,5], [      3,4,5])
+        assertSearchCardinality([0,1,2,3,4,5], [    2,3,4  ])
+        assertSearchCardinality([3,4,5,6,7,8], [0,1,2,3,4,5])
+        assertSearchCardinality([3,4,5,6,7,8], [            6,7,8,9,10])
+        assertSearchCardinality([], [])

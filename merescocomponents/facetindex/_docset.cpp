@@ -69,6 +69,9 @@ char* DocSet_term(DocSet* docset) {
 int DocSet_combinedCardinality(DocSet* docset, DocSet* rhs) {
     return docset->combinedCardinality(rhs);
 }
+int DocSet_combinedCardinalitySearch(DocSet* docset, DocSet* rhs) {
+    return docset->combinedCardinalitySearch(rhs);
+}
 DocSet* DocSet_intersect(DocSet* docset, DocSet* rhs) {
     return docset->intersect(rhs);
 }
@@ -96,20 +99,15 @@ char* DocSet::term(void) {
 }
 
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
-    std::vector<guint32>::iterator lower = larger->begin();
-    std::vector<guint32>::iterator upper = larger->end();
     std::vector<guint32>::iterator from = begin();
     std::vector<guint32>::iterator till = end();
+    std::vector<guint32>::iterator lower = larger->begin();
+    std::vector<guint32>::iterator upper = larger->end();
     int c = 0;
-    while ( from != till ) {
+    while ( from < till ) {
         lower = lower_bound(lower, upper, *from);
-        if ( *from++ == *lower ) {
+        if (( *(from++) == *lower ) && (lower < upper)) {
             c++;
-        }
-        if ( till > from ) {
-            upper = upper_bound(lower, upper, *--till);
-            if ( *till == *upper )
-                c++;
         }
     }
     return c;
@@ -123,6 +121,7 @@ int DocSet::combinedCardinality(DocSet* rhs) {
         return rhs->combinedCardinality(this);
     }
     if ( rhsSize > lhsSize * SWITCHPOINT ) {
+    printf("using search\n");
         return combinedCardinalitySearch(rhs);
     }
     push_back(0xFFFFFFFF);

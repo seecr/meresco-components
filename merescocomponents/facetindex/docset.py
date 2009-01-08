@@ -66,7 +66,11 @@ DocSet_setTerm.restype = None
 
 DocSet_combinedCardinality = libDocSet.DocSet_combinedCardinality
 DocSet_combinedCardinality.argtypes = [SELF, SELF]
-DocSet_combinedCardinality.restype = c_uint32
+DocSet_combinedCardinality.restype = c_int
+
+DocSet_combinedCardinalitySearch = libDocSet.DocSet_combinedCardinalitySearch
+DocSet_combinedCardinalitySearch.argtype = [SELF, SELF]
+DocSet_combinedCardinalitySearch.restype = c_int
 
 DocSet_intersect = libDocSet.DocSet_intersect
 DocSet_intersect.argtypes = [SELF, SELF]
