@@ -37,9 +37,12 @@ def printFields(fields):
     for field in sorted(fields):
         print field
 
-def listTerms(reader, fields):
+def listTerms(reader, fields, fieldName=''):
     termDocs = reader.termDocs()
     for field in sorted(fields):
+        if field != fieldName:
+            continue
+
         print field
         termEnum = reader.terms(Term(field, ''))
         while True:
@@ -57,7 +60,7 @@ def listTerms(reader, fields):
 if __name__ == '__main__':
     args = argv[1:]
     if len(args) < 1:
-        print 'Usage: %s <index directory name> --fields | --terms' % basename(argv[0])    
+        print 'Usage: %s <index directory name> --fields | --terms <fieldname>' % basename(argv[0])
     else:
         index = args[0]
         reader = IndexReader.open(index)
@@ -65,5 +68,10 @@ if __name__ == '__main__':
         if '--fields' in args:
             printFields(fields)
         elif '--terms' in args:
-            listTerms(reader, fields)
+            paramIndex = args.index('--terms')
+            fieldName = ''
+            if paramIndex+1 < len(args):
+                fieldName = args[paramIndex+1]
+
+            listTerms(reader, fields, fieldName=fieldName)
 
