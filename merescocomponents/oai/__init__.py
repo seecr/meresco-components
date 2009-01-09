@@ -31,4 +31,5 @@ from oaiprovenance import OaiProvenance
 from oaisetselect import OaiSetSelect
 from uniquenumbergenerator import UniqueNumberGenerator
 from fields2oairecord import Fields2OaiRecordTx
+from oaijazzfile import OaiJazzFile
 
