@@ -180,9 +180,9 @@ class PerformanceTuningTest(LuceneTestCase):
         NA = Wildcard()
         self.assertEquals([('t€rm0', NA), ('t€rm1', NA), ('t€rm2', NA)], list(cs))
 
-    def testReadRealyBigIndex(self):
+    def XXXXtestReadRealyBigIndex(self):
         try:
-            reader = IndexReader.open('testindexopt')
+            reader = IndexReader.open('testindexoptff')
         except:
             return
         fields = reader.getFieldNames(IndexReader.FieldOption.ALL)

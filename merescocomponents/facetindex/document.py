@@ -43,7 +43,6 @@ class Document(object):
         self._document = PyLucene.Document()
         self._document.add(PyLucene.Field(IDFIELD, anId, PyLucene.Field.Store.YES, PyLucene.Field.Index.UN_TOKENIZED))
         self._fields = [IDFIELD]
-        self.pokedDict = []
 
     def _isValidFieldValue(self, anObject):
         return isinstance(anObject, basestring) and anObject.strip()
@@ -54,18 +53,22 @@ class Document(object):
     def _validFieldName(self, aKey):
         return self._isValidFieldValue(aKey) and aKey.lower() != IDFIELD
 
-    def addIndexedField(self, aKey, aValue, tokenize = True):
+    def addIndexedField(self, aKey, aValue, tokenize = True, store=False):
         if not self._validFieldName(aKey):
                 raise DocumentException('Invalid fieldname: "%s"' % aKey)
 
         if not self._isValidFieldValue(aValue):
             return
 
-        self._addIndexedField(aKey, aValue, tokenize)
+        self._addIndexedField(aKey, aValue, tokenize, store)
         self._fields.append(aKey)
 
-    def _addIndexedField(self, aKey, aValue, tokenize = True):
-        self._document.add(PyLucene.Field(aKey, aValue, PyLucene.Field.Store.NO, tokenize and PyLucene.Field.Index.TOKENIZED or PyLucene.Field.Index.UN_TOKENIZED))
+    def _addIndexedField(self, aKey, aValue, tokenize = True, store=False):
+        self._document.add(PyLucene.Field(
+            aKey,
+            aValue,
+            store and PyLucene.Field.Store.YES or PyLucene.Field.Store.NO,
+            tokenize and PyLucene.Field.Index.TOKENIZED or PyLucene.Field.Index.UN_TOKENIZED))
 
     def addToIndexWith(self, anIndexWriter):
         anIndexWriter.addDocument(self._document)
