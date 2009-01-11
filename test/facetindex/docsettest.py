@@ -133,7 +133,6 @@ class DocSetTest(LuceneTestCase):
             expected = len(set(lhList).intersection(rhList))
             lhDocSet = DocSet('lhterm', lhList)
             rhDocSet = DocSet('rhterm', rhList)
-            print 'TEST', lhList, rhList
             self.assertEquals(expected, DocSet_combinedCardinalitySearch(lhDocSet, rhDocSet))
             self.assertEquals(expected, DocSet_combinedCardinalitySearch(rhDocSet, lhDocSet))
         assertSearchCardinality([0,1], [0,1,2,3])

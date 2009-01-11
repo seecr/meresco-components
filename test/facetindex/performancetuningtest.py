@@ -122,6 +122,20 @@ class PerformanceTuningTest(LuceneTestCase):
         self.assertTiming(0.002, tdisp1, 0.005) # zipper/upper_bound optimization 1
         self.assertTiming(0.002, tdisp2, 0.005) # zipper/upper_bound optimization 2
 
+    def testIncrementalSearch(self):
+        all1 = DocSet.forTesting(1000000)
+        all2 = DocSet('t0', range(500000-10,500000+10))
+        small = DocSet('q', range(500000-10,500000+10))
+        t1, t2 = 0, 0
+        for i in range(1000):
+            t0 = time()
+            small.combinedCardinality(all1)
+            t1 += time() - t0
+            t0 = time()
+            small.combinedCardinality(all2)
+            t2 += time() - t0
+        self.assertTrue( 0.8 < abs(t1/t2) < 1.2, t1/t2 )
+
     def testSwitchPoint(self):
         # This test is used to tune the selection of intersection algoritms in _docset.cpp
         # For |N| ~ |M|, zipper is the fastest.

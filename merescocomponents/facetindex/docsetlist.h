@@ -52,26 +52,32 @@ class DocSetList : public std::vector<DocSet*> {
         DocSetList();
         ~DocSetList();
         void                 addDocSet(DocSet* docset);
-        CardinalityList* combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
+        CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
+        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum);
+        CardinalityList*     jaccards2(DocSet* docset, int minimum, int maximum);
         DocSet*              forTerm(char* term);
         void                 removeDoc(guint32 doc);
+
+        bool operator< (DocSetList& rhs);
+        bool operator> (DocSetList& rhs);
 };
 
 /**************** C-interface for DocSetList ****************************/
 extern "C" {
-    DocSetList*    DocSetList_create               (void);
-    void           DocSetList_add                  (DocSetList* list, DocSet* docset);
-    void           DocSetList_removeDoc            (DocSetList* list, guint32 doc);
-    int            DocSetList_size                 (DocSetList* list);
-    DocSet*        DocSetList_get                  (DocSetList* list, int i);
-    DocSet*        DocSetList_getForTerm           (DocSetList* list, char* term);
-    void* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docset, guint32 maxResults, int doSort);
-    void           DocSetList_delete               (DocSetList* list);
-    void           DocSetList_sortOnCardinality    (DocSetList* list);
-    DocSetList*    DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs);
-    cardinality_t* CardinalityList_at              (CardinalityList* vector, int i);
-    int            CardinalityList_size            (CardinalityList* vector);
-    void           CardinalityList_free            (CardinalityList* vector);
+    DocSetList*      DocSetList_create               (void);
+    void             DocSetList_add                  (DocSetList* list, DocSet* docset);
+    void             DocSetList_removeDoc            (DocSetList* list, guint32 doc);
+    int              DocSetList_size                 (DocSetList* list);
+    DocSet*          DocSetList_get                  (DocSetList* list, int i);
+    DocSet*          DocSetList_getForTerm           (DocSetList* list, char* term);
+    CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docset, guint32 maxResults, int doSort);
+    CardinalityList* DocSetList_jaccards             (DocSetList* list, DocSet* docset, int minimum, int maximum);
+    void             DocSetList_delete               (DocSetList* list);
+    void             DocSetList_sortOnCardinality    (DocSetList* list);
+    DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs);
+    cardinality_t*   CardinalityList_at              (CardinalityList* vector, int i);
+    int              CardinalityList_size            (CardinalityList* vector);
+    void             CardinalityList_free            (CardinalityList* vector);
 }
 
 #endif

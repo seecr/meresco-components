@@ -26,7 +26,7 @@
 ## end license ##
 from itertools import islice
 from sys import maxint
-from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, cast
+from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
 from docset import DocSet, libDocSet, docsetpointer
 
 SELF = POINTER(None)
@@ -72,6 +72,10 @@ DocSetList_getForTerm.restype = POINTER(None)
 DocSetList_combinedCardinalities = libDocSet.DocSetList_combinedCardinalities
 DocSetList_combinedCardinalities.argtypes = [SELF, SELF, c_uint32, c_int]
 DocSetList_combinedCardinalities.restype = SELF # *CardinalityList
+
+DocSetList_jaccards = libDocSet.DocSetList_jaccards
+DocSetList_jaccards.argtypes = [SELF, SELF, c_int, c_int]
+DocSetList_jaccards.restype = SELF  # *CardinalityList
 
 DocSetList_fromTermEnum = libDocSet.DocSetList_fromTermEnum
 DocSetList_fromTermEnum.argtypes = [py_object, py_object]
@@ -139,6 +143,16 @@ class DocSetList(object):
     def allCardinalities(self):
         for docset in self:
             yield (docset.term(), len(docset))
+
+    def jaccards(self, docset, minimum, maximum):
+        self.sortOnCardinality()
+        p = DocSetList_jaccards(self, docset, minimum, maximum)
+        try:
+            for i in xrange(CardinalityList_size(p)):
+                c = CardinalityList_at(p, i)
+                yield (c.contents.term, c.contents.cardinality)
+        finally:
+            CardinalityList_free(p)
 
     def addDocument(self, docid, terms):
         for term in terms:

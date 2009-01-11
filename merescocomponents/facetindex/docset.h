@@ -38,6 +38,8 @@ extern "C" {
 class DocSet : public std::vector<doc_t> {
     public:
         fwString _term;
+    protected:
+        DocSet(size_t n): std::vector<doc_t>(n, 0) {}
     public:
         DocSet(): _term(fwStringNone) {};
         int     combinedCardinality      (DocSet* rhs);

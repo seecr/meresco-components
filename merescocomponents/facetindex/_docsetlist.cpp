@@ -64,6 +64,7 @@ DocSet* DocSetList::forTerm(char* term) {
     return at(termnr);
 }
 
+
 bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
     return lhs.cardinality > rhs.cardinality;
 }
@@ -103,7 +104,74 @@ DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort
     }
     return results;
 }
+bool cmpCardinality(DocSet* lhs, DocSet* rhs) {
+    return lhs->size() > rhs->size();
+}
 
+class DummyDocSet : public DocSet {
+    public:
+        DummyDocSet(size_t size) : DocSet(size) { }
+};
+
+CardinalityList*
+DocSetList::jaccards(DocSet* docset, int minimum, int maximum) {
+    CardinalityList* results = new CardinalityList();
+    DocSetList::iterator lower = begin();
+    DocSetList::iterator upper = end();
+    if ( minimum > 0 ) {
+        DummyDocSet dummyMax = DummyDocSet(100*docset->size()/minimum);
+        lower = lower_bound(lower, upper, &dummyMax, cmpCardinality);
+        DummyDocSet dummyMin = DummyDocSet(docset->size()*minimum/100);
+        upper = upper_bound(lower, upper, &dummyMin, cmpCardinality);
+    }
+    while ( lower < upper ) {
+        DocSet* candidate = (*lower++);
+        int c = candidate->combinedCardinality(docset);
+        int j = 100 * c / (candidate->size() + docset->size() - c);
+        if ( j >= minimum && j <= maximum ) {
+            cardinality_t t = { candidate->term(), j };
+            results->push_back(t);
+        }
+    }
+    sort(results->begin(), results->end(), cmpCardinalityResults);
+    return results;
+}
+    
+
+CardinalityList*
+DocSetList::jaccards2(DocSet* docset, int minimum, int maximum) {
+    CardinalityList* results = new CardinalityList();
+
+    int lowerbound = 0;
+    if ( minimum > 0 ) {
+        lowerbound = int((100*docset->size()/minimum));
+    }
+    printf("lowerbound = %d\n", lowerbound);
+
+
+    DocSet *previous = NULL;
+    DummyDocSet dummy = DummyDocSet(lowerbound);
+
+    DocSetList::iterator lower = upper_bound(begin(), end(), &dummy);
+    printf("at end: %d\n", lower == end());
+
+    for ( DocSetList::iterator it = begin(); it < end(); it++ ) {
+        if (previous) {
+            previous < (*it);
+
+        }
+           previous = (*it);
+        printf("*it size: %s %d\n", (*it)->term(), (*it)->size());
+        unsigned int cardinality = (*it)->combinedCardinality(docset);
+        int jaccard = 100*cardinality / ((*it)->size() + docset->size() - cardinality);
+        if (jaccard > minimum && jaccard < maximum) {
+            cardinality_t t = { (*it)->term(), jaccard };
+            results->push_back(t);
+        }
+    }
+    sort(results->begin(), results->end(), cmpCardinalityResults);
+    return results;
+}
 
 /////////////// C Interface to DocSetList ////////////////
 
@@ -145,8 +213,12 @@ DocSet* DocSetList_getForTerm(DocSetList* list, char* term) {
     return list->forTerm(term);
 }
 
-void* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docset, guint32 maxResults, int doSort) {
+CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docset, guint32 maxResults, int doSort) {
     return list->combinedCardinalities(docset, maxResults, doSort);
+}
+
+CardinalityList* DocSetList_jaccards(DocSetList* list, DocSet* docset, int minimum, int maximum) {
+    return list->jaccards(docset, minimum, maximum);
 }
 
 void DocSetList_delete(DocSetList* list) {
@@ -181,9 +253,6 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs) {
     return list;
 }
 
-bool cmpCardinality(DocSet* lhs, DocSet* rhs) {
-    return lhs->size() > rhs->size();
-}
 void DocSetList_sortOnCardinality(DocSetList* docsetlist) {
     sort(docsetlist->begin(), docsetlist->end(), cmpCardinality);
 }

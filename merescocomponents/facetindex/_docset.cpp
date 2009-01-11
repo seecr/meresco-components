@@ -79,7 +79,6 @@ void DocSet_delete(DocSet* docset) {
     delete docset;
 }
 
-
 void DocSet::setTerm(char* term) {
     _term = fwString_create(term);
 }
@@ -99,18 +98,33 @@ char* DocSet::term(void) {
 }
 
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
+    if ( size() == 0 )
+       return 0;
     std::vector<guint32>::iterator from = begin();
     std::vector<guint32>::iterator till = end();
     std::vector<guint32>::iterator lower = larger->begin();
     std::vector<guint32>::iterator upper = larger->end();
     int c = 0;
-    while ( from < till ) {
+    while ( 1 ) {
+        // Lowerbound pruning
         lower = lower_bound(lower, upper, *from);
-        if (( *(from++) == *lower ) && (lower < upper)) {
+        if ( lower >= upper )
+            return c;
+        from = lower_bound(from, till, *lower);
+        if ( from >= till )
+            return c;
+        if ( *from++ == *lower )
             c++;
-        }
+        // Upperbound pruning optimization only, you could remove it without breaking functionality
+        upper = upper_bound(lower, upper, *(till-1));
+        if ( upper <= lower )
+            return c;
+        till = upper_bound(from, till, *(upper-1));
+        if ( till <= from )
+            return c;
+        if ( *--till == *(upper-1) )
+            c++;
     }
-    return c;
 }
 
 #define SWITCHPOINT 100 // for random docsset, this is the trippoint
@@ -161,6 +175,16 @@ void DocSet::remove(guint32 doc) {
     if ( *i == doc )
         erase(i);
 }
+
+//bool DocSet::operator< ( const DocSet* rhs) {
+////    printf("DocSet operator< %ld %ld %d\n", this->size(), rhs->size(), this->size() < rhs->size());
+////    return this->size() < rhs->size();
+//}
+//bool DocSet::operator> ( const DocSet& rhs) {
+//    printf("DocSet operator> %ld %ld %d\n", this->size(), rhs.size(), this->size() > rhs.size());
+//    return this->size() > rhs.size();
+//}
+
 
 /****************************************************************************
 * DocSet_fromQuery() performs a Lucene query with 'search'() and gathers all
