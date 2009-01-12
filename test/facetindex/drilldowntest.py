@@ -207,6 +207,8 @@ class DrilldownTest(CQ2TestCase):
             self.assertEquals("No facetindex for field 'name'. Available fields: 'title'", str(e))
 
 
+
+
 from time import sleep
 class TimerForTestSupport(object):
     def addTimer(self, time, callback):

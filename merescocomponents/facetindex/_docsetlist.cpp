@@ -31,6 +31,7 @@ extern "C" {
     #include "zipper.h"
 }
 
+#include <math.h>
 #include <vector>
 #include <algorithm>
 
@@ -116,6 +117,7 @@ class DummyDocSet : public DocSet {
 
 CardinalityList*
 DocSetList::jaccards(DocSet* docset, int minimum, int maximum) {
+
     CardinalityList* results = new CardinalityList();
     DocSetList::iterator lower = begin();
     DocSetList::iterator upper = end();
@@ -125,13 +127,20 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum) {
         DummyDocSet dummyMin = DummyDocSet(docset->size()*minimum/100);
         upper = upper_bound(lower, upper, &dummyMin, cmpCardinality);
     }
+
     while ( lower < upper ) {
         DocSet* candidate = (*lower++);
         int c = candidate->combinedCardinality(docset);
         int j = 100 * c / (candidate->size() + docset->size() - c);
+
         if ( j >= minimum && j <= maximum ) {
-            cardinality_t t = { candidate->term(), j };
-            results->push_back(t);
+            double tf = (double)candidate->size() / (double) docset->size();
+            double idf = log((double)candidate->size() / (double) c) + 1;
+            printf("==> %s tf=%f idf=%f %f\n", candidate->term(), tf, idf, tf*idf);
+            if (tf*idf < 2.0) {
+                cardinality_t t = { candidate->term(), j };
+                results->push_back(t);
+            }
         }
     }
     sort(results->begin(), results->end(), cmpCardinalityResults);
