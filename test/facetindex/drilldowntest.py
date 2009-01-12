@@ -29,7 +29,7 @@ from PyLucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 from cq2utils import CQ2TestCase, CallTrace
 
 from merescocomponents.facetindex.document import Document
-from merescocomponents.facetindex.drilldown import Drilldown
+from merescocomponents.facetindex.drilldown import Drilldown, NoFacetIndexException
 from merescocomponents.facetindex.drilldownfieldnames import DrilldownFieldnames
 from merescocomponents.facetindex.lucene import LuceneIndex
 
@@ -48,10 +48,16 @@ class DrilldownTest(CQ2TestCase):
 
     #Helper functions:
     def addUntokenized(self, documents):
+        self.addToIndex(documents)
+
+    def addTokenized(self, documents):
+        self.addToIndex(documents, tokenize=True)
+
+    def addToIndex(self, documents, tokenize=False):
         for docId, fields in documents:
             myDocument = Document(docId)
             for field, value in fields.items():
-                myDocument.addIndexedField(field, value, tokenize = False)
+                myDocument.addIndexedField(field, value, tokenize = tokenize)
             self.index.addDocument(myDocument)
 
     def testIndexStarted(self):
@@ -174,6 +180,32 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([('drilldown.field1', 0, True),('drilldown.field2', 3, False)], list(observer.calledMethods[0].args[1]))
 
         self.assertEquals([('field1', [('term1',1)]),('field2', [('term2', 2)])], result)
+
+    def testJaccardIndex(self):
+        self.addTokenized([
+            ('0', {'title': 'cats dogs mice'}),
+            ('1', {'title': 'cats dogs'}),
+            ('2', {'title': 'cats'}),
+            ('3', {'title': 'dogs mice'})])
+        self.index._writer.flush()
+        reader = IndexReader.open(self.tempdir)
+
+        drilldown = Drilldown(['title'])
+        drilldown.indexStarted(reader)
+        query = TermQuery(Term("title", "dogs"))
+        total, queryResults = self.index.executeQuery(query)
+        queryDocset = self.index.docsetFromQuery(query)
+        jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 0, 100)]))
+        self.assertEquals([('title', [('dogs',100),('mice', 66),('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
+
+    def testJaccardIndexChecksFields(self):
+        drilldown = Drilldown(['title'])
+        try:
+            jaccardIndex = list(drilldown.jaccard(None, [("name", 0, 100)]))
+            self.fail()
+        except NoFacetIndexException, e:
+            self.assertEquals("No facetindex for field 'name'. Available fields: 'title'", str(e))
+
 
 from time import sleep
 class TimerForTestSupport(object):

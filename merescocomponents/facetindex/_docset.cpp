@@ -176,16 +176,6 @@ void DocSet::remove(guint32 doc) {
         erase(i);
 }
 
-//bool DocSet::operator< ( const DocSet* rhs) {
-////    printf("DocSet operator< %ld %ld %d\n", this->size(), rhs->size(), this->size() < rhs->size());
-////    return this->size() < rhs->size();
-//}
-//bool DocSet::operator> ( const DocSet& rhs) {
-//    printf("DocSet operator> %ld %ld %d\n", this->size(), rhs.size(), this->size() > rhs.size());
-//    return this->size() > rhs.size();
-//}
-
-
 /****************************************************************************
 * DocSet_fromQuery() performs a Lucene query with 'search'() and gathers all
 * docids in a C 0xFFFFFFFF-terminated list. It assumes PyLucene objects for

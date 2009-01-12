@@ -29,8 +29,13 @@ from PyLucene import Term, IndexReader # hmm, maybe we don't want this dependenc
 from time import time
 from sys import maxint
 
-class DrilldownException(Exception):
-    pass
+class NoFacetIndexException(Exception):
+
+    def __init__(self, field, fields):
+        self._str = "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields))
+
+    def __str__(self):
+        return self._str
 
 
 class Drilldown(object):
@@ -69,12 +74,19 @@ class Drilldown(object):
                 for fieldname in self._actualDrilldownFieldnames]
         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
             if fieldname not in self._actualDrilldownFieldnames:
-                raise DrilldownException("No Docset For Field %s, legal docsets: %s" % (fieldname, self._actualDrilldownFieldnames))
+                raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
             t0 = time()
             try:
                 yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
             finally:
                 print 'drilldown (ms)', fieldname, (time()-t0)*1000
+
+    def jaccard(self, docset, jaccardFieldsAndRanges):
+        for fieldname, minimum, maximum in jaccardFieldsAndRanges:
+            if fieldname not in self._docsetlists:
+                raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
+            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum)
+
 
     def rowCardinalities(self):
         for fieldname in self._actualDrilldownFieldnames:

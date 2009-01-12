@@ -69,6 +69,7 @@ bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
     return lhs.cardinality > rhs.cardinality;
 }
 
+
 CardinalityList*
 DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort) {
     CardinalityList* results = new CardinalityList();
@@ -136,42 +137,9 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum) {
     sort(results->begin(), results->end(), cmpCardinalityResults);
     return results;
 }
-    
-
-CardinalityList*
-DocSetList::jaccards2(DocSet* docset, int minimum, int maximum) {
-    CardinalityList* results = new CardinalityList();
-
-    int lowerbound = 0;
-    if ( minimum > 0 ) {
-        lowerbound = int((100*docset->size()/minimum));
-    }
-    printf("lowerbound = %d\n", lowerbound);
 
 
-    DocSet *previous = NULL;
-    DummyDocSet dummy = DummyDocSet(lowerbound);
 
-    DocSetList::iterator lower = upper_bound(begin(), end(), &dummy);
-    printf("at end: %d\n", lower == end());
-
-    for ( DocSetList::iterator it = begin(); it < end(); it++ ) {
-        if (previous) {
-            previous < (*it);
-
-        }
-           previous = (*it);
-        printf("*it size: %s %d\n", (*it)->term(), (*it)->size());
-        unsigned int cardinality = (*it)->combinedCardinality(docset);
-        int jaccard = 100*cardinality / ((*it)->size() + docset->size() - cardinality);
-        if (jaccard > minimum && jaccard < maximum) {
-            cardinality_t t = { (*it)->term(), jaccard };
-            results->push_back(t);
-        }
-    }
-    sort(results->begin(), results->end(), cmpCardinalityResults);
-    return results;
-}
 
 /////////////// C Interface to DocSetList ////////////////
 

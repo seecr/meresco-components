@@ -54,12 +54,8 @@ class DocSetList : public std::vector<DocSet*> {
         void                 addDocSet(DocSet* docset);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
         CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum);
-        CardinalityList*     jaccards2(DocSet* docset, int minimum, int maximum);
         DocSet*              forTerm(char* term);
         void                 removeDoc(guint32 doc);
-
-        bool operator< (DocSetList& rhs);
-        bool operator> (DocSetList& rhs);
 };
 
 /**************** C-interface for DocSetList ****************************/
