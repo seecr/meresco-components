@@ -31,12 +31,11 @@ class MockOaiJazz:
         self._deleted = deleted
         self._isAvailableDefault = isAvailableDefault
         self._isAvailableAnswer = isAvailableAnswer
-        self._selectTotal = selectTotal
         self.oaiSelectArguments = {}
 
     def oaiSelect(self, sets=[], prefix=None, continueAt=None, oaiFrom=None, oaiUntil=None, batchSize=0):
         self.oaiSelectArguments = (sets, prefix, continueAt, oaiFrom, oaiUntil, batchSize)
-        return self._selectTotal, self._selectAnswer
+        return (i for i in self._selectAnswer)
 
     def getUnique(self, id):
         return 'Unique for test'

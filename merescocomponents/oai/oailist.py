@@ -118,29 +118,51 @@ Error and Exception Conditions
         if not self._metadataPrefix in [prefix for prefix, na, na in self.any.getAllPrefixes()]:
             return self.writeError(webRequest, 'cannotDisseminateFormat')
 
-        self._queryTotals, self._queryRecordIds = self.any.oaiSelect(
+        self._queryRecordIds = HasNextIterator(self.any.oaiSelect(
             sets=self._set and [self._set] or None,
             prefix=self._metadataPrefix,
             continueAt=self._continueAt,
             oaiFrom=self._from,
-            oaiUntil=self._until,
-            batchSize=BATCH_SIZE)
-        if self._queryTotals == 0:
+            oaiUntil=self._until))
+        if not self._queryRecordIds.hasNext():
             return self.writeError(webRequest, 'noRecordsMatch')
 
     def process(self, webRequest):
-        for recordId in self._queryRecordIds:
-            self.writeRecord(webRequest, recordId, self._verb == "ListRecords")
-        
-                        
-        if self._queryTotals > BATCH_SIZE:
-            webRequest.write('<resumptionToken>%s</resumptionToken>' % ResumptionToken(
-                self._metadataPrefix,
-                self.any.getUnique(recordId),
-                self._from,
-                self._until,
-                self._set))
-            return
+        for i, id in enumerate(self._queryRecordIds):
+            if i == BATCH_SIZE:
+                webRequest.write('<resumptionToken>%s</resumptionToken>' % ResumptionToken(
+                    self._metadataPrefix,
+                    self.any.getUnique(prevId),
+                    self._from,
+                    self._until,
+                    self._set))
+                return
+            self.writeRecord(webRequest, id, self._verb == "ListRecords")
+            prevId = id
 
         if self._resumptionToken:
             webRequest.write('<resumptionToken/>')
+
+class HasNextIterator(object):
+    def __init__(self, anIterator):
+        self._iterator = anIterator
+        self._next = None
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self._next != None:
+            try:
+                return self._next
+            finally:
+                self._next = None
+        return self._iterator.next()
+
+    def hasNext(self):
+        if self._next == None:
+            try:
+                self._next = self._iterator.next()
+            except StopIteration:
+                return False
+        return True

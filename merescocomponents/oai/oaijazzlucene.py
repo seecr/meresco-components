@@ -39,6 +39,7 @@ from PyLucene import BooleanQuery, BooleanClause, ConstantScoreRangeQuery, Term,
 from merescocore.framework import Observable, Transparant, be
 from merescocore.components import XmlParseAmara
 from xml2document import Xml2Document
+from oailist import BATCH_SIZE
 
 def createOaiMeta(sets, prefixes, stamp, unique):
     yield '<oaimeta xmlns="http://meresco.com/namespace/meresco/oai/meta" xmlns:t="http://www.cq2.nl/teddy">'
@@ -120,13 +121,13 @@ class OaiJazzLucene(Observable):
         sets, prefixes, na, na = self._getPreviousRecord(id)
         self._updateOaiMeta(id, sets, prefixes)
 
-    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize=10):
+    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None):
         def addRange(root, field, lo, hi, inclusive):
             range = ConstantScoreRangeQuery(field, lo, hi, inclusive, inclusive)
             root.add(range, BooleanClause.Occur.MUST)
 
         if self.any.docCount() == 0:
-            return 0, []
+            return (f for f in [])
 
         #It is necessery here to work with the elemental objects, because the query parser transforms everything into lowercase
         query = BooleanQuery()
@@ -147,8 +148,12 @@ class OaiJazzLucene(Observable):
                 for set in sets:
                     setQuery.add(TermQuery(Term('oaimeta.sets.setSpec', set)), BooleanClause.Occur.SHOULD)
                 query.add(setQuery, BooleanClause.Occur.MUST)
-        total, recordIds = self.any.executeQuery(query, sortBy='oaimeta.unique', stop=batchSize)
-        return total, recordIds
+        # the new lucene needs a start and stop.
+        # we stop at batchSize + 1 (for testing if there are more than batchSize
+        # records available) (This code should self destruct after implementation
+        # of OaiJazzFile)
+        total, recordIds = self.any.executeQuery(query, sortBy='oaimeta.unique', stop=BATCH_SIZE+1) 
+        return iter(recordIds)
 
     def getAllPrefixes(self):
         return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllPrefixes().items())

@@ -31,18 +31,7 @@ from os.path import isdir, join, isfile
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime
-
-def listUnion(*lists):
-    result = set()
-    for l in lists:
-        result.update(l)
-    return sorted(result)
-    
-def listIntersection(head, *tail):
-    result = set(head)
-    for l in tail:
-        result = result.intersection(l)
-    return sorted(result)
+from itertools import ifilter
 
 class OaiJazzFile(Observable):
     def __init__(self, aDirectory):
@@ -73,13 +62,17 @@ class OaiJazzFile(Observable):
         self._deleted.add(stamp)
         self._store()
 
-    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize=10):
-        stampIds = self._prefixes.get(prefix, [])
+    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None):
+        stampIds = iter(self._prefixes.get(prefix, []))
         if sets:
-            stampIdsSet = listUnion(*[self._sets.get(set,[]) for set in sets])
-            stampIds = listIntersection(stampIds, *[stampIdsSet])
-        
-        return len(stampIds), [self._stamp2identifier.get(stampId) for stampId in stampIds[:batchSize]]
+            stampIdsSets = [self._sets.get(set,[]) for set in sets]
+            def predicate(stamp):
+                for stampIdsFromSet in stampIdsSets:
+                    if stamp in stampIdsFromSet:
+                        return True
+                return False
+            stampIds = ifilter(predicate, stampIds)
+        return (self._stamp2identifier.get(stampId) for stampId in stampIds)
 
     def getDatestamp(self, identifier):
         stamp = self._identifier2stamp.get(identifier, None)

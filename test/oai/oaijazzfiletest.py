@@ -69,20 +69,19 @@ class OaiJazzFileTest(CQ2TestCase):
     def testAddOaiRecordPrefixOnly(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
         
-        total, recordIds = self.jazz.oaiSelect(prefix='prefix')
-        self.assertEquals(1, total)
-        self.assertEquals(['oai://1234?34'], recordIds)
+        recordIds = self.jazz.oaiSelect(prefix='prefix')
+        self.assertEquals(['oai://1234?34'], list(recordIds))
 
     def testAddOaiRecord(self):
         self.jazz.addOaiRecord('identifier', sets=[('setSpec', 'setName')], metadataFormats=[('prefix','schema', 'namespace')])
-        self.assertEquals((1, ['identifier']), self.jazz.oaiSelect(prefix='prefix'))
-        self.assertEquals((1, ['identifier']), self.jazz.oaiSelect(sets=['setSpec'],prefix='prefix'))
-        self.assertEquals((0,[]), self.jazz.oaiSelect(sets=['unknown'],prefix='prefix'))
+        self.assertEquals(['identifier'], list(self.jazz.oaiSelect(prefix='prefix')))
+        self.assertEquals(['identifier'], list(self.jazz.oaiSelect(sets=['setSpec'],prefix='prefix')))
+        self.assertEquals([], list(self.jazz.oaiSelect(sets=['unknown'],prefix='prefix')))
 
     def testAddOaiRecordWithNoSets(self):
         self.jazz.addOaiRecord('id1', sets=[], metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.addOaiRecord('id2', sets=[], metadataFormats=[('prefix','schema', 'namespace')])
-        self.assertEquals((2, ['id1', 'id2']), self.jazz.oaiSelect(prefix='prefix'))
+        self.assertEquals(['id1', 'id2'], list(self.jazz.oaiSelect(prefix='prefix')))
 
     def testAddOaiRecordWithNoMetadataFormats(self):
         try:
@@ -96,15 +95,14 @@ class OaiJazzFileTest(CQ2TestCase):
         
         myJazz = OaiJazzFile(self.tempdir)
 
-        total, recordIds = myJazz.oaiSelect(prefix='prefix')
-        self.assertEquals(1, total)
-        self.assertEquals(['oai://1234?34'], recordIds)
+        recordIds = myJazz.oaiSelect(prefix='prefix')
+        self.assertEquals('oai://1234?34', recordIds.next())
 
     def testGetFromMultipleSets(self):
         self.jazz.addOaiRecord('id1', sets=[('set1', 'set1name')], metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.addOaiRecord('id2', sets=[('set2', 'set2name')], metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.addOaiRecord('id3', sets=[('set3', 'set1name')], metadataFormats=[('prefix','schema', 'namespace')])
-        self.assertEquals((2, ['id1','id2']), self.jazz.oaiSelect(sets=['set1','set2'], prefix='prefix'))
+        self.assertEquals(['id1','id2'], list(self.jazz.oaiSelect(sets=['set1','set2'], prefix='prefix')))
 
     def xtestPerformanceTestje(self):
         """This test is fast if storing on disk is off"""
@@ -116,38 +114,35 @@ class OaiJazzFileTest(CQ2TestCase):
         t1 = time()
         #originalStore()
         t2 = time()
-        total, ids = self.jazz.oaiSelect(sets=['setSpec95000'],prefix='prefix')
-        self.assertEquals(100, total)
+        ids = self.jazz.oaiSelect(sets=['setSpec95000'],prefix='prefix')
+        self.assertEquals(100, len(list(ids)))
         print t1 - t0, t2 - t1, time() -t2
         # a set form 10 million records costs 3.9 seconds (Without any efficiency things applied
         # it costs 0.3 seconds with 1 million records
     
     def testListRecordsNoResults(self):
-        total, result = self.jazz.oaiSelect(prefix='xxx')
-        self.assertEquals([], result)
-        self.assertEquals(0, total)
+        result = self.jazz.oaiSelect(prefix='xxx')
+        self.assertEquals([], list(result))
 
     def testUpdateOaiRecord(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
-        total, result = self.jazz.oaiSelect(prefix='prefix')
-        self.assertEquals(1, total)
-        self.assertEquals(['id:1'],result)
+        result = self.jazz.oaiSelect(prefix='prefix')
+        self.assertEquals(['id:1'],list(result))
     
     def testUpdateOaiRecordSet(self):
         self.jazz.addOaiRecord('id:1', sets=[('setSpec1', 'setName1')], metadataFormats=[('prefix', 'schema', 'namespace')])
         
-        total, result = self.jazz.oaiSelect(prefix='prefix', sets=['setSpec1'])
-        self.assertEquals(1, total)
+        result = self.jazz.oaiSelect(prefix='prefix', sets=['setSpec1'])
+        self.assertEquals(1, len(list(result)))
 
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
 
-        total, result = self.jazz.oaiSelect(prefix='prefix')
-        self.assertEquals(1, total)
-        self.assertEquals(['id:1'],result)
+        result = self.jazz.oaiSelect(prefix='prefix')
+        self.assertEquals(['id:1'],list(result))
         
-        total, result = self.jazz.oaiSelect(prefix='prefix', sets=['setSpec1'])
-        self.assertEquals(0, total)
+        result = self.jazz.oaiSelect(prefix='prefix', sets=['setSpec1'])
+        self.assertEquals(0, len(list(result)))
 
         self.assertEquals('', open(join(self.tempdir, 'sets', 'setSpec1')).read())
 
@@ -156,11 +151,10 @@ class OaiJazzFileTest(CQ2TestCase):
         self.jazz.addOaiRecord('124', metadataFormats=[('lom', 'schema', 'namespace')])
         self.jazz.addOaiRecord('121', metadataFormats=[('lom', 'schema', 'namespace')])
         self.jazz.addOaiRecord('122', metadataFormats=[('lom', 'schema', 'namespace')])
-        total, results = self.jazz.oaiSelect(prefix='oai_dc')
-        self.assertEquals(1, total)
-        total, results =self.jazz.oaiSelect(prefix='lom')
-        self.assertEquals(3, total)
-        self.assertEquals(['124', '121','122'], results)
+        results = self.jazz.oaiSelect(prefix='oai_dc')
+        self.assertEquals(['123'], list(results))
+        results =self.jazz.oaiSelect(prefix='lom')
+        self.assertEquals(['124', '121','122'], list(results))
 
     def testGetDatestampNotExisting(self):
         self.assertEquals(None, self.jazz.getDatestamp('doesNotExist'))
@@ -172,10 +166,10 @@ class OaiJazzFileTest(CQ2TestCase):
     def testDelete(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
         self.assertFalse(self.jazz.isDeleted('42'))
-        self.assertEquals((1, ['42']), self.jazz.oaiSelect(prefix='oai_dc'))
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
         self.jazz.delete('42')
         self.assertTrue(self.jazz.isDeleted('42'))
-        self.assertEquals((1, ['42']), self.jazz.oaiSelect(prefix='oai_dc'))
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
 
     # delete nonExistingRecord
     # delete keeps the same identifier, sets, prefixes
