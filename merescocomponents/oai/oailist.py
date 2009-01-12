@@ -30,6 +30,7 @@ from merescocore.framework.observable import Observable
 from resumptiontoken import resumptionTokenFromString, ResumptionToken
 from oaitool import ISO8601, ISO8601Exception
 from oairecordverb import OaiRecordVerb
+from itertools import chain
 
 BATCH_SIZE = 200
 
@@ -118,14 +119,18 @@ Error and Exception Conditions
         if not self._metadataPrefix in [prefix for prefix, na, na in self.any.getAllPrefixes()]:
             return self.writeError(webRequest, 'cannotDisseminateFormat')
 
-        self._queryRecordIds = HasNextIterator(self.any.oaiSelect(
+        result = self.any.oaiSelect(
             sets=self._set and [self._set] or None,
             prefix=self._metadataPrefix,
             continueAt=self._continueAt,
             oaiFrom=self._from,
-            oaiUntil=self._until))
-        if not self._queryRecordIds.hasNext():
-            return self.writeError(webRequest, 'noRecordsMatch')
+            oaiUntil=self._until)
+        try:
+            firstRecord = result.next()
+            self._queryRecordIds = chain(iter([firstRecord]), result)
+        except StopIteration:
+            self._queryRecordIds = iter([])
+            self.writeError(webRequest, 'noRecordsMatch')
 
     def process(self, webRequest):
         for i, id in enumerate(self._queryRecordIds):
@@ -142,27 +147,3 @@ Error and Exception Conditions
 
         if self._resumptionToken:
             webRequest.write('<resumptionToken/>')
-
-class HasNextIterator(object):
-    def __init__(self, anIterator):
-        self._iterator = anIterator
-        self._next = None
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self._next != None:
-            try:
-                return self._next
-            finally:
-                self._next = None
-        return self._iterator.next()
-
-    def hasNext(self):
-        if self._next == None:
-            try:
-                self._next = self._iterator.next()
-            except StopIteration:
-                return False
-        return True
