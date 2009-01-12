@@ -28,7 +28,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from os.path import isfile, join
-from time import time
+from time import time, mktime
 
 from merescocomponents.oai import OaiJazzFile
 
@@ -65,7 +65,7 @@ class OaiJazzFileTest(CQ2TestCase):
         jazz = OaiJazzFile(self.tempdir)
         stamps = [jazz._stamp() for i in xrange(1000)]
         self.assertEquals(list(sorted(set(stamps))), stamps)
-
+        
     def testAddOaiRecordPrefixOnly(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
         
@@ -217,15 +217,39 @@ class OaiJazzFileTest(CQ2TestCase):
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
         
 
+    def _setTime(self, year, month, day):
+        self.jazz._stamp = lambda: int(mktime((year, month, day, 0, 1, 0, 0, 0 ,0))*1000000.0)
+        
+    def testListRecordsWithFromAndUntil(self):
+        self._setTime(2007, 9, 21)
+        self.jazz.addOaiRecord('4', metadataFormats=[('prefix','schema', 'namespace')])
+        self._setTime(2007, 9, 22)
+        self.jazz.addOaiRecord('3', metadataFormats=[('prefix','schema', 'namespace')])
+        self._setTime(2007, 9, 23)
+        self.jazz.addOaiRecord('2', metadataFormats=[('prefix','schema', 'namespace')])
+        self._setTime(2007, 9, 24)
+        self.jazz.addOaiRecord('1', metadataFormats=[('prefix','schema', 'namespace')])
+
+        result = self.jazz.oaiSelect(prefix='prefix', oaiFrom="2007-09-22T00:00:00Z")
+        self.assertEquals(3, len(list(result)))
+        result = self.jazz.oaiSelect(prefix='prefix', oaiFrom="2007-09-22T00:00:00Z", oaiUntil="2007-09-23T23:59:59Z")
+        self.assertEquals(2, len(list(result)))
+
+    #def testFixUntil(self):
+        #self.assertEquals("2007-09-22T12:33:00Z", self.jazz._fixUntilDate("2007-09-22T12:33:00Z"))
+        #self.assertEquals("2007-09-23T00:00:00Z", self.jazz._fixUntilDate("2007-09-22"))
+        #self.assertEquals("2008-01-01T00:00:00Z", self.jazz._fixUntilDate("2007-12-31"))
+        #self.assertEquals("2004-02-29T00:00:00Z", self.jazz._fixUntilDate("2004-02-28"))
+        
     # unique, for continueAt
 
-    def xtestDeleteIncrementsDatestampAndUnique(self):
+    def testDeleteIncrementsDatestampAndUnique(self):
         self.jazz.addOaiRecord('23', metadataFormats=[('oai_dc','schema', 'namespace')])
-        stamp = jazz.getDatestamp('23')
+        stamp = self.jazz.getDatestamp('23')
         #unique = jazz.getUnique('23')
         self.stampNumber += 1234567890 # increaseTime
-        jazz.delete('23')
-        self.assertNotEqual(stamp, jazz.getDatestamp('23'))
+        self.jazz.delete('23')
+        self.assertNotEqual(stamp, self.jazz.getDatestamp('23'))
         #self.assertNotEquals(unique, int(jazz.getUnique('23')))
 
     #def testGetUnique(self):
@@ -410,27 +434,7 @@ class OaiJazzFileTest(CQ2TestCase):
         #total, result = self.jazz.oaiSelect(prefix='oai_dc', continueAt='%020d' % 1)
         #self.assertEquals('00002', result[0])
 
-    #def testListRecordsWithFromAndUntil(self):
-        #BooleanQuery.setMaxClauseCount(10) # Cause an early TooManyClauses exception.
-        #self.jazz._gettime = lambda: (2007, 9, 24, 14, 27, 53, 0, 267, 0)
-        #self._addRecord(1)
-        #self.jazz._gettime = lambda: (2007, 9, 23, 14, 27, 53, 0, 267, 0)
-        #self._addRecord(2)
-        #self.jazz._gettime = lambda: (2007, 9, 22, 14, 27, 53, 0, 267, 0)
-        #self._addRecord(3)
-        #self.jazz._gettime = lambda: (2007, 9, 21, 14, 27, 53, 0, 267, 0)
-        #self._addRecord(4)
 
-        #total, result = self.jazz.oaiSelect(prefix='oai_dc', oaiFrom="2007-09-22T00:00:00Z")
-        #self.assertEquals(3, total)
-        #total, result = self.jazz.oaiSelect(prefix='oai_dc', oaiFrom="2007-09-22", oaiUntil="2007-09-23")
-        #self.assertEquals(2, total)
-
-    #def testFixUntil(self):
-        #self.assertEquals("2007-09-22T12:33:00Z", self.jazz._fixUntilDate("2007-09-22T12:33:00Z"))
-        #self.assertEquals("2007-09-23T00:00:00Z", self.jazz._fixUntilDate("2007-09-22"))
-        #self.assertEquals("2008-01-01T00:00:00Z", self.jazz._fixUntilDate("2007-12-31"))
-        #self.assertEquals("2004-02-29T00:00:00Z", self.jazz._fixUntilDate("2004-02-28"))
 
 #from time import sleep
 #class TimerForTestSupport(object):

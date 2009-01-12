@@ -30,8 +30,8 @@ from merescocore.framework import Observable
 from os.path import isdir, join, isfile
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
-from time import time, strftime, localtime
-from itertools import ifilter
+from time import time, strftime, localtime, mktime, strptime
+from itertools import ifilter, dropwhile, takewhile
 
 class OaiJazzFile(Observable):
     def __init__(self, aDirectory):
@@ -65,7 +65,9 @@ class OaiJazzFile(Observable):
         self._store()
 
     def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None):
-        stampIds = iter(self._prefixes.get(prefix, []))
+        stampIds = dropwhile(self._fromPredicate(oaiFrom),
+             takewhile(self._untilPredicate(oaiUntil),
+                (self._prefixes.get(prefix, []))))
         if sets:
             stampIdsSets = [self._sets.get(setSpec,[]) for setSpec in sets]
             def predicate(stamp):
@@ -94,6 +96,18 @@ class OaiJazzFile(Observable):
         self._stamp2identifier[stamp]=identifier
         self._identifier2stamp[identifier]=stamp
 
+    def _fromPredicate(self, oaiFrom):
+        if oaiFrom == None:
+            return lambda stamp: False
+        fromStamp = int(mktime(strptime(oaiFrom, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
+        return lambda stamp: stamp < fromStamp
+    
+    def _untilPredicate(self, oaiUntil):
+        if oaiUntil == None:
+            return lambda stamp: True
+        UNTIL_IS_INCLUSIVE = 1 # Add one second to 23:59:59
+        untilStamp = int(mktime(strptime(oaiUntil, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0) + UNTIL_IS_INCLUSIVE
+        return lambda stamp: stamp < untilStamp
         
     def _delete(self, identifier):
         stamp = self._identifier2stamp.get(identifier, None)
