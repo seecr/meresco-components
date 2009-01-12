@@ -57,6 +57,8 @@ class OaiJazzFile(Observable):
 
     def delete(self, identifier):
         oldPrefixes, oldSets = self._delete(identifier)
+        if not oldPrefixes:
+            return
         stamp = self._stamp()
         self._add(stamp, identifier, oldSets, oldPrefixes)
         self._deleted.add(stamp)
@@ -65,7 +67,7 @@ class OaiJazzFile(Observable):
     def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None):
         stampIds = iter(self._prefixes.get(prefix, []))
         if sets:
-            stampIdsSets = [self._sets.get(set,[]) for set in sets]
+            stampIdsSets = [self._sets.get(setSpec,[]) for setSpec in sets]
             def predicate(stamp):
                 for stampIdsFromSet in stampIdsSets:
                     if stamp in stampIdsFromSet:
@@ -116,19 +118,23 @@ class OaiJazzFile(Observable):
         self._prefixes = {}
         for prefix in listdir(join(self._directory, 'prefixes')):
             with open(join(self._directory, 'prefixes',prefix)) as f:
-                self._prefixes[unescapeName(prefix)] = [stamp.strip() for stamp in f if stamp]
+                self._prefixes[unescapeName(prefix)] = [int(stamp.strip()) for stamp in f if stamp]
         self._sets = {}
-        for set in listdir(join(self._directory, 'sets')):
-            with open(join(self._directory, 'sets',prefix)) as f:
-                self._sets[unescapeName(set)] = [stamp.strip() for stamp in f if stamp]
+        for setSpec in listdir(join(self._directory, 'sets')):
+            with open(join(self._directory, 'sets', setSpec)) as f:
+                self._sets[unescapeName(setSpec)] = [int(stamp.strip()) for stamp in f if stamp]
         self._stamp2identifier = {}
         self._identifier2stamp = {}
         identifiersFile = join(self._directory, 'identifiers')
         if isfile(identifiersFile):
             with open(identifiersFile) as f:
                 for stamp, identifier in (line.strip().split(' ',1) for line in f):
-                    self._stamp2identifier[stamp] = identifier
-                    self._identifier2stamp[identifier] = stamp
+                    self._stamp2identifier[int(stamp)] = identifier
+                    self._identifier2stamp[identifier] = int(stamp)
+        deletedFile = join(self._directory, 'deleted')
+        if isfile(deletedFile):
+            with open(deletedFile) as f:
+                self._deleted = set(int(stamp.strip()) for stamp in f if stamp.strip())
 
     def _store(self):
         for prefix, stamps in self._prefixes.items():
@@ -136,15 +142,19 @@ class OaiJazzFile(Observable):
                 for s in stamps:
                     f.write('%s\n' % s)
             rename(join(self._directory, 'prefixes', '__tmp__'), join(self._directory, 'prefixes', escapeName(prefix)))
-        for set, stamps in self._sets.items():
+        for setSpec, stamps in self._sets.items():
             with open(join(self._directory, 'sets', '__tmp__'), 'w') as f:
                 for s in stamps:
                     f.write('%s\n' % s)
-            rename(join(self._directory, 'sets', '__tmp__'), join(self._directory, 'sets', escapeName(set)))
+            rename(join(self._directory, 'sets', '__tmp__'), join(self._directory, 'sets', escapeName(setSpec)))
         with open(join(self._directory, '__tmp__identifiers'), 'w') as f:
             for stamp, identifier in self._stamp2identifier.items():
                 f.write('%s %s\n' % (stamp, identifier))
         rename(join(self._directory, '__tmp__identifiers'), join(self._directory, 'identifiers'))
+        with open(join(self._directory, '__tmp__deleted'), 'w') as f:
+            for stamp in self._deleted:
+                f.write('%s\n' % stamp)
+        rename(join(self._directory, '__tmp__deleted'), join(self._directory, 'deleted'))
 
     def _stamp(self):
         """time in microseconds"""

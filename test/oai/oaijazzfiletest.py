@@ -171,10 +171,51 @@ class OaiJazzFileTest(CQ2TestCase):
         self.assertTrue(self.jazz.isDeleted('42'))
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
 
-    # delete nonExistingRecord
-    # delete keeps the same identifier, sets, prefixes
-    # delete and re-add
-    # delete is persistent (written to a file.)
+    def testDeleteNonExistingRecords(self):
+        self.jazz.addOaiRecord('existing', metadataFormats=[('prefix','schema', 'namespace')])
+        self.jazz.delete('notExisting')
+        self.assertEquals(['1215313443000000 existing\n'], open(join(self.tempdir, 'identifiers')).readlines())
+
+    def testDeleteKeepsSetsAndPrefixes(self):
+        self.jazz.addOaiRecord('42', sets=[('setSpec1', 'setName1'),('setSpec2', 'setName2')], metadataFormats=[('prefix1','schema', 'namespace'), ('prefix2','schema', 'namespace')])
+        self.jazz.delete('42')
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix1')))
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix2')))
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix1', sets=['setSpec1'])))
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix1', sets=['setSpec2'])))
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix2', sets=['setSpec2'])))
+        self.assertTrue(self.jazz.isDeleted('42'))
+    
+    def testDeleteAndReadd(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
+        self.jazz.delete('42')
+        self.assertTrue(self.jazz.isDeleted('42'))
+        self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
+        self.assertFalse(self.jazz.isDeleted('42'))
+
+        self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
+
+    # What happens if you do addOaiRecord('id1', prefix='aap') and afterwards
+    #   addOaiRecord('id1', prefix='noot')
+    # According to the specification:
+    # Deleted status is a property of individual records. Like a normal record, a deleted record is identified by a unique identifier, a metadataPrefix and a datestamp. Other records, with different metadataPrefix but the same unique identifier, may remain available for the item.
+
+    def testDeleteIsPersistent(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
+        self.jazz.delete('42')
+        jazz2 = OaiJazzFile(self.tempdir)
+        self.assertTrue(jazz2.isDeleted('42'))
+
+    def testAddOaiRecordPersistent(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec', 'setName')])
+        jazz2 = OaiJazzFile(self.tempdir)
+        self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='prefix', sets=['setSpec'])))
+
+    def testWeirdSetOrPrefixNamesDoNotMatter(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('/%^!@#$   \n\t','schema', 'namespace')], sets=[('set%2Spec\n\n', 'setName')])
+        jazz2 = OaiJazzFile(self.tempdir)
+        self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
+        
 
     # unique, for continueAt
 
