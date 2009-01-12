@@ -30,7 +30,7 @@ from merescocore.framework import Observable
 from os.path import isdir, join, isfile
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
-from time import time
+from time import time, strftime, localtime
 
 def listUnion(*lists):
     result = set()
@@ -52,17 +52,25 @@ class OaiJazzFile(Observable):
         isdir(join(aDirectory, 'prefixes')) or makedirs(join(aDirectory,'prefixes'))
         self._prefixes = {}
         self._sets = {}
-        self._identifiers = {}
+        self._stamp2identifier = {}
+        self._identifier2stamp = {}
+        self._deleted = set()
         self._read()
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
+        self._delete(identifier)
         stamp = self._stamp()
-        for prefix, schema, namespace in metadataFormats:
-            self._prefixes.setdefault(prefix,[]).append(stamp)
-        for setSpec, setName in sets:
-            self._sets.setdefault(setSpec,[]).append(stamp)
-        self._identifiers[stamp]=identifier
+        prefixes = (prefix for prefix, schema, namespace in metadataFormats)
+        setSpecs = (setSpec for setSpec, setName in sets)
+        self._add(stamp, identifier, setSpecs, prefixes)
+        self._store()
+
+    def delete(self, identifier):
+        oldPrefixes, oldSets = self._delete(identifier)
+        stamp = self._stamp()
+        self._add(stamp, identifier, oldSets, oldPrefixes)
+        self._deleted.add(stamp)
         self._store()
 
     def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize=10):
@@ -71,7 +79,45 @@ class OaiJazzFile(Observable):
             stampIdsSet = listUnion(*[self._sets.get(set,[]) for set in sets])
             stampIds = listIntersection(stampIds, *[stampIdsSet])
         
-        return len(stampIds), [self._identifiers.get(stampId) for stampId in stampIds[:batchSize]]
+        return len(stampIds), [self._stamp2identifier.get(stampId) for stampId in stampIds[:batchSize]]
+
+    def getDatestamp(self, identifier):
+        stamp = self._identifier2stamp.get(identifier, None)
+        if stamp == None:
+            return None
+        return strftime('%Y-%m-%dT%H:%M:%SZ', localtime(stamp/1000000.0))
+
+    def isDeleted(self, identifier):
+        stamp = self._identifier2stamp.get(identifier, None)
+        return stamp != None and stamp in self._deleted
+    
+    def _add(self, stamp, identifier, setSpecs, prefixes):
+        for setSpec in setSpecs:
+            self._sets.setdefault(setSpec,[]).append(stamp)
+        for prefix in prefixes:
+            self._prefixes.setdefault(prefix,[]).append(stamp)
+        self._stamp2identifier[stamp]=identifier
+        self._identifier2stamp[identifier]=stamp
+
+        
+    def _delete(self, identifier):
+        stamp = self._identifier2stamp.get(identifier, None)
+        oldPrefixes = []
+        oldSets = []
+        if stamp != None:
+            del self._identifier2stamp[identifier]
+            del self._stamp2identifier[stamp]
+            for prefix, prefixStamps in self._prefixes.items():
+                if stamp in prefixStamps:
+                    prefixStamps.remove(stamp)
+                    oldPrefixes.append(prefix)
+            for setSpec, setStamps in self._sets.items():
+                if stamp in setStamps:
+                    setStamps.remove(stamp)
+                    oldSets.append(setSpec)
+            if stamp in self._deleted:
+                self._deleted.remove(stamp)
+        return oldPrefixes, oldSets
 
     def _read(self):
         self._prefixes = {}
@@ -82,11 +128,14 @@ class OaiJazzFile(Observable):
         for set in listdir(join(self._directory, 'sets')):
             with open(join(self._directory, 'sets',prefix)) as f:
                 self._sets[unescapeName(set)] = [stamp.strip() for stamp in f if stamp]
-        self._identifiers = {}
+        self._stamp2identifier = {}
+        self._identifier2stamp = {}
         identifiersFile = join(self._directory, 'identifiers')
         if isfile(identifiersFile):
             with open(identifiersFile) as f:
-                self._identifiers = dict(line.strip().split(' ',1) for line in f)
+                for stamp, identifier in (line.strip().split(' ',1) for line in f):
+                    self._stamp2identifier[stamp] = identifier
+                    self._identifier2stamp[identifier] = stamp
 
     def _store(self):
         for prefix, stamps in self._prefixes.items():
@@ -100,13 +149,13 @@ class OaiJazzFile(Observable):
                     f.write('%s\n' % s)
             rename(join(self._directory, 'sets', '__tmp__'), join(self._directory, 'sets', escapeName(set)))
         with open(join(self._directory, '__tmp__identifiers'), 'w') as f:
-            for stamp, identifier in self._identifiers.items():
+            for stamp, identifier in self._stamp2identifier.items():
                 f.write('%s %s\n' % (stamp, identifier))
         rename(join(self._directory, '__tmp__identifiers'), join(self._directory, 'identifiers'))
 
     def _stamp(self):
         """time in microseconds"""
-        return str(int(time()*1000000.0))
+        return int(time()*1000000.0)
 
     #def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         #self.any.deletePart(identifier, 'tombstone')
