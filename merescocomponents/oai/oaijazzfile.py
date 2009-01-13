@@ -87,6 +87,8 @@ class OaiJazzFile(Observable):
     def isDeleted(self, identifier):
         stamp = self._identifier2stamp.get(identifier, None)
         return stamp != None and stamp in self._deleted
+
+    # private methods
     
     def _add(self, stamp, identifier, setSpecs, prefixes):
         for setSpec in setSpecs:

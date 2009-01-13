@@ -33,20 +33,6 @@ from time import time, mktime
 from merescocomponents.oai import OaiJazzFile
 
 class OaiJazzFileTest(CQ2TestCase):
-    #def setUp(self):
-        #CQ2TestCase.setUp(self)
-        #self.index = CallTrace("Index")
-        #self.storage = CallTrace("Storage")
-        #self.mockedjazz = OaiJazzLucene(self.index, self.storage, (i for i in xrange(100)))
-        #self.id = "id"
-        #self.partName = "xmlfields"
-        #self.document = Xml2Document()._create(self.id, FIELDS)
-        #self.realjazz = OaiJazzLucene(
-            #LuceneIndex(
-                #join(self.tempdir,'index'), timer=TimerForTestSupport()),
-            #StorageComponent(join(self.tempdir,'storage')),
-            #iter(xrange(99)))
-
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.jazz = OaiJazzFile(self.tempdir)
@@ -56,10 +42,6 @@ class OaiJazzFileTest(CQ2TestCase):
             self.stampNumber += 1
             return result
         self.jazz._stamp = stamp
-
-    #def tearDown(self):
-        #self.realjazz.close()
-        #CQ2TestCase.tearDown(self)
 
     def testOriginalStamp(self):
         jazz = OaiJazzFile(self.tempdir)
@@ -109,16 +91,24 @@ class OaiJazzFileTest(CQ2TestCase):
         originalStore = self.jazz._store
         self.jazz._store = lambda:None
         t0 = time()
-        for i in xrange(10000000):
+        for i in xrange(1 * 10**7):
             self.jazz.addOaiRecord('id%s' % i, sets=[('setSpec%s' % ((i / 100)*100), 'setName')], metadataFormats=[('prefix','schema', 'namespace')])
         t1 = time()
-        #originalStore()
-        t2 = time()
         ids = self.jazz.oaiSelect(sets=['setSpec95000'],prefix='prefix')
-        self.assertEquals(100, len(list(ids)))
-        print t1 - t0, t2 - t1, time() -t2
+        firstId = ids.next()
+        t2 = time()
+        self.assertEquals(99, len(list(ids)))
+        print t1 - t0, t2 - t1, time() -t2, time() -t1
         # a set form 10 million records costs 3.9 seconds (Without any efficiency things applied
         # it costs 0.3 seconds with 1 million records
+        # retimed it at 2009-01-13:
+        #  1 * 10**6 oaiSelect took 3.7 seconds
+        #  1 * 10**7 oaiSelect took 37.3 seconds
+        # after adding low, high for sets: although this quite optimal for this test!!
+        #  1 * 10**6 oaiSelect took 0.071
+        #  1 * 10**7 oaiSelect took 0.071
+        # the above optimization is removed again, it was only there to show optimization could help  A LOT!
+        
     
     def testListRecordsNoResults(self):
         result = self.jazz.oaiSelect(prefix='xxx')
@@ -234,12 +224,6 @@ class OaiJazzFileTest(CQ2TestCase):
         self.assertEquals(3, len(list(result)))
         result = self.jazz.oaiSelect(prefix='prefix', oaiFrom="2007-09-22T00:00:00Z", oaiUntil="2007-09-23T23:59:59Z")
         self.assertEquals(2, len(list(result)))
-
-    #def testFixUntil(self):
-        #self.assertEquals("2007-09-22T12:33:00Z", self.jazz._fixUntilDate("2007-09-22T12:33:00Z"))
-        #self.assertEquals("2007-09-23T00:00:00Z", self.jazz._fixUntilDate("2007-09-22"))
-        #self.assertEquals("2008-01-01T00:00:00Z", self.jazz._fixUntilDate("2007-12-31"))
-        #self.assertEquals("2004-02-29T00:00:00Z", self.jazz._fixUntilDate("2004-02-28"))
         
     # unique, for continueAt
 
