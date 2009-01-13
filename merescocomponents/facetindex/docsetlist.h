@@ -53,7 +53,7 @@ class DocSetList : public std::vector<DocSet*> {
         ~DocSetList();
         void                 addDocSet(DocSet* docset);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
-        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum);
+        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs);
         DocSet*              forTerm(char* term);
         void                 removeDoc(guint32 doc);
 };
@@ -67,7 +67,7 @@ extern "C" {
     DocSet*          DocSetList_get                  (DocSetList* list, int i);
     DocSet*          DocSetList_getForTerm           (DocSetList* list, char* term);
     CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docset, guint32 maxResults, int doSort);
-    CardinalityList* DocSetList_jaccards             (DocSetList* list, DocSet* docset, int minimum, int maximum);
+    CardinalityList* DocSetList_jaccards             (DocSetList* list, DocSet* docset, int minimum, int maximum, int totaldocs);
     void             DocSetList_delete               (DocSetList* list);
     void             DocSetList_sortOnCardinality    (DocSetList* list);
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs);

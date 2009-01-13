@@ -56,6 +56,7 @@ class Drilldown(object):
 
     def indexStarted(self, indexReader):
         t0 = time()
+        self._totaldocs = indexReader.numDocs()
         termDocs = indexReader.termDocs()
         fieldNames = self._staticDrilldownFieldnames
         if not fieldNames:
@@ -85,7 +86,7 @@ class Drilldown(object):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:
             if fieldname not in self._docsetlists:
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
-            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum)
+            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs)
 
 
     def rowCardinalities(self):

@@ -115,8 +115,12 @@ class DummyDocSet : public DocSet {
         DummyDocSet(size_t size) : DocSet(size) { }
 };
 
+bool cmpCardinalityResultsReverse(const cardinality_t& lhs, const cardinality_t& rhs) {
+    return lhs.cardinality < rhs.cardinality;
+}
+
 CardinalityList*
-DocSetList::jaccards(DocSet* docset, int minimum, int maximum) {
+DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs) {
 
     CardinalityList* results = new CardinalityList();
     DocSetList::iterator lower = begin();
@@ -134,21 +138,43 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum) {
         int j = 100 * c / (candidate->size() + docset->size() - c);
 
         if ( j >= minimum && j <= maximum ) {
-            double tf = (double)candidate->size() / (double) docset->size();
+            // Mutual Information (aka Information Gain)
+            double N = totaldocs;
+
+            double N11 = c;
+            double N10 = docset->size() - c;
+            double N01 = candidate->size() -c;
+
+            // N = N00 + N01 + N10 + N11
+            double N00 = N - (docset->size() + candidate->size() + c);
+            double N1_ = N10 + N11;   // ==> docset->size()
+            double N_1 = N01 + N11;   // ==> candidate->size()
+            double N0_ = N01 + N00;
+            double N_0 = N10 + N00;
+            double MI = (N11/N)*log((N*N11)/(N1_*N_1)) +
+                        (N01/N)*log((N*N01)/(N0_*N_1)) +
+                        (N10/N)*log((N*N10)/(N1_*N_0)) +
+                        (N00/N)*log((N*N00)/(N0_*N_0));
+            // X^2
+/*            double X2 = ((N11+N10+N01+N00)*pow(N11*N00-N10*N01,2.0)) /
+                        ((N11+N01)*(N11+N10)*(N10+N00)*(N01+N00));
+*/
+            // TF*IDF a la Jonkers
+/*            double tf = (double)candidate->size() / (double) docset->size();
             double idf = log((double)candidate->size() / (double) c) + 1;
-            printf("==> %s tf=%f idf=%f %f\n", candidate->term(), tf, idf, tf*idf);
-            if (tf*idf < 2.0) {
-                cardinality_t t = { candidate->term(), j };
+            double tfidf = tf*idf;
+*/
+
+            if ( MI < 0.5 ) {
+                int n = int(MI * 1000.0);
+                cardinality_t t = { candidate->term(), n};
                 results->push_back(t);
             }
         }
     }
-    sort(results->begin(), results->end(), cmpCardinalityResults);
+    sort(results->begin(), results->end(), cmpCardinalityResultsReverse);
     return results;
 }
-
-
-
 
 /////////////// C Interface to DocSetList ////////////////
 
@@ -194,8 +220,8 @@ CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docs
     return list->combinedCardinalities(docset, maxResults, doSort);
 }
 
-CardinalityList* DocSetList_jaccards(DocSetList* list, DocSet* docset, int minimum, int maximum) {
-    return list->jaccards(docset, minimum, maximum);
+CardinalityList* DocSetList_jaccards(DocSetList* list, DocSet* docset, int minimum, int maximum, int totaldocs) {
+    return list->jaccards(docset, minimum, maximum, totaldocs);
 }
 
 void DocSetList_delete(DocSetList* list) {
