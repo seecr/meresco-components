@@ -196,7 +196,7 @@ class OaiJazzLuceneTest(CQ2TestCase):
         jazz = self.realjazz
         jazz.add('123', 'oai_dc', bind_string('<dc/>').dc)
         jazz.add('123', 'lom', bind_string('<lom/>').lom)
-        parts = jazz.getParts('123')
+        parts = jazz.getPrefixes('123')
         self.assertEquals(['oai_dc', 'lom'], parts)
         self.assertEquals(['123'], list(jazz.oaiSelect(prefix='lom')))
         self.assertEquals(['123'], list(jazz.oaiSelect(prefix='oai_dc')))
@@ -229,23 +229,23 @@ class OaiJazzLuceneTest(CQ2TestCase):
         jazz = self.realjazz
         jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
-        prefixes = jazz.getAllPrefixes()
+        prefixes = jazz.getAllMetadataFormats()
         self.assertEquals([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')], list(prefixes))
         jazz.add('457', 'dc2', bind_string('<oai_dc:dc xmlns:oai_dc="http://dc2"/>').dc)
-        prefixes = jazz.getAllPrefixes()
+        prefixes = jazz.getAllMetadataFormats()
         self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc'), ('dc2', '', 'http://dc2')]), prefixes)
 
     def testMetadataPrefixesFromRootTag(self):
         jazz = self.realjazz
         jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>'))
-        prefixes = jazz.getAllPrefixes()
+        prefixes = jazz.getAllMetadataFormats()
         self.assertEquals([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')], list(prefixes))
 
     def testIncompletePrefixInfo(self):
         jazz = self.realjazz
         jazz.add('457', 'dc2', bind_string('<oai_dc/>').oai_dc)
-        prefixes = jazz.getAllPrefixes()
+        prefixes = jazz.getAllMetadataFormats()
         self.assertEquals(set([('dc2', '', '')]), prefixes)
 
     def testPreserveRicherPrefixInfo(self):
@@ -253,7 +253,7 @@ class OaiJazzLuceneTest(CQ2TestCase):
         jazz.add('457', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
         jazz.add('457', 'oai_dc', bind_string('<oai_dc/>'))
-        prefixes = jazz.getAllPrefixes()
+        prefixes = jazz.getAllMetadataFormats()
         self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')]), prefixes)
 
 

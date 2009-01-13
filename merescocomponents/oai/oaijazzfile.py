@@ -51,7 +51,7 @@ class OaiJazzFile(Observable):
         self._delete(identifier)
         stamp = self._stamp()
         prefixes = (prefix for prefix, schema, namespace in metadataFormats)
-        setSpecs = (setSpec for setSpec, setName in sets)
+        setSpecs = self._flattenSetHierarchy((setSpec for setSpec, setName in sets))
         self._add(stamp, identifier, setSpecs, prefixes)
         self._store()
 
@@ -65,9 +65,10 @@ class OaiJazzFile(Observable):
         self._store()
 
     def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None):
-        stampIds = dropwhile(self._fromPredicate(oaiFrom),
-             takewhile(self._untilPredicate(oaiUntil),
-                (self._prefixes.get(prefix, []))))
+        stampIds = dropwhile(lambda stamp: stamp <= int(continueAt),
+            dropwhile(self._fromPredicate(oaiFrom),
+                takewhile(self._untilPredicate(oaiUntil),
+                    (self._prefixes.get(prefix, [])))))
         if sets:
             stampIdsSets = [self._sets.get(setSpec,[]) for setSpec in sets]
             def predicate(stamp):
@@ -84,9 +85,20 @@ class OaiJazzFile(Observable):
             return None
         return strftime('%Y-%m-%dT%H:%M:%SZ', localtime(stamp/1000000.0))
 
+    def getUnique(self, identifier):
+        return self._identifier2stamp.get(identifier, None)
+
     def isDeleted(self, identifier):
         stamp = self._identifier2stamp.get(identifier, None)
         return stamp != None and stamp in self._deleted
+
+    # temporary implementation
+    def getAllMetadataFormats(self):
+        yield ('prefix', 'schema', 'namespace')
+
+    def getSets(self, id):
+        if False:
+            yield 'yes'
 
     # private methods
     
@@ -99,13 +111,13 @@ class OaiJazzFile(Observable):
         self._identifier2stamp[identifier]=stamp
 
     def _fromPredicate(self, oaiFrom):
-        if oaiFrom == None:
+        if not oaiFrom:
             return lambda stamp: False
         fromStamp = int(mktime(strptime(oaiFrom, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
         return lambda stamp: stamp < fromStamp
     
     def _untilPredicate(self, oaiUntil):
-        if oaiUntil == None:
+        if not oaiUntil:
             return lambda stamp: True
         UNTIL_IS_INCLUSIVE = 1 # Add one second to 23:59:59
         untilStamp = int(mktime(strptime(oaiUntil, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0) + UNTIL_IS_INCLUSIVE
@@ -176,6 +188,15 @@ class OaiJazzFile(Observable):
         """time in microseconds"""
         return int(time()*1000000.0)
 
+    def _flattenSetHierarchy(self, sets):
+        """"[1:2:3, 1:2:4] => [1, 1:2, 1:2:3, 1:2:4]"""
+        result = set()
+        for setSpec in sets:
+            parts = setSpec.split(':')
+            for i in range(1, len(parts) + 1):
+                result.add(':'.join(parts[:i]))
+        return result
+    
     #def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         #self.any.deletePart(identifier, 'tombstone')
         #setSpecs, prefixes, na, na = self._getPreviousRecord(identifier)
@@ -243,8 +264,8 @@ class OaiJazzFile(Observable):
         #total, recordIds = self.any.executeQuery(query, sortBy='oaimeta.unique', stop=batchSize)
         #return total, recordIds
 
-    #def getAllPrefixes(self):
-        #return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllPrefixes().items())
+    #def getAllMetadataFormats(self):
+        #return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
 
     #def getUnique(self, id):
         #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
@@ -258,7 +279,7 @@ class OaiJazzFile(Observable):
         #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
         #return list(sets)
 
-    #def getParts(self, id):
+    #def getPrefixes(self, id):
         #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
         #return list(prefixes)
 
@@ -292,7 +313,7 @@ class OaiJazzFile(Observable):
         #return ns2xsd
 
     #def __updateAllPrefixes2(self, metadataFormats):
-        #allPrefixes = self._getAllPrefixes()
+        #allPrefixes = self._getAllMetadataFormats()
         #for prefix, schema, namespace in metadataFormats:
             #if prefix not in allPrefixes:
                #allPrefixes[prefix] = (schema, namespace)
@@ -304,7 +325,7 @@ class OaiJazzFile(Observable):
     #def _updateAllPrefixes(self, prefix, record):
         #if 'amara.bindery.root_base' in str(type(record)):
             #record = record.childNodes[0]
-        #allPrefixes = self._getAllPrefixes()
+        #allPrefixes = self._getAllMetadataFormats()
         #ns2xsd = self._findSchema(record)
         #nsmap = findNamespaces(record)
         #ns = nsmap[record.prefix]
@@ -323,15 +344,6 @@ class OaiJazzFile(Observable):
             #result = strftime('%Y-%m-%dT%H:%M:%SZ', datePlusOneDay)
         #return result
 
-    #def _flattenSetHierarchy(self, sets):
-        #""""[1:2:3, 1:2:4] => [1, 1:2, 1:2:3, 1:2:4]"""
-        #result = set()
-        #for setSpec in sets:
-            #parts = setSpec.split(':')
-            #for i in range(1, len(parts) + 1):
-                #result.add(':'.join(parts[:i]))
-        #return result
-
     #def _getAllSets(self):
         #allSets = set()
         #if (True, True) == self.any.isAvailable('__all_sets__', '__sets__'):
@@ -346,7 +358,7 @@ class OaiJazzFile(Observable):
         #setsXml = '<__sets__ xmlns="http://meresco.com/namespace/meresco/oai/sets">' + ''.join(spec % set for set in allSets) + '</__sets__>'
         #self.any.store('__all_sets__', '__sets__', setsXml)
 
-    #def _getAllPrefixes(self):
+    #def _getAllMetadataFormats(self):
         #allPrefixes = {}
         #if (True, True) == self.any.isAvailable('__all_prefixes__', '__prefixes__'):
             #allPrefixesXml = bind_stream(self.any.getStream('__all_prefixes__', '__prefixes__')).ListMetadataFormats

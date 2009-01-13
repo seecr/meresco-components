@@ -31,14 +31,17 @@ from os.path import isfile, join
 from time import time, mktime
 
 from merescocomponents.oai import OaiJazzFile
+from merescocomponents.oai.oailist import OaiList, BATCH_SIZE
+from StringIO import StringIO
+from lxml.etree import parse
 
 class OaiJazzFileTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.jazz = OaiJazzFile(self.tempdir)
-        self.stampNumber = 0
+        self.stampNumber = 1215313443000000
         def stamp():
-            result = 1215313443000000 + self.stampNumber
+            result = self.stampNumber
             self.stampNumber += 1
             return result
         self.jazz._stamp = stamp
@@ -236,20 +239,67 @@ class OaiJazzFileTest(CQ2TestCase):
         self.assertNotEqual(stamp, self.jazz.getDatestamp('23'))
         #self.assertNotEquals(unique, int(jazz.getUnique('23')))
 
-    #def testGetUnique(self):
-        #self.index.ignoredAttributes=['isAvailable', 'getStream']
-        #def getStream(id, partName):
-            #yield """<oaimeta>
-        #<stamp>DATESTAMP_FOR_TEST</stamp>
-        #<unique>UNIQUE_FOR_TEST</unique>
-		#<sets/>
-		#<prefixes/>
-    #</oaimeta>"""
-        #self.storage.getStream = getStream
-        #self.storage.isAvailable = lambda id, part: (True, True)
-        #uniqueNumber = self.mockedjazz.getUnique('somedocid')
-        #self.assertEquals('UNIQUE_FOR_TEST', uniqueNumber)
+    def testHierarchicalSets(self):
+        self.jazz.addOaiRecord('record123', metadataFormats=[('oai_dc', 'schema', 'namespace')], sets=[('set1:set2:set3', 'setName123')])
+        self.jazz.addOaiRecord('record124', metadataFormats=[('oai_dc', 'schema', 'namespace')], sets=[('set1:set2:set4', 'setName124')])
+        
+        self.assertEquals(['record123', 'record124'], list(self.jazz.oaiSelect(prefix='oai_dc', sets=['set1'])))
+        self.assertEquals(['record123', 'record124'], list(self.jazz.oaiSelect(prefix='oai_dc', sets=['set1:set2'])))
+        self.assertEquals(['record123'], list(self.jazz.oaiSelect(prefix='oai_dc', sets=['set1:set2:set3'])))
 
+    def testFlattenSetHierarchy(self):
+        self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(self.jazz._flattenSetHierarchy(['set1:set2:set3'])))
+        self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3', 'set1:set2:set4'], sorted(self.jazz._flattenSetHierarchy(['set1:set2:set3', 'set1:set2:set4'])))
+
+    def testGetUnique(self):
+        newStamp = self.stampNumber
+        self.jazz.addOaiRecord('id', metadataFormats=[('prefix', 'schema', 'namespace')])
+        self.assertEquals(newStamp, self.jazz.getUnique('id'))
+
+    def testOaiListWithListIdentifiers(self):
+        for i in xrange(300):
+            self.jazz.addOaiRecord('id:%i' % i, metadataFormats=[('prefix', 'schema', 'namespace')])
+        output = StringIO()
+        oaiList = OaiList()
+        oaiList.addObserver(self.jazz)
+        host = CallTrace('Host')
+        host.port = 12345
+        webrequest = CallTrace('WebRequest')
+        webrequest.write = output.write
+        webrequest.args = {'verb': ['ListIdentifiers'], 'metadataPrefix': ['prefix']}
+        webrequest.path = '/oai'
+        webrequest.returnValues['getRequestHostname'] = 'www.example.org'
+        webrequest.returnValues['getHost'] = host
+        oaiList.listIdentifiers(webrequest)
+        output.seek(0)
+        lxmlNode = parse(output)
+        recordIds = lxmlNode.xpath('//oai:identifier/text()', namespaces = {'oai':"http://www.openarchives.org/OAI/2.0/"})
+        self.assertEquals(['id:%d' % i for i in range(BATCH_SIZE)], recordIds)
+        resumptionToken = ''.join(lxmlNode.xpath('//oai:resumptionToken/text()', namespaces = {'oai':"http://www.openarchives.org/OAI/2.0/"}))
+
+        # now use resumptiontoken
+        output = StringIO()
+        webrequest.write = output.write
+        webrequest.args = {'verb': ['ListIdentifiers'], 'resumptionToken':[resumptionToken]}
+        oaiList.listIdentifiers(webrequest)
+        output.seek(0)
+        lxmlNode = parse(output)
+        recordIds = lxmlNode.xpath('//oai:identifier/text()', namespaces = {'oai':"http://www.openarchives.org/OAI/2.0/"})
+        self.assertEquals(['id:%d' % i for i in range(BATCH_SIZE, 300)], recordIds)
+
+    def testOaiSelectWithContinuAt(self):
+        self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
+        self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix', 'schema', 'namespace')])
+
+        continueAt = str(self.jazz.getUnique('id:1'))
+        self.assertEquals(['id:2'], list(self.jazz.oaiSelect(prefix='prefix', continueAt=continueAt)))
+
+        #add again will change the unique value
+        self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
+        self.assertEquals(['id:2', 'id:1'], list(self.jazz.oaiSelect(prefix='prefix', continueAt=continueAt)))
+        
+        
+        
     #def testOaiSelectWithBatchSize(self):
         #jazz = self.realjazz
         #for i in range(123,143):
@@ -335,7 +385,7 @@ class OaiJazzFileTest(CQ2TestCase):
         #jazz = self.realjazz
         #jazz.add('123', 'oai_dc', bind_string('<dc/>').dc)
         #jazz.add('123', 'lom', bind_string('<lom/>').lom)
-        #parts = jazz.getParts('123')
+        #parts = jazz.getPrefixes('123')
         #self.assertEquals(['oai_dc', 'lom'], parts)
         #self.assertEquals((1, ['123']), jazz.oaiSelect(prefix='lom'))
         #self.assertEquals((1, ['123']), jazz.oaiSelect(prefix='oai_dc'))
@@ -349,13 +399,6 @@ class OaiJazzFileTest(CQ2TestCase):
         #sets = jazz.listSets()
         #self.assertEquals(['set1', 'set2', 'set3'], sets)
 
-    #def testHierarchicalSets(self):
-        #jazz = self.realjazz
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('456', 'oai_dc', bind_string(header % 'set1:set2:set3').header)
-        #sets = jazz.listSets()
-        #self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(sets))
-
     #def testDatestamp(self):
         #jazz = self.realjazz
         #lower = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
@@ -368,23 +411,23 @@ class OaiJazzFileTest(CQ2TestCase):
         #jazz = self.realjazz
         #jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              #xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
-        #prefixes = jazz.getAllPrefixes()
+        #prefixes = jazz.getAllMetadataFormats()
         #self.assertEquals([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')], list(prefixes))
         #jazz.add('457', 'dc2', bind_string('<oai_dc:dc xmlns:oai_dc="http://dc2"/>').dc)
-        #prefixes = jazz.getAllPrefixes()
+        #prefixes = jazz.getAllMetadataFormats()
         #self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc'), ('dc2', '', 'http://dc2')]), prefixes)
 
     #def testMetadataPrefixesFromRootTag(self):
         #jazz = self.realjazz
         #jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              #xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>'))
-        #prefixes = jazz.getAllPrefixes()
+        #prefixes = jazz.getAllMetadataFormats()
         #self.assertEquals([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')], list(prefixes))
 
     #def testIncompletePrefixInfo(self):
         #jazz = self.realjazz
         #jazz.add('457', 'dc2', bind_string('<oai_dc/>').oai_dc)
-        #prefixes = jazz.getAllPrefixes()
+        #prefixes = jazz.getAllMetadataFormats()
         #self.assertEquals(set([('dc2', '', '')]), prefixes)
 
     #def testPreserveRicherPrefixInfo(self):
@@ -392,7 +435,7 @@ class OaiJazzFileTest(CQ2TestCase):
         #jazz.add('457', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              #xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
         #jazz.add('457', 'oai_dc', bind_string('<oai_dc/>'))
-        #prefixes = jazz.getAllPrefixes()
+        #prefixes = jazz.getAllMetadataFormats()
         #self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')]), prefixes)
 
 

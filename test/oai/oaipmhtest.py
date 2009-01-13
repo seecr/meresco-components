@@ -65,7 +65,7 @@ class OaiPmhTest(OaiTestCase):
 
     def testGetRecordUsesObservers(self):
         self.request.args = {'verb':['GetRecord'], 'metadataPrefix': ['oai_dc'], 'identifier': ['oai:ident']}
-        self.observer.returnValues['getAllPrefixes'] = [('oai_dc', 'schema', 'namespace')]
+        self.observer.returnValues['getAllMetadataFormats'] = [('oai_dc', 'schema', 'namespace')]
         self.observer.returnValues['isAvailable'] = (True, True)
         self.observer.returnValues['getDatestamp'] = '2008-11-14T15:43:00Z'
         self.observer.ignoredAttributes.append('provenance')
@@ -77,7 +77,7 @@ class OaiPmhTest(OaiTestCase):
         
         result = self.stream.getvalue()
         self.assertValidString(result)
-        self.assertEquals(['isDeleted', 'getAllPrefixes', 'isAvailable', 'isDeleted', 'getDatestamp', 'getSets', 'unknown'], [m.name for m in self.observer.calledMethods])
+        self.assertEquals(['isDeleted', 'getAllMetadataFormats', 'isAvailable', 'isDeleted', 'getDatestamp', 'getSets', 'unknown'], [m.name for m in self.observer.calledMethods])
         
     def assertBadArgument(self, arguments, additionalMessage = '', errorCode = "badArgument"):
         self.request.args = arguments

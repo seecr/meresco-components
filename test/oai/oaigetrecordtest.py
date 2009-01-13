@@ -37,7 +37,7 @@ from cq2utils.calltrace import CallTrace
 class OaiGetRecordTest(OaiTestCase):
     def getSubject(self):
         oaigetrecord = OaiGetRecord()
-        oaigetrecord.addObserver(ObserverFunction(lambda: [('oai_dc', '', '')], 'getAllPrefixes'))
+        oaigetrecord.addObserver(ObserverFunction(lambda: [('oai_dc', '', '')], 'getAllMetadataFormats'))
         return oaigetrecord
 
 

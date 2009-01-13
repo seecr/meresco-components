@@ -155,8 +155,8 @@ class OaiJazzLucene(Observable):
         total, recordIds = self.any.executeQuery(query, sortBy='oaimeta.unique', stop=BATCH_SIZE+1) 
         return iter(recordIds)
 
-    def getAllPrefixes(self):
-        return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllPrefixes().items())
+    def getAllMetadataFormats(self):
+        return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
 
     def getUnique(self, id):
         sets, prefixes, stamp, unique = self._getPreviousRecord(id)
@@ -170,7 +170,7 @@ class OaiJazzLucene(Observable):
         sets, prefixes, stamp, unique = self._getPreviousRecord(id)
         return list(sets)
 
-    def getParts(self, id):
+    def getPrefixes(self, id):
         sets, prefixes, stamp, unique = self._getPreviousRecord(id)
         return list(prefixes)
 
@@ -204,7 +204,7 @@ class OaiJazzLucene(Observable):
         return ns2xsd
 
     def __updateAllPrefixes2(self, metadataFormats):
-        allPrefixes = self._getAllPrefixes()
+        allPrefixes = self._getAllMetadataFormats()
         for prefix, schema, namespace in metadataFormats:
             if prefix not in allPrefixes:
                allPrefixes[prefix] = (schema, namespace)
@@ -216,7 +216,7 @@ class OaiJazzLucene(Observable):
     def _updateAllPrefixes(self, prefix, record):
         if 'amara.bindery.root_base' in str(type(record)):
             record = record.childNodes[0]
-        allPrefixes = self._getAllPrefixes()
+        allPrefixes = self._getAllMetadataFormats()
         ns2xsd = self._findSchema(record)
         nsmap = findNamespaces(record)
         ns = nsmap[record.prefix]
@@ -258,7 +258,7 @@ class OaiJazzLucene(Observable):
         setsXml = '<__sets__ xmlns="http://meresco.com/namespace/meresco/oai/sets">' + ''.join(spec % set for set in allSets) + '</__sets__>'
         self.any.store('__all_sets__', '__sets__', setsXml)
 
-    def _getAllPrefixes(self):
+    def _getAllMetadataFormats(self):
         allPrefixes = {}
         if (True, True) == self.any.isAvailable('__all_prefixes__', '__prefixes__'):
             allPrefixesXml = bind_stream(self.any.getStream('__all_prefixes__', '__prefixes__')).ListMetadataFormats

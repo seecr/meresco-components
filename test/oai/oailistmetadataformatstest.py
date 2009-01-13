@@ -42,7 +42,7 @@ class OaiListMetadataFormatsTest(OaiTestCase):
 
     def testListAllMetadataFormats(self):
         class MockJazz:
-            def getAllPrefixes(*args):
+            def getAllMetadataFormats(*args):
                 return [
                     ('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
                     ('olac', 'http://www.language-archives.org/OLAC/olac-0.2.xsd','http://www.language-archives.org/OLAC/0.2/')
@@ -102,7 +102,7 @@ class OaiListMetadataFormatsTest(OaiTestCase):
         class Observer:
             def oaiRecordExists(*args):
                 return False
-            def getAllPrefixes(*args):
+            def getAllMetadataFormats(*args):
                 return []
         self.request.args = {'verb': ['ListMetadataFormats'], 'identifier': ['DoesNotExist']}
         self.subject.addObserver(Observer())

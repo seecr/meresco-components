@@ -46,13 +46,13 @@ class MockOaiJazz:
     def getDatestamp(self, id):
         return 'DATESTAMP_FOR_TEST'
 
-    def getParts(self, id):
+    def getPrefixes(self, id):
         raise "STOP"
 
     def isDeleted(self, id):
         return id in self._deleted
 
-    def getAllPrefixes(self):
+    def getAllMetadataFormats(self):
         return [('oai_dc',None,None)]
 
     def write(self, sink, id, partName):

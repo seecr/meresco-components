@@ -42,7 +42,7 @@ from oaitestcase import OaiTestCase
 class OaiListTest(OaiTestCase):
     def getSubject(self):
         oailist = OaiList()
-        oailist.addObserver(ObserverFunction(lambda: [('oai_dc', '', '')], 'getAllPrefixes'))
+        oailist.addObserver(ObserverFunction(lambda: [('oai_dc', '', '')], 'getAllMetadataFormats'))
         return oailist
 
 

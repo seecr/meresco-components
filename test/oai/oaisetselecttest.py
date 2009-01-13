@@ -50,9 +50,9 @@ class OaiSetSelectTest(CQ2TestCase):
         self.assertEquals(['set1', 'set2'], self.observer.calledMethods[0].kwargs['sets'])
 
     def testOtherMethodsArePassed(self):
-        list(self.dna.all.getAllPrefixes())
+        list(self.dna.all.getAllMetadataFormats())
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals('getAllPrefixes', self.observer.calledMethods[0].name)
+        self.assertEquals('getAllMetadataFormats', self.observer.calledMethods[0].name)
 
     def testSetsIsNone(self):
         list(self.dna.all.oaiSelect(sets=None))

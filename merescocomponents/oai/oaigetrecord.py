@@ -56,7 +56,7 @@ Error and Exception Conditions
 
     def preProcess(self, webRequest):
         isDeleted = self.any.isDeleted(self._identifier)
-        if not self._metadataPrefix in [prefix for prefix, na, na in self.any.getAllPrefixes()]:
+        if not self._metadataPrefix in [prefix for prefix, na, na in self.any.getAllMetadataFormats()]:
             return self.writeError(webRequest, 'cannotDisseminateFormat')
 
         hasId, hasPartName = self.any.isAvailable(self._identifier, self._metadataPrefix)
