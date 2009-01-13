@@ -207,14 +207,14 @@ class OaiJazzLuceneTest(CQ2TestCase):
         jazz.add('456', 'oai_dc', bind_string(header % 'set1').header)
         jazz.add('457', 'oai_dc', bind_string(header % 'set2').header)
         jazz.add('458', 'oai_dc', bind_string(header % 'set3').header)
-        sets = jazz.listSets()
+        sets = jazz.getAllSets()
         self.assertEquals(['set1', 'set2', 'set3'], sets)
 
     def testHierarchicalSets(self):
         jazz = self.realjazz
         header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
         jazz.add('456', 'oai_dc', bind_string(header % 'set1:set2:set3').header)
-        sets = jazz.listSets()
+        sets = jazz.getAllSets()
         self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(sets))
 
     def testDatestamp(self):
@@ -235,6 +235,16 @@ class OaiJazzLuceneTest(CQ2TestCase):
         prefixes = jazz.getAllMetadataFormats()
         self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc'), ('dc2', '', 'http://dc2')]), prefixes)
 
+    def testMetadataPrefixesOnly(self):
+        jazz = self.realjazz
+        jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+             xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
+        prefixes = set(jazz.getAllPrefixes())
+        self.assertEquals(set(['oai_dc']), prefixes)
+        jazz.add('457', 'dc2', bind_string('<oai_dc:dc xmlns:oai_dc="http://dc2"/>').dc)
+        prefixes = set(jazz.getAllPrefixes())
+        self.assertEquals(set(['oai_dc', 'dc2']), prefixes)
+        
     def testMetadataPrefixesFromRootTag(self):
         jazz = self.realjazz
         jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \

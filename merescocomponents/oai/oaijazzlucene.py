@@ -157,6 +157,9 @@ class OaiJazzLucene(Observable):
 
     def getAllMetadataFormats(self):
         return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
+    
+    def getAllPrefixes(self):
+        return (prefix for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
 
     def getUnique(self, id):
         sets, prefixes, stamp, unique = self._getPreviousRecord(id)
@@ -178,11 +181,7 @@ class OaiJazzLucene(Observable):
         ignored, hasTombStone = self.any.isAvailable(id, 'tombstone')
         return hasTombStone
 
-    def oaiRecordExists(self, id):
-        hasRecord, hasMeta = self.any.isAvailable(id, 'oaimeta')
-        return hasRecord and hasMeta
-
-    def listSets(self):
+    def getAllSets(self):
         return list(self._getAllSets())
 
 ###############################################################################

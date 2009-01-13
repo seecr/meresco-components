@@ -54,7 +54,7 @@ Error and Exception Conditions
     def preProcess(self, webRequest):
         metadataFormats = self.any.getAllMetadataFormats()
         if self._identifier:
-            if not self.any.oaiRecordExists(self._identifier):
+            if not self.any.getUnique(self._identifier):
                 return self.writeError(webRequest, 'idDoesNotExist')
             prefixes = self.any.getPrefixes(self._identifier)
             metadataFormats = [(prefix, xsd, ns) for prefix, xsd, ns in metadataFormats if prefix in prefixes]

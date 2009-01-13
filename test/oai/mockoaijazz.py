@@ -54,6 +54,9 @@ class MockOaiJazz:
 
     def getAllMetadataFormats(self):
         return [('oai_dc',None,None)]
+    
+    def getAllPrefixes(self):
+        return ['oai_dc']
 
     def write(self, sink, id, partName):
         if partName == 'oai_dc':

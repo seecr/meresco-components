@@ -100,8 +100,8 @@ class OaiListMetadataFormatsTest(OaiTestCase):
 
     def testListMetadataFormatsNonExistingId(self):
         class Observer:
-            def oaiRecordExists(*args):
-                return False
+            def getUnique(*args):
+                return None
             def getAllMetadataFormats(*args):
                 return []
         self.request.args = {'verb': ['ListMetadataFormats'], 'identifier': ['DoesNotExist']}

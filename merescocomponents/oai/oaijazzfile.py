@@ -51,9 +51,9 @@ class OaiJazzFile(Observable):
         self._delete(identifier)
         stamp = self._stamp()
         prefixes = (prefix for prefix, schema, namespace in metadataFormats)
-        setSpecs = self._flattenSetHierarchy((setSpec for setSpec, setName in sets))
+        setSpecs = _flattenSetHierarchy((setSpec for setSpec, setName in sets))
         self._add(stamp, identifier, setSpecs, prefixes)
-        self._store()
+        self._store(metadataFormats)
 
     def delete(self, identifier):
         oldPrefixes, oldSets = self._delete(identifier)
@@ -92,13 +92,33 @@ class OaiJazzFile(Observable):
         stamp = self._identifier2stamp.get(identifier, None)
         return stamp != None and stamp in self._deleted
 
-    # temporary implementation
     def getAllMetadataFormats(self):
-        yield ('prefix', 'schema', 'namespace')
+        for prefix in self._prefixes.keys():
+            schema = open(join(self._directory, 'prefixes', '%s.schema' % escapeName(prefix))).read()
+            namespace = open(join(self._directory, 'prefixes', '%s.namespace' % escapeName(prefix))).read()
+            yield (prefix, schema, namespace)
 
-    def getSets(self, id):
-        if False:
-            yield 'yes'
+    def getAllPrefixes(self):
+        return self._prefixes.keys()
+
+    def getSets(self, identifier):
+        stamp = self._identifier2stamp.get(identifier, None)
+        if not stamp:
+            return
+        for setSpec, stampIds in self._sets.items():
+            if stamp in stampIds:
+                yield setSpec
+
+    def getPrefixes(self, identifier):
+        stamp = self._identifier2stamp.get(identifier, None)
+        if not stamp:
+            return
+        for prefix, stampIds in self._prefixes.items():
+            if stamp in stampIds:
+                yield prefix
+    
+    def getAllSets(self):
+        return self._sets.keys()
 
     # private methods
     
@@ -144,12 +164,12 @@ class OaiJazzFile(Observable):
 
     def _read(self):
         self._prefixes = {}
-        for prefix in listdir(join(self._directory, 'prefixes')):
-            with open(join(self._directory, 'prefixes',prefix)) as f:
+        for prefix in (name[:-len('.stamps')] for name in listdir(join(self._directory, 'prefixes')) if name.endswith('.stamps')):
+            with open(join(self._directory, 'prefixes', '%s.stamps' % prefix)) as f:
                 self._prefixes[unescapeName(prefix)] = [int(stamp.strip()) for stamp in f if stamp]
         self._sets = {}
-        for setSpec in listdir(join(self._directory, 'sets')):
-            with open(join(self._directory, 'sets', setSpec)) as f:
+        for setSpec in (name[:-len('.stamps')] for name in listdir(join(self._directory, 'sets')) if name.endswith('.stamps')):
+            with open(join(self._directory, 'sets', '%s.stamps' % setSpec)) as f:
                 self._sets[unescapeName(setSpec)] = [int(stamp.strip()) for stamp in f if stamp]
         self._stamp2identifier = {}
         self._identifier2stamp = {}
@@ -164,38 +184,42 @@ class OaiJazzFile(Observable):
             with open(deletedFile) as f:
                 self._deleted = set(int(stamp.strip()) for stamp in f if stamp.strip())
 
-    def _store(self):
+    def _store(self, metadataFormats=[]):
         for prefix, stamps in self._prefixes.items():
-            with open(join(self._directory, 'prefixes', '__tmp__'), 'w') as f:
-                for s in stamps:
-                    f.write('%s\n' % s)
-            rename(join(self._directory, 'prefixes', '__tmp__'), join(self._directory, 'prefixes', escapeName(prefix)))
+            _writeLines(join(self._directory, 'prefixes', '%s.stamps' % escapeName(prefix)), stamps)
         for setSpec, stamps in self._sets.items():
-            with open(join(self._directory, 'sets', '__tmp__'), 'w') as f:
-                for s in stamps:
-                    f.write('%s\n' % s)
-            rename(join(self._directory, 'sets', '__tmp__'), join(self._directory, 'sets', escapeName(setSpec)))
-        with open(join(self._directory, '__tmp__identifiers'), 'w') as f:
-            for stamp, identifier in self._stamp2identifier.items():
-                f.write('%s %s\n' % (stamp, identifier))
-        rename(join(self._directory, '__tmp__identifiers'), join(self._directory, 'identifiers'))
-        with open(join(self._directory, '__tmp__deleted'), 'w') as f:
-            for stamp in self._deleted:
-                f.write('%s\n' % stamp)
-        rename(join(self._directory, '__tmp__deleted'), join(self._directory, 'deleted'))
+            _writeLines(join(self._directory, 'sets', '%s.stamps' % escapeName(setSpec)), stamps)
+        _writeLines(join(self._directory, 'identifiers'), ('%s %s' % (k,v) for k,v in self._stamp2identifier.items()))
+        _writeLines(join(self._directory, 'deleted'), self._deleted)
+        for prefix, schema, namespace in metadataFormats:
+            _write(join(self._directory, 'prefixes', '%s.schema' % escapeName(prefix)), schema)
+            _write(join(self._directory, 'prefixes', '%s.namespace' % escapeName(prefix)), namespace)
 
     def _stamp(self):
         """time in microseconds"""
         return int(time()*1000000.0)
 
-    def _flattenSetHierarchy(self, sets):
-        """"[1:2:3, 1:2:4] => [1, 1:2, 1:2:3, 1:2:4]"""
-        result = set()
-        for setSpec in sets:
-            parts = setSpec.split(':')
-            for i in range(1, len(parts) + 1):
-                result.add(':'.join(parts[:i]))
-        return result
+# helper methods
+
+def _writeLines(filename, lines):
+    with open(filename + '.tmp', 'w') as f:
+        for line in lines:
+            f.write('%s\n' % line)
+    rename(filename + '.tmp', filename)
+
+def _write(filename, content):
+    with open(filename + '.tmp', 'w') as f:
+        f.write(content)
+    rename(filename + '.tmp', filename)
+
+def _flattenSetHierarchy(sets):
+    """"[1:2:3, 1:2:4] => [1, 1:2, 1:2:3, 1:2:4]"""
+    result = set()
+    for setSpec in sets:
+        parts = setSpec.split(':')
+        for i in range(1, len(parts) + 1):
+            result.add(':'.join(parts[:i]))
+    return result
     
     #def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         #self.any.deletePart(identifier, 'tombstone')
@@ -287,11 +311,7 @@ class OaiJazzFile(Observable):
         #ignored, hasTombStone = self.any.isAvailable(id, 'tombstone')
         #return hasTombStone
 
-    #def oaiRecordExists(self, id):
-        #hasRecord, hasMeta = self.any.isAvailable(id, 'oaimeta')
-        #return hasRecord and hasMeta
-
-    #def listSets(self):
+    #def getAllSets(self):
         #return list(self._getAllSets())
 
 ################################################################################

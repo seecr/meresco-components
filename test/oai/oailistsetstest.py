@@ -41,7 +41,7 @@ class OaiListSetsTest(OaiTestCase):
 
 
     def testListSetsNoArguments(self):
-        mockJazz = CallTrace(returnValues = {'listSets': ['some:name:id_0', 'some:name:id_1']})
+        mockJazz = CallTrace(returnValues = {'getAllSets': ['some:name:id_0', 'some:name:id_1']})
         self.request.args = {'verb':['ListSets']}
         self.subject.addObserver(mockJazz)
         self.subject.listSets(self.request)

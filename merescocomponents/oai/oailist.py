@@ -116,7 +116,7 @@ Error and Exception Conditions
             except ISO8601Exception, e:
                 return self.writeError(webRequest, 'badArgument', 'from and/or until arguments are faulty')
 
-        if not self._metadataPrefix in [prefix for prefix, na, na in self.any.getAllMetadataFormats()]:
+        if not self._metadataPrefix in set(self.any.getAllPrefixes()):
             return self.writeError(webRequest, 'cannotDisseminateFormat')
 
         result = self.any.oaiSelect(

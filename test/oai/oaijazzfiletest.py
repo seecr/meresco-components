@@ -32,6 +32,7 @@ from time import time, mktime
 
 from merescocomponents.oai import OaiJazzFile
 from merescocomponents.oai.oailist import OaiList, BATCH_SIZE
+from merescocomponents.oai.oaijazzfile import _flattenSetHierarchy
 from StringIO import StringIO
 from lxml.etree import parse
 
@@ -137,7 +138,7 @@ class OaiJazzFileTest(CQ2TestCase):
         result = self.jazz.oaiSelect(prefix='prefix', sets=['setSpec1'])
         self.assertEquals(0, len(list(result)))
 
-        self.assertEquals('', open(join(self.tempdir, 'sets', 'setSpec1')).read())
+        self.assertEquals('', open(join(self.tempdir, 'sets', 'setSpec1.stamps')).read())
 
     def testAddPartWithUniqueNumbersAndSorting(self):
         self.jazz.addOaiRecord('123', metadataFormats=[('oai_dc', 'schema', 'namespace')])
@@ -248,8 +249,8 @@ class OaiJazzFileTest(CQ2TestCase):
         self.assertEquals(['record123'], list(self.jazz.oaiSelect(prefix='oai_dc', sets=['set1:set2:set3'])))
 
     def testFlattenSetHierarchy(self):
-        self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(self.jazz._flattenSetHierarchy(['set1:set2:set3'])))
-        self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3', 'set1:set2:set4'], sorted(self.jazz._flattenSetHierarchy(['set1:set2:set3', 'set1:set2:set4'])))
+        self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(_flattenSetHierarchy(['set1:set2:set3'])))
+        self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3', 'set1:set2:set4'], sorted(_flattenSetHierarchy(['set1:set2:set3', 'set1:set2:set4'])))
 
     def testGetUnique(self):
         newStamp = self.stampNumber
@@ -298,8 +299,29 @@ class OaiJazzFileTest(CQ2TestCase):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.assertEquals(['id:2', 'id:1'], list(self.jazz.oaiSelect(prefix='prefix', continueAt=continueAt)))
         
-        
-        
+    def testGetAllMetadataFormats(self):
+        self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
+        self.assertEquals([('prefix', 'schema', 'namespace')], list(self.jazz.getAllMetadataFormats()))
+        self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix2', 'schema2', 'namespace2')])
+        self.assertEquals(set([('prefix', 'schema', 'namespace'), ('prefix2', 'schema2', 'namespace2')]), set(self.jazz.getAllMetadataFormats()))
+
+    def testGetAndAllPrefixes(self):
+        self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix1', 'schema', 'namespace')])
+        self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix1', 'schema', 'namespace'), ('prefix2', 'schema', 'namespace')])
+        self.assertEquals(set(['prefix1', 'prefix2']), set(self.jazz.getAllPrefixes()))
+        self.assertEquals(set(['prefix1']), set(self.jazz.getPrefixes('id:1')))
+        self.assertEquals(set(['prefix1', 'prefix2']) , set(self.jazz.getPrefixes('id:2')))
+        self.assertEquals(set([]), set(self.jazz.getPrefixes('doesNotExist')))
+
+    def testGetAndAllSets(self):
+        self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix1', 'schema', 'namespace')], sets=[('setSpec1', 'setName1')])
+        self.assertEquals(set(['setSpec1']), set(self.jazz.getSets('id:1')))
+        self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix1', 'schema', 'namespace')], sets=[('setSpec1', 'setName1'), ('setSpec2:setSpec3', 'setName23')])
+        self.assertEquals(set(['setSpec1']), set(self.jazz.getSets('id:1')))
+        self.assertEquals(set(['setSpec1', 'setSpec2', 'setSpec2:setSpec3']), set(self.jazz.getSets('id:2')))
+        self.assertEquals(set([]), set(self.jazz.getSets('doesNotExist')))
+        self.assertEquals(set(['setSpec1', 'setSpec2', 'setSpec2:setSpec3']), set(self.jazz.getAllSets()))
+
     #def testOaiSelectWithBatchSize(self):
         #jazz = self.realjazz
         #for i in range(123,143):
@@ -350,20 +372,6 @@ class OaiJazzFileTest(CQ2TestCase):
         #self.assertEquals((1,['124']), jazz.oaiSelect(sets=['3'], prefix='oai_dc'))
         #self.assertEquals((1,['124']), jazz.oaiSelect(sets=['3:4'], prefix='oai_dc'))
 
-    #def testGetSets(self):
-        #jazz = self.realjazz
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('124', 'oai_dc', bind_string(header % 1).header)
-        #sets = jazz.getSets('124')
-        #self.assertEquals(['1'], sets)
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('125', 'oai_dc', bind_string(header % 2).header)
-        #sets = jazz.getSets('125')
-        #self.assertEquals(['2'], sets)
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>1:2</setSpec><setSpec>2</setSpec></header>'
-        #jazz.add('124', 'oai_dc', bind_string(header).header)
-        #sets = jazz.getSets('124')
-        #self.assertEquals(['1', '1:2', '2'], sets)
 
     #def testSetSpecWithTokensSplit(self):
         #jazz = self.realjazz
@@ -389,15 +397,6 @@ class OaiJazzFileTest(CQ2TestCase):
         #self.assertEquals(['oai_dc', 'lom'], parts)
         #self.assertEquals((1, ['123']), jazz.oaiSelect(prefix='lom'))
         #self.assertEquals((1, ['123']), jazz.oaiSelect(prefix='oai_dc'))
-
-    #def testAddDocsWithSets(self):
-        #jazz = self.realjazz
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('456', 'oai_dc', bind_string(header % 'set1').header)
-        #jazz.add('457', 'oai_dc', bind_string(header % 'set2').header)
-        #jazz.add('458', 'oai_dc', bind_string(header % 'set3').header)
-        #sets = jazz.listSets()
-        #self.assertEquals(['set1', 'set2', 'set3'], sets)
 
     #def testDatestamp(self):
         #jazz = self.realjazz
