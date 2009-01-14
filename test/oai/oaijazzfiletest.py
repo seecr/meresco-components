@@ -48,7 +48,10 @@ class OaiJazzFileTest(CQ2TestCase):
 
     def testOriginalStamp(self):
         jazz = OaiJazzFile(self.tempdir)
-        stamps = [jazz._stamp() for i in xrange(1000)]
+        stamps = []
+        for i in xrange(1000):
+            stamps.append(jazz._stamp())
+            var = 30.0/2.0
         self.assertEquals(list(sorted(set(stamps))), stamps)
         
     def testResultsStored(self):
