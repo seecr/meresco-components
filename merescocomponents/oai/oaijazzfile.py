@@ -76,19 +76,21 @@ class OaiJazzFile(Observable):
             allStampIdsFromSets = (self._sets.get(setSpec,[]) for setSpec in sets)
             stampIds = AndIterator(stampIds,
                 reduce(OrIterator, allStampIdsFromSets))
-        return (self._stamp2identifier.get(stampId) for stampId in stampIds)
+        return (RecordId(self._stamp2identifier.get(stampId), stampId) for stampId in stampIds)
 
     def getDatestamp(self, identifier):
-        stamp = self._identifier2stamp.get(identifier, None)
+        stamp = self.getUnique(identifier)
         if stamp == None:
             return None
         return strftime('%Y-%m-%dT%H:%M:%SZ', localtime(stamp/1000000.0))
 
     def getUnique(self, identifier):
+        if hasattr(identifier, 'stamp'):
+            return identifier.stamp
         return self._identifier2stamp.get(identifier, None)
 
     def isDeleted(self, identifier):
-        stamp = self._identifier2stamp.get(identifier, None)
+        stamp = self.getUnique(identifier)
         return stamp != None and stamp in self._deleted
 
     def getAllMetadataFormats(self):
@@ -101,7 +103,7 @@ class OaiJazzFile(Observable):
         return self._prefixes.keys()
 
     def getSets(self, identifier):
-        stamp = self._identifier2stamp.get(identifier, None)
+        stamp = self.getUnique(identifier)
         if not stamp:
             return
         for setSpec, stampIds in self._sets.items():
@@ -109,7 +111,7 @@ class OaiJazzFile(Observable):
                 yield setSpec
 
     def getPrefixes(self, identifier):
-        stamp = self._identifier2stamp.get(identifier, None)
+        stamp = self.getUnique(identifier)
         if not stamp:
             return
         for prefix, stampIds in self._prefixes.items():
@@ -143,7 +145,7 @@ class OaiJazzFile(Observable):
         return lambda stamp: stamp < untilStamp
         
     def _delete(self, identifier):
-        stamp = self._identifier2stamp.get(identifier, None)
+        stamp = self.getUnique(identifier)
         oldPrefixes = []
         oldSets = []
         if stamp != None:
@@ -199,6 +201,12 @@ class OaiJazzFile(Observable):
         return int(time()*1000000.0)
 
 # helper methods
+
+class RecordId(str):
+    def __new__(self, identifier, stamp):
+        return str.__new__(self, identifier)
+    def __init__(self, identifier, stamp):
+        self.stamp = stamp
 
 def _writeLines(filename, lines):
     with open(filename + '.tmp', 'w') as f:

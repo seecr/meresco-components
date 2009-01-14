@@ -33,10 +33,10 @@ from merescocore.framework.generatorutils import generatorDecorate
 
 class OaiRecordVerb(OaiVerb):
 
-    def writeRecord(self, webRequest, id, writeBody=True):
-        isDeletedStr = self.any.isDeleted(id) and ' status="deleted"' or ''
-        datestamp = self.any.getDatestamp(id)
-        setSpecs = self._getSetSpecs(id)
+    def writeRecord(self, webRequest, recordId, writeBody=True):
+        isDeletedStr = self.any.isDeleted(recordId) and ' status="deleted"' or ''
+        datestamp = self.any.getDatestamp(recordId)
+        setSpecs = self._getSetSpecs(recordId)
         if writeBody:
             webRequest.write('<record>')
 
@@ -44,27 +44,27 @@ class OaiRecordVerb(OaiVerb):
             <identifier>%s</identifier>
             <datestamp>%s</datestamp>
             %s
-        </header>""" % (isDeletedStr, xmlEscape(id.encode('utf-8')), datestamp, setSpecs))
+        </header>""" % (isDeletedStr, xmlEscape(recordId.encode('utf-8')), datestamp, setSpecs))
 
         if writeBody and not isDeletedStr:
             webRequest.write('<metadata>')
-            self.any.write(webRequest, id, self._metadataPrefix)
+            self.any.write(webRequest, recordId, self._metadataPrefix)
             webRequest.write('</metadata>')
 
-        provenance = self.all.provenance(id)
+        provenance = self.all.provenance(recordId)
         for line in generatorDecorate('<about>', provenance, '</about>'):
             webRequest.write(line)
 
         if writeBody:
             webRequest.write('</record>')
 
-    def _getSetSpecs(self, id):
-        sets = self.any.getSets(id)
+    def _getSetSpecs(self, recordId):
+        sets = self.any.getSets(recordId)
         if sets:
             return ''.join('<setSpec>%s</setSpec>' % xmlEscape(setSpec) for setSpec in sets)
         return ''
 
-    def _getPartFromStorage(self, anId, aPartname):
+    def _getPartFromStorage(self, recordId, aPartname):
         stream = StringIO()
-        self.any.write(stream, anId, aPartname)
+        self.any.write(stream, recordId, aPartname)
         return stream.getvalue()
