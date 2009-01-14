@@ -35,8 +35,6 @@ extern "C" {
 #ifndef __docsetlist_h__
 #define __docsetlist_h__
 
-
-
 /**************** C++ implementation of DocSetList****************************/
 typedef struct {
     char*   term;
@@ -53,13 +51,16 @@ class DocSetList : public std::vector<DocSet*> {
         ~DocSetList();
         void                 addDocSet(DocSet* docset);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
-        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs);
+        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm);
         DocSet*              forTerm(char* term);
         void                 removeDoc(guint32 doc);
 };
 
 /**************** C-interface for DocSetList ****************************/
 extern "C" {
+    int JACCARD_ONLY = 0;
+    int JACCARD_MI = 1;
+    int JACCARD_X2 = 2;
     DocSetList*      DocSetList_create               (void);
     void             DocSetList_add                  (DocSetList* list, DocSet* docset);
     void             DocSetList_removeDoc            (DocSetList* list, guint32 doc);
@@ -67,7 +68,7 @@ extern "C" {
     DocSet*          DocSetList_get                  (DocSetList* list, int i);
     DocSet*          DocSetList_getForTerm           (DocSetList* list, char* term);
     CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, DocSet* docset, guint32 maxResults, int doSort);
-    CardinalityList* DocSetList_jaccards             (DocSetList* list, DocSet* docset, int minimum, int maximum, int totaldocs);
+    CardinalityList* DocSetList_jaccards             (DocSetList* list, DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm);
     void             DocSetList_delete               (DocSetList* list);
     void             DocSetList_sortOnCardinality    (DocSetList* list);
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs);

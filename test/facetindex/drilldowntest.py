@@ -34,7 +34,7 @@ from merescocomponents.facetindex.drilldownfieldnames import DrilldownFieldnames
 from merescocomponents.facetindex.lucene import LuceneIndex
 
 from merescocomponents.facetindex.docset import DocSet
-from merescocomponents.facetindex.docsetlist import DocSetList
+from merescocomponents.facetindex.docsetlist import DocSetList, JACCARD_ONLY
 
 class DrilldownTest(CQ2TestCase):
 
@@ -195,7 +195,7 @@ class DrilldownTest(CQ2TestCase):
         query = TermQuery(Term("title", "dogs"))
         total, queryResults = self.index.executeQuery(query)
         queryDocset = self.index.docsetFromQuery(query)
-        jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 0, 100)]))
+        jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 0, 100)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('dogs',100),('mice', 66),('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
 
     def testJaccardIndexChecksFields(self):

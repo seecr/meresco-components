@@ -74,8 +74,11 @@ DocSetList_combinedCardinalities.argtypes = [SELF, SELF, c_uint32, c_int]
 DocSetList_combinedCardinalities.restype = SELF # *CardinalityList
 
 DocSetList_jaccards = libDocSet.DocSetList_jaccards
-DocSetList_jaccards.argtypes = [SELF, SELF, c_int, c_int, c_int]
+DocSetList_jaccards.argtypes = [SELF, SELF, c_int, c_int, c_int, c_int]
 DocSetList_jaccards.restype = SELF  # *CardinalityList
+JACCARD_MI = c_int.in_dll(libDocSet, "JACCARD_MI")
+JACCARD_X2 = c_int.in_dll(libDocSet, "JACCARD_X2")
+JACCARD_ONLY = c_int.in_dll(libDocSet, "JACCARD_ONLY")
 
 DocSetList_fromTermEnum = libDocSet.DocSetList_fromTermEnum
 DocSetList_fromTermEnum.argtypes = [py_object, py_object]
@@ -144,9 +147,9 @@ class DocSetList(object):
         for docset in self:
             yield (docset.term(), len(docset))
 
-    def jaccards(self, docset, minimum, maximum, totaldocs):
+    def jaccards(self, docset, minimum, maximum, totaldocs, algorithm=JACCARD_MI):
         self.sortOnCardinality()
-        p = DocSetList_jaccards(self, docset, minimum, maximum, totaldocs)
+        p = DocSetList_jaccards(self, docset, minimum, maximum, totaldocs, algorithm)
         try:
             for i in xrange(CardinalityList_size(p)):
                 c = CardinalityList_at(p, i)

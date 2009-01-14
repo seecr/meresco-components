@@ -28,6 +28,7 @@
 ## end license ##
 from time import time
 from merescocomponents.facetindex import DocSetList, DocSet
+from merescocomponents.facetindex.docsetlist import JACCARD_ONLY
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
 from cq2utils import Wildcard
@@ -402,7 +403,7 @@ class DocSetListTest(LuceneTestCase):
         dsl.add(DocSet('term0', [0,1,2,3,4]))
         dsl.add(DocSet('term1', [3,4,5,6,7]))
         dsl.add(DocSet('term2', [0, 4]))
-        results = dsl.jaccards(DocSet('query',[2,3,4]), 0, 100, 8)
+        results = dsl.jaccards(DocSet('query',[2,3,4]), 0, 100, 8, JACCARD_ONLY)
 
         self.assertEquals([('term0', 60), ('term1', 33), ('term2', 25)], list(results))
 
@@ -412,10 +413,10 @@ class DocSetListTest(LuceneTestCase):
         dsl.add(DocSet('term1', range(0,7)))
         dsl.add(DocSet('term2', range(0,15)))
         dsl.add(DocSet('term3', range(0,20)))
-        result = dsl.jaccards(DocSet('query',[2,3,4]), 0, 100, 20)
+        result = dsl.jaccards(DocSet('query',[2,3,4]), 0, 100, 20, JACCARD_ONLY)
         self.assertEquals([('term0',60),('term1',42),('term2',20),('term3',15)], list(result))
 
-        result = dsl.jaccards(DocSet('query',[2,3,4]), 25, 59, 20)
+        result = dsl.jaccards(DocSet('query',[2,3,4]), 25, 59, 20, JACCARD_ONLY)
         self.assertEquals([('term1',42)], list(result))
 
     def testCornerCases(self):
@@ -424,20 +425,20 @@ class DocSetListTest(LuceneTestCase):
         dsl.add(DocSet('term1', [1]))
         dsl.add(DocSet('term2', [2,3]))
         dsl.add(DocSet('term3', [4,5,6,7,8,9]))
-        results = dsl.jaccards(DocSet('query',[]), 0, 100, 9)
+        results = dsl.jaccards(DocSet('query',[]), 0, 100, 9, JACCARD_ONLY)
         self.assertEquals([('term3', 0L), ('term2', 0L), ('term1', 0L)], list(results))
-        results = dsl.jaccards(DocSet('query',[1]), 1, 100, 9)
+        results = dsl.jaccards(DocSet('query',[1]), 1, 100, 9, JACCARD_ONLY)
         self.assertEquals([('term1',100)], list(results))
-        results = dsl.jaccards(DocSet('query',[3]), 1, 100, 9)
+        results = dsl.jaccards(DocSet('query',[3]), 1, 100, 9, JACCARD_ONLY)
         self.assertEquals([('term2', 50L)], list(results))
-        results = dsl.jaccards(DocSet('query',[3]), 50, 100, 9)
+        results = dsl.jaccards(DocSet('query',[3]), 50, 100, 9, JACCARD_ONLY)
         self.assertEquals([('term2',50)], list(results))
-        results = dsl.jaccards(DocSet('query',[6]), 16, 17, 9)
+        results = dsl.jaccards(DocSet('query',[6]), 16, 17, 9, JACCARD_ONLY)
         self.assertEquals([('term3', 16L)], list(results))
 
-        results = dsl.jaccards(DocSet('query',[1,2,3,4,5,6,7,8,9]), 0, 100, 9)
+        results = dsl.jaccards(DocSet('query',[1,2,3,4,5,6,7,8,9]), 0, 100, 9, JACCARD_ONLY)
         self.assertEquals([('term3', 66L), ('term2', 22L), ('term1', 11L)], list(results))
-        results = dsl.jaccards(DocSet('query',[1,2,3,4,5,6,7,8,9]), 11, 22, 9)
+        results = dsl.jaccards(DocSet('query',[1,2,3,4,5,6,7,8,9]), 11, 22, 9, JACCARD_ONLY)
         self.assertEquals([('term2', 22L), ('term1', 11L)], list(results))
 
 

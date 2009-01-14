@@ -24,7 +24,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from .docsetlist import DocSetList
+from .docsetlist import DocSetList, JACCARD_MI
 from PyLucene import Term, IndexReader # hmm, maybe we don't want this dependency?
 from time import time
 from sys import maxint
@@ -82,11 +82,11 @@ class Drilldown(object):
             finally:
                 print 'drilldown (ms)', fieldname, (time()-t0)*1000
 
-    def jaccard(self, docset, jaccardFieldsAndRanges):
+    def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:
             if fieldname not in self._docsetlists:
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
-            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs)
+            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs, algorithm=algorithm)
 
 
     def rowCardinalities(self):
