@@ -59,10 +59,6 @@ from ngram.ngramtest import NGramTest
 
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
-#from facetindex.lucenedocidtrackerdecoratortest import LuceneDocIdTrackerDecoratorTest
-#from facetindex.indexfacadetest import IndexFacadeTest
-#from facetindex.document2test import Document2Test
-#from facetindex.lucene2test import Lucene2Test
 
 #from oai.oaicomponenttest import OaiComponentTest
 from oai.fields2oairecordtest import Fields2OaiRecordTest
