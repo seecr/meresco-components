@@ -1,4 +1,14 @@
 
+class WrapIterable(object):
+    def __init__(self, iterable):
+        self._iterator = iter(iterable)
+    
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self._iterator.next()
+
 class PeekIterator(object):
     def __init__(self, iterable):
         self._iterator = iter(iterable)

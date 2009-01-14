@@ -26,15 +26,14 @@
 ## end license ##
 
 from __future__ import with_statement
-from merescocore.framework import Observable
 from os.path import isdir, join, isfile
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile, chain
-from merescocomponents.sorteditertools import OrIterator, AndIterator
+from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 
-class OaiJazzFile(Observable):
+class OaiJazzFile(object):
     def __init__(self, aDirectory):
         self._directory = aDirectory
         isdir(aDirectory) or makedirs(aDirectory)
@@ -76,7 +75,8 @@ class OaiJazzFile(Observable):
             allStampIdsFromSets = (self._sets.get(setSpec,[]) for setSpec in sets)
             stampIds = AndIterator(stampIds,
                 reduce(OrIterator, allStampIdsFromSets))
-        return (RecordId(self._stamp2identifier.get(stampId), stampId) for stampId in stampIds)
+        #WrapIterable to fool Observable's any message
+        return WrapIterable((RecordId(self._stamp2identifier.get(stampId), stampId) for stampId in stampIds))
 
     def getDatestamp(self, identifier):
         stamp = self.getUnique(identifier)
@@ -105,19 +105,15 @@ class OaiJazzFile(Observable):
     def getSets(self, identifier):
         stamp = self.getUnique(identifier)
         if not stamp:
-            return
-        for setSpec, stampIds in self._sets.items():
-            if stamp in stampIds:
-                yield setSpec
+            return []
+        return WrapIterable((setSpec for setSpec, stampIds in self._sets.items() if stamp in stampIds))
 
     def getPrefixes(self, identifier):
         stamp = self.getUnique(identifier)
         if not stamp:
-            return
-        for prefix, stampIds in self._prefixes.items():
-            if stamp in stampIds:
-                yield prefix
-    
+            return []
+        return WrapIterable((prefix for prefix, stampIds in self._prefixes.items() if stamp in stampIds))
+
     def getAllSets(self):
         return self._sets.keys()
 

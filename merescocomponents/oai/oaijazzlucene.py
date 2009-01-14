@@ -139,7 +139,7 @@ class OaiJazzLucene(Observable):
         return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
     
     def getAllPrefixes(self):
-        return (prefix for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
+        return set((prefix for prefix, (xsd, ns) in self._getAllMetadataFormats().items()))
 
     def getUnique(self, id):
         sets, prefixes, stamp, unique = self._getPreviousRecord(id)
