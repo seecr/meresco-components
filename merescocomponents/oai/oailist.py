@@ -76,7 +76,7 @@ Error and Exception Conditions
     * noRecordsMatch - The combination of the values of the from, until, set and metadataPrefix arguments results in an empty list.
     * noSetHierarchy - The repository does not support sets.
 """
-    def __init__(self):
+    def __init__(self, batchSize=BATCH_SIZE):
         OaiRecordVerb.__init__(self, ['ListIdentifiers', 'ListRecords'], {
             'from': 'optional',
             'until': 'optional',
@@ -84,6 +84,7 @@ Error and Exception Conditions
             'resumptionToken': 'exclusive',
             'metadataPrefix': 'required'})
         Observable.__init__(self)
+        self._batchSize = batchSize
 
     def listRecords(self, webRequest):
         self.startProcessing(webRequest)
@@ -124,7 +125,8 @@ Error and Exception Conditions
             prefix=self._metadataPrefix,
             continueAt=self._continueAt,
             oaiFrom=self._from,
-            oaiUntil=self._until)
+            oaiUntil=self._until,
+            batchSize = self._batchSize)
         try:
             firstRecord = result.next()
             self._queryRecordIds = chain(iter([firstRecord]), result)
@@ -134,7 +136,7 @@ Error and Exception Conditions
 
     def process(self, webRequest):
         for i, id in enumerate(self._queryRecordIds):
-            if i == BATCH_SIZE:
+            if i == self._batchSize:
                 webRequest.write('<resumptionToken>%s</resumptionToken>' % ResumptionToken(
                     self._metadataPrefix,
                     self.any.getUnique(prevId),

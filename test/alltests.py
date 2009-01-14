@@ -62,7 +62,7 @@ from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
 
 #from oai.oaicomponenttest import OaiComponentTest
 from oai.fields2oairecordtest import Fields2OaiRecordTest
-from oai.oaijazzlucenetest import OaiJazzLuceneTest, OaiJazzLuceneIntegrationTest
+from oai.oaijazzlucenetest import OaiJazzLuceneTest
 from oai.oaigetrecordtest import OaiGetRecordTest
 from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
 from oai.oailistsetstest import OaiListSetsTest
@@ -76,6 +76,7 @@ from oai.xml2documenttest import Xml2DocumentTest  # --> Xml2Document only in us
                                                #     when OAI is worked on next.
 from oai.oaijazzfiletest import OaiJazzFileTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
+from oai.oaijazztest import OaiJazzWithFileTest, OaiJazzWithLuceneTest
 
 if __name__ == '__main__':
     unittest.main()

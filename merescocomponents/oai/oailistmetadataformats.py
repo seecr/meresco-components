@@ -58,7 +58,7 @@ Error and Exception Conditions
                 return self.writeError(webRequest, 'idDoesNotExist')
             prefixes = set(self.any.getPrefixes(self._identifier))
             metadataFormats = [(prefix, xsd, ns) for prefix, xsd, ns in metadataFormats if prefix in prefixes]
-        self.displayedMetadataFormats = metadataFormats
+        self.displayedMetadataFormats = sorted(metadataFormats)
 
     def process(self, webRequest):
         for metadataPrefix, schema, metadataNamespace in self.displayedMetadataFormats:

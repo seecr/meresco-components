@@ -34,6 +34,7 @@ class OaiAddRecordTest(CQ2TestCase):
         CQ2TestCase.setUp(self)
         self.subject = OaiAddRecord()
         self.observer = CallTrace('observert')
+        self.observer.getAllMetadataFormats = lambda: []
         self.subject.addObserver(self.observer)
 
     def testAdd(self):

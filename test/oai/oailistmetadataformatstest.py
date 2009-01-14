@@ -86,14 +86,14 @@ class OaiListMetadataFormatsTest(OaiTestCase):
         self.assertEqualsWS(self.OAIPMH % """<request identifier="id_0" verb="ListMetadataFormats">http://server:9000/path/to/oai</request>
     <ListMetadataFormats>
         <metadataFormat>
-            <metadataPrefix>olac</metadataPrefix>
-            <schema></schema>
-            <metadataNamespace></metadataNamespace>
-        </metadataFormat>
-        <metadataFormat>
             <metadataPrefix>oai_dc</metadataPrefix>
             <schema>http://www.openarchives.org/OAI/2.0/oai_dc.xsd</schema>
             <metadataNamespace>http://www.openarchives.org/OAI/2.0/oai_dc/</metadataNamespace>
+        </metadataFormat>
+        <metadataFormat>
+            <metadataPrefix>olac</metadataPrefix>
+            <schema></schema>
+            <metadataNamespace></metadataNamespace>
         </metadataFormat>
   </ListMetadataFormats>""", self.stream.getvalue())
         self.assertValidString(self.stream.getvalue())

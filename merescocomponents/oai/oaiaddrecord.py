@@ -14,9 +14,17 @@ class OaiAddRecord(Transparant):
         nsmap = findNamespaces(record)
         ns = nsmap[record.prefix]
         schema, namespace = (ns2xsd.get(ns,''), ns)
+        schema, namespace = self._magicSchemaNamespace(record.prefix, name, schema, namespace)
         metadataFormats=[(name, schema, namespace)]
 
         self.do.addOaiRecord(identifier=id, sets=sets, metadataFormats=metadataFormats)
+
+    def _magicSchemaNamespace(self, prefix, name, schema, namespace):
+        searchForPrefix = prefix or name
+        for oldprefix, oldschema, oldnamespace in self.any.getAllMetadataFormats():
+            if searchForPrefix == oldprefix:
+                return schema or oldschema, namespace or oldnamespace
+        return schema, namespace
 
 def _findSchema(record):
     if 'amara.bindery.root_base' in str(type(record)):

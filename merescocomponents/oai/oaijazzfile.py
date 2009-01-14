@@ -31,7 +31,7 @@ from os.path import isdir, join, isfile
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
-from itertools import ifilter, dropwhile, takewhile
+from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator
 
 class OaiJazzFile(Observable):
@@ -49,10 +49,12 @@ class OaiJazzFile(Observable):
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
-        self._delete(identifier)
+        oldPrefixes, oldSets = self._delete(identifier)
         stamp = self._stamp()
-        prefixes = (prefix for prefix, schema, namespace in metadataFormats)
+        prefixes = set(prefix for prefix, schema, namespace in metadataFormats)
+        prefixes.update(oldPrefixes)
         setSpecs = _flattenSetHierarchy((setSpec for setSpec, setName in sets))
+        setSpecs.update(oldSets)
         self._add(stamp, identifier, setSpecs, prefixes)
         self._store(metadataFormats)
 
@@ -65,7 +67,7 @@ class OaiJazzFile(Observable):
         self._deleted.add(stamp)
         self._store()
 
-    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None):
+    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize='ignored'):
         stampIds = dropwhile(lambda stamp: stamp <= int(continueAt),
             dropwhile(self._fromPredicate(oaiFrom),
                 takewhile(self._untilPredicate(oaiUntil),
