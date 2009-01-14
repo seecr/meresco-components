@@ -32,6 +32,7 @@ from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile
+from merescocomponents.sorteditertools import OrIterator, AndIterator
 
 class OaiJazzFile(Observable):
     def __init__(self, aDirectory):
@@ -70,13 +71,9 @@ class OaiJazzFile(Observable):
                 takewhile(self._untilPredicate(oaiUntil),
                     (self._prefixes.get(prefix, [])))))
         if sets:
-            stampIdsSets = [self._sets.get(setSpec,[]) for setSpec in sets]
-            def predicate(stamp):
-                for stampIdsFromSet in stampIdsSets:
-                    if stamp in stampIdsFromSet:
-                        return True
-                return False
-            stampIds = ifilter(predicate, stampIds)
+            allStampIdsFromSets = (self._sets.get(setSpec,[]) for setSpec in sets)
+            stampIds = AndIterator(stampIds,
+                reduce(OrIterator, allStampIdsFromSets))
         return (self._stamp2identifier.get(stampId) for stampId in stampIds)
 
     def getDatestamp(self, identifier):
@@ -221,186 +218,3 @@ def _flattenSetHierarchy(sets):
             result.add(':'.join(parts[:i]))
     return result
     
-    #def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
-        #self.any.deletePart(identifier, 'tombstone')
-        #setSpecs, prefixes, na, na = self._getPreviousRecord(identifier)
-        #prefixes.update(prefix for prefix, schema, namespace in metadataFormats)
-        #assert prefixes, 'No metadataFormat specified for record with identifier "%s"' % identifier
-        #setSpecs.update(setSpec for setSpec, setName in sets)
-        #setSpecs = self._flattenSetHierarchy(setSpecs)
-        #self.__updateAllPrefixes2(metadataFormats)
-        #self._updateAllSets(setSpecs)
-        #self._updateOaiMeta(identifier, setSpecs, prefixes)
-
-
-
-    #THE FOLLOWING CODE MUST GO AWAY, but is in use.
-    #def add(self, id, name, record):
-        ## This is the old way of adding data to OAI. Some self-learning stuff
-        ## is still applied, this should be refactored to special components
-        ## addOaiRecord will be the new way today.
-        #sets=set()
-        #if record.localName == "header" and record.namespaceURI == "http://www.openarchives.org/OAI/2.0/" and getattr(record, 'setSpec', None):
-            #sets.update((str(s), str(s)) for s in record.setSpec)
-
-        #if 'amara.bindery.root_base' in str(type(record)):
-            #record = record.childNodes[0]
-        #ns2xsd = self._findSchema(record)
-        #nsmap = findNamespaces(record)
-        #ns = nsmap[record.prefix]
-        #schema, namespace = (ns2xsd.get(ns,''), ns)
-        #metadataFormats=[(name, schema, namespace)]
-
-        #self.addOaiRecord(identifier=id, sets=sets, metadataFormats=metadataFormats)
-
-    #def delete(self, id):
-        #self.any.store(id, 'tombstone', '<tombstone/>')
-        #sets, prefixes, na, na = self._getPreviousRecord(id)
-        #self._updateOaiMeta(id, sets, prefixes)
-
-    #def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize=10):
-        #def addRange(root, field, lo, hi, inclusive):
-            #range = ConstantScoreRangeQuery(field, lo, hi, inclusive, inclusive)
-            #root.add(range, BooleanClause.Occur.MUST)
-
-        #if self.any.docCount() == 0:
-            #return 0, []
-
-        ##It is necessery here to work with the elemental objects, because the query parser transforms everything into lowercase
-        #query = BooleanQuery()
-        #query.add(TermQuery(Term('oaimeta.prefixes.prefix', prefix)), BooleanClause.Occur.MUST)
-
-        #if continueAt != '0':
-            #addRange(query, 'oaimeta.unique', continueAt, None, False)
-        #if oaiFrom or oaiUntil:
-            #oaiFrom = oaiFrom or None
-            #oaiUntil = oaiUntil and self._fixUntilDate(oaiUntil) or None
-            #addRange(query, 'oaimeta.stamp', oaiFrom, oaiUntil, True)
-        #if sets:
-            #if len(sets) == 1:
-                #query.add(TermQuery(Term('oaimeta.sets.setSpec', sets[0])), BooleanClause.Occur.MUST)
-
-            #else:
-                #setQuery = BooleanQuery()
-                #for set in sets:
-                    #setQuery.add(TermQuery(Term('oaimeta.sets.setSpec', set)), BooleanClause.Occur.SHOULD)
-                #query.add(setQuery, BooleanClause.Occur.MUST)
-        #total, recordIds = self.any.executeQuery(query, sortBy='oaimeta.unique', stop=batchSize)
-        #return total, recordIds
-
-    #def getAllMetadataFormats(self):
-        #return set((prefix, xsd, ns) for prefix, (xsd, ns) in self._getAllMetadataFormats().items())
-
-    #def getUnique(self, id):
-        #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
-        #return unique
-
-    #def getDatestamp(self, id):
-        #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
-        #return stamp
-
-    #def getSets(self, id):
-        #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
-        #return list(sets)
-
-    #def getPrefixes(self, id):
-        #sets, prefixes, stamp, unique = self._getPreviousRecord(id)
-        #return list(prefixes)
-
-    #def isDeleted(self, id):
-        #ignored, hasTombStone = self.any.isAvailable(id, 'tombstone')
-        #return hasTombStone
-
-    #def getAllSets(self):
-        #return list(self._getAllSets())
-
-################################################################################
-    ## test only?
-    #def listAll(self):
-        #total, hits = self.any.executeQuery(MatchAllDocsQuery())
-        #return hits
-
-################################################################################
-
-    #def _findSchema(self, record):
-        #if 'amara.bindery.root_base' in str(type(record)):
-            #record = record.childNodes[0]
-        #ns2xsd = {}
-        #if hasattr(record, 'schemaLocation'):
-            #nsXsdList = record.schemaLocation.split()
-            #for n in range(0, len(nsXsdList), 2):
-                #ns2xsd[nsXsdList[n]] = nsXsdList[n+1]
-        #return ns2xsd
-
-    #def __updateAllPrefixes2(self, metadataFormats):
-        #allPrefixes = self._getAllMetadataFormats()
-        #for prefix, schema, namespace in metadataFormats:
-            #if prefix not in allPrefixes:
-               #allPrefixes[prefix] = (schema, namespace)
-        #prefixesXml = '<ListMetadataFormats>%s</ListMetadataFormats>' % \
-            #''.join(prefixTemplate % (prefix, xsd, ns) \
-                #for prefix, (xsd, ns) in allPrefixes.items())
-        #self.any.store('__all_prefixes__', '__prefixes__', prefixesXml)
-
-    #def _updateAllPrefixes(self, prefix, record):
-        #if 'amara.bindery.root_base' in str(type(record)):
-            #record = record.childNodes[0]
-        #allPrefixes = self._getAllMetadataFormats()
-        #ns2xsd = self._findSchema(record)
-        #nsmap = findNamespaces(record)
-        #ns = nsmap[record.prefix]
-        #newPrefixInfo = (ns2xsd.get(ns,''), ns)
-        #if prefix not in allPrefixes:
-            #allPrefixes[prefix] = newPrefixInfo
-        #prefixesXml = '<ListMetadataFormats>' + ''.join(prefixTemplate % (prefix, xsd, ns) for prefix, (xsd, ns) in allPrefixes.items()) + '</ListMetadataFormats>'
-        #self.any.store('__all_prefixes__', '__prefixes__', prefixesXml)
-
-    #def _fixUntilDate(self, aString):
-        #dateRE = compile('^\d{4}-\d{2}-\d{2}$')
-        #result = aString
-        #if dateRE.match(aString):
-            #dateFromString = strptime(aString, '%Y-%m-%d')
-            #datePlusOneDay = localtime(mktime(dateFromString) + 24*3600)
-            #result = strftime('%Y-%m-%dT%H:%M:%SZ', datePlusOneDay)
-        #return result
-
-    #def _getAllSets(self):
-        #allSets = set()
-        #if (True, True) == self.any.isAvailable('__all_sets__', '__sets__'):
-            #setsXml = parse(self.any.getStream('__all_sets__', '__sets__'))
-            #allSets.update(setsXml.xpath('/sets:__sets__/sets:setSpec/text()', {'sets':'http://meresco.com/namespace/meresco/oai/sets'}))
-        #return allSets
-
-    #def _updateAllSets(self, sets):
-        #allSets = self._getAllSets()
-        #allSets.update(sets)
-        #spec= '<setSpec>%s</setSpec>'
-        #setsXml = '<__sets__ xmlns="http://meresco.com/namespace/meresco/oai/sets">' + ''.join(spec % set for set in allSets) + '</__sets__>'
-        #self.any.store('__all_sets__', '__sets__', setsXml)
-
-    #def _getAllMetadataFormats(self):
-        #allPrefixes = {}
-        #if (True, True) == self.any.isAvailable('__all_prefixes__', '__prefixes__'):
-            #allPrefixesXml = bind_stream(self.any.getStream('__all_prefixes__', '__prefixes__')).ListMetadataFormats
-            #for info in allPrefixesXml.metadataFormat:
-                #allPrefixes[str(info.metadataPrefix)] = (str(info.schema), str(info.metadataNamespace))
-        #return allPrefixes
-
-    #def _gettime(self):
-        #return gmtime()
-
-    #def _updateOaiMeta(self, id, sets, prefixes):
-        #unique = self._numberGenerator.next()
-        #stamp =  strftime('%Y-%m-%dT%H:%M:%SZ', self._gettime())
-        #newOaiMeta = createOaiMeta(sets, prefixes, stamp, unique)
-        #metaRecord = ''.join(newOaiMeta)
-        #self.do.add(id, 'oaimeta', str(metaRecord))
-
-    #def _getPreviousRecord(self, id):
-        #sets = set()
-        #prefixes = set()
-        #stamp = unique = None
-        #if (True, True) == self.any.isAvailable(id, 'oaimeta'):
-            #data = ''.join(self.any.getStream(id, 'oaimeta'))
-            #sets, prefixes, stamp, unique = parseOaiMeta(data)
-        #return sets, prefixes, stamp, unique

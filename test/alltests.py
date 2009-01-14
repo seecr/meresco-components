@@ -40,6 +40,8 @@ if os.environ.get('PYTHONPATH', '') == '':
 
 import unittest
 
+from sorteditertoolstest import SortedItertoolsTest
+
 from facetindex.performancetuningtest import PerformanceTuningTest
 from facetindex.docsettest import DocSetTest
 from facetindex.docsetlisttest import DocSetListTest
@@ -77,6 +79,8 @@ from oai.oaisetselecttest import OaiSetSelectTest
 from oai.xml2documenttest import Xml2DocumentTest  # --> Xml2Document only in use by OAI; deprecated; needs to be replaced
                                                #     when OAI is worked on next.
 from oai.oaijazzfiletest import OaiJazzFileTest
+from oai.oaiaddrecordtest import OaiAddRecordTest
+
 if __name__ == '__main__':
     unittest.main()
     os.system('find .. -name "*.pyc" | xargs rm -f')

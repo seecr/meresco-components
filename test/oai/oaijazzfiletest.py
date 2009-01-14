@@ -93,7 +93,7 @@ class OaiJazzFileTest(CQ2TestCase):
     def xtestPerformanceTestje(self):
         """This test is fast if storing on disk is off"""
         originalStore = self.jazz._store
-        self.jazz._store = lambda:None
+        self.jazz._store = lambda iets:None
         t0 = time()
         for i in xrange(1 * 10**7):
             self.jazz.addOaiRecord('id%s' % i, sets=[('setSpec%s' % ((i / 100)*100), 'setName')], metadataFormats=[('prefix','schema', 'namespace')])
@@ -112,7 +112,9 @@ class OaiJazzFileTest(CQ2TestCase):
         #  1 * 10**6 oaiSelect took 0.071
         #  1 * 10**7 oaiSelect took 0.071
         # the above optimization is removed again, it was only there to show optimization could help  A LOT!
-        
+        # New optimization with And, Or Iterator
+        #  1 * 10**6 oaiSelect took 0.363089084625
+        #  1 * 10**7 oaiSelect took 0.347623825073
     
     def testListRecordsNoResults(self):
         result = self.jazz.oaiSelect(prefix='xxx')
@@ -321,153 +323,3 @@ class OaiJazzFileTest(CQ2TestCase):
         self.assertEquals(set(['setSpec1', 'setSpec2', 'setSpec2:setSpec3']), set(self.jazz.getSets('id:2')))
         self.assertEquals(set([]), set(self.jazz.getSets('doesNotExist')))
         self.assertEquals(set(['setSpec1', 'setSpec2', 'setSpec2:setSpec3']), set(self.jazz.getAllSets()))
-
-    #def testOaiSelectWithBatchSize(self):
-        #jazz = self.realjazz
-        #for i in range(123,143):
-            #jazz.add('%s' % i, 'oai_dc', bind_string('<oai_dc/>'))
-        #total, results =jazz.oaiSelect(prefix='oai_dc', batchSize=200)
-        #self.assertEquals(20, total)
-        #self.assertEquals(20, len(results))
-        #total, results =jazz.oaiSelect(prefix='oai_dc', batchSize=2)
-        #self.assertEquals(20, total)
-        #self.assertEquals(2, len(results))
-        
-    
-    #def testAddSetInfo(self):
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz = self.realjazz
-        #jazz.add('123', 'oai_dc', bind_string(header % 1).header)
-        #jazz.add('124', 'oai_dc', bind_string(header % 2).header)
-        #total, results =jazz.oaiSelect(sets=['1'], prefix='oai_dc')
-        #self.assertEquals(1, total)
-        #total, results =jazz.oaiSelect(sets=['2'], prefix='oai_dc')
-        #self.assertEquals(1, total)
-        #total, results =jazz.oaiSelect(prefix='oai_dc')
-        #self.assertEquals(2, total)
-
-    #def testAddRecognizeNamespace(self):
-        #header = '<header xmlns="this.is.not.the.right.ns"><setSpec>%s</setSpec></header>'
-        #jazz = self.realjazz
-        #jazz.add('123', 'oai_dc', bind_string(header % 1).header)
-        #total, results =jazz.oaiSelect(sets=['1'], prefix='oai_dc')
-        #self.assertEquals(0, total)
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('124', 'oai_dc', bind_string(header % 1).header)
-        #total, results =jazz.oaiSelect(sets=['1'], prefix='oai_dc')
-        #self.assertEquals(1, total)
-
-    #def testAddWithoutData(self):
-        #jazz = self.realjazz
-        #jazz.add('9', 'oai_cd', bind_string('<empty/>'))
-
-
-    #def testMultipleHierarchicalSets(self):
-        #spec = "<setSpec>%s</setSpec>"
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/">%s</header>'
-        #jazz = self.realjazz
-        #jazz.add('124', 'oai_dc', bind_string(header % (spec % '2:3' + spec % '3:4')).header)
-        #self.assertEquals((1,['124']), jazz.oaiSelect(sets=['2'], prefix='oai_dc'))
-        #self.assertEquals((1,['124']), jazz.oaiSelect(sets=['2:3'], prefix='oai_dc'))
-        #self.assertEquals((1,['124']), jazz.oaiSelect(sets=['3'], prefix='oai_dc'))
-        #self.assertEquals((1,['124']), jazz.oaiSelect(sets=['3:4'], prefix='oai_dc'))
-
-
-    #def testSetSpecWithTokensSplit(self):
-        #jazz = self.realjazz
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('124', 'oai_dc', bind_string(header % "1:23").header)
-        #total, results = jazz.oaiSelect(sets=['1:23'], prefix='oai_dc')
-        #self.assertEquals(1, len(results))
-        #self.assertEquals(1, total)
-
-    #def testDeleteAndReAdd(self):
-        #jazz = self.realjazz
-        #header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        #jazz.add('123', 'oai_dc', bind_string(header % "1").header)
-        #jazz.delete('123')
-        #jazz.add('123', 'oai_dc', bind_string(header % "1").header)
-        #self.assertFalse(jazz.isDeleted('123'))
-
-    #def testGetParts(self):
-        #jazz = self.realjazz
-        #jazz.add('123', 'oai_dc', bind_string('<dc/>').dc)
-        #jazz.add('123', 'lom', bind_string('<lom/>').lom)
-        #parts = jazz.getPrefixes('123')
-        #self.assertEquals(['oai_dc', 'lom'], parts)
-        #self.assertEquals((1, ['123']), jazz.oaiSelect(prefix='lom'))
-        #self.assertEquals((1, ['123']), jazz.oaiSelect(prefix='oai_dc'))
-
-    #def testDatestamp(self):
-        #jazz = self.realjazz
-        #lower = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
-        #jazz.add('456', 'oai_dc', bind_string('<data/>'))
-        #upper = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
-        #datestamp = jazz.getDatestamp('456')
-        #self.assertTrue(lower <= datestamp <= upper, datestamp)
-
-    #def testMetadataPrefixes(self):
-        #jazz = self.realjazz
-        #jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-             #xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
-        #prefixes = jazz.getAllMetadataFormats()
-        #self.assertEquals([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')], list(prefixes))
-        #jazz.add('457', 'dc2', bind_string('<oai_dc:dc xmlns:oai_dc="http://dc2"/>').dc)
-        #prefixes = jazz.getAllMetadataFormats()
-        #self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc'), ('dc2', '', 'http://dc2')]), prefixes)
-
-    #def testMetadataPrefixesFromRootTag(self):
-        #jazz = self.realjazz
-        #jazz.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-             #xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>'))
-        #prefixes = jazz.getAllMetadataFormats()
-        #self.assertEquals([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')], list(prefixes))
-
-    #def testIncompletePrefixInfo(self):
-        #jazz = self.realjazz
-        #jazz.add('457', 'dc2', bind_string('<oai_dc/>').oai_dc)
-        #prefixes = jazz.getAllMetadataFormats()
-        #self.assertEquals(set([('dc2', '', '')]), prefixes)
-
-    #def testPreserveRicherPrefixInfo(self):
-        #jazz = self.realjazz
-        #jazz.add('457', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-             #xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
-        #jazz.add('457', 'oai_dc', bind_string('<oai_dc/>'))
-        #prefixes = jazz.getAllMetadataFormats()
-        #self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')]), prefixes)
-
-
-    #def addDocuments(self, size):
-        #for id in range(1,size+1):
-            #self._addRecord(id)
-
-    #def _addRecord(self, anId):
-        #self.jazz.add('%05d' % anId, 'oai_dc', bind_string('<title>The Title %d</title>' % anId))
-
-    #def testListAll(self):
-        #self.addDocuments(1)
-        #total, result = self.jazz.oaiSelect(prefix='oai_dc')
-        #result2 = self.jazz.listAll()
-        #self.assertEquals(['00001'], list(result2))
-        #self.assertEquals(['00001'], result)
-
-    #def testListRecordsWith2000(self):
-        #BooleanQuery.setMaxClauseCount(10) # Cause an early TooManyClauses exception.
-        #self.addDocuments(50)
-        #total, result = self.jazz.oaiSelect(prefix='oai_dc')
-        #self.assertEquals('00001', result[0])
-        #total, result = self.jazz.oaiSelect(prefix='oai_dc', continueAt='%020d' % 1)
-        #self.assertEquals('00002', result[0])
-
-
-
-#from time import sleep
-#class TimerForTestSupport(object):
-    #def addTimer(self, time, callback):
-        #callback()
-
-        #sleep(0.01)
-        #return (time,callback)
-    #def removeTimer(self, token):
-        #pass

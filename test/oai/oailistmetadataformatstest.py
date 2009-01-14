@@ -30,8 +30,9 @@ from amara.binderytools import bind_string
 from oaitestcase import OaiTestCase
 from merescocomponents.facetindex import LuceneIndex
 from merescocore.components import StorageComponent
-from merescocomponents.oai import OaiJazzLucene
+from merescocomponents.oai import OaiJazzLucene, OaiAddRecord, OaiJazzFile
 from merescocomponents.oai.oailistmetadataformats import OaiListMetadataFormats
+from merescocore.framework import be, Observable
 
 from cq2utils import CallTrace
 
@@ -69,18 +70,18 @@ class OaiListMetadataFormatsTest(OaiTestCase):
   </ListMetadataFormats>""", self.stream.getvalue())
         self.assertValidString(self.stream.getvalue())
 
-    def testListMetadataFormatsForIdentifier(self):
-        jazz = OaiJazzLucene(
-            LuceneIndex(join(
-                self.tempdir, 'index'), CallTrace('timer')),
-            StorageComponent(join(self.tempdir,'storage')),
-            iter(xrange(99)))
+    def assertWithJazz(self, jazz):
+        server = be((Observable(),
+            (OaiAddRecord(),
+                (jazz,)
+            )
+        ))
         self.subject.addObserver(jazz)
         self.request.args = {'verb': ['ListMetadataFormats'], 'identifier': ['id_0']}
-        jazz.add('id_0', 'oai_dc', bind_string("""<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+        server.do.add('id_0', 'oai_dc', bind_string("""<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"></oai_dc:dc>""").dc)
-        jazz.add('id_0', 'olac', bind_string('<tag/>').tag)
+        server.do.add('id_0', 'olac', bind_string('<tag/>').tag)
         self.subject.listMetadataFormats(self.request)
         self.assertEqualsWS(self.OAIPMH % """<request identifier="id_0" verb="ListMetadataFormats">http://server:9000/path/to/oai</request>
     <ListMetadataFormats>
@@ -96,7 +97,18 @@ class OaiListMetadataFormatsTest(OaiTestCase):
         </metadataFormat>
   </ListMetadataFormats>""", self.stream.getvalue())
         self.assertValidString(self.stream.getvalue())
+
+    def testListMetadataFormatsForIdentifierLucene(self):
+        jazz = OaiJazzLucene(
+            LuceneIndex(join(self.tempdir, 'index'), CallTrace('timer')),
+            StorageComponent(join(self.tempdir,'storage')),
+            iter(xrange(99)))
+        self.assertWithJazz(jazz)
         jazz.close()
+    
+    def testListMetadataFormatsForIdentifierFile(self):
+        jazz = OaiJazzFile(self.tempdir)
+        self.assertWithJazz(jazz)
 
     def testListMetadataFormatsNonExistingId(self):
         class Observer:

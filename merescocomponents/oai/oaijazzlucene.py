@@ -97,25 +97,6 @@ class OaiJazzLucene(Observable):
         self._updateAllSets(setSpecs)
         self._updateOaiMeta(identifier, setSpecs, prefixes)
 
-
-    def add(self, id, name, record):
-        # This is the old way of adding data to OAI. Some self-learning stuff
-        # is still applied, this should be refactored to special components
-        # addOaiRecord will be the new way today.
-        sets=set()
-        if record.localName == "header" and record.namespaceURI == "http://www.openarchives.org/OAI/2.0/" and getattr(record, 'setSpec', None):
-            sets.update((str(s), str(s)) for s in record.setSpec)
-
-        if 'amara.bindery.root_base' in str(type(record)):
-            record = record.childNodes[0]
-        ns2xsd = self._findSchema(record)
-        nsmap = findNamespaces(record)
-        ns = nsmap[record.prefix]
-        schema, namespace = (ns2xsd.get(ns,''), ns)
-        metadataFormats=[(name, schema, namespace)]
-
-        self.addOaiRecord(identifier=id, sets=sets, metadataFormats=metadataFormats)
-
     def delete(self, id):
         self.any.store(id, 'tombstone', '<tombstone/>')
         sets, prefixes, na, na = self._getPreviousRecord(id)
