@@ -40,7 +40,7 @@ class DrilldownTest(CQ2TestCase):
 
     def setUp(self):
         CQ2TestCase.setUp(self)
-        self.index = LuceneIndex(self.tempdir, timer=TimerForTestSupport())
+        self.index = LuceneIndex(self.tempdir)
 
     def tearDown(self):
         self.index.close()
@@ -59,9 +59,11 @@ class DrilldownTest(CQ2TestCase):
             for field, value in fields.items():
                 myDocument.addIndexedField(field, value, tokenize = tokenize)
             self.index.addDocument(myDocument)
+        self.index.commit()
 
     def testIndexStarted(self):
         self.addUntokenized([('id', {'field_0': 'this is term_0'})])
+
         drilldown = Drilldown(['field_0'])
         reader = IndexReader.open(self.tempdir)
         drilldown.indexStarted(reader)
@@ -206,15 +208,52 @@ class DrilldownTest(CQ2TestCase):
         except NoFacetIndexException, e:
             self.assertEquals("No facetindex for field 'name'. Available fields: 'title'", str(e))
 
+    def testAddDocument(self):
+        drilldown = Drilldown(['title'])
+        self.assertEquals(0, len(drilldown._documentQueue))
+        drilldown.addDocument(0, {'title': ['value']})
+        self.assertEquals(2, len(drilldown._documentQueue))
 
+    def testDeleteDocument(self):
+        drilldown = Drilldown(['title'])
+        self.assertEquals(0, len(drilldown._documentQueue))
+        drilldown.deleteDocument(0)
+        self.assertEquals(1, len(drilldown._documentQueue))
 
+    def testCommitClearsQueue(self):
+        drilldown = Drilldown(['title'])
+        drilldown.deleteDocument(0)
+        drilldown.addDocument(0, {'title': ['value']})
+        self.assertEquals(3, len(drilldown._documentQueue))
+        drilldown.commit()
+        self.assertEquals(0, len(drilldown._documentQueue))
 
-from time import sleep
-class TimerForTestSupport(object):
-    def addTimer(self, time, callback):
-        callback()
+        def raiseException(*args, **kwargs):
+            raise Exception('Exception')
+        drilldown._delete = raiseException
+        drilldown.deleteDocument(0)
+        try:
+            drilldown.commit()
+            self.fail()
+        except Exception, e:
+            self.assertEquals("Exception", str(e))
+        self.assertEquals(0, len(drilldown._documentQueue))
 
-        sleep(0.01)
-        return (time,callback)
-    def removeTimer(self, token):
-        pass
+    def testCommit(self):
+        reader = IndexReader.open(self.tempdir)
+        drilldown = Drilldown(['title'])
+        drilldown.indexStarted(reader)
+        drilldown.addDocument(0, {'title': ['value']})
+        drilldown.addDocument(1, {'title': ['value2']})
+
+        self.assertEquals(0, len(drilldown._docsetlists['title']))
+        drilldown.commit()
+        self.assertEquals(0, len(drilldown._documentQueue))
+        self.assertEquals(2, len(drilldown._docsetlists['title']))
+        self.assertEquals([('value', 1), ('value2', 1)], list(drilldown._docsetlists['title'].allCardinalities()))
+
+        drilldown.deleteDocument(0)
+        self.assertEquals(2, len(drilldown._docsetlists['title']))
+        drilldown.commit()
+        self.assertEquals(2, len(drilldown._docsetlists['title']))
+        self.assertEquals([('value', 0), ('value2', 1)], list(drilldown._docsetlists['title'].allCardinalities()))

@@ -229,3 +229,9 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         isdir(name) and rmtree(name)
         mkdir(name)
         return name
+
+    def testAddAndFlush(self):
+        tracker = LuceneDocIdTracker(10, directory = self.createTrackerDir())
+        tracker.next()
+        tracker.next()
+        tracker.flush()

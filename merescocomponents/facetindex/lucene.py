@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from os.path import isdir
+from os.path import isdir, isfile, join
 from os import makedirs
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
 from time import time
@@ -34,6 +34,8 @@ from document import IDFIELD
 from merescocore.framework import Observable
 
 from docset import DocSet
+from functioncommand import FunctionCommand
+from lucenedocidtracker import LuceneDocIdTracker
 
 class LuceneException(Exception):
     pass
@@ -42,32 +44,39 @@ class IncludeStopWordAnalyzer(object):
     def tokenStream(self, fieldName, reader):
         return LowerCaseFilter(StandardFilter(StandardTokenizer(reader)))
 
-def lastUpdateTimeoutToken(method):
-    def wrapper(luceneIndexSelf, *args, **kwargs):
-        if luceneIndexSelf._lastUpdateTimeoutToken != None:
-            luceneIndexSelf._timer.removeTimer(luceneIndexSelf._lastUpdateTimeoutToken)
-        try:
-            return method(luceneIndexSelf, *args, **kwargs)
-        finally:
-            luceneIndexSelf._lastUpdateTimeoutToken = luceneIndexSelf._timer.addTimer(1, luceneIndexSelf._lastUpdateTimeout)
-    return wrapper
-
 class LuceneIndex(Observable):
 
-    def __init__(self, directoryName, timer):
+    def __init__(self, directoryName, *ditwilikniet, **ditookniet):
+        self._searcher = None
+        self._reader = None
+        self._writer = None
         Observable.__init__(self)
+        self._documentQueue = []
         self._directoryName = directoryName
-        self._timer = timer
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
-        indexExists = IndexReader.indexExists(self._directoryName)
+        self._reopenIndex()
+        optimized = self.isOptimized()
+        assert isfile(join(directoryName, 'tracker.segments')) or optimized, 'index must be optimized or tracker state must be present in directory'
+        mergeFactor = self.getMergeFactor()
+        maxBufferedDocs = self.getMaxBufferedDocs()
+        assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
+        self._tracker = LuceneDocIdTracker(self.getMergeFactor(), directory=self._directoryName)
+
+    def _reopenIndex(self):
+        if self._writer:
+            self._writer.close()
         self._writer = IndexWriter(
             self._directoryName,
-            IncludeStopWordAnalyzer(), not indexExists)
-        self._lastUpdateTimeoutToken = None
-        self._reader = self._openReader()
+            IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
+        if self._reader:
+            self._reader.close()
+        self._reader = IndexReader.open(self._directoryName)
+        if self._searcher:
+            self._searcher.close()
+        self._searcher = IndexSearcher(self._reader)
         self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
-        self._searcher = self._openSearcher()
+        self.do.indexStarted(self._reader)
 
     def observer_init(self):
         self.do.indexStarted(self._reader)
@@ -87,62 +96,57 @@ class LuceneIndex(Observable):
             hits = self._searcher.search(pyLuceneQuery)
         return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
 
-    def _lastUpdateTimeout(self):
-        try:
-            self._reopenIndex()
-        finally:
-            self._lastUpdateTimeoutToken = None
-
-    def _reOpenWriter(self):
-        self._writer.close()
-        self._writer = None
-        self._writer = IndexWriter(
-            self._directoryName,
-            IncludeStopWordAnalyzer(), False)
-
-    def _docIdForId(self, id):
-        hits = self.executeQuery(TermQuery(Term(IDFIELD, id)))
+    def _docIdForIdentifier(self, identifier):
+        hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)))
         if len(hits) == 1:
-            return hits[0]
+            luceneId = hits.id(0)
+            docId = self._tracker.map([luceneId]).next()
+            return docId
+        else:
+            for command in self._documentQueue:
+                if 'document' in command._kwargs:
+                    docId = command._kwargs['document'].docId
+                    return docId
         return None
 
     def getIndexReader(self):
         return self._reader
 
-    def _reopenIndex(self):
-        self._reOpenWriter()
-        self._reader = None
-        self._reader = self._openReader()
-        self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
-        self._searcher.close()
-        self._searcher = None
-        self._searcher = self._openSearcher()
-        self.do.indexStarted(self._reader)
+    def _delete(self, identifier):
+        self._writer.deleteDocuments(Term(IDFIELD, identifier))
 
-    def _delete(self, anId):
-        docId = self._docIdForId(anId)
-        self._writer.deleteDocuments(Term(IDFIELD, anId))
+    def _add(self, document):
+        document.addToIndexWith(self._writer)
+
+    def delete(self, identifier):
+        docId = self._docIdForIdentifier(identifier)
+        if docId != None:
+            self._tracker.deleteDocId(docId)
+            self._documentQueue.append(FunctionCommand(self._delete, identifier=identifier))
+            self.do.deleteDocument(docId=docId)
         return docId
 
-    @lastUpdateTimeoutToken
-    def delete(self, anId):
-        return self._delete(anId)
+    def addDocument(self, luceneDocument=None):
+        docId = self._tracker.next()
+        luceneDocument.docId = docId
+        try:
+            luceneDocument.validate()
+            self._documentQueue.append(FunctionCommand(self._delete, identifier=luceneDocument.identifier))
+            self._documentQueue.append(FunctionCommand(self._add, document=luceneDocument))
+            self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
+        except:
+            self._documentQueue = []
+            raise
 
-    @lastUpdateTimeoutToken
-    def addDocument(self, aDocument):
-        self._delete(aDocument.identifier)
-
-        aDocument.validate()
-        aDocument.addToIndexWith(self._writer)
+    def commit(self):
+        for item in self._documentQueue:
+            item.execute()
+        self._documentQueue = []
+        self._reopenIndex()
+        self._tracker.flush()
 
     def docCount(self):
         return self._reader.numDocs()
-
-    def _openReader(self):
-        return IndexReader.open(self._directoryName)
-
-    def _openSearcher(self):
-        return IndexSearcher(self._reader)
 
     def _getPyLuceneSort(self, sortBy, sortDescending):
         if sortBy and sortBy in self._existingFieldNames:
@@ -150,9 +154,9 @@ class LuceneIndex(Observable):
         return None
 
     def close(self):
-        self._writer.close()
+        self._writer and self._writer.close()
         self._reader = None
-        self._searcher.close()
+        self._searcher and self._searcher.close()
 
     def __del__(self):
         self.close()

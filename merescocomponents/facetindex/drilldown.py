@@ -28,6 +28,7 @@ from .docsetlist import DocSetList, JACCARD_MI
 from PyLucene import Term, IndexReader # hmm, maybe we don't want this dependency?
 from time import time
 from sys import maxint
+from functioncommand import FunctionCommand
 
 class NoFacetIndexException(Exception):
 
@@ -44,15 +45,34 @@ class Drilldown(object):
         self._staticDrilldownFieldnames = staticDrilldownFieldnames
         self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
         self._docsetlists = {}
+        if self._staticDrilldownFieldnames:
+            self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
+        self._documentQueue = []
 
-    def addDocument(self, docId, fieldAndTermsList):
-        for fieldname, terms in fieldAndTermsList:
-            if fieldname in self._actualDrilldownFieldnames:
-                self._fieldMatrices[fieldname].addDocument(docId, terms)
+    def _add(self, docId, docDict):
+        fieldnames = (fieldname
+            for fieldname in docDict.keys()
+                if fieldname in self._actualDrilldownFieldnames)
+        for fieldname in fieldnames:
+            self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
+
+    def addDocument(self, docId, docDict):
+        self._documentQueue.append(FunctionCommand(self._delete, docId=docId))
+        self._documentQueue.append(FunctionCommand(self._add, docId=docId, docDict=docDict))
+
+    def _delete(self, docId):
+        for docsetlist in self._docsetlists.values():
+            docsetlist.deleteDoc(docId)
+
+    def commit(self):
+        try:
+            for item in self._documentQueue:
+                item.execute()
+        finally:
+            self._documentQueue = []
 
     def deleteDocument(self, docId):
-        for fieldname in self._actualDrilldownFieldnames:
-            self._fieldMatrices[fieldname].deleteDocument(docId)
+        self._documentQueue.append(FunctionCommand(self._delete, docId=docId))
 
     def indexStarted(self, indexReader):
         t0 = time()
@@ -87,12 +107,4 @@ class Drilldown(object):
             if fieldname not in self._docsetlists:
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
             yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs, algorithm=algorithm)
-
-
-    def rowCardinalities(self):
-        for fieldname in self._actualDrilldownFieldnames:
-            yield fieldname, self._fieldMatrices[fieldname].allRowCardinalities()
-
-    def prefixDrilldown(self, fieldname, prefix, row, maximumResults=0):
-        return self._fieldMatrices[fieldname].prefixDrilldown(prefix, row, maximumResults)
 

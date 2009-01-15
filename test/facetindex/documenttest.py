@@ -92,3 +92,9 @@ class DocumentTest(unittest.TestCase):
         d.addIndexedField('x', 'b')
         d.addToIndexWith(CallTrace("IndexWriter"))
         self.assertEquals([IDFIELD, 'x', 'x'], d.fields())
+
+    def testAsDict(self):
+        d = Document('1234')
+        d.addIndexedField('field', 'value1')
+        d.addIndexedField('field', 'value2')
+        self.assertEquals({'__id__': ['1234'], 'field': ['value1', 'value2']}, d.asDict())

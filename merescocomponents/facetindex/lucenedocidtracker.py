@@ -100,8 +100,8 @@ class LuceneDocIdTracker(object):
         self._flushRamSegments()
         return removedUDocID
 
-    def map(self, docids):
-        return (self._docIds[docid] for docid in docids)
+    def map(self, luceneIds):
+        return (self._docIds[luceneId] for luceneId in luceneIds)
 
     def flush(self):
         self._flushRamSegments()
@@ -148,44 +148,3 @@ class LuceneDocIdTracker(object):
 
     def close(self):
         self.flush()
-
-class LuceneDocIdTrackerDecorator(object):
-
-    def __init__(self, luceneIndex):
-        optimized = luceneIndex.isOptimized()
-        directory = luceneIndex.getDirectory()
-        assert isfile(join(directory, 'tracker.segments')) or optimized, 'index must be optimized or tracker state must be present in directory'
-        mergeFactor = luceneIndex.getMergeFactor()
-        maxBufferedDocs = luceneIndex.getMaxBufferedDocs()
-        assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
-        self._tracker = LuceneDocIdTracker(mergeFactor, luceneIndex.docCount(), directory)
-        self._lucene = luceneIndex
-
-    def addDocument(self, doc):
-        self._lucene.addDocument(doc)
-        return self._tracker.next()
-
-    def delete(self, identifier):
-        docId = self._lucene.delete(identifier)
-        return self._tracker.deleteDocId(docId)
-
-    def executeQuery(self, *args, **kwargs):
-        hits = self._lucene.executeQuery(*args, **kwargs)
-        return HitsDecorator(hits, self._tracker._docIds)
-
-    def getDocSets(self, fieldNames):
-        convertor = LuceneRawDocSets(self._lucene.getIndexReader(), fieldNames)
-        return convertor.getDocSets(self._tracker._docIds)
-
-    def close(self):
-        self._lucene.close()
-
-class HitsDecorator(object):
-
-    def __init__(self, hits, docidsMap):
-        self._hits = hits
-        self._docIdsMap = docidsMap
-
-    def bitMatrixRow(self):
-        return self._hits.bitMatrixRow(self._docIdsMap)
-

@@ -36,7 +36,6 @@ from document import Document, IDFIELD, DocumentException
 from docset import DocSet
 from docsetlist import DocSetList
 from trie import Trie
-from lucenedocidtracker import LuceneDocIdTrackerDecorator
 from cql2lucenequery import CQL2LuceneQuery
 from fields2lucenedocument import Fields2LuceneDocumentTx
 

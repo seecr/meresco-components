@@ -48,12 +48,7 @@ class LuceneTest(CQ2TestCase):
 
     def setUp(self):
         CQ2TestCase.setUp(self)
-        self.timer = CallTrace('timer')
-        self._luceneIndex = LuceneIndex(
-            directoryName=self.tempdir,
-            timer=self.timer)
-
-        self.timerCallbackMethod = self._luceneIndex._lastUpdateTimeout
+        self._luceneIndex = LuceneIndex(directoryName=self.tempdir)
 
     def tearDown(self):
         self._luceneIndex.close()
@@ -67,7 +62,7 @@ class LuceneTest(CQ2TestCase):
         myDocument = Document('0123456789')
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(len(hits), 1)
@@ -78,7 +73,7 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('title', 'een titel')
         myDocument.addIndexedField('title', 'een sub titel')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(len(hits), 1)
@@ -94,7 +89,7 @@ class LuceneTest(CQ2TestCase):
         myDocument = Document('2')
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(2, len(hits))
@@ -105,7 +100,7 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('field1', 'value_2')
         self._luceneIndex.addDocument(myDocument)
 
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         def check(value):
             total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', value)))
@@ -120,9 +115,7 @@ class LuceneTest(CQ2TestCase):
 
     def testAddDocumentWithFailure(self):
         self._luceneIndex.close()
-        myIndex = LuceneIndex(
-            directoryName=self.tempdir,
-            timer=Reactor())
+        myIndex = LuceneIndex(directoryName=self.tempdir)
         class MyException(Exception):
             pass
         myDocument = Document('1')
@@ -141,16 +134,16 @@ class LuceneTest(CQ2TestCase):
         my2Document.addIndexedField('aap', 'noot')
         myIndex.addDocument(my2Document)
 
+    def addDocument(self, identifier, **fields):
+        doc = Document(identifier)
+        for key, value in fields.items():
+            doc.addIndexedField(key, value)
+        self._luceneIndex.addDocument(doc)
 
     def testDeleteFromIndex(self):
-        myDocument = Document('1')
-        myDocument.addIndexedField('title', 'een titel')
-        self._luceneIndex.addDocument(myDocument)
-
-        myDocument = Document('2')
-        myDocument.addIndexedField('title', 'een titel')
-        self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self.addDocument('1', title='een titel')
+        self.addDocument('2', title='een titel')
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(2, len(hits))
@@ -160,17 +153,14 @@ class LuceneTest(CQ2TestCase):
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(2, len(hits))
 
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(1, len(hits))
 
-    def testAddDeleteWithoutReopenInBetween(self):
-        myDocument = Document('1')
-        myDocument.addIndexedField('title', 'een titel')
-        self._luceneIndex.addDocument(myDocument)
-
+    def testAddDeleteWithoutCommitInBetween(self):
+        self.addDocument('1', title='een titel')
         self._luceneIndex.delete('1')
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(0, len(hits))
 
@@ -178,10 +168,10 @@ class LuceneTest(CQ2TestCase):
         myDocument = Document('0123456789')
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
         # keep ref to hits, while refreshing/reopening the index after timeout
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
         # now try to get the results,
         try:
             list(hits)
@@ -190,9 +180,8 @@ class LuceneTest(CQ2TestCase):
             self.assertEquals('org.apache.lucene.store.AlreadyClosedException: this IndexReader is closed', str(e))
             self.fail('this must not fail on a closed reader')
 
-
     def testIndexCloses(self):
-        index = LuceneIndex(self.tempdir + '/x', timer=self.timer)
+        index = LuceneIndex(self.tempdir + '/x')
         myDocument = Document('1')
         myDocument.addIndexedField('title', 'een titel')
         index.addDocument(myDocument)
@@ -207,45 +196,13 @@ class LuceneTest(CQ2TestCase):
         myDocument = Document('0123456789')
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
         total1, hits1 = list(self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel'))))
         total2, hits2 = list(queryConvertor.executeCQL(parseString("title = titel")))
         self.assertEquals(len(hits1), len(hits2))
         self.assertEquals(['0123456789'], hits1)
         self.assertEquals(['0123456789'], hits2)
 
-    def testUpdateSetsTimer(self):
-        myDocument = Document('1')
-        myDocument.addIndexedField('title', 'een titel')
-        self._luceneIndex.addDocument(myDocument) # this must trigger a timer
-        self.assertEquals('addTimer', self.timer.calledMethods[0].name)
-        self.assertEquals(1, self.timer.calledMethods[0].args[0])
-        timeCallback = self.timer.calledMethods[0].args[1]
-        self.assertTrue(timeCallback)
-
-    def testUpdateRESetsTimer(self):
-        self.timer.returnValues['addTimer'] = 'aToken'
-        myDocument = Document('1')
-        myDocument.addIndexedField('title', 'een titel')
-        self._luceneIndex.addDocument(myDocument) # this must trigger a timer
-        self._luceneIndex.addDocument(myDocument) # this must REset the timer
-        self.assertEquals(['addTimer', 'removeTimer', 'addTimer'],
-            [method.name for method in self.timer.calledMethods])
-        self.assertEquals('aToken', self.timer.calledMethods[1].args[0])
-
-    def testOptimizeOnTimeOut(self):
-        self.timer.returnValues['addTimer'] = 'aToken'
-        myDocument = Document('1')
-        myDocument.addIndexedField('title', 'een titel')
-        self._luceneIndex.addDocument(myDocument)
-        timeCallback = self.timer.calledMethods[0].args[1]
-        self.assertEquals(0, len(self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))[1]))
-        timeCallback()
-        self.assertEquals(1, len(self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))[1]))
-        # after callback the old timer will not be removed
-        self._luceneIndex.addDocument(myDocument)
-        self.assertEquals(['addTimer', 'addTimer'],
-            [method.name for method in self.timer.calledMethods])
 
     def testStart(self):
         intercept = CallTrace('Interceptor')
@@ -255,38 +212,6 @@ class LuceneTest(CQ2TestCase):
 
         self.assertEquals(1, len(intercept.calledMethods))
         self.assertEquals('indexStarted', intercept.calledMethods[0].name)
-
-
-    def testMerging(self):
-        """
-            After 10 added documents, a new segment file is created.
-            After the 10th segment, the segments are merged into 1 segment
-        """
-        self._luceneIndex._reopenIndex = lambda: None #turn off auto-reopens
-
-        def addDocument(number):
-            d = Document(str(number))
-            d.addIndexedField('field', 'value')
-            self._luceneIndex.addDocument(d)
-
-        fileCount = 3
-        docsAdded = 0
-        segmentMerges = 0
-        for i in range(300):
-            addDocument(i)
-            docsAdded += 1
-            newFileCount = len(listdir(self.tempdir))
-
-            # less files, seperate segments got merged into a larger segment
-            if newFileCount < fileCount:
-                segmentMerges += 1
-                self.assertEquals(100*segmentMerges, i+1)   # i = 0 based
-
-            # after 10 added documents, a new file should have been born
-            if newFileCount != fileCount:
-                self.assertEquals(10, docsAdded)
-                fileCount = newFileCount
-                docsAdded = 0
 
     def testAddIsAlsoDeleteCausesBug(self):
         reopen = self._luceneIndex._reopenIndex
@@ -320,7 +245,7 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('field', 'a')
         myDocument.addIndexedField('field', 'vAlUe')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'a')))
         self.assertEquals(len(hits), 1)
@@ -339,7 +264,7 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('field1', 'one')
         myDocument.addIndexedField('field2', 'b')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', 'one')), sortBy='field2', sortDescending=False)
         self.assertEquals(len(hits), 2)
@@ -356,7 +281,7 @@ class LuceneTest(CQ2TestCase):
         myDocument = Document('id1')
         myDocument.addIndexedField('field1', 'one')
         self._luceneIndex.addDocument(myDocument)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', 'one')), sortBy='doesNotExist', sortDescending=False)
         self.assertEquals(len(hits), 2)
@@ -369,7 +294,45 @@ class LuceneTest(CQ2TestCase):
             self._luceneIndex.addDocument(doc)
         for n in range(20):
             addDoc(n)
-        self.timerCallbackMethod()
+        self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), 3, 7)
         self.assertEquals(7-3, len(hits))
         self.assertEquals(['3', '4', '5', '6'], hits)
+
+    def testFailureRollsBack(self):
+        self.addDocument('1', field1='ape')
+        try:
+            self.addDocument('id')
+            self.fail()
+        except Exception, e:
+            self.assertEquals("Empty document", str(e))
+        self.addDocument('2', field1='nut')
+        self._luceneIndex.commit()
+        self.assertEquals(1, self._luceneIndex.docCount())
+
+    def testPassOnAddDocument(self):
+        observer = CallTrace('observer')
+        self._luceneIndex.addObserver(observer)
+
+        self.addDocument('2', field1='nut')
+        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEquals(2, len(self._luceneIndex._documentQueue))
+        self.assertEquals("addDocument(docDict={u'field1': [u'nut'], u'__id__': [u'2']}, docId=0)", str(observer.calledMethods[0]))
+
+    def testPassOnDeleteDocument(self):
+        observer = CallTrace('observer')
+        self._luceneIndex.addObserver(observer)
+        self.addDocument('identifier', field0='term0') # 0
+        self._luceneIndex.delete('identifier')
+        self.assertEquals(2, len(observer.calledMethods))
+        self.assertEquals('deleteDocument(docId=0)', str(observer.calledMethods[-1]))
+
+    def testDocIdTrackerIntegration(self):
+        observer = CallTrace('observer')
+        self._luceneIndex.addObserver(observer)
+        self.addDocument('a', field0='term0')
+        self.addDocument('b', field0='term0')
+        self._luceneIndex.delete('a')
+        self._luceneIndex.commit()
+        self.addDocument('c', field0='term0')
+        self.assertEquals(2, observer.calledMethods[-1].kwargs['docId'])

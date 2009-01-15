@@ -55,7 +55,7 @@ class Document(object):
 
     def addIndexedField(self, aKey, aValue, tokenize = True):
         if not self._validFieldName(aKey):
-                raise DocumentException('Invalid fieldname: "%s"' % aKey)
+            raise DocumentException('Invalid fieldname: "%s"' % aKey)
 
         if not self._isValidFieldValue(aValue):
             return
@@ -72,3 +72,12 @@ class Document(object):
     def validate(self):
         if self._fields == [IDFIELD]:
             raise DocumentException('Empty document')
+
+    def asDict(self):
+        dictionary = {}
+        for field in self._document.getFields():
+            key = field.name()
+            if not key in dictionary:
+                dictionary[key] = []
+            dictionary[key].append(field.stringValue())
+        return dictionary
