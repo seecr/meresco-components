@@ -62,8 +62,7 @@ class NGramTest(CQ2TestCase):
                 query.add(BooleanClause(TermQuery(Term('ngrams', ngram)), BooleanClause.Occur.SHOULD))
             return query
 
-        reactor = CallTrace('Reactor')
-        index = LuceneIndex(self.tempdir, reactor)
+        index = LuceneIndex(self.tempdir)
         dna = \
             (Observable(),
                 (TransactionScope('ngram'),
@@ -82,6 +81,7 @@ class NGramTest(CQ2TestCase):
         x = be(dna)
         xmlNode = parse(StringIO(u'<node><subnode>ideeën</subnode></node>'))
         x.do.addXml(xmlNode)
+        index.commit()
         index.start()
         total, hits = index.executeQuery(ngramQuery(u'ideeën'))
         self.assertEquals(1, index.docCount())

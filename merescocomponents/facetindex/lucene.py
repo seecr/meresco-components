@@ -84,7 +84,9 @@ class LuceneIndex(Observable):
     def docsetFromQuery(self, pyLuceneQuery):
         t0 = time()
         try:
-            return DocSet.fromQuery(self._searcher, pyLuceneQuery)
+            luceneIds = DocSet.fromQuery(self._searcher, pyLuceneQuery)
+            docIds = DocSet('', self._tracker.map(luceneIds))
+            return docIds
         finally:
             print 'docsetFromQuery (ms): ', (time()-t0)*1000
 

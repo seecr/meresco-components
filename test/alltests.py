@@ -60,7 +60,7 @@ from ngram.ngramtest import NGramTest
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
 
-#from oai.oaicomponenttest import OaiComponentTest
+from oai.oaicomponenttest import OaiComponentTest
 from oai.fields2oairecordtest import Fields2OaiRecordTest
 from oai.oaijazzlucenetest import OaiJazzLuceneTest
 from oai.oaigetrecordtest import OaiGetRecordTest
