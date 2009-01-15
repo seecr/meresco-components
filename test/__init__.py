@@ -1,4 +1,3 @@
-from timerfortestsupport import TimerForTestSupport
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories

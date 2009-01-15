@@ -32,19 +32,23 @@ from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
+from merescocomponents import SortedFileList
 
 class OaiJazzFile(object):
-    def __init__(self, aDirectory):
+    def __init__(self, aDirectory, transactionName='oai'):
         self._directory = aDirectory
         isdir(aDirectory) or makedirs(aDirectory)
         isdir(join(aDirectory, 'sets')) or makedirs(join(aDirectory,'sets'))
         isdir(join(aDirectory, 'prefixes')) or makedirs(join(aDirectory,'prefixes'))
+        isdir(join(aDirectory, 'prefixesInfo')) or makedirs(join(aDirectory,'prefixesInfo'))
         self._prefixes = {}
         self._sets = {}
         self._stamp2identifier = {}
         self._identifier2stamp = {}
-        self._deleted = set()
+        self._tombStones = self._createList('', 'tombStones')
+        self._deletedStamps = set()
         self._read()
+        self._transactionName = transactionName
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
@@ -55,7 +59,7 @@ class OaiJazzFile(object):
         setSpecs = _flattenSetHierarchy((setSpec for setSpec, setName in sets))
         setSpecs.update(oldSets)
         self._add(stamp, identifier, setSpecs, prefixes)
-        self._store(metadataFormats)
+        self._storeMetadataFormats(metadataFormats)
 
     def delete(self, identifier):
         oldPrefixes, oldSets = self._delete(identifier)
@@ -63,8 +67,7 @@ class OaiJazzFile(object):
             return
         stamp = self._stamp()
         self._add(stamp, identifier, oldSets, oldPrefixes)
-        self._deleted.add(stamp)
-        self._store()
+        self._tombStones.append(stamp)
 
     def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize='ignored'):
         stampIds = dropwhile(lambda stamp: stamp <= int(continueAt),
@@ -76,7 +79,7 @@ class OaiJazzFile(object):
             stampIds = AndIterator(stampIds,
                 reduce(OrIterator, allStampIdsFromSets))
         #WrapIterable to fool Observable's any message
-        return WrapIterable((RecordId(self._stamp2identifier.get(stampId), stampId) for stampId in stampIds))
+        return WrapIterable((RecordId(self._stamp2identifier.get(stampId), stampId) for stampId in ifilter(lambda stampId: stampId not in self._deletedStamps, stampIds)))
 
     def getDatestamp(self, identifier):
         stamp = self.getUnique(identifier)
@@ -90,13 +93,20 @@ class OaiJazzFile(object):
         return self._identifier2stamp.get(identifier, None)
 
     def isDeleted(self, identifier):
+        print 'matige code.'
         stamp = self.getUnique(identifier)
-        return stamp != None and stamp in self._deleted
+        if stamp == None:
+            return False
+        try:
+            ifilter(lambda aStamp:aStamp == stamp, self._tombStones).next()
+            return True
+        except StopIteration:
+            return False
 
     def getAllMetadataFormats(self):
         for prefix in self._prefixes.keys():
-            schema = open(join(self._directory, 'prefixes', '%s.schema' % escapeName(prefix))).read()
-            namespace = open(join(self._directory, 'prefixes', '%s.namespace' % escapeName(prefix))).read()
+            schema = open(join(self._directory, 'prefixesInfo', '%s.schema' % escapeName(prefix))).read()
+            namespace = open(join(self._directory, 'prefixesInfo', '%s.namespace' % escapeName(prefix))).read()
             yield (prefix, schema, namespace)
 
     def getAllPrefixes(self):
@@ -117,15 +127,36 @@ class OaiJazzFile(object):
     def getAllSets(self):
         return self._sets.keys()
 
+    def begin(self):
+        if self.tx.name == self._transactionName:
+            self.tx.join(self)
+
+    def commit(self):
+        if self._deletedStamps:
+            for prefix, prefixStamps in self._prefixes.items():
+                self._prefixes[prefix] = self._createList('prefixes', prefix, (stamp for stamp in prefixStamps if not stamp in self._deletedStamps))
+            for setSpec, setStamps in self._sets.items():
+                self._sets[setSpec] = self._createList('sets', setSpec, (stamp for stamp in setStamps if not stamp in self._deletedStamps))
+            self._tombStones = self._createList('', 'tombStones',  (stamp for stamp in self._tombStones if not stamp in self._deletedStamps))
+        _writeLines(join(self._directory, 'identifiers'), ('%s %s' % (stamp,identifier) for identifier,stamp in self._identifier2stamp.items() if not stamp in self._deletedStamps))
+        self._deletedStamps = set()
+
+    def rollback(self):
+        pass
+
     # private methods
     
     def _add(self, stamp, identifier, setSpecs, prefixes):
         for setSpec in setSpecs:
-            self._sets.setdefault(setSpec,[]).append(stamp)
+            self._sets.setdefault(setSpec, self._createList('sets', setSpec)).append(stamp)
         for prefix in prefixes:
-            self._prefixes.setdefault(prefix,[]).append(stamp)
+            self._prefixes.setdefault(prefix, self._createList('prefixes', prefix)).append(stamp)
         self._stamp2identifier[stamp]=identifier
         self._identifier2stamp[identifier]=stamp
+
+    def _createList(self, subdir, name, initialContent=None):
+        filename = join(self._directory, subdir, escapeName(name))
+        return SortedFileList(filename, initialContent=initialContent)
 
     def _fromPredicate(self, oaiFrom):
         if not oaiFrom:
@@ -145,29 +176,20 @@ class OaiJazzFile(object):
         oldPrefixes = []
         oldSets = []
         if stamp != None:
-            del self._identifier2stamp[identifier]
-            del self._stamp2identifier[stamp]
             for prefix, prefixStamps in self._prefixes.items():
                 if stamp in prefixStamps:
-                    prefixStamps.remove(stamp)
                     oldPrefixes.append(prefix)
             for setSpec, setStamps in self._sets.items():
                 if stamp in setStamps:
-                    setStamps.remove(stamp)
                     oldSets.append(setSpec)
-            if stamp in self._deleted:
-                self._deleted.remove(stamp)
+            self._deletedStamps.add(stamp)
         return oldPrefixes, oldSets
 
     def _read(self):
-        self._prefixes = {}
-        for prefix in (name[:-len('.stamps')] for name in listdir(join(self._directory, 'prefixes')) if name.endswith('.stamps')):
-            with open(join(self._directory, 'prefixes', '%s.stamps' % prefix)) as f:
-                self._prefixes[unescapeName(prefix)] = [int(stamp.strip()) for stamp in f if stamp]
-        self._sets = {}
-        for setSpec in (name[:-len('.stamps')] for name in listdir(join(self._directory, 'sets')) if name.endswith('.stamps')):
-            with open(join(self._directory, 'sets', '%s.stamps' % setSpec)) as f:
-                self._sets[unescapeName(setSpec)] = [int(stamp.strip()) for stamp in f if stamp]
+        for prefix in (unescapeName(name) for name in listdir(join(self._directory, 'prefixes'))):
+            self._prefixes[prefix] = self._createList('prefixes', prefix)
+        for setSpec in (unescapeName(name) for name in listdir(join(self._directory, 'sets'))):
+            self._sets[setSpec] = self._createList('sets', setSpec)
         self._stamp2identifier = {}
         self._identifier2stamp = {}
         identifiersFile = join(self._directory, 'identifiers')
@@ -176,21 +198,14 @@ class OaiJazzFile(object):
                 for stamp, identifier in (line.strip().split(' ',1) for line in f):
                     self._stamp2identifier[int(stamp)] = identifier
                     self._identifier2stamp[identifier] = int(stamp)
-        deletedFile = join(self._directory, 'deleted')
-        if isfile(deletedFile):
-            with open(deletedFile) as f:
-                self._deleted = set(int(stamp.strip()) for stamp in f if stamp.strip())
 
-    def _store(self, metadataFormats=[]):
-        for prefix, stamps in self._prefixes.items():
-            _writeLines(join(self._directory, 'prefixes', '%s.stamps' % escapeName(prefix)), stamps)
-        for setSpec, stamps in self._sets.items():
-            _writeLines(join(self._directory, 'sets', '%s.stamps' % escapeName(setSpec)), stamps)
-        _writeLines(join(self._directory, 'identifiers'), ('%s %s' % (k,v) for k,v in self._stamp2identifier.items()))
-        _writeLines(join(self._directory, 'deleted'), self._deleted)
+    def _storeMetadataFormats(self, metadataFormats):
         for prefix, schema, namespace in metadataFormats:
-            _write(join(self._directory, 'prefixes', '%s.schema' % escapeName(prefix)), schema)
-            _write(join(self._directory, 'prefixes', '%s.namespace' % escapeName(prefix)), namespace)
+            _write(join(self._directory, 'prefixesInfo', '%s.schema' % escapeName(prefix)), schema)
+            _write(join(self._directory, 'prefixesInfo', '%s.namespace' % escapeName(prefix)), namespace)
+
+    def _store(self):
+        pass
 
     def _stamp(self):
         """time in microseconds"""

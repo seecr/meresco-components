@@ -41,6 +41,7 @@ if os.environ.get('PYTHONPATH', '') == '':
 import unittest
 
 from sorteditertoolstest import SortedItertoolsTest
+from sortedfilelisttest import SortedFileListTest
 
 from facetindex.performancetuningtest import PerformanceTuningTest
 from facetindex.docsettest import DocSetTest
