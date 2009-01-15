@@ -114,26 +114,32 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
 
     def testAddDocumentWithFailure(self):
-        self._luceneIndex.close()
-        myIndex = LuceneIndex(directoryName=self.tempdir)
+        drilldown = CallTrace('Drilldown')
+        self._luceneIndex.addObserver(drilldown)
         class MyException(Exception):
             pass
         myDocument = Document('1')
         myDocument.addIndexedField('aap', 'noot')
-        myIndex.addDocument(myDocument)
         def validate():
             raise MyException('Boom')
         myDocument.validate = validate
         try:
-            myIndex.addDocument(myDocument)
+            self._luceneIndex.addDocument(myDocument)
             self.fail()
         except MyException:
             pass
+        self._luceneIndex.rollback()
 
         my2Document = Document('2')
         my2Document.addIndexedField('aap', 'noot')
-        myIndex.addDocument(my2Document)
-
+        self._luceneIndex.addDocument(my2Document)
+        self._luceneIndex.commit()
+        addDocumentMethods = [m for m in drilldown.calledMethods if m.name=='addDocument']
+        self.assertEquals(1, len(addDocumentMethods))
+        docId = addDocumentMethods[0].kwargs['docId']
+        self.assertEquals(my2Document.docId, docId)
+        self.assertEquals([docId], list(self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())))
+        
     def addDocument(self, identifier, **fields):
         doc = Document(identifier)
         for key, value in fields.items():

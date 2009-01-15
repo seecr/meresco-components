@@ -29,6 +29,7 @@ from PyLucene import Term, IndexReader # hmm, maybe we don't want this dependenc
 from time import time
 from sys import maxint
 from functioncommand import FunctionCommand
+from merescocore.framework import getCallstackVar
 
 class NoFacetIndexException(Exception):
 
@@ -41,13 +42,14 @@ class NoFacetIndexException(Exception):
 
 class Drilldown(object):
 
-    def __init__(self, staticDrilldownFieldnames=None):
+    def __init__(self, staticDrilldownFieldnames=None, transactionName=None):
         self._staticDrilldownFieldnames = staticDrilldownFieldnames
         self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
         self._docsetlists = {}
         if self._staticDrilldownFieldnames:
             self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
         self._documentQueue = []
+        self._transactionName = transactionName
 
     def _add(self, docId, docDict):
         fieldnames = (fieldname
@@ -66,10 +68,18 @@ class Drilldown(object):
 
     def commit(self):
         try:
-            for item in self._documentQueue:
-                item.execute()
+            for command in self._documentQueue:
+                command.execute()
         finally:
             self._documentQueue = []
+
+    def rollback(self):
+        pass
+
+    def begin(self):
+        tx = getCallstackVar('tx')
+        if tx.name == self._transactionName:
+            tx.join(self)
 
     def deleteDocument(self, docId):
         self._documentQueue.append(FunctionCommand(self._delete, docId=docId))

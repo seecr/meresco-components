@@ -46,7 +46,7 @@ class IncludeStopWordAnalyzer(object):
 
 class LuceneIndex(Observable):
 
-    def __init__(self, directoryName, *ditwilikniet, **ditookniet):
+    def __init__(self, directoryName, transactionName=None, *ditwilikniet, **ditookniet):
         self._searcher = None
         self._reader = None
         self._writer = None
@@ -62,6 +62,7 @@ class LuceneIndex(Observable):
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
         self._tracker = LuceneDocIdTracker(self.getMergeFactor(), directory=self._directoryName)
+        self._transactionName = transactionName
 
     def _reopenIndex(self):
         if self._writer:
@@ -129,10 +130,10 @@ class LuceneIndex(Observable):
         return docId
 
     def addDocument(self, luceneDocument=None):
-        docId = self._tracker.next()
-        luceneDocument.docId = docId
         try:
             luceneDocument.validate()
+            docId = self._tracker.next()
+            luceneDocument.docId = docId
             self._documentQueue.append(FunctionCommand(self._delete, identifier=luceneDocument.identifier))
             self._documentQueue.append(FunctionCommand(self._add, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
@@ -140,12 +141,19 @@ class LuceneIndex(Observable):
             self._documentQueue = []
             raise
 
+    def begin(self):
+        if self.tx.name == self._transactionName:
+            self.tx.join(self)
+
     def commit(self):
-        for item in self._documentQueue:
-            item.execute()
+        for command in self._documentQueue:
+            command.execute()
         self._documentQueue = []
         self._reopenIndex()
         self._tracker.flush()
+
+    def rollback(self):
+        pass
 
     def docCount(self):
         return self._reader.numDocs()
