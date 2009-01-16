@@ -33,6 +33,7 @@ from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 from merescocomponents import SortedFileList
+from merescocore.framework import getCallstackVar
 
 class OaiJazzFile(object):
     def __init__(self, aDirectory, transactionName='oai'):
@@ -128,8 +129,9 @@ class OaiJazzFile(object):
         return self._sets.keys()
 
     def begin(self):
-        if self.tx.name == self._transactionName:
-            self.tx.join(self)
+        tx = getCallstackVar('tx')
+        if tx.name == self._transactionName:
+            tx.join(self)
 
     def commit(self):
         if self._deletedStamps:

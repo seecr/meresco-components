@@ -35,6 +35,8 @@ from merescocomponents.oai.oaijazzfile import _flattenSetHierarchy
 from StringIO import StringIO
 from lxml.etree import parse
 
+from os import listdir
+
 class OaiJazzFileTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
@@ -57,9 +59,7 @@ class OaiJazzFileTest(CQ2TestCase):
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
         self.jazz.commit()
-        
         myJazz = OaiJazzFile(self.tempdir)
-
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
 

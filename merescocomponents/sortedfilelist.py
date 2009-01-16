@@ -19,8 +19,6 @@ class SortedFileList(object):
         self._appendToFile(item)
 
     def __iter__(self):
-        if self._file != None:
-            self._file.flush()
         with open(self._filename) as f:
             for line in f:
                 yield self._contentType(line[:-len('\n')])
@@ -34,3 +32,4 @@ class SortedFileList(object):
         if self._file == None:
             self._file = file(self._filename, 'a')
         self._file.write('%s\n'% item)
+        self._file.flush()
