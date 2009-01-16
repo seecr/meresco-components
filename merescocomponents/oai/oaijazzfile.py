@@ -94,15 +94,10 @@ class OaiJazzFile(object):
         return self._identifier2stamp.get(identifier, None)
 
     def isDeleted(self, identifier):
-        print 'matige code.'
         stamp = self.getUnique(identifier)
         if stamp == None:
             return False
-        try:
-            ifilter(lambda aStamp:aStamp == stamp, self._tombStones).next()
-            return True
-        except StopIteration:
-            return False
+        return stamp in self._tombStones
 
     def getAllMetadataFormats(self):
         for prefix in self._prefixes.keys():
