@@ -132,7 +132,7 @@ class OaiJazzFileTest(CQ2TestCase):
         
 
         
-    # unique, for continueAt
+    # unique, for continueAfter
 
     def testDeleteIncrementsDatestampAndUnique(self):
         self.jazz.addOaiRecord('23', metadataFormats=[('oai_dc','schema', 'namespace')])

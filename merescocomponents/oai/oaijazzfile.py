@@ -34,6 +34,7 @@ from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 from merescocomponents import SortedFileList
 from merescocore.framework import getCallstackVar
+from bisect import bisect_left
 
 class OaiJazzFile(object):
     def __init__(self, aDirectory, transactionName='oai'):
@@ -70,11 +71,14 @@ class OaiJazzFile(object):
         self._add(stamp, identifier, oldSets, oldPrefixes)
         self._tombStones.append(stamp)
 
-    def oaiSelect(self, sets=[], prefix='oai_dc', continueAt='0', oaiFrom=None, oaiUntil=None, batchSize='ignored'):
-        stampIds = dropwhile(lambda stamp: stamp <= int(continueAt),
-            dropwhile(self._fromPredicate(oaiFrom),
-                takewhile(self._untilPredicate(oaiUntil),
-                    (self._prefixes.get(prefix, [])))))
+    def oaiSelect(self, sets=[], prefix='oai_dc', continueAfter='0', oaiFrom=None, oaiUntil=None, batchSize='ignored'):
+        start = max(int(continueAfter)+1, self._fromTime(oaiFrom))
+        stop = self._untilTime(oaiUntil)
+        stampIds = self._prefixes.get(prefix, [])
+        if stop:
+            stampIds = stampIds[bisect_left(stampIds,start):bisect_left(stampIds,stop)]
+        else:
+            stampIds = stampIds[bisect_left(stampIds,start):]
         if sets:
             allStampIdsFromSets = (self._sets.get(setSpec,[]) for setSpec in sets)
             stampIds = AndIterator(stampIds,
@@ -155,18 +159,16 @@ class OaiJazzFile(object):
         filename = join(self._directory, subdir, escapeName(name))
         return SortedFileList(filename, initialContent=initialContent)
 
-    def _fromPredicate(self, oaiFrom):
+    def _fromTime(self, oaiFrom):
         if not oaiFrom:
-            return lambda stamp: False
-        fromStamp = int(mktime(strptime(oaiFrom, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
-        return lambda stamp: stamp < fromStamp
+            return 0
+        return int(mktime(strptime(oaiFrom, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
     
-    def _untilPredicate(self, oaiUntil):
+    def _untilTime(self, oaiUntil):
         if not oaiUntil:
-            return lambda stamp: True
+            return None
         UNTIL_IS_INCLUSIVE = 1 # Add one second to 23:59:59
-        untilStamp = int(mktime(strptime(oaiUntil, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0) + UNTIL_IS_INCLUSIVE
-        return lambda stamp: stamp < untilStamp
+        return int(mktime(strptime(oaiUntil, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0) + UNTIL_IS_INCLUSIVE
         
     def _delete(self, identifier):
         stamp = self.getUnique(identifier)

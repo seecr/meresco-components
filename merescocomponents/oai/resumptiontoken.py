@@ -41,19 +41,19 @@ class ResumptionToken:
 
     SHORT = {
         'm': '_metadataPrefix',
-        'c': '_continueAt',
+        'c': '_continueAfter',
         'f': '_from',
         'u': '_until',
         's': '_set'}
 
     def __init__(self,
         _metadataPrefix = '',
-        _continueAt = '0',
+        _continueAfter = '0',
         _from = '',
         _until = '',
         _set = ''):
         self._metadataPrefix = _metadataPrefix
-        self._continueAt = _continueAt
+        self._continueAfter = _continueAfter
         self._from = _from or '' #blank out "None"
         self._until = _until or ''
         self._set = _set or ''
@@ -69,7 +69,7 @@ class ResumptionToken:
         return \
             ResumptionToken == other.__class__ and \
             self._metadataPrefix == other._metadataPrefix and \
-            self._continueAt == other._continueAt and \
+            self._continueAfter == other._continueAfter and \
             self._from == other._from and \
             self._until == other._until and \
             self._set == other._set

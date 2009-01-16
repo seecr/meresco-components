@@ -97,13 +97,13 @@ Error and Exception Conditions
             token = resumptionTokenFromString(self._resumptionToken)
             if not token:
                 return self.writeError(webRequest, "badResumptionToken")
-            self._continueAt = token._continueAt
+            self._continueAfter = token._continueAfter
             self._metadataPrefix = token._metadataPrefix
             self._from = token._from
             self._until = token._until
             self._set = token._set
         else:
-            self._continueAt = '0'
+            self._continueAfter = '0'
             try:
                 self._from = self._from and ISO8601(self._from)
                 self._until  = self._until and ISO8601(self._until)
@@ -123,7 +123,7 @@ Error and Exception Conditions
         result = self.any.oaiSelect(
             sets=self._set and [self._set] or None,
             prefix=self._metadataPrefix,
-            continueAt=self._continueAt,
+            continueAfter=self._continueAfter,
             oaiFrom=self._from,
             oaiUntil=self._until,
             batchSize = self._batchSize)

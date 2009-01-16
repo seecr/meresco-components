@@ -124,7 +124,7 @@ class OaiAddRecordTest(CQ2TestCase):
         #self.addDocuments(50)
         #result = self.jazz.oaiSelect(prefix='oai_dc')
         #self.assertEquals('00001', result.next())
-        #result = self.jazz.oaiSelect(prefix='oai_dc', continueAt='%020d' % 1)
+        #result = self.jazz.oaiSelect(prefix='oai_dc', continueAfter='%020d' % 1)
         #self.assertEquals('00002', result.next())
 
     #def testListRecordsWithFromAndUntil(self):

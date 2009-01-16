@@ -57,7 +57,7 @@ class OaiJazzTest(CQ2TestCase):
         self.addDocuments(50)
         result = self.jazz.oaiSelect(prefix='oai_dc')
         self.assertEquals('00001', result.next())
-        result = self.jazz.oaiSelect(prefix='oai_dc', continueAt=str(self.jazz.getUnique('00001')))
+        result = self.jazz.oaiSelect(prefix='oai_dc', continueAfter=str(self.jazz.getUnique('00001')))
         self.assertEquals('00002', result.next())
 
     def testAddOaiRecordWithNoMetadataFormats(self):
@@ -241,13 +241,13 @@ class OaiJazzTest(CQ2TestCase):
         self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.commit()
         
-        continueAt = str(self.jazz.getUnique('id:1'))
-        self.assertEquals(['id:2'], list(self.jazz.oaiSelect(prefix='prefix', continueAt=continueAt)))
+        continueAfter = str(self.jazz.getUnique('id:1'))
+        self.assertEquals(['id:2'], list(self.jazz.oaiSelect(prefix='prefix', continueAfter=continueAfter)))
 
         #add again will change the unique value
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.commit()
-        self.assertEquals(['id:2', 'id:1'], list(self.jazz.oaiSelect(prefix='prefix', continueAt=continueAt)))
+        self.assertEquals(['id:2', 'id:1'], list(self.jazz.oaiSelect(prefix='prefix', continueAfter=continueAfter)))
         
     def testGetAllMetadataFormats(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])

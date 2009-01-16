@@ -123,10 +123,10 @@ class OaiListTest(OaiTestCase):
         self.request.args = {'verb':['ListRecords'], 'resumptionToken': [str(ResumptionToken('oai_dc', '10', 'FROM', 'UNTIL', 'SET'))]}
 
         observer = CallTrace('RecordAnswering')
-        def oaiSelect(sets, prefix, continueAt, oaiFrom, oaiUntil, batchSize):
+        def oaiSelect(sets, prefix, continueAfter, oaiFrom, oaiUntil, batchSize):
             self.assertEquals('SET', sets[0])
             self.assertEquals('oai_dc', prefix)
-            self.assertEquals('10', continueAt)
+            self.assertEquals('10', continueAfter)
             self.assertEquals('FROM', oaiFrom)
             self.assertEquals('UNTIL', oaiUntil)
             self.assertEquals(BATCH_SIZE, batchSize)
@@ -140,7 +140,7 @@ class OaiListTest(OaiTestCase):
     def testResumptionTokensAreProduced(self):
         self.request.args = {'verb':['ListRecords'], 'metadataPrefix': ['oai_dc'], 'from': ['2000-01-01T00:00:00Z'], 'until': ['2000-12-31T00:00:00Z'], 'set': ['SET']}
         observer = CallTrace('RecordAnswering')
-        def oaiSelect(sets, prefix, continueAt, oaiFrom, oaiUntil, batchSize):
+        def oaiSelect(sets, prefix, continueAfter, oaiFrom, oaiUntil, batchSize):
             return imap(lambda i: 'id_%i' % i, range(batchSize+1))
         def writeRecord(*args, **kwargs):
             pass
@@ -154,7 +154,7 @@ class OaiListTest(OaiTestCase):
         self.assertTrue(self.stream.getvalue().find("<resumptionToken>") > -1)
         xml = bind_string(self.stream.getvalue()).OAI_PMH.ListRecords.resumptionToken
         resumptionToken = resumptionTokenFromString(str(xml))
-        self.assertEquals('UNIQUE_FOR_TEST', resumptionToken._continueAt)
+        self.assertEquals('UNIQUE_FOR_TEST', resumptionToken._continueAfter)
         self.assertEquals('oai_dc', resumptionToken._metadataPrefix)
         self.assertEquals('2000-01-01T00:00:00Z', resumptionToken._from)
         self.assertEquals('2000-12-31T00:00:00Z', resumptionToken._until)
