@@ -26,7 +26,10 @@
  * end license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "fwpool.h"
+
+#define FACTOR 1.1
 
 fwPtr fwNONE = {0, 0x3FFFFFFF};
 
@@ -41,8 +44,9 @@ void pool_init() {
 }
 
 fwPool Pool_create(short elementType, size_t elementSize, int initialSize) {
+    assert( initialSize * FACTOR != initialSize );
     if (_head >= _allocated) {
-        _allocated = (int) _allocated * 2;
+        _allocated = (int) _allocated * FACTOR;
         _pools = (PoolState*) realloc(_pools, _allocated * sizeof(PoolState));
     }
     P(_head)->pool = calloc(initialSize, elementSize);
@@ -72,7 +76,7 @@ fwPtr Pool_new(fwPool self) {
         newOne.ptr = Pool__pop_free(self).ptr;
     } else {
         if (P(self)->_headElement >= P(self)->_allocatedElements) {
-            P(self)->_allocatedElements = (int) P(self)->_allocatedElements * 1.5;
+            P(self)->_allocatedElements = (int) P(self)->_allocatedElements * FACTOR;
             P(self)->pool = realloc(P(self)->pool, P(self)->_allocatedElements * P(self)->_elementSize);
         }
         newOne.ptr = P(self)->_headElement++;
@@ -82,7 +86,7 @@ fwPtr Pool_new(fwPool self) {
 
 void Pool_free(fwPool self, fwPtr ptr) {
     if (P(self)->_freed_head >= P(self)->_freed_allocated) {
-        P(self)->_freed_allocated = (int) P(self)->_freed_allocated * 1.5;
+        P(self)->_freed_allocated = (int) P(self)->_freed_allocated * FACTOR;
         P(self)->freed = (fwPtr*) realloc(P(self)->freed, P(self)->_freed_allocated * sizeof(fwPtr));
     }
     P(self)->freed[P(self)->_freed_head++] = ptr;

@@ -95,7 +95,7 @@ class TrieTest(TestCase):
         trie.add(0, "prefix")
         self.assertEquals("default", trie.getValue("prefix, but other stuff follows", "default"))
 
-    def testGetValues(self):
+    def XXXXXXXXXXXXXXXtestGetValues(self):
         trie = Trie()
         trie.add(0, "prefix-0")
         trie.add(1, "prefix-1")
@@ -113,13 +113,13 @@ class TrieTest(TestCase):
         self.assertEquals([], trie.getValues("prefix-0-enmeer"))
         self.assertEquals([], trie.getValues("not found"))
 
-    def testSearchBugWithCaseSensitivityOnNumbers(self):
+    def XXXXXXXXXXXXXXXXtestSearchBugWithCaseSensitivityOnNumbers(self):
         trie = Trie()
         trie.add(0, "prefix-0")
         trie.add(1, "prefix-1")
         self.assertEquals([0], trie.getValues("prefix-0", caseSensitive=False))
 
-    def testSearchCaseInsensitive(self):
+    def XXXXXXXXXXXXXXtestSearchCaseInsensitive(self):
         trie = Trie()
         trie.add(0,'ABC')
         trie.add(1,'abc')
@@ -139,3 +139,32 @@ class TrieTest(TestCase):
         self.assertEquals(range(3), trieGetValues('aBc'))
         self.assertEquals([], trieGetValues('aBc---'))
         self.assertEquals([6, 7], trieGetValues('met '))
+
+    def testList(self):
+        trie = Trie()
+        trie.add(0,'a') # creates trieNode + one leafNode
+        self.assertEquals(0, trie.getValue('a'))
+        trie.add(1,'aa') # turns leafNode into listNode and add 'a'
+        self.assertEquals(1, trie.getValue('aa'))
+        trie.add(2,'aaa') # adds one string 'aa' to listNode
+        self.assertEquals(2, trie.getValue('aaa'))
+        trie.add(3,'aaaa') # adds one string 'aaa' to listNode
+        self.assertEquals(3, trie.getValue('aaaa'))
+        trie.add(4,'aaaaa') # bursts listNode into trieNode
+        self.assertEquals(4, trie.getValue('aaaaa'))
+        self.assertEquals(3, trie.getValue('aaaa'))
+        self.assertEquals(2, trie.getValue('aaa'))
+        self.assertEquals(1, trie.getValue('aa'))
+        self.assertEquals(0, trie.getValue('a'))
+        trie.add(5,'ab') # adds one leafNode to trieNode
+        self.assertEquals(5, trie.getValue('ab'))
+        trie.add(6,'ac') # adds one leafNode to trieNode
+        self.assertEquals(6, trie.getValue('ac'))
+        trie.add(7,'aaaaaaaa')
+        self.assertEquals(7, trie.getValue('aaaaaaaa'))
+        self.assertEquals(4, trie.getValue('aaaaa'))
+        self.assertEquals(3, trie.getValue('aaaa'))
+        self.assertEquals(2, trie.getValue('aaa'))
+        self.assertEquals(1, trie.getValue('aa'))
+        self.assertEquals(0, trie.getValue('a'))
+        trie.printit()

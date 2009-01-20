@@ -166,6 +166,7 @@ void DocSet::append(doc_t* docarray, int count) {
         doc_t* end;
         doc_t* allocated;
     } *hack = (IntVectorHacker*) this;
+    // vette hack + 100
     memcpy(hack->end, docarray, count * sizeof(doc_t));
     hack->end += count;
 }

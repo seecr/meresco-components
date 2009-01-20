@@ -67,7 +67,11 @@ class PerformanceTuningTest(LuceneTestCase):
             if word:
                 if type(word) == unicode:
                     word = word.encode('utf-8')
-                self.assertEquals(i, trie.getValue(word), (i, trie.getValue(word), word))
+                try:
+                    self.assertEquals(i, trie.getValue(word), (i, trie.getValue(word), word))
+                except:
+                    trie.printit()
+                    raise
                 self.assertEquals(word, trie.getTerm(i), (i, word, trie.getTerm(i)))
 
         print

@@ -64,13 +64,13 @@ class PoolTest(TestCase):
 
     def testCreate(self):
         pool1 = Pool(1, 10, 10)
-        self.assertEquals(3, pool1._as_parameter_)
+        self.assertEquals(4, pool1._as_parameter_)
         pool2 = Pool(2, 10, 10)
-        self.assertEquals(4, pool2._as_parameter_)
+        self.assertEquals(5, pool2._as_parameter_)
         pool3 = Pool(3, 10, 10)
-        self.assertEquals(5, pool3._as_parameter_)
+        self.assertEquals(6, pool3._as_parameter_)
         pool4 = Pool(4, 10, 10)
-        self.assertEquals(6, pool4._as_parameter_)
+        self.assertEquals(7, pool4._as_parameter_)
 
     def testNewItem(self):
         pool = Pool(3, 0, 10)
