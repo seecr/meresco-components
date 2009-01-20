@@ -66,4 +66,23 @@ class SortedFileListTest(CQ2TestCase):
         self.assertEquals([5,4,3,2,1,0], list(s[::-1]))
         self.assertEquals([], list(s[4:3]))
         self.assertEquals([0,1,2,3,4,5], list(s[-12345:234567]))
-        #self.assertEquals([1,2], list(s[1:3]))
+        self.assertEquals([1,2], list(s[1:3]))
+
+    def testSlicingCreatesASequence(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        for i in range(6):
+            s.append(i)
+        r = s[2:4]
+        self.assertEquals(s[2], r[0])
+        self.assertEquals(2, len(r))
+        self.assertEquals([2,3], list(r))
+
+        r = s[0:4:2]
+        self.assertEquals([0,2], list(r))
+        self.assertEquals(2, r[1])
+        r = s[::-1]
+        self.assertEquals([5,4,3,2,1,0], list(r))
+        self.assertEquals(5, r[0])
+        self.assertEquals([5,4], list(r[:2]))
+        self.assertEquals(4, r[:4][1])
+        

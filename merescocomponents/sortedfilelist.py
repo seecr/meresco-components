@@ -55,22 +55,48 @@ class SortedFileList(object):
         raise IndexError('list index out of range')
 
     def _slice(self, aSlice):
-        start = aSlice.start or 0
-        stop = aSlice.stop or self._length
-        step = aSlice.step or 1
-        if stop < 0:
-            stop += self._length
-        if stop > self._length:
-            stop = self._length
-        if start < 0:
-            start += self._length
-        if start < 0:
-            start = 0
-        if step < 0:
-            start,stop = stop-1, start-1
-        for i in range(start, stop, step):
-            yield self[i]
+        return self.SortedFileListSeq(self, *_sliceWithinRange(aSlice, self._length))
 
     def __contains__(self, item):
         position = bisect_left(self, item)
         return position < self._length and item == self[position]
+
+    class SortedFileListSeq(object):
+        def __init__(self, mainList, start, stop, step):
+            self._mainList = mainList
+            self._start = start
+            self._stop = stop
+            self._step = step
+
+        def __iter__(self):
+            for i in range(self._start, self._stop, self._step):
+                yield self._mainList[i]
+
+        def __getitem__(self, index):
+            if isinstance(index, slice):
+                start,stop, step = _sliceWithinRange(index, len(self))
+                nStart = self._start + start * self._step
+                nStop = self._start + stop * self._step
+                nStep = self._step * step
+                return self.__class__(self._mainList, nStart, nStop, nStep)
+            return self._mainList[self._start + index*self._step]
+
+        def __len__(self):
+            return abs((self._start - self._stop)/self._step)
+
+
+def _sliceWithinRange(aSlice, listLength):
+        start = aSlice.start or 0
+        stop = aSlice.stop or listLength
+        step = aSlice.step or 1
+        if stop < 0:
+            stop += listLength
+        if stop > listLength:
+            stop = listLength
+        if start < 0:
+            start += listLength
+        if start < 0:
+            start = 0
+        if step < 0:
+            start,stop = stop-1, start-1
+        return start, stop, step
