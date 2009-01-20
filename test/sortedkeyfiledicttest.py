@@ -78,5 +78,13 @@ class SortedKeyFileDictTest(CQ2TestCase):
 
         d = SortedKeyFileDict(join(self.tempdir, 'dict'), 'Integer2String', initialContent=((key, value) for key, value in d.items() if key != 2))
         self.assertEquals([1,3], list(d.keys()))
+
+    def testEmptyDictionary(self):
+        d = SortedKeyFileDict(join(self.tempdir, 'dict'), 'String2Integer', initialContent=None)
+        
+        self.assertKeyError(d, 'not')
+        self.assertEquals([], list(d.items()))
+        self.assertEquals([], list(d.keys()))
+        self.assertEquals([], list(d.values()))
         
         

@@ -102,7 +102,8 @@ class OaiJazzFileTest(CQ2TestCase):
         self.jazz.addOaiRecord('existing', metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.delete('notExisting')
         self.jazz.commit()
-        self.assertEquals(['1215313443000000 existing\n'], open(join(self.tempdir, 'identifiers')).readlines())
+        jazz2 = OaiJazzFile(self.tempdir)
+        self.assertEquals(None, jazz2.getUnique('notExisting'))
 
     # What happens if you do addOaiRecord('id1', prefix='aap') and afterwards
     #   addOaiRecord('id1', prefix='noot')
