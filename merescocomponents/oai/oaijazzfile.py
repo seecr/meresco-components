@@ -84,7 +84,7 @@ class OaiJazzFile(object):
             stampIds = AndIterator(stampIds,
                 reduce(OrIterator, allStampIdsFromSets))
         #WrapIterable to fool Observable's any message
-        return WrapIterable((RecordId(self._stamp2identifier.get(stampId), stampId) for stampId in ifilter(lambda stampId: stampId not in self._deletedStamps, stampIds)))
+        return WrapIterable((RecordId(self._stamp2identifier[stampId], stampId) for stampId in ifilter(lambda stampId: stampId not in self._deletedStamps, stampIds)))
 
     def getDatestamp(self, identifier):
         stamp = self.getUnique(identifier)

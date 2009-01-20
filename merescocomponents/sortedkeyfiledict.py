@@ -24,5 +24,43 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 from sortedfilelist import SortedFileList
-from sortedkeyfiledict import SortedKeyFileDict
+from packer import IntStringPacker, StringIntPacker
+from bisect import bisect_left
+
+PACKERS = {
+    'Integer2String': (IntStringPacker(), ''),
+    'String2Integer': (StringIntPacker(), 0)
+}
+
+class SortedKeyFileDict(object):
+    def __init__(self, filename, dictFormat, initialContent=[]):
+        packer, self._emptyValue = PACKERS[dictFormat]
+        self._list = SortedFileList(filename, initialContent=initialContent, packer=packer)
+
+    def __getitem__(self, key):
+        index = bisect_left(self._list, (key, self._emptyValue))
+        if index == len(self._list):
+            raise KeyError(key)
+        storedKey, value = self._list[index]
+        if storedKey != key:
+            raise KeyError(key)
+        return value
+
+    def get(self, key, defaultValue=None):
+        try:
+            return self[key]
+        except KeyError:
+            return defaultValue
+
+    def items(self):
+        return iter(self._list)
+
+    def keys(self):
+        for key,value in self._list:
+            yield key
+
+    def values(self):
+        for key,value in self._list:
+            yield value
