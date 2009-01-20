@@ -24,4 +24,13 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from sortedfilelist import SortedFileList
+
+from cq2utils import CQ2TestCase
+
+from merescocomponents.packer import IntStringPacker
+from merescocomponents.sortedfilelist import SortedFileList
+from os.path import join
+
+class SortedKeyFileDictTest(CQ2TestCase):
+    def testIntStringPacker(self):
+        sf = SortedFileList(join(self.tempdir, 'list'), packer=IntStringPacker())

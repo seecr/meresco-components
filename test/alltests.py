@@ -42,6 +42,8 @@ import unittest
 
 from sorteditertoolstest import SortedItertoolsTest
 from sortedfilelisttest import SortedFileListTest
+from sortedkeyfiledicttest import SortedKeyFileDictTest
+from packertest import PackerTest
 
 from facetindex.performancetuningtest import PerformanceTuningTest
 from facetindex.docsettest import DocSetTest
