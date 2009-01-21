@@ -58,6 +58,8 @@ from facetindex.lucenetest import LuceneTest
 from facetindex.drilldowntest import DrilldownTest
 from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
 
+from facetindex.incrementalindexingtest import IncrementalIndexingTest
+
 from ngram.ngramtest import NGramTest
 
 # incremental indexing

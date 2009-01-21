@@ -66,6 +66,20 @@ class DocSetTest(LuceneTestCase):
         i.delete(99)
         self.assertEquals([0,1,2,3,4,  6,7,8,9], i)
 
+    def testDeleteOfDocumentOutOfRange(self):
+        # this code triggers a docset of precisely N docids, so that delete will overflow the buffer
+        for i in range(100):
+            ds = DocSet('?', range(i))
+            ds.delete(9999)
+
+    def testDeleteAndReAddMaintainsSortOrder(self):
+        i = DocSet('x', xrange(10))
+        self.assertEquals([0,1,2,3,4,5,6,7,8,9], i)
+        i.delete(5)
+        self.assertEquals([0,1,2,3,4,  6,7,8,9], i)
+        i.add(10)
+        self.assertEquals([0,1,2,3,4,  6,7,8,9,10], i)
+
     def assertIntersect(self, lhs, rhs):
         soll = set(lhs).intersection(set(rhs))
         intersection1 = DocSet('', lhs).intersect(DocSet('', rhs))

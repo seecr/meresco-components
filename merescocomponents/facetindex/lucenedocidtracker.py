@@ -66,6 +66,9 @@ class LuceneDocIdTracker(object):
             self._flushRamSegments()
         return self._nextDocId - 1
 
+    def getMap(self):
+        return self._docIds[:]
+
     def _flushRamSegments(self):
         if len(self._ramSegmentsInfo) > 0:
             self._merge(self._ramSegmentsInfo, self._ramSegmentsInfo[0].offset, 0, self._mergeFactor)
@@ -93,12 +96,12 @@ class LuceneDocIdTracker(object):
         if newLength > upper:
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
 
-    def deleteDocId(self, docid):
-        assert self._docIds[docid] != -1
-        removedUDocID = self._docIds[docid]
-        self._docIds[docid] = -1
+    def deleteLuceneId(self, luceneId):
+        assert self._docIds[luceneId] != -1
+        docId = self._docIds[luceneId]
+        self._docIds[luceneId] = -1
         self._flushRamSegments()
-        return removedUDocID
+        return docId
 
     def map(self, luceneIds):
         return (self._docIds[luceneId] for luceneId in luceneIds)

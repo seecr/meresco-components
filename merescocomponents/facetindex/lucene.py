@@ -51,7 +51,7 @@ class LuceneIndex(Observable):
         self._reader = None
         self._writer = None
         Observable.__init__(self)
-        self._documentQueue = []
+        self._commandQueue = []
         self._directoryName = directoryName
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
@@ -62,6 +62,7 @@ class LuceneIndex(Observable):
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
         self._tracker = LuceneDocIdTracker(self.getMergeFactor(), directory=self._directoryName)
+        self._lucene2docId = []
         self._transactionName = transactionName
 
     def _reopenIndex(self):
@@ -77,7 +78,7 @@ class LuceneIndex(Observable):
             self._searcher.close()
         self._searcher = IndexSearcher(self._reader)
         self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
-        self.do.indexStarted(self._reader)
+
 
     def observer_init(self):
         self.do.indexStarted(self._reader)
@@ -86,10 +87,11 @@ class LuceneIndex(Observable):
         t0 = time()
         try:
             luceneIds = DocSet.fromQuery(self._searcher, pyLuceneQuery)
-            docIds = DocSet('', self._tracker.map(luceneIds))
+            docIds = DocSet('', (self._lucene2docId[luceneId] for luceneId in luceneIds))
             return docIds
         finally:
-            print 'docsetFromQuery (ms): ', (time()-t0)*1000
+            pass
+            #print 'docsetFromQuery (ms): ', (time()-t0)*1000
 
     def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
@@ -99,17 +101,10 @@ class LuceneIndex(Observable):
             hits = self._searcher.search(pyLuceneQuery)
         return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
 
-    def _docIdForIdentifier(self, identifier):
+    def _luceneIdForIdentifier(self, identifier):
         hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)))
         if len(hits) == 1:
-            luceneId = hits.id(0)
-            docId = self._tracker.map([luceneId]).next()
-            return docId
-        else:
-            for command in self._documentQueue:
-                if 'document' in command._kwargs:
-                    docId = command._kwargs['document'].docId
-                    return docId
+            return hits.id(0)
         return None
 
     def getIndexReader(self):
@@ -122,23 +117,31 @@ class LuceneIndex(Observable):
         document.addToIndexWith(self._writer)
 
     def delete(self, identifier):
-        docId = self._docIdForIdentifier(identifier)
+        docId = None
+        luceneId = self._luceneIdForIdentifier(identifier)
+        if luceneId == None:
+            for command in self._commandQueue:
+                if 'document' in command._kwargs:
+                    docId = command._kwargs['document'].docId
+                    break
+        else:
+            self._tracker.deleteLuceneId(luceneId)
+            docId = self._tracker.map([luceneId]).next()
         if docId != None:
-            self._tracker.deleteDocId(docId)
-            self._documentQueue.append(FunctionCommand(self._delete, identifier=identifier))
+            self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
             self.do.deleteDocument(docId=docId)
-        return docId
+
 
     def addDocument(self, luceneDocument=None):
         try:
             luceneDocument.validate()
             docId = self._tracker.next()
             luceneDocument.docId = docId
-            self._documentQueue.append(FunctionCommand(self._delete, identifier=luceneDocument.identifier))
-            self._documentQueue.append(FunctionCommand(self._add, document=luceneDocument))
+            self.delete(luceneDocument.identifier)
+            self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
         except:
-            self._documentQueue = []
+            self._commandQueue = []
             raise
 
     def begin(self):
@@ -146,11 +149,12 @@ class LuceneIndex(Observable):
             self.tx.join(self)
 
     def commit(self):
-        for command in self._documentQueue:
+        for command in self._commandQueue:
             command.execute()
-        self._documentQueue = []
+        self._commandQueue = []
         self._reopenIndex()
         self._tracker.flush()
+        self._lucene2docId = self._tracker.getMap()
 
     def rollback(self):
         pass
@@ -173,6 +177,7 @@ class LuceneIndex(Observable):
 
     def start(self):
         self._reopenIndex()
+        self.do.indexStarted(self._reader)
 
     def isOptimized(self):
         return self.docCount() == 0 or self._reader.isOptimized()

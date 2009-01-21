@@ -45,10 +45,10 @@ from PyLucene import MatchAllDocsQuery
 class IntegrationTest(CQ2TestCase):
     def testOne(self):
         index = LuceneIndex(self.tempdir, transactionName='document')
-        drilldown = Drilldown(['generic1', 'generic2', 'generic3'])
+        drilldown = Drilldown(['generic1', 'generic2', 'generic3'], transactionName='document')
         server = be((Observable(),
             (TransactionScope('document'),
-                (OurDocumentGenerator(),
+                (LuceneDocumentFromDict(),
                     (index,
                         (drilldown,)
                     )
@@ -56,14 +56,34 @@ class IntegrationTest(CQ2TestCase):
             )
         ))
         server.once.observer_init()
-        server.do.addRecord('repository:record:id:1', {'generic1':'repository', 'generic2': 'record:id', 'generic3': 'repositoryGroupId', 'generic4': '2009-01-15', 'generic5': 'Author'})
-        ds = index.docsetFromQuery(MatchAllDocsQuery())
-        fieldname, sets = drilldown.drilldown(ds, [('generic1', 10, False)]).next()
-        self.assertEquals('generic1', fieldname)
-        self.assertEquals([('repository',1)], list(sets))
-        
+        def addRecord(number):
+            server.do.addRecord('repository:record:id:%s' % number, {
+                'generic1':'repository',
+                'generic2': 'record:id:%04d' % number,
+                'generic3': 'repositoryGroupId',
+                'generic4': '2009-01-15',
+                'generic5': 'Author'})
 
-class OurDocumentGenerator(Observable):
+        for i in xrange(30):
+            addRecord(i)
+        server.do.deleteRecord('repository:record:id:12')
+
+
+        for loopje in range(10):
+            for i in xrange(15,20):
+                addRecord(i)
+
+
+        ds = index.docsetFromQuery(MatchAllDocsQuery())
+        fieldname, sets = drilldown.drilldown(ds, [('generic1', 0, False)]).next()
+        self.assertEquals('generic1', fieldname)
+        self.assertEquals([('repository',29)], list(sets))
+
+        fieldname, sets = drilldown.drilldown(ds, [('generic2', 0, False)]).next()
+        self.assertEquals([('record:id:%04d' % i, 1) for i in range(30) if i != 12], list(sorted(sets)))
+
+
+class LuceneDocumentFromDict(Observable):
     def addRecord(self, identifier, documentDict):
         d = Document(identifier)
         for k,v in documentDict.items():
@@ -73,7 +93,7 @@ class OurDocumentGenerator(Observable):
     def deleteRecord(self, identifier):
         self.do.delete(identifier)
 
-            
+
 if __name__ == '__main__':
     main()
     os.system('find .. -name "*.pyc" | xargs rm -f')

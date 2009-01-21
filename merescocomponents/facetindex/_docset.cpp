@@ -173,7 +173,7 @@ void DocSet::append(doc_t* docarray, int count) {
 
 void DocSet::remove(guint32 doc) {
     std::vector<guint32>::iterator i = lower_bound(begin(), end(), doc);
-    if ( *i == doc )
+    if ( i < end() && *i == doc )
         erase(i);
 }
 

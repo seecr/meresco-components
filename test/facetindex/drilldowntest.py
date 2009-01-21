@@ -214,7 +214,7 @@ class DrilldownTest(CQ2TestCase):
         drilldown.addDocument(0, {'title': ['value']})
         self.assertEquals(2, len(drilldown._documentQueue))
 
-    def testDeleteDocument(self):
+    def testDeleteDocumentFromQueue(self):
         drilldown = Drilldown(['title'])
         self.assertEquals(0, len(drilldown._documentQueue))
         drilldown.deleteDocument(0)

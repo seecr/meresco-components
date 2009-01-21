@@ -82,8 +82,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.tracker.flush()
         self.writer.flush()
         hits = IndexSearcher(self.tempdir).search(TermQuery(Term('__id__', str(doc))))
-        docid = int(list(hits)[0].getId())
-        self.tracker.deleteDocId(docid)
+        luceneId = int(list(hits)[0].getId())
+        self.tracker.deleteLuceneId(luceneId)
         self.writer.deleteDocuments(Term('__id__', str(doc)))
 
     def processDocs(self, docs):
@@ -190,9 +190,9 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertNotEquals(t1, t2)
         t2.next()
         self.assertEquals(t1, t2)
-        t1.deleteDocId(0)
+        t1.deleteLuceneId(0)
         self.assertNotEquals(t1, t2)
-        t2.deleteDocId(0)
+        t2.deleteLuceneId(0)
         self.assertEquals(t1, t2)
         t1.next() # segments
         self.assertNotEquals(t1, t2)

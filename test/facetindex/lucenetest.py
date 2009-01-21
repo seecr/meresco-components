@@ -139,7 +139,7 @@ class LuceneTest(CQ2TestCase):
         docId = addDocumentMethods[0].kwargs['docId']
         self.assertEquals(my2Document.docId, docId)
         self.assertEquals([docId], list(self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())))
-        
+
     def addDocument(self, identifier, **fields):
         doc = Document(identifier)
         for key, value in fields.items():
@@ -316,13 +316,12 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
         self.assertEquals(1, self._luceneIndex.docCount())
 
-    def testPassOnAddDocument(self):
+    def testPassOnAddDocumentForDocumentNotInIndexSoDeleteIsIgnored(self):
         observer = CallTrace('observer')
         self._luceneIndex.addObserver(observer)
-
         self.addDocument('2', field1='nut')
         self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals(2, len(self._luceneIndex._documentQueue))
+        self.assertEquals(1, len(self._luceneIndex._commandQueue))
         self.assertEquals("addDocument(docDict={u'field1': [u'nut'], u'__id__': [u'2']}, docId=0)", str(observer.calledMethods[0]))
 
     def testPassOnDeleteDocument(self):
@@ -330,8 +329,8 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addObserver(observer)
         self.addDocument('identifier', field0='term0') # 0
         self._luceneIndex.delete('identifier')
-        self.assertEquals(2, len(observer.calledMethods))
-        self.assertEquals('deleteDocument(docId=0)', str(observer.calledMethods[-1]))
+        self.assertEquals("addDocument(docDict={u'field0': [u'term0'], u'__id__': [u'identifier']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals('deleteDocument(docId=0)', str(observer.calledMethods[1]))
 
     def testDocIdTrackerIntegration(self):
         observer = CallTrace('observer')
@@ -342,3 +341,37 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
         self.addDocument('c', field0='term0')
         self.assertEquals(2, observer.calledMethods[-1].kwargs['docId'])
+
+    def testDocSetMapping(self):
+        self.addDocument('1', field0='term0')
+        self.addDocument('2', field0='term0')
+        self.addDocument('3', field0='term0')
+        self._luceneIndex.commit()
+        result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
+        self.assertEquals([0,1,2], list(result))
+        self._luceneIndex.delete('2')
+        self._luceneIndex.commit()
+        result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
+        self.assertEquals([0,2], list(result))
+        self.addDocument('2', field0='term0')
+        self._luceneIndex.commit()
+        result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
+        self.assertEquals([0,2,3], list(result))
+        self.addDocument('1', field0='term0')
+        self.addDocument('2', field0='term0')
+        self.addDocument('3', field0='term0')
+        self._luceneIndex.commit()
+        result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
+        self.assertEquals([4,5,6], list(result))
+
+    def testDelete(self):
+        self.addDocument('1', field0='term0')
+        self.addDocument('2', field0='term0')
+        self.addDocument('3', field0='term0')
+        self._luceneIndex.commit()
+        self._luceneIndex.delete('2')
+        result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
+        self.assertEquals([0,1,2], list(result))
+        self._luceneIndex.commit()
+        result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
+        self.assertEquals([0,2], list(result))

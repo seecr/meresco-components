@@ -97,7 +97,7 @@ class Drilldown(object):
             termEnum = indexReader.terms(Term(fieldname,''))
             self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs)
         self._actualDrilldownFieldnames = fieldNames
-        print 'indexStarted (ms)', (time()-t0)*1000
+        #print 'indexStarted (ms)', (time()-t0)*1000
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=[]):
         if not drilldownFieldnamesAndMaximumResults:
@@ -110,7 +110,8 @@ class Drilldown(object):
             try:
                 yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
             finally:
-                print 'drilldown (ms)', fieldname, (time()-t0)*1000
+                pass
+                #print 'drilldown (ms)', fieldname, (time()-t0)*1000
 
     def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:
