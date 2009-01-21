@@ -41,7 +41,7 @@ class FileListTest(CQ2TestCase):
         self.assertEquals(16, len(open(join(self.tempdir, 'list')).read()))
         self.assertEquals([1,2], list(s))
         s = SortedFileList(join(self.tempdir, 'list'))
-        self.assertEquals([1,2], list(s))
+        self.assertEquals([1,2], list(iter(s)))
         self.assertEquals(len(s), len(list(s)))
 
     def testRewrite(self):
@@ -142,4 +142,40 @@ class FileListTest(CQ2TestCase):
         s.append(10)
         s.append(5)
         self.assertEquals([10,5], list(s))
-        
+
+    def testWithDeletedItems(self):
+        def assertListFunctions(aList):
+            self.assertEquals(2, aList[1])
+            self.assertEquals(8, aList[4])
+            self.assertEquals(8, aList[-2])
+            
+            self.assertEquals([0,2,4,6,8,10], list(aList))
+            self.assertEquals([2,4,6], list(aList[1:4]))
+            self.assertTrue(2 in aList)
+            self.assertFalse(1 in aList)
+            
+        s = SortedFileList(join(self.tempdir, 'list1'))
+        for i in [0,2,4,6,8,10]:
+            s.append(i)
+        assertListFunctions(s)
+        t = SortedFileList(join(self.tempdir, 'list2'))
+        for i in [0,1,2,3,4,5,6,7,8,9,10]:
+            t.append(i)
+        for i in [1,3,5,7,9]:
+            t.remove(i)
+        assertListFunctions(t)
+
+    def testDelete(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        for i in range(5):
+            s.append(i)
+        try:
+            s.remove(8)
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
+        s.remove(2)
+        self.assertEquals(0, s[0])
+        self.assertEquals(3, s[2])
+        self.assertEquals(4, len(s))
+
