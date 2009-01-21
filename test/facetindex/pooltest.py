@@ -99,15 +99,15 @@ class PoolTest(TestCase):
         self.assertEquals(obj1.ptr, obj2.ptr)
 
     def testRecycleListExpandsIfNeeded(self):
-        pool = Pool(elementType=1, elementSize=10, initialSize=5)
+        pool = Pool(elementType=1, elementSize=10, initialSize=10)
         pointers = []
-        for i in range(10):
+        for i in range(20):
             ptr = pool.new()
             pointers.append(ptr)
-        for i in range(10):
+        for i in range(20):
             pool.free(pointers[i])
 
         pointers.reverse()
-        for i in range(10):
+        for i in range(20):
             ptr = pool.new()
             self.assertEquals(pointers[i].ptr, ptr.ptr, (pointers, ptr,i) )

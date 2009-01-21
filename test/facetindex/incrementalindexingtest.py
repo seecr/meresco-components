@@ -126,4 +126,3 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.addDocument('1', field0='term0')
         self.assertEquals(['_delete', '_add'], [command.methodName() for command in self.index._commandQueue])
         self.assertEquals(['_delete', '_delete', '_add'], [command.methodName() for command in self.drilldown._commandQueue])
-

@@ -30,6 +30,7 @@
 #include "fwpool.h"
 
 #define FACTOR 1.1
+#define POOLFACTOR 2
 
 fwPtr fwNONE = {0, 0x3FFFFFFF};
 
@@ -44,9 +45,16 @@ void pool_init() {
 }
 
 fwPool Pool_create(short elementType, size_t elementSize, int initialSize) {
-    assert( initialSize * FACTOR != initialSize );
+    if ( (int)(initialSize * FACTOR) == initialSize ) {
+        printf("initialSize of pool too small: %d\n", initialSize);
+        exit(1);
+    }
+    if ( (int)(_allocated * POOLFACTOR) == _allocated ) {
+        printf("_allocated nr of pools too small: %d\n", _allocated);
+        exit(1);
+    }
     if (_head >= _allocated) {
-        _allocated = (int) _allocated * FACTOR;
+        _allocated = (int) _allocated * POOLFACTOR;
         _pools = (PoolState*) realloc(_pools, _allocated * sizeof(PoolState));
     }
     P(_head)->pool = calloc(initialSize, elementSize);
