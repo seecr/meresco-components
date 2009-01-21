@@ -32,7 +32,7 @@ from bisect import bisect_left, bisect_right
 from merescocomponents import SortedFileList
 from merescocomponents.packer import IntStringPacker
 
-class SortedFileListTest(CQ2TestCase):
+class FileListTest(CQ2TestCase):
     def testAppendAndWrite(self):
         s = SortedFileList(join(self.tempdir, 'list'))
         s.append(1)

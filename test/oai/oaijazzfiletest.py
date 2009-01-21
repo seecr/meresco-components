@@ -58,7 +58,6 @@ class OaiJazzFileTest(CQ2TestCase):
         
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.jazz.commit()
         myJazz = OaiJazzFile(self.tempdir)
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
@@ -101,7 +100,6 @@ class OaiJazzFileTest(CQ2TestCase):
     def testDeleteNonExistingRecords(self):
         self.jazz.addOaiRecord('existing', metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.delete('notExisting')
-        self.jazz.commit()
         jazz2 = OaiJazzFile(self.tempdir)
         self.assertEquals(None, jazz2.getUnique('notExisting'))
 
@@ -113,7 +111,6 @@ class OaiJazzFileTest(CQ2TestCase):
     def testDeleteIsPersistent(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
         self.jazz.delete('42')
-        self.jazz.commit()
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
         jazz2 = OaiJazzFile(self.tempdir)
         self.assertTrue(jazz2.isDeleted('42'))
@@ -121,13 +118,11 @@ class OaiJazzFileTest(CQ2TestCase):
 
     def testAddOaiRecordPersistent(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec', 'setName')])
-        self.jazz.commit()
         jazz2 = OaiJazzFile(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='prefix', sets=['setSpec'])))
 
     def testWeirdSetOrPrefixNamesDoNotMatter(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('/%^!@#$   \n\t','schema', 'namespace')], sets=[('set%2Spec\n\n', 'setName')])
-        self.jazz.commit()
         jazz2 = OaiJazzFile(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
         

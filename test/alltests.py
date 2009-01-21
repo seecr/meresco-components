@@ -41,7 +41,7 @@ if os.environ.get('PYTHONPATH', '') == '':
 import unittest
 
 from sorteditertoolstest import SortedItertoolsTest
-from sortedfilelisttest import SortedFileListTest
+from filelisttest import FileListTest
 from sortedkeyfiledicttest import SortedKeyFileDictTest
 from packertest import PackerTest
 

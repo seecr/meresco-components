@@ -356,7 +356,7 @@ class OaiJazzWithFileTest(OaiJazzTest):
         self.jazz = OaiJazzFile(self.tempdir)
         self.oaiAddRecord = OaiAddRecord()
         self.oaiAddRecord.addObserver(self.jazz)
-        self.commit = self.jazz.commit
+        self.commit = lambda: None
 
     def _setTime(self, year, month, day):
         self.jazz._stamp = lambda: int(mktime((year, month, day, 0, 1, 0, 0, 0 ,0))*1000000.0)
