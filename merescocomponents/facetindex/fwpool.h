@@ -65,6 +65,6 @@ int Pool_memory(fwPool self);
 int Pool_count(fwPool self);
 void pool_init(void);
 
-inline int isNone(fwPtr ptr);
+//inline int isNone(fwPtr ptr);
 
 #endif
