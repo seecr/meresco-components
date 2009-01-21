@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from sortedfilelist import SortedFileList
+from filelist import SortedFileList
 from packer import IntStringPacker, StringIntPacker
 from bisect import bisect_left
 

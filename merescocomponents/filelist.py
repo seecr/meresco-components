@@ -30,7 +30,7 @@ from os.path import isfile
 from bisect import bisect_left
 from packer import IntPacker
 
-class SortedFileList(object):
+class FileList(object):
     def __init__(self, filename, initialContent=[], packer=IntPacker()):
         self._filename = filename
         self._packer = packer
@@ -78,13 +78,9 @@ class SortedFileList(object):
         raise IndexError('list index out of range')
 
     def _slice(self, aSlice):
-        return self.SortedFileListSeq(self, *_sliceWithinRange(aSlice, self._length))
+        return self.FileListSeq(self, *_sliceWithinRange(aSlice, self._length))
 
-    def __contains__(self, item):
-        position = bisect_left(self, item)
-        return position < self._length and item == self[position]
-
-    class SortedFileListSeq(object):
+    class FileListSeq(object):
         def __init__(self, mainList, start, stop, step):
             self._mainList = mainList
             self._start = start
@@ -107,6 +103,11 @@ class SortedFileList(object):
         def __len__(self):
             return abs((self._start - self._stop)/self._step)
 
+class SortedFileList(FileList):
+    def __contains__(self, item):
+        position = bisect_left(self, item)
+        return position < self._length and item == self[position]
+    
 
 def _sliceWithinRange(aSlice, listLength):
         start = aSlice.start or 0
