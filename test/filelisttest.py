@@ -29,7 +29,7 @@ from cq2utils import CQ2TestCase
 from os.path import join
 from bisect import bisect_left, bisect_right
 
-from merescocomponents import SortedFileList
+from merescocomponents import SortedFileList, FileList
 from merescocomponents.packer import IntStringPacker
 
 class FileListTest(CQ2TestCase):
@@ -126,5 +126,20 @@ class FileListTest(CQ2TestCase):
 
         index = bisect_left(s, (3, ''))
         self.assertEquals((3, 'string 3'), s[index])
-            
+
+    def testAppendFailsIfValueMakesListUnsorted(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        s.append(10)
+        try:
+            s.append(5)
+            self.fail()
+        except ValueError:
+            pass
+        self.assertEquals([10], list(s))
+        
+    def testAppendSucceedsEvenWhenUnsortedForFileList(self):
+        s = FileList(join(self.tempdir, 'list'))
+        s.append(10)
+        s.append(5)
+        self.assertEquals([10,5], list(s))
         

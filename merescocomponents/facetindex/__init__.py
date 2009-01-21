@@ -38,6 +38,7 @@ from docsetlist import DocSetList
 from trie import Trie
 from cql2lucenequery import CQL2LuceneQuery
 from fields2lucenedocument import Fields2LuceneDocumentTx
+from lucenedict import LuceneDict
 
 #temp for developing incremental indexing
 #from document2 import Document2

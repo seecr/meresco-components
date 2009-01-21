@@ -47,8 +47,8 @@ class FileList(object):
                 self._appendToopen(item)
         rename(self._filename+'~',self._filename)
 
-    def append(self, anInteger):
-        self._appendToopen(anInteger)
+    def append(self, item):
+        self._appendToopen(item)
 
     def __iter__(self):
         for i in xrange(self._length):
@@ -107,6 +107,11 @@ class SortedFileList(FileList):
     def __contains__(self, item):
         position = bisect_left(self, item)
         return position < self._length and item == self[position]
+
+    def append(self, item):
+        if len(self) > 0 and item <= self[-1]:
+            raise ValueError('%s should be greater than %s', (item, self[-1]))
+        FileList.append(self, item)
     
 
 def _sliceWithinRange(aSlice, listLength):
