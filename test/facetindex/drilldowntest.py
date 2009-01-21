@@ -210,23 +210,23 @@ class DrilldownTest(CQ2TestCase):
 
     def testAddDocument(self):
         drilldown = Drilldown(['title'])
-        self.assertEquals(0, len(drilldown._documentQueue))
+        self.assertEquals(0, drilldown.queueLength())
         drilldown.addDocument(0, {'title': ['value']})
-        self.assertEquals(2, len(drilldown._documentQueue))
+        self.assertEquals(2, drilldown.queueLength())
 
     def testDeleteDocumentFromQueue(self):
         drilldown = Drilldown(['title'])
-        self.assertEquals(0, len(drilldown._documentQueue))
+        self.assertEquals(0, drilldown.queueLength())
         drilldown.deleteDocument(0)
-        self.assertEquals(1, len(drilldown._documentQueue))
+        self.assertEquals(1, drilldown.queueLength())
 
     def testCommitClearsQueue(self):
         drilldown = Drilldown(['title'])
         drilldown.deleteDocument(0)
         drilldown.addDocument(0, {'title': ['value']})
-        self.assertEquals(3, len(drilldown._documentQueue))
+        self.assertEquals(3, drilldown.queueLength())
         drilldown.commit()
-        self.assertEquals(0, len(drilldown._documentQueue))
+        self.assertEquals(0, drilldown.queueLength())
 
         def raiseException(*args, **kwargs):
             raise Exception('Exception')
@@ -237,7 +237,7 @@ class DrilldownTest(CQ2TestCase):
             self.fail()
         except Exception, e:
             self.assertEquals("Exception", str(e))
-        self.assertEquals(0, len(drilldown._documentQueue))
+        self.assertEquals(0, drilldown.queueLength())
 
     def testCommit(self):
         reader = IndexReader.open(self.tempdir)
@@ -248,7 +248,7 @@ class DrilldownTest(CQ2TestCase):
 
         self.assertEquals(0, len(drilldown._docsetlists['title']))
         drilldown.commit()
-        self.assertEquals(0, len(drilldown._documentQueue))
+        self.assertEquals(0, drilldown.queueLength())
         self.assertEquals(2, len(drilldown._docsetlists['title']))
         self.assertEquals([('value', 1), ('value2', 1)], list(drilldown._docsetlists['title'].allCardinalities()))
 

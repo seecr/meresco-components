@@ -31,3 +31,9 @@ class FunctionCommand(object):
 
     def execute(self):
         return self._method(**self._kwargs)
+
+    def methodName(self):
+        return self._method.func_name
+
+    def __repr__(self):
+        return self.methodName() + '(%s)' % ', '.join('%s=%s' % (argument, value) for argument,value in self._kwargs.items())

@@ -125,8 +125,9 @@ class LuceneIndex(Observable):
                     docId = command._kwargs['document'].docId
                     break
         else:
-            self._tracker.deleteLuceneId(luceneId)
-            docId = self._tracker.map([luceneId]).next()
+            if not self._tracker.isDeleted(luceneId):
+                self._tracker.deleteLuceneId(luceneId)
+                docId = self._lucene2docId[luceneId]
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
             self.do.deleteDocument(docId=docId)
@@ -190,3 +191,6 @@ class LuceneIndex(Observable):
 
     def getMaxBufferedDocs(self):
         return self._writer.getMaxBufferedDocs()
+
+    def queueLength(self):
+        return len(self._commandQueue)

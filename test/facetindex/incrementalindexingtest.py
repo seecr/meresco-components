@@ -31,38 +31,99 @@ from PyLucene import MatchAllDocsQuery
 
 class IncrementalIndexingTest(CQ2TestCase):
 
+    def setUp(self):
+        CQ2TestCase.setUp(self)
+        self.index = LuceneIndex(self.tempdir)
+        self.drilldown = Drilldown(['field0'])
+        self.index.addObserver(self.drilldown)
+        self.index.start()
+
+    def addDocument(self, identifier, **fields):
+        doc = Document(identifier)
+        for field, value in fields.items():
+            doc.addIndexedField(field, value)
+        self.index.addDocument(doc)
+
     def testOne(self):
-        index = LuceneIndex(self.tempdir)
-        drilldown = Drilldown(['field0'])
-        index.addObserver(drilldown)
-        index.start()
-        doc = Document('1')
-        doc.addIndexedField('field0', 'term0')
-        index.addDocument(doc)
-        index.commit()
-        drilldown.commit()
-        docset = index.docsetFromQuery(MatchAllDocsQuery())
-        result = list(drilldown.drilldown(docset, [('field0', 0, False)]))
+        self.addDocument('1', field0='term0')
+        self.index.commit()
+        self.drilldown.commit()
+        docset = self.index.docsetFromQuery(MatchAllDocsQuery())
+        result = list(self.drilldown.drilldown(docset, [('field0', 0, False)]))
         self.assertEquals([('term0',1)], list(result[0][1]))
-        index.delete('1')
-        index.commit()
-        drilldown.commit()
-        docset = index.docsetFromQuery(MatchAllDocsQuery())
-        result = list(drilldown.drilldown(docset, [('field0', 0, False)]))
+        self.index.delete('1')
+        self.index.commit()
+        self.drilldown.commit()
+        docset = self.index.docsetFromQuery(MatchAllDocsQuery())
+        result = list(self.drilldown.drilldown(docset, [('field0', 0, False)]))
         self.assertEquals([], list(result[0][1]))
 
         for identifier in xrange(30):
-            doc = Document(str(identifier))
-            doc.addIndexedField('field0', 'term0')
-            index.addDocument(doc)
-            index.commit()
-            drilldown.commit()
+            self.addDocument(str(identifier), field0='term0')
+            self.index.commit()
+            self.drilldown.commit()
 
-        index.delete('12')
-        index.commit()
-        drilldown.commit()
+        self.index.delete('12')
+        self.index.commit()
+        self.drilldown.commit()
 
-        docset = index.docsetFromQuery(MatchAllDocsQuery())
-        result = list(drilldown.drilldown(docset, [('field0', 0, False)]))
+        docset = self.index.docsetFromQuery(MatchAllDocsQuery())
+        result = list(self.drilldown.drilldown(docset, [('field0', 0, False)]))
         sets = list(result[0][1])
         self.assertEquals([('term0', 29)], list(sorted(sets)))
+
+    def testSingleDeleteOfDocumentNotIndex(self):
+        self.index.delete('1')
+        self.assertEquals(0, self.index.queueLength())
+
+    def testSingleDeleteOfDocumentInIndex(self):
+        self.addDocument('1', field0='term0')
+        self.index.commit()
+        self.drilldown.commit()
+
+        self.assertEquals(0, self.index.queueLength())
+        self.assertEquals(0, self.drilldown.queueLength())
+        self.index.delete('1')
+        self.assertEquals(1, self.index.queueLength())
+        self.assertEquals(['_delete'], [command.methodName() for command in self.index._commandQueue])
+        self.assertEquals(1, self.drilldown.queueLength())
+        self.assertEquals(['_delete'], [command.methodName() for command in self.drilldown._commandQueue])
+
+    def testAddDocument(self):
+        self.assertEquals(0, self.index.queueLength())
+        self.assertEquals(0, self.drilldown.queueLength())
+        self.addDocument('1', field0='term0')
+        self.assertEquals(1, self.index.queueLength())     # add
+        self.assertEquals(['_add'], [command.methodName() for command in self.index._commandQueue])
+        self.assertEquals(2, self.drilldown.queueLength()) # delete, add
+        self.assertEquals([
+            '_delete(docId=0)',
+            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
+            ], list(repr(command) for command in self.drilldown._commandQueue))
+
+    def testAddDocumentAndThenDeleteIt(self):
+        self.assertEquals(0, self.index.queueLength())
+        self.assertEquals(0, self.drilldown.queueLength())
+        self.addDocument('1', field0='term0')
+        self.index.delete('1')
+        self.assertEquals(2, self.index.queueLength())     # add, delete
+        self.assertEquals(['_add', '_delete'], [command.methodName() for command in self.index._commandQueue])
+        self.assertEquals(3, self.drilldown.queueLength()) # delete, add, delete
+        self.assertEquals([
+            '_delete(docId=0)',
+            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
+            '_delete(docId=0)'], list(repr(command) for command in self.drilldown._commandQueue))
+
+
+    def testDeleteDocumentAndThenAddIt(self):
+        self.addDocument('1', field0='term0')
+        self.index.commit()
+        self.drilldown.commit()
+
+        self.assertEquals(0, self.index.queueLength())
+        self.assertEquals(0, self.drilldown.queueLength())
+        self.index.delete('1')
+        self.addDocument('1', field0='term0')
+        self.assertEquals(['_delete', '_add'], [command.methodName() for command in self.index._commandQueue])
+        self.assertEquals(['_delete', '_delete', '_add'], [command.methodName() for command in self.drilldown._commandQueue])
+

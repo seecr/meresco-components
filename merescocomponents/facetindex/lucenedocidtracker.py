@@ -103,6 +103,9 @@ class LuceneDocIdTracker(object):
         self._flushRamSegments()
         return docId
 
+    def isDeleted(self, luceneId):
+        return self._docIds[luceneId] == -1
+
     def map(self, luceneIds):
         return (self._docIds[luceneId] for luceneId in luceneIds)
 

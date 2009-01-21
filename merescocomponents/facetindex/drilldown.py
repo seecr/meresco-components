@@ -48,7 +48,7 @@ class Drilldown(object):
         self._docsetlists = {}
         if self._staticDrilldownFieldnames:
             self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
-        self._documentQueue = []
+        self._commandQueue = []
         self._transactionName = transactionName
 
     def _add(self, docId, docDict):
@@ -59,8 +59,8 @@ class Drilldown(object):
             self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
 
     def addDocument(self, docId, docDict):
-        self._documentQueue.append(FunctionCommand(self._delete, docId=docId))
-        self._documentQueue.append(FunctionCommand(self._add, docId=docId, docDict=docDict))
+        self.deleteDocument(docId)
+        self._commandQueue.append(FunctionCommand(self._add, docId=docId, docDict=docDict))
 
     def _delete(self, docId):
         for docsetlist in self._docsetlists.values():
@@ -68,10 +68,10 @@ class Drilldown(object):
 
     def commit(self):
         try:
-            for command in self._documentQueue:
+            for command in self._commandQueue:
                 command.execute()
         finally:
-            self._documentQueue = []
+            self._commandQueue = []
 
     def rollback(self):
         pass
@@ -82,7 +82,7 @@ class Drilldown(object):
             tx.join(self)
 
     def deleteDocument(self, docId):
-        self._documentQueue.append(FunctionCommand(self._delete, docId=docId))
+        self._commandQueue.append(FunctionCommand(self._delete, docId=docId))
 
     def indexStarted(self, indexReader):
         t0 = time()
@@ -119,3 +119,5 @@ class Drilldown(object):
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
             yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs, algorithm=algorithm)
 
+    def queueLength(self):
+        return len(self._commandQueue)

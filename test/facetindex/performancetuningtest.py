@@ -70,7 +70,7 @@ class PerformanceTuningTest(LuceneTestCase):
                 try:
                     self.assertEquals(i, trie.getValue(word), (i, trie.getValue(word), word))
                 except:
-                    trie.printit()
+                    #trie.printit()
                     raise
                 self.assertEquals(word, trie.getTerm(i), (i, word, trie.getTerm(i)))
 
