@@ -55,7 +55,7 @@ int TrieNode_memory(void);
 void TrieNode_printit(fwPtr self, int indent);
 
 void nodecount(void);
-inline int isNone(fwPtr ptr);
+int isNone(fwPtr ptr);
 
 #endif
 
