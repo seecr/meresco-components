@@ -37,7 +37,7 @@ from lxml.etree import parse
 
 from os import listdir
 
-class OaiJazzFileTest(CQ2TestCase):
+class OaiJazzTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.jazz = OaiJazz(self.tempdir)

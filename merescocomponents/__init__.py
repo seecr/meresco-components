@@ -25,4 +25,3 @@
 #
 ## end license ##
 from filelist import SortedFileList, FileList
-from sortedkeyfiledict import SortedKeyFileDict

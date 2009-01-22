@@ -42,7 +42,6 @@ import unittest
 
 from sorteditertoolstest import SortedItertoolsTest
 from filelisttest import FileListTest
-from sortedkeyfiledicttest import SortedKeyFileDictTest
 from packertest import PackerTest
 
 from facetindex.lucenedicttest import LuceneDictTest
@@ -78,7 +77,7 @@ from oai.oaiprovenancetest import OaiProvenanceTest
 from oai.resumptiontokentest import ResumptionTokenTest
 from oai.oaisetselecttest import OaiSetSelectTest
 from oai.xml2documenttest import Xml2DocumentTest
-from oai.oaijazzfiletest import OaiJazzFileTest
+from oai.oaijazztest import OaiJazzTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
 from oai.oaijazzimplementationstest import OaiJazzWithFileAndLuceneTest, OaiJazzWithLuceneTest
 
