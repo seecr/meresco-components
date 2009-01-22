@@ -87,6 +87,12 @@ class LuceneDictTest(CQ2TestCase):
         self.assertEquals(set(['1','2']), set(d.keys()))
         self.assertEquals(set(['one','two']), set(d.values()))
         self.assertEquals(set([('1','one'),('2','two')]), set(d.items()))
+
+    def testGetKeys(self):
+        d = LuceneDict(self.tempdir)
+        d['1'] = 'one'
+        d['2'] = 'two'
+        self.assertEquals(['1'], d.getKeysFor('one'))
         
 
 #items()¶

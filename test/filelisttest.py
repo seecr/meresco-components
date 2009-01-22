@@ -25,12 +25,13 @@
 #
 ## end license ##
 
+from __future__ import with_statement
 from cq2utils import CQ2TestCase
 from os.path import join
 from bisect import bisect_left, bisect_right
 
 from merescocomponents import SortedFileList, FileList
-from merescocomponents.packer import IntStringPacker
+from merescocomponents.packer import IntStringPacker, IntPacker
 
 class FileListTest(CQ2TestCase):
     def testAppendAndWrite(self):
@@ -63,6 +64,11 @@ class FileListTest(CQ2TestCase):
         self.assertTrue(14 in s)
         self.assertFalse(15 in s)
         self.assertFalse(32 in s)
+
+    def testZero(self):
+        s = FileList(join(self.tempdir, 'list'))
+        s.append(0)
+        self.assertEquals([0],list(s))
 
     def testGetItem(self):
         s = SortedFileList(join(self.tempdir, 'list'))
@@ -148,8 +154,12 @@ class FileListTest(CQ2TestCase):
             self.assertEquals(2, aList[1])
             self.assertEquals(8, aList[4])
             self.assertEquals(8, aList[-2])
+            self.assertEquals(10, aList[-1])
             
             self.assertEquals([0,2,4,6,8,10], list(aList))
+            self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
+            self.assertEquals([0,2,4,6,8,10], list(aList[::-1][::-1]))
+            self.assertEquals([10,8,6,4,2,0], list(aList[::-1]))
             self.assertEquals([2,4,6], list(aList[1:4]))
             self.assertTrue(2 in aList)
             self.assertFalse(1 in aList)
@@ -175,6 +185,11 @@ class FileListTest(CQ2TestCase):
         except ValueError:
             pass
         s.remove(2)
+        try:
+            s.remove(2)
+            self.fail('ValueError expected')
+        except ValueError:
+            pass
         self.assertEquals(0, s[0])
         self.assertEquals(3, s[2])
         self.assertEquals(4, len(s))
@@ -191,3 +206,40 @@ class FileListTest(CQ2TestCase):
         self.assertEquals([0,1,3,5,7,8,9], list(t))
         t.remove(7)
         self.assertEquals([0,1,3,5,8,9], list(t))
+
+    def testIndex(self):
+        s = SortedFileList(join(self.tempdir, 'list'), mergeTrigger=10)
+        for i in range(4):
+            s.append(i)
+        self.assertEquals(0, s.index(0))
+        
+
+    def testMergeWhenNecessary(self):
+        s = SortedFileList(join(self.tempdir, 'list'), mergeTrigger=10)
+        for i in range(20):
+            s.append(i)
+        for i in range(9):
+            s.remove(i)
+        self.assertEquals(9, len(FileList(join(self.tempdir, 'list.deleted'))))
+        s.remove(12)
+        self.assertEquals(0, len(FileList(join(self.tempdir, 'list.deleted'))))
+
+    def testDeleteResultingInEmptyListWithMerging(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        s.append(1234)
+        s.remove(1234)
+        self.assertEquals([], list(s))
+        s._merge()
+        s._merge()
+        self.assertEquals([], list(s))
+        
+    def testDeleteResultingInEmptyListWithMerging2(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        s.append(1234)
+        s.remove(1234)
+        s.append(1235)
+        self.assertEquals([1235], list(s))
+        s._merge()
+        self.assertEquals([1235], list(s))
+        
+        

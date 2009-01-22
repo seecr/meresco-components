@@ -27,10 +27,12 @@
 
 from lucene import IncludeStopWordAnalyzer
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, Document as LuceneDocument, Field, TermQuery, Term, MatchAllDocsQuery
+from tools import unlock
 
 class LuceneDict(object):
     def __init__(self, directoryName):
         self._directoryName = directoryName
+        unlock(self._directoryName)
         self._writer = None
         self._reader = None
         self._searcher = None
@@ -98,3 +100,7 @@ class LuceneDict(object):
     def values(self):
         return (value for key,value in self.items())
     
+    def getKeysFor(self, value):
+        hits = self._searcher.search(TermQuery(Term('value', value)))
+        return [hits.doc(i).getField('key').stringValue() for i in range(len(hits))]
+        

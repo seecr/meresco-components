@@ -47,6 +47,7 @@ class PackerTest(CQ2TestCase):
     def testIntPacker(self):
         self.packer = IntPacker()
         self.assertPacking(1)
+        self.assertPacking(0)
         self.assertPacking(12345678901234567890)
         self.assertError(-1)
 

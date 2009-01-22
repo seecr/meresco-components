@@ -30,8 +30,8 @@ from cq2utils import CQ2TestCase, CallTrace
 from os.path import isfile, join
 from time import time, mktime
 
-from merescocomponents.oai import OaiJazzFile
-from merescocomponents.oai.oaijazzfile import _flattenSetHierarchy
+from merescocomponents.oai import OaiJazz
+from merescocomponents.oai.oaijazz import _flattenSetHierarchy
 from StringIO import StringIO
 from lxml.etree import parse
 
@@ -40,7 +40,7 @@ from os import listdir
 class OaiJazzFileTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
-        self.jazz = OaiJazzFile(self.tempdir)
+        self.jazz = OaiJazz(self.tempdir)
         self.stampNumber = 1215313443000000
         def stamp():
             result = self.stampNumber
@@ -49,7 +49,7 @@ class OaiJazzFileTest(CQ2TestCase):
         self.jazz._stamp = stamp
 
     def testOriginalStamp(self):
-        jazz = OaiJazzFile(self.tempdir)
+        jazz = OaiJazz(self.tempdir)
         stamps = []
         for i in xrange(1000):
             stamps.append(jazz._stamp())
@@ -58,7 +58,7 @@ class OaiJazzFileTest(CQ2TestCase):
         
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
-        myJazz = OaiJazzFile(self.tempdir)
+        myJazz = OaiJazz(self.tempdir)
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
 
@@ -77,7 +77,7 @@ class OaiJazzFileTest(CQ2TestCase):
         t3 = time()
         originalStore()
         t4 = time()
-        jazz = OaiJazzFile(self.tempdir)
+        jazz = OaiJazz(self.tempdir)
         t5 = time()
         print t1 - t0, t2 - t1, t3 -t2, t3 -t1, t4 - t3, t5 - t4
         # a set form 10 million records costs 3.9 seconds (Without any efficiency things applied
@@ -100,7 +100,7 @@ class OaiJazzFileTest(CQ2TestCase):
     def testDeleteNonExistingRecords(self):
         self.jazz.addOaiRecord('existing', metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.delete('notExisting')
-        jazz2 = OaiJazzFile(self.tempdir)
+        jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(None, jazz2.getUnique('notExisting'))
 
     # What happens if you do addOaiRecord('id1', prefix='aap') and afterwards
@@ -112,18 +112,18 @@ class OaiJazzFileTest(CQ2TestCase):
         self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
         self.jazz.delete('42')
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
-        jazz2 = OaiJazzFile(self.tempdir)
+        jazz2 = OaiJazz(self.tempdir)
         self.assertTrue(jazz2.isDeleted('42'))
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='oai_dc')))
 
     def testAddOaiRecordPersistent(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec', 'setName')])
-        jazz2 = OaiJazzFile(self.tempdir)
+        jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='prefix', sets=['setSpec'])))
 
     def testWeirdSetOrPrefixNamesDoNotMatter(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('/%^!@#$   \n\t','schema', 'namespace')], sets=[('set%2Spec\n\n', 'setName')])
-        jazz2 = OaiJazzFile(self.tempdir)
+        jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
         
 

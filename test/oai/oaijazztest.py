@@ -36,7 +36,7 @@ from StringIO import StringIO
 from lxml.etree import parse
 from merescocomponents.oai.oailist import OaiList
 
-from merescocomponents.oai import OaiJazzFile, OaiJazzLucene, OaiAddRecord
+from merescocomponents.oai import OaiJazz, OaiJazzLucene, OaiAddRecord
 
 class OaiJazzTest(CQ2TestCase):
     def addDocuments(self, size):
@@ -353,7 +353,7 @@ class OaiJazzWithLuceneTest(OaiJazzTest):
 class OaiJazzWithFileTest(OaiJazzTest):
     def setUp(self):
         OaiJazzTest.setUp(self)
-        self.jazz = OaiJazzFile(self.tempdir)
+        self.jazz = OaiJazz(self.tempdir)
         self.oaiAddRecord = OaiAddRecord()
         self.oaiAddRecord.addObserver(self.jazz)
         self.commit = lambda: None

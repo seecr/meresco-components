@@ -31,12 +31,12 @@ from bisect import bisect_left, bisect_right
 from packer import IntPacker
 
 class FileList(object):
-    def __init__(self, filename, initialContent=[], packer=IntPacker()):
+    def __init__(self, filename, initialContent=None, packer=IntPacker()):
         self._filename = filename
         self._packer = packer
         isfile(filename) or open(self._filename, 'w')
         self._length = stat(self._filename).st_size/self._packer.length
-        if initialContent:
+        if initialContent != None:
             self._writeInitialContent(initialContent)
         self._file = open(self._filename, 'ab+')
 
@@ -86,10 +86,11 @@ class FileList(object):
         self._length += 1
 
 class SortedFileList(object):
-    def __init__(self, filename, initialContent=[], packer=IntPacker()):
+    def __init__(self, filename, initialContent=None, packer=IntPacker(), mergeTrigger=100):
         self._list = FileList(filename=filename, initialContent=initialContent, packer=packer)
         self._deletedIndexes = FileList(filename=filename+'.deleted', packer=IntPacker())
         self._tempDeletedIndexes = []
+        self._mergeTrigger = mergeTrigger
         if len(self._deletedIndexes):
             self._merge()
 
@@ -106,7 +107,6 @@ class SortedFileList(object):
                 extra = 0
                 while extra != bisect_right(self._tempDeletedIndexes, index + extra):
                     extra = bisect_right(self._tempDeletedIndexes, index + extra)
-                #print extra
                 index += extra
         return self._list[index]
 
@@ -136,10 +136,14 @@ class SortedFileList(object):
         self._tempDeletedIndexes.append(realPosition)
         self._deletedIndexes.append(realPosition)
         self._tempDeletedIndexes.sort()
+        if len(self._deletedIndexes) >= self._mergeTrigger:
+            self._merge()
 
     def _position(self, item):
         position = bisect_left(self, item)
-        return (position < len(self) and item == self[position]) and position or -1
+        if (position < len(self) and item == self[position]):
+            return position
+        return -1
 
     def _merge(self):
         self._tempDeletedIndexes = list(self._deletedIndexes)
