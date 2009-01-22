@@ -52,30 +52,38 @@ class PerformanceTuningTest(LuceneTestCase):
         words = 'words'
         totalLength = 0
         trie = Trie()
-        t = 0
+        t_addvalue = 0
+        t_getvalue = 0
+        t_getterm = 0
         for i, word in enumerate(word.strip() for word in open(words)):
             if word:
                 if type(word) == unicode:
                     word = word.encode('utf-8')
                 totalLength += len(word)
-
                 t0 = time()
                 trie.add(i, word)
-                t += time() - t0
+                t_addvalue += time() - t0
 
         for i, word in enumerate(word.strip() for word in open(words)):
             if word:
                 if type(word) == unicode:
                     word = word.encode('utf-8')
-                try:
-                    self.assertEquals(i, trie.getValue(word), (i, trie.getValue(word), word))
-                except:
-                    #trie.printit()
-                    raise
-                self.assertEquals(word, trie.getTerm(i), (i, word, trie.getTerm(i)))
-
+                t0 = time()
+                resultValue = trie.getValue(word)
+                t_getvalue += time() - t0
+                t0 = time()
+                resultTerm = trie.getTerm(i)
+                t_getterm += time() - t0
+                self.assertEquals(i, resultValue, (i, resultValue, word))
+                self.assertEquals(word, resultTerm, (i, word, resultTerm))
         print
-        print 'Time for', i, 'inserts:', t, "(", totalLength, "total length) (", 1000*t/i, 'ms per insert)'
+        print '------- Trie Test Results ----------'
+        print 'Words:', i
+        print 'Total size:', totalLength, '(%.2f MB)' % (totalLength/1024.0/1024.0)
+        print 'Average word size:', totalLength/i, 'characters'
+        print 'Time for', i, 'addValue:', t_addvalue, '(', 10**6*t_addvalue/i, 'us)'
+        print 'Time for', i, 'getTerms:', t_getterm , '(', 10**6*t_getterm /i, 'us)'
+        print 'Time for', i, 'getValue:', t_getvalue, '(', 10**6*t_getvalue/i, 'us)'
         trie.nodecount()
 
     def testRelativeSpeed(self):

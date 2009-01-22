@@ -59,7 +59,7 @@ extern INode IStringNode;
 extern INode IListNode;
 
 enum _nodetypes { TRIE, LEAF, STRING, LIST };
-INode* nodeTypes[5] = { &ITrieNode, &ILeafNode, &IStringNode, &IListNode, 0 };
+INode* nodeTypes[4] = { &ITrieNode, &ILeafNode, &IStringNode, &IListNode};
 
 inline INode* interface(fwPtr node) {
     return nodeTypes[node.type];
@@ -92,28 +92,57 @@ INode IListNode = {
     ListNode_printit
 };
 
-const unsigned int LISTSIZE = 16;
+const unsigned int LISTSIZE = 100;
+/*
+LEAF+STRING+LIST+TRIE (NO move-to-front optimization on LISTNode)
+LISTSIZE:  MEMORY: TIME inserts/getterm/getvalue (98568 words)
+    1000: 1.15 MB: 1.5/0.5/1.4 s
+     500: 1.18 MB: 1.3/0.5/1.1 s
+     200: 1.23 MB: 1.1/0.6/0.9 s
+     100: 1.30 MB: 1.0/0.5/0.7 s  <== seems to be an optimum
+      50: 1.43 MB: 1.1/0.5/0.7 s
+      20: 1.77 MB: 1.0/0.5/0.7 s
+      10: 2.30 MB: 1.0/0.5/0.7 s
+
+Improvement memory usages over raw Trie without ListNodes: 14.12/1.30 = 11x
+*/
 
 typedef struct {
     guint32 value;
     fwString aString;
+    fwPtr next;
 } ListItem;
 
 typedef struct {
     guint32 value;
     guint32 size;
-    ListItem items[LISTSIZE];
+    fwPtr first;
 } ListNodeState;
 
 fwPool _listNodePool;
+fwPool _listItemPool;
 
 inline ListNodeState* ListNode_state(fwPtr self) {
     return (ListNodeState*) Pool_get(_listNodePool, self);
 }
 
+inline ListItem* ListItem_state(fwPtr self) {
+    return (ListItem*) Pool_get(_listItemPool, self);
+}
+
 void ListNode_init() {
     printf("sizeof(ListNodeState) = %d\n", sizeof(ListNodeState));
-    _listNodePool = Pool_create(LIST, sizeof(ListNodeState), 64);
+    _listNodePool = Pool_create(LIST, sizeof(ListNodeState),  5000);
+    _listItemPool = Pool_create(0 /*NA*/, sizeof(ListItem), 100000);
+}
+
+fwPtr ListItem_create(guint32 value, fwString term) {
+    fwPtr newOne = Pool_new(_listItemPool);
+    ListItem* listitem = ListItem_state(newOne);
+    listitem->value = value;
+    listitem->aString = term;
+    listitem->next = fwNONE;
+    return newOne;
 }
 
 fwPtr ListNode_create(guint32 value) {
@@ -121,18 +150,35 @@ fwPtr ListNode_create(guint32 value) {
     ListNodeState* node = ListNode_state(newOne);
     node->value = value;
     node->size = 0;
+    node->first = fwNONE;
     return newOne;
 }
 
 inline void ListNode_addValue(fwPtr self, guint32 value, fwString term) {
-    ListNodeState* node = ListNode_state(self);
-    if ( node->size > LISTSIZE ) {
+    ListNodeState* me = ListNode_state(self);
+    if ( me->size > LISTSIZE ) {
         printf("ListNode_addValue(): Ignoring new string '%s'\n", fwString_get(term));
         return;
     }
-    node->items[node->size].value = value;
-    node->items[node->size].aString = term;
-    node->size++;
+    if ( isNone( me->first ) ) {
+        me->first = ListItem_create(value, term);
+        me->size++;
+        return;
+    }
+    fwPtr last = me->first;
+    fwPtr prev = last;
+    while ( ! isNone(last) ) {
+        prev = last;
+        last = ListItem_state(last)->next;
+    }
+    fwPtr item = prev;
+    fwPtr tmp =
+        ListItem_create(
+            value,
+            term
+        );
+    ListItem_state(item)->next = tmp;
+    me->size++;
 }
 
 inline guint32 ListNode_getValue(fwPtr self, char* term) {
@@ -140,17 +186,30 @@ inline guint32 ListNode_getValue(fwPtr self, char* term) {
     if ( *term == '\0' ) {
         return me->value;
     }
-    for ( unsigned int i = 0; i < me->size; i++ ) {
-        char* string = fwString_get(me->items[i].aString);
-        if (strcmp((char*) term, (char *)string) == 0) {
-            return me->items[i].value;
+    fwPtr last = me->first;
+    while ( ! isNone(last) ) {
+        ListItem* plast = ListItem_state(last);
+        char* string = fwString_get(plast->aString);
+        if ( strcmp(term, string) == 0 ) {
+            return plast->value;
         }
+        last = plast->next;
     }
     return fwValueNone;
 }
 
 bool ListNode_hasRoom(fwPtr self) {
     return ListNode_state(self)->size < LISTSIZE;
+}
+
+void ListNode_addTo(fwPtr self, fwPtr other) {
+    ListNodeState* me = ListNode_state(self);
+    fwPtr last = me->first;
+    while ( ! isNone(last) ) {
+        ListItem* plast = ListItem_state(last);
+        interface(other)->addValue(other, plast->value, plast->aString);
+        last = ListItem_state(last)->next;
+    }
 }
 
 void ListNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive) {
@@ -171,6 +230,14 @@ void ListNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, 
 }
 
 void ListNode_free(fwPtr self) {
+    ListNodeState* me = ListNode_state(self);
+    fwPtr last = me->first;
+    fwPtr prev = last;
+    while ( ! isNone(last) ) {
+        prev = last;
+        last = ListItem_state(last)->next;
+        Pool_free(_listItemPool, prev);
+    }
     Pool_free(_listNodePool, self);
 }
 
@@ -178,9 +245,12 @@ void ListNode_printit(fwPtr self, int indent) {
     ListNodeState* me = ListNode_state(self);
     for(int i=0;i<indent; i++) printf(" ");
     printf("%u List: %d elements.\n", self.ptr, me->size);
-    for ( int item = 0; item < me->size; item++ ) {
+    fwPtr last = me->first;
+    while ( ! isNone(last) ) {
+        ListItem* plast = ListItem_state(last);
         for(int i=0;i<indent; i++) printf(" ");
-        printf("  %s = %d\n", fwString_get(me->items[item].aString), me->items[item].value);
+        printf("  %s:%d\n", fwString_get(plast->aString), plast->value);
+        last = ListItem_state(last)->next;
     }
 }
 
@@ -214,7 +284,7 @@ inline TrieNodeState* TrieNode_state(fwPtr self) {
 }
 
 void TrieNode_init() {
-    _trieNodePool = Pool_create(TRIE, sizeof(TrieNodeState), 64);
+    _trieNodePool = Pool_create(TRIE, sizeof(TrieNodeState), 5000);
     fwValueNone = 0xFFFFFFFF;
 }
 
@@ -348,26 +418,18 @@ void TrieNode_addValue(fwPtr self, guint32 value, fwString term) {
             guint32 value = interface(child)->getValue(child, (char*) "");
             interface(child)->free(child);
             child = ListNode_create(value);
-            //child = TrieNode_create(value);
         } else if (isString(child)) {
             fwString string = StringNode_getString(child);
             guint32 value = interface(child)->getValue(child, fwString_get(string));
             interface(child)->free(child);
             child = ListNode_create(fwValueNone);
             ListNode_addValue(child, value, string);
-            //child = TrieNode_create(fwValueNone);
-            //TrieNode_addValue(child, value, string);
         }
         else if (isList(child)) {
             if ( ! ListNode_hasRoom(child) ) {
-                //printf("    LIST full\n");
                 guint32 value = ListNode_getValue(child, (char*) "");
                 fwPtr newNode = TrieNode_create(value);
-                ListNodeState* list = ListNode_state(child);
-                for ( unsigned int i = 0; i < list->size; i++ ) {
-                    //printf("    relocating %s\n", fwString_get(list->items[i].aString));
-                    TrieNode_addValue(newNode, list->items[i].value, list->items[i].aString);
-                }
+                ListNode_addTo(child, newNode);
                 interface(child)->free(child);
                 child = newNode;
             }
@@ -382,7 +444,7 @@ void TrieNode_addValue(fwPtr self, guint32 value, fwString term) {
 }
 
 void TrieNode_free(fwPtr self) {
-    //printf("TrieNode_free - Not yet implemented!\n");
+    printf("TrieNode_free - Not yet implemented!\n");
 }
 
 void TrieNode_printit(fwPtr self, int indent) {
@@ -569,24 +631,21 @@ void nodecount() {
     int leafMemory = Pool_memory(_leafNodePool);
     int stringMemory = Pool_memory(_stringNodePool);
     int listMemory = Pool_memory(_listNodePool);
-    int totalMemory = trieMemory+leafMemory+stringMemory+listMemory;
+    int listItemMemory = Pool_memory(_listItemPool);
+    int totalMemory = trieMemory+leafMemory+stringMemory+listMemory+listItemMemory;
     int trieCount = Pool_count(_trieNodePool);
     int leafCount = Pool_count(_leafNodePool);
     int stringCount = Pool_count(_stringNodePool);
     int listCount = Pool_count(_listNodePool);
-    int totalCount = trieCount + leafCount + stringCount + listCount;
-    int totalListSize = 0;
-    for ( int i = 0; i < listCount; i++ ) {
-        fwPtr fwp = { LIST, i };
-        ListNodeState* p = ListNode_state(fwp);
-        totalListSize += p->size;
-    }
-    printf("%d total list size, avg/listNode: %d\n", totalListSize, totalListSize/listCount);
-    printf("%d Trie nodes take %.2f MB: %d bytes/term\n", trieCount, trieMemory/1024.0/1024.0, trieMemory/trieCount);
-    printf("%d Leaf nodes take %.2f MB: %d bytes/term\n", leafCount, leafMemory/1024.0/1024.0, leafMemory/leafCount);
-    printf("%d String nodes take %.2f MB: %d bytes/term\n", stringCount, stringMemory/1024.0/1024.0, stringMemory/stringCount);
-    printf("%d List nodes take %.2f MB: %d bytes/term\n", listCount, listMemory/1024.0/1024.0, listMemory/totalListSize);
-    printf("%d total nodes take %.2f MB: %d bytes/term\n", totalCount, totalMemory/1024.0/1024.0, totalMemory/totalCount);
+    int listItemCount = Pool_count(_listItemPool);
+    printf("===== Summary of Memory Used by Trie ======\n");
+    printf("Maximum ListSize used: %d\n", LISTSIZE);
+    printf("%d Trie nodes take %.2f MB (%d bytes/node).\n", trieCount, trieMemory/1024.0/1024.0, trieMemory/trieCount);
+    printf("%d Leaf nodes take %.2f MB (%d bytes/node).\n", leafCount, leafMemory/1024.0/1024.0, leafMemory/leafCount);
+    printf("%d String nodes take %.2f MB (%d bytes/node).\n", stringCount, stringMemory/1024.0/1024.0, stringMemory/stringCount);
+    printf("%d List nodes take %.2f MB (%d bytes/node).\n", listCount, listMemory/1024.0/1024.0, listMemory/listCount);
+    printf("%d ListItems take %.2f MB (%d bytes/item).\n", listItemCount, listItemMemory/1024.0/1024.0, listItemMemory/listItemCount);
+    printf("Total memory used: %.2f MB.\n", totalMemory/1024.0/1024.0);
 }
 
 
