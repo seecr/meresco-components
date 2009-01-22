@@ -38,7 +38,7 @@ from merescocomponents.oai.oailist import OaiList
 
 from merescocomponents.oai import OaiJazz, OaiJazzLucene, OaiAddRecord
 
-class OaiJazzTest(CQ2TestCase):
+class OaiJazzImplementationTest(CQ2TestCase):
     def addDocuments(self, size):
         for id in range(1,size+1):
             self._addRecord(id)
@@ -335,9 +335,9 @@ class OaiJazzTest(CQ2TestCase):
 
 
 
-class OaiJazzWithLuceneTest(OaiJazzTest):
+class OaiJazzWithLuceneTest(OaiJazzImplementationTest):
     def setUp(self):
-        OaiJazzTest.setUp(self)
+        OaiJazzImplementationTest.setUp(self)
         self._luceneIndex = LuceneIndex(join(self.tempdir, "lucene-index"))
         self._storage = StorageComponent(join(self.tempdir,'storage'))
         self.jazz = OaiJazzLucene(self._luceneIndex, self._storage, iter(xrange(9999)))
@@ -350,9 +350,9 @@ class OaiJazzWithLuceneTest(OaiJazzTest):
     def _setTime(self, year, month, day):
         self.jazz._gettime = lambda: (year, month, day, 14, 27, 53, 0, 267, 0)
 
-class OaiJazzWithFileTest(OaiJazzTest):
+class OaiJazzWithFileAndLuceneTest(OaiJazzImplementationTest):
     def setUp(self):
-        OaiJazzTest.setUp(self)
+        OaiJazzImplementationTest.setUp(self)
         self.jazz = OaiJazz(self.tempdir)
         self.oaiAddRecord = OaiAddRecord()
         self.oaiAddRecord.addObserver(self.jazz)

@@ -80,7 +80,7 @@ from oai.oaisetselecttest import OaiSetSelectTest
 from oai.xml2documenttest import Xml2DocumentTest
 from oai.oaijazzfiletest import OaiJazzFileTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
-from oai.oaijazztest import OaiJazzWithFileTest, OaiJazzWithLuceneTest
+from oai.oaijazzimplementationstest import OaiJazzWithFileAndLuceneTest, OaiJazzWithLuceneTest
 
 if __name__ == '__main__':
     unittest.main()
