@@ -179,3 +179,15 @@ class FileListTest(CQ2TestCase):
         self.assertEquals(3, s[2])
         self.assertEquals(4, len(s))
 
+    def testDeleteIsPersistent(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        for i in range(10):
+            s.append(i)
+        s.remove(2)
+        s.remove(6)
+        s.remove(4)
+        self.assertEquals([0,1,3,5,7,8,9], list(s))
+        t = SortedFileList(join(self.tempdir, 'list'))
+        self.assertEquals([0,1,3,5,7,8,9], list(t))
+        t.remove(7)
+        self.assertEquals([0,1,3,5,8,9], list(t))

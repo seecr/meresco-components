@@ -64,6 +64,11 @@ class FileList(object):
             return self._packer.unpack(self._file.read(self._packer.length))
         raise IndexError('list index out of range')
 
+    def clear(self):
+        self._file.seek(0)
+        self._file.truncate()
+        self._length = 0
+
     def _slice(self, aSlice):
         return FileListSeq(self, *_sliceWithinRange(aSlice, len(self)))
 
@@ -83,21 +88,24 @@ class FileList(object):
 class SortedFileList(object):
     def __init__(self, filename, initialContent=[], packer=IntPacker()):
         self._list = FileList(filename=filename, initialContent=initialContent, packer=packer)
-        self._deletedIndexes = []
+        self._deletedIndexes = FileList(filename=filename+'.deleted', packer=IntPacker())
+        self._tempDeletedIndexes = []
+        if len(self._deletedIndexes):
+            self._merge()
 
     def __len__(self):
-        return len(self._list) - len(self._deletedIndexes)
+        return len(self._list) - len(self._tempDeletedIndexes)
 
     def __getitem__(self, index):
         if isinstance(index, slice):
             return FileListSeq(self, *_sliceWithinRange(index, len(self)))
-        if len(self._deletedIndexes):
+        if len(self._tempDeletedIndexes):
             if index < 0:
                 index += len(self)
             if 0 <= index < len(self):
                 extra = 0
-                while extra != bisect_right(self._deletedIndexes, index + extra):
-                    extra = bisect_right(self._deletedIndexes, index + extra)
+                while extra != bisect_right(self._tempDeletedIndexes, index + extra):
+                    extra = bisect_right(self._tempDeletedIndexes, index + extra)
                 #print extra
                 index += extra
         return self._list[index]
@@ -125,12 +133,20 @@ class SortedFileList(object):
         if position == -1:
             raise ValueError('list.remove(%s): %s not in list' % (item, item))
         realPosition = bisect_left(self._list, item)
+        self._tempDeletedIndexes.append(realPosition)
         self._deletedIndexes.append(realPosition)
-        self._deletedIndexes.sort()
+        self._tempDeletedIndexes.sort()
 
     def _position(self, item):
         position = bisect_left(self, item)
         return (position < len(self) and item == self[position]) and position or -1
+
+    def _merge(self):
+        self._tempDeletedIndexes = list(self._deletedIndexes)
+        self._tempDeletedIndexes.sort()
+        self._list = FileList(self._list._filename, packer=self._list._packer, initialContent=self)
+        self._deletedIndexes.clear()
+        self._tempDeletedIndexes = []
 
 class FileListSeq(object):
     def __init__(self, mainList, start, stop, step):
