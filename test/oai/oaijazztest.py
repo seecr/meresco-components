@@ -62,7 +62,7 @@ class OaiJazzTest(CQ2TestCase):
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
 
-    def testPerformanceTestje(self):
+    def xtestPerformanceTestje(self):
         t0 = time()
         lastTime = t0
         for i in xrange(1,10**4 + 1):
