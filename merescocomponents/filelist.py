@@ -170,7 +170,15 @@ class FileListSeq(object):
             nStop = self._start + stop * self._step
             nStep = self._step * step
             return self.__class__(self._mainList, nStart, nStop, nStep)
-        return self._mainList[self._start + index*self._step]
+        if index < 0:
+            index = len(self) + index
+        index = self._start + index*self._step
+        if self._step > 0 and self._start <= index < self._stop:
+            return self._mainList[index]
+        if self._step < 0 and self._stop < index <= self._start:
+            return self._mainList[index]
+        raise IndexError('list index out of range')
+        
 
     def __len__(self):
         return abs((self._start - self._stop)/self._step)

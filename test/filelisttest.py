@@ -75,18 +75,10 @@ class FileListTest(CQ2TestCase):
         for i in range(20):
             s.append(i)
         self.assertEquals(2, s[2])
-        try:
-            s[1234567]
-            self.fail('IndexError expected')
-        except IndexError,e:
-            pass
+        self.assertIndexError(s, 1234567)
         self.assertEquals(19, s[-1])
         self.assertEquals(0, s[-20])
-        try:
-            s[-21]
-            self.fail('IndexError expected')
-        except IndexError,e:
-            pass
+        self.assertIndexError(s, -21)
 
     def testSlicing(self):
         s = SortedFileList(join(self.tempdir, 'list'))
@@ -116,8 +108,12 @@ class FileListTest(CQ2TestCase):
         r = s[::-1]
         self.assertEquals([5,4,3,2,1,0], list(r))
         self.assertEquals(5, r[0])
+        self.assertEquals(0, r[5])
+        self.assertEquals(0, r[-1])
         self.assertEquals([5,4], list(r[:2]))
         self.assertEquals(4, r[:4][1])
+
+        self.assertIndexError(s[:2], 4)
 
     def testWithIntStringPacker(self):
         s = SortedFileList(join(self.tempdir, 'list'), packer=IntStringPacker())
@@ -149,8 +145,16 @@ class FileListTest(CQ2TestCase):
         s.append(5)
         self.assertEquals([10,5], list(s))
 
+    def assertIndexError(self, aList, index):
+        try:
+            aList[index]
+            self.fail('IndexError expected')
+        except IndexError:
+            pass
+
     def testWithDeletedItems(self):
         def assertListFunctions(aList):
+            self.assertEquals(0, aList[0])
             self.assertEquals(2, aList[1])
             self.assertEquals(8, aList[4])
             self.assertEquals(8, aList[-2])
@@ -163,6 +167,9 @@ class FileListTest(CQ2TestCase):
             self.assertEquals([2,4,6], list(aList[1:4]))
             self.assertTrue(2 in aList)
             self.assertFalse(1 in aList)
+            self.assertIndexError(aList, 20)
+            self.assertIndexError(aList, -34567)
+                
             
         s = SortedFileList(join(self.tempdir, 'list1'))
         for i in [0,2,4,6,8,10]:
