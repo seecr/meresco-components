@@ -62,36 +62,36 @@ class OaiJazzTest(CQ2TestCase):
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
 
-    def xtestPerformanceTestje(self):
-        """This test is fast if storing on disk is off"""
-        originalStore = self.jazz._store
-        self.jazz._store = lambda iets:None
+    def testPerformanceTestje(self):
         t0 = time()
-        for i in xrange(1 * 10**7):
+        lastTime = t0
+        for i in xrange(1,10**4 + 1):
             self.jazz.addOaiRecord('id%s' % i, sets=[('setSpec%s' % ((i / 100)*100), 'setName')], metadataFormats=[('prefix','schema', 'namespace')])
+            if i%1000 == 0 and i > 0:
+                tmp = time()
+                print '%7d' % i, '%.4f' % (tmp - lastTime), '%.6f' % ((tmp - t0)/float(i))
+                lastTime = tmp
         t1 = time()
-        ids = self.jazz.oaiSelect(sets=['setSpec95000'],prefix='prefix')
+        ids = self.jazz.oaiSelect(sets=['setSpec9500'],prefix='prefix')
         firstId = ids.next()
         t2 = time()
         self.assertEquals(99, len(list(ids)))
         t3 = time()
-        originalStore()
-        t4 = time()
         jazz = OaiJazz(self.tempdir)
-        t5 = time()
-        print t1 - t0, t2 - t1, t3 -t2, t3 -t1, t4 - t3, t5 - t4
+        t4 = time()
+        print t1 - t0, t2 - t1, t3 -t2, t3 -t1, t4 - t3
         # a set form 10 million records costs 3.9 seconds (Without any efficiency things applied
         # it costs 0.3 seconds with 1 million records
         # retimed it at 2009-01-13:
         #  1 * 10**6 oaiSelect took 3.7 seconds
         #  1 * 10**7 oaiSelect took 37.3 seconds
-        # after adding low, high for sets: although this quite optimal for this test!!
-        #  1 * 10**6 oaiSelect took 0.071
-        #  1 * 10**7 oaiSelect took 0.071
-        # the above optimization is removed again, it was only there to show optimization could help  A LOT!
         # New optimization with And, Or Iterator
         #  1 * 10**6 oaiSelect took 0.363089084625
         #  1 * 10**7 oaiSelect took 0.347623825073
+        # New implementation with LuceneDict and SortedFileList with delete support
+        #  insert of 10*4 took 153 secs
+        #  oaiSelect took 0.1285 
+        
         
     def testGetDatestamp(self):
         self.jazz.addOaiRecord('123', metadataFormats=[('oai_dc', 'schema', 'namespace')])
