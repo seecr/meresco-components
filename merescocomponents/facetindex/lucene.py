@@ -47,23 +47,27 @@ class IncludeStopWordAnalyzer(object):
 class LuceneIndex(Observable):
 
     def __init__(self, directoryName, transactionName=None, *ditwilikniet, **ditookniet):
+        Observable.__init__(self)
         self._searcher = None
         self._reader = None
         self._writer = None
-        Observable.__init__(self)
+        self._transactionName = transactionName
         self._commandQueue = []
         self._directoryName = directoryName
+
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
         self._reopenIndex()
+
         optimized = self.isOptimized()
         assert isfile(join(directoryName, 'tracker.segments')) or optimized, 'index must be optimized or tracker state must be present in directory'
+
         mergeFactor = self.getMergeFactor()
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
-        self._tracker = LuceneDocIdTracker(self.getMergeFactor(), directory=self._directoryName)
-        self._lucene2docId = []
-        self._transactionName = transactionName
+
+        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName)
+        self._lucene2docId = self._tracker.getMap()
 
     def _reopenIndex(self):
         if self._writer:
@@ -79,9 +83,8 @@ class LuceneIndex(Observable):
         self._searcher = IndexSearcher(self._reader)
         self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
 
-
     def observer_init(self):
-        self.do.indexStarted(self._reader)
+        self.do.indexStarted(self._reader, tracker=self._tracker)
 
     def docsetFromQuery(self, pyLuceneQuery):
         t0 = time()
@@ -99,6 +102,8 @@ class LuceneIndex(Observable):
             hits = self._searcher.search(pyLuceneQuery, sortField)
         else:
             hits = self._searcher.search(pyLuceneQuery)
+
+        luceneIds = [hits.id(i) for i in range(start,min(len(hits),stop))]
         return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
 
     def _luceneIdForIdentifier(self, identifier):

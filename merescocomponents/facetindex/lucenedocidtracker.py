@@ -27,6 +27,8 @@
 from itertools import takewhile, dropwhile
 from os.path import join, isfile
 
+from integerlist import IntegerList
+
 class SegmentInfo(object):
     def __init__(self, length, offset):
         self.length = length
@@ -51,7 +53,7 @@ class LuceneDocIdTracker(object):
         self._ramSegmentsInfo = []
         self._segmentInfo = []
         self._nextDocId = maxDoc
-        self._docIds = range(maxDoc)
+        self._docIds = IntegerList(maxDoc)
         if isfile(join(directory, 'tracker.segments')):
             self._load()
         else:
@@ -68,6 +70,9 @@ class LuceneDocIdTracker(object):
 
     def getMap(self):
         return self._docIds[:]
+
+    def mapLuceneId(self, luceneId):
+        return self._docIds[luceneId]
 
     def _flushRamSegments(self):
         if len(self._ramSegmentsInfo) > 0:
@@ -86,14 +91,11 @@ class LuceneDocIdTracker(object):
             self._merge(segments, worthySegments[-1].offset, lower, upper)
 
     def _merge(self, segments, newOffset, lower, upper):
-        merged = [docid for docid in self._docIds[newOffset:] if docid >= 0]
-        del self._docIds[newOffset:] # ook op disk
-        self._docIds.extend(merged)
-        newLength = len(merged)
-        si = SegmentInfo(newLength, newOffset)
+        newSegmentLength = self._docIds.mergeFromOffset(newOffset)
+        si = SegmentInfo(newSegmentLength, newOffset)
         del segments[-self._mergeFactor:]
         segments.append(si)
-        if newLength > upper:
+        if newSegmentLength > upper:
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
 
     def deleteLuceneId(self, luceneId):

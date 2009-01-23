@@ -84,7 +84,7 @@ class Drilldown(object):
     def deleteDocument(self, docId):
         self._commandQueue.append(FunctionCommand(self._delete, docId=docId))
 
-    def indexStarted(self, indexReader):
+    def indexStarted(self, indexReader, tracker=None):
         t0 = time()
         self._totaldocs = indexReader.numDocs()
         termDocs = indexReader.termDocs()

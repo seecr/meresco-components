@@ -47,19 +47,22 @@ class DrilldownTest(CQ2TestCase):
         CQ2TestCase.tearDown(self)
 
     #Helper functions:
-    def addUntokenized(self, documents):
-        self.addToIndex(documents)
+    def addUntokenized(self, documents, index=None):
+        self.addToIndex(documents, index=index)
 
-    def addTokenized(self, documents):
-        self.addToIndex(documents, tokenize=True)
+    def addTokenized(self, documents, index=None):
+        self.addToIndex(documents, tokenize=True, index=index)
 
-    def addToIndex(self, documents, tokenize=False):
-        for docId, fields in documents:
-            myDocument = Document(docId)
+    def addToIndex(self, documents, tokenize=False, index=None):
+        if not index:
+            index = self.index
+
+        for identifier, fields in documents:
+            myDocument = Document(identifier)
             for field, value in fields.items():
                 myDocument.addIndexedField(field, value, tokenize = tokenize)
-            self.index.addDocument(myDocument)
-        self.index.commit()
+            index.addDocument(myDocument)
+        index.commit()
 
     def testIndexStarted(self):
         self.addUntokenized([('id', {'field_0': 'this is term_0'})])
@@ -257,3 +260,50 @@ class DrilldownTest(CQ2TestCase):
         drilldown.commit()
         self.assertEquals(2, len(drilldown._docsetlists['title']))
         self.assertEquals([('value', 0), ('value2', 1)], list(drilldown._docsetlists['title'].allCardinalities()))
+
+    def testMapLuceneIdsOnStartup(self):
+        drilldown = Drilldown(['field_0'])
+        self.index.addObserver(drilldown)
+        documents = []
+        for i in range(8):
+            recordId = 'id:%0.3d' % i
+            data = {'field_0': 'value%0.3d' % i}
+            documents.append((recordId, data))
+        self.addUntokenized(documents)
+        drilldown.commit()
+        self.index.close()
+
+        #print "---- 1 ----"
+        index = LuceneIndex(self.tempdir)
+        drilldown = Drilldown(['field_0'])
+        drilldown.indexStarted(index._reader)
+
+        index.delete('id:003')
+        index.delete('id:006')
+        index.commit()
+        drilldown.commit()
+        index.close()
+
+        #print "---- 2 ----"
+        index2 = LuceneIndex(self.tempdir)
+        drilldown2 = Drilldown(['field_0'])
+        drilldown2.indexStarted(index2._reader)
+        documents = []
+        for i in range(8,89):
+            recordId = 'id:%0.3d' % i
+            data = {'field_0': 'value%0.3d' % i}
+            documents.append((recordId, data))
+        self.addUntokenized(documents, index=index2)
+
+        drilldown2.commit()
+        index2.close()
+
+        #print "---- 3 ----"
+        index3 = LuceneIndex(self.tempdir)
+        drilldown3 = Drilldown(['field_0'])
+        drilldown3.indexStarted(index3._reader)
+        unmappedDrilldownDocIds = [x[0] for x in list(drilldown3._docsetlists['field_0'])]
+        mappedDrilldownDocIds = [index3._lucene2docId[x] for x in unmappedDrilldownDocIds]
+
+        print unmappedDrilldownDocIds
+        print   mappedDrilldownDocIds

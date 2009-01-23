@@ -54,8 +54,9 @@ void DocSetList::addDocSet(DocSet* docset) {
 }
 
 void DocSetList::removeDoc(guint32 doc) {
-    for (unsigned int i = 0; i < size(); i++ )
+    for (unsigned int i = 0; i < size(); i++ ) {
         at(i)->remove(doc);
+    }
 }
 
 DocSet* DocSetList::forTerm(char* term) {

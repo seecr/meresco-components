@@ -103,9 +103,9 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         foundDocs = [int(hit.get('__id__')) for hit in hits]
         return foundIds, foundDocs
 
-    def assertMap(self, sequence, foundIds, foundDocs):
+    def assertMap(self, sequence, luceneIds, foundDocs):
         docs = [doc for doc in sequence if doc >= 0]
-        docids = self.tracker.map(foundIds)
+        docids = self.tracker.map(luceneIds)
         should = [docs[docid] for docid in docids]
         self.assertEquals(should, foundDocs)
 
@@ -133,10 +133,11 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
     def testC(self):
         s = [100, 101, 102, 103, 104, 105, -102, 106, 107, 108, 109]
         self.processDocs(s)
-        foundIds, foundDocs = self.findAll()
-        self.assertEquals([0,1,2,3,4,5,6,7,8], foundIds)
+
+        luceneIds, foundDocs = self.findAll()
+        self.assertEquals([0,1,2,3,4,5,6,7,8], luceneIds)
         self.assertEquals([100,101,103,104,105,106,107,108,109], foundDocs)
-        self.assertMap(s, foundIds, foundDocs)
+        self.assertMap(s, luceneIds, foundDocs)
 
     def XXXXXXXXXXXXXXXXXXXXXXXXXXXtestRandom(self):
         mergeFactor = randint(2,50)

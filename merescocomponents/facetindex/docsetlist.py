@@ -24,10 +24,10 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from itertools import islice
+
 from sys import maxint
 from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
-from docset import DocSet, libDocSet, docsetpointer
+from docset import DocSet, libDocSet
 
 SELF = POINTER(None)
 
