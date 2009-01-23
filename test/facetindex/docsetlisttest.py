@@ -441,4 +441,3 @@ class DocSetListTest(LuceneTestCase):
         results = dsl.jaccards(DocSet('query',[1,2,3,4,5,6,7,8,9]), 11, 22, 9, JACCARD_ONLY)
         self.assertEquals([('term2', 22L), ('term1', 11L)], list(results))
 
-

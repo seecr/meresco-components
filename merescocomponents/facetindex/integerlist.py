@@ -129,3 +129,6 @@ class IntegerList(object):
 
     def mergeFromOffset(self, offset):
         return IntegerList_mergeFromOffset(self, offset)
+
+    def getCObject(self):
+        return self._cobj

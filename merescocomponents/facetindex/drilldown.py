@@ -86,6 +86,11 @@ class Drilldown(object):
 
     def indexStarted(self, indexReader, tracker=None):
         t0 = time()
+
+        mapping = None
+        if tracker:
+            mapping = tracker.getMap()
+
         self._totaldocs = indexReader.numDocs()
         termDocs = indexReader.termDocs()
         fieldNames = self._staticDrilldownFieldnames
@@ -95,7 +100,7 @@ class Drilldown(object):
                     if not fieldname.startswith('__')]
         for fieldname in fieldNames:
             termEnum = indexReader.terms(Term(fieldname,''))
-            self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs)
+            self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, mapping)
         self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000
 

@@ -28,6 +28,7 @@
 from sys import maxint
 from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
 from docset import DocSet, libDocSet
+from integerlist import IntegerList
 
 SELF = POINTER(None)
 
@@ -81,7 +82,7 @@ JACCARD_X2 = c_int.in_dll(libDocSet, "JACCARD_X2")
 JACCARD_ONLY = c_int.in_dll(libDocSet, "JACCARD_ONLY")
 
 DocSetList_fromTermEnum = libDocSet.DocSetList_fromTermEnum
-DocSetList_fromTermEnum.argtypes = [py_object, py_object]
+DocSetList_fromTermEnum.argtypes = [py_object, py_object, c_int]
 DocSetList_fromTermEnum.restype = SELF
 
 DocSetList_sortOnCardinality = libDocSet.DocSetList_sortOnCardinality
@@ -103,8 +104,8 @@ CardinalityList_free.restype = None
 class DocSetList(object):
 
     @classmethod
-    def fromTermEnum(clazz, termEnum, termDocs):
-        r = DocSetList_fromTermEnum(py_object(termEnum), py_object(termDocs))
+    def fromTermEnum(clazz, termEnum, termDocs, integerList=None):
+        r = DocSetList_fromTermEnum(py_object(termEnum), py_object(termDocs), integerList.getCObject() if integerList else 0)
         return clazz(r)
 
     def __init__(self, cobj=None):
@@ -179,3 +180,13 @@ class DocSetList(object):
 
     def sorted(self):
         return self._sorted
+
+    def TEST_getDocsetForTerm(self, term):
+        r = DocSetList_getForTerm(self, term)
+        if r:
+            return DocSet(cobj=r)
+        return None
+
+    def applyDocIdMapping(self, mappingList):
+        for docset in self:
+            docset.applyDocIdMapping(mappingList)

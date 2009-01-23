@@ -26,6 +26,7 @@
  * end license */
 #include "pyjava.h"
 #include "docsetlist.h"
+#include "integerlist.h"
 
 extern "C" {
     #include "zipper.h"
@@ -230,7 +231,7 @@ void DocSetList_delete(DocSetList* list) {
     delete list;
 }
 
-DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs) {
+DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, IntegerList *mapping) {
     TermDocs_seek seek = (TermDocs_seek) lookupIface(termDocs->jobject, &ITermDocs, 2);
     // Call methods on TermEnum via vtable lookup.  TermEnum is not an interface, but
     // multiple subclasses exists (Segment..., Multi...) and might be passed. The methods
@@ -253,8 +254,20 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs) {
         seek(termDocs->jobject, termEnum->jobject);
         JString* text = Term_text(term);
         jint freq = docFreq(termEnum->jobject);
-        list->addDocSet(DocSet::fromTermDocs(termDocs->jobject, freq, text));
+
+        DocSet *docset = DocSet::fromTermDocs(termDocs->jobject, freq, text);
+        DocSet *mappedDocset = docset;
+        if (mapping) {
+            mappedDocset = new DocSet();
+
+            mappedDocset->setTerm(docset->term());
+            for (std::vector<doc_t>::iterator it = docset->begin(); it < docset->end(); it++) {
+                mappedDocset->push_back(mapping->at((*it)));
+            }
+        }
+        list->addDocSet(mappedDocset);
     } while ( next(termEnum->jobject) );
+
     return list;
 }
 

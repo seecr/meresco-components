@@ -28,6 +28,8 @@
 #include <vector>
 #include "facetindex.h"
 #include "docset.h"
+#include "integerlist.h"
+
 extern "C" {
     #include "trie_c.h"
 }
@@ -71,7 +73,7 @@ extern "C" {
     CardinalityList* DocSetList_jaccards             (DocSetList* list, DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm);
     void             DocSetList_delete               (DocSetList* list);
     void             DocSetList_sortOnCardinality    (DocSetList* list);
-    DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs);
+    DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
     cardinality_t*   CardinalityList_at              (CardinalityList* vector, int i);
     int              CardinalityList_size            (CardinalityList* vector);
     void             CardinalityList_free            (CardinalityList* vector);

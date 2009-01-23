@@ -41,6 +41,10 @@ class DrilldownTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.index = LuceneIndex(self.tempdir)
+        self.mockTracker=CallTrace('Tracker',
+            returnValues={
+                'getMap': CallTrace('IntegerList',
+                            returnValues={'getCObject': 0})})
 
     def tearDown(self):
         self.index.close()
@@ -69,7 +73,8 @@ class DrilldownTest(CQ2TestCase):
 
         drilldown = Drilldown(['field_0'])
         reader = IndexReader.open(self.tempdir)
-        drilldown.indexStarted(reader)
+
+        drilldown.indexStarted(reader, tracker=self.mockTracker)
         field, results = drilldown.drilldown(DocSet('query', data=[0]), [('field_0', 10, False)]).next()
         self.assertEquals('field_0', field)
         self.assertEquals([('this is term_0', 1)], list(results))
@@ -84,7 +89,7 @@ class DrilldownTest(CQ2TestCase):
         reader = IndexReader.open(self.tempdir)
         #convertor = LuceneRawDocSets(reader, ['field_0', 'field_1'])
         drilldown = Drilldown(['field_0', 'field_1'])
-        drilldown.indexStarted(reader)
+        drilldown.indexStarted(reader, tracker=self.mockTracker)
         query = TermQuery(Term("field_1", "inquery"))
         total, queryResults = self.index.executeQuery(query)
         self.assertEquals(3, total)
@@ -105,7 +110,7 @@ class DrilldownTest(CQ2TestCase):
             ('3', {'field0': 'term0'})])
         reader = IndexReader.open(self.tempdir)
         drilldown = Drilldown(['field0'])
-        drilldown.indexStarted(reader)
+        drilldown.indexStarted(reader, tracker=self.mockTracker)
         hits = self.index.docsetFromQuery(MatchAllDocsQuery())
         ddData = list(drilldown.drilldown(hits, [('field0', 0, False)]))
         self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
@@ -141,7 +146,7 @@ class DrilldownTest(CQ2TestCase):
             ('3', {'__private_field': 'this is term_2', 'field_1': 'cannotbefound'})])
         reader = IndexReader.open(self.tempdir)
         drilldown = Drilldown()
-        drilldown.indexStarted(reader)
+        drilldown.indexStarted(reader, tracker=self.mockTracker)
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
         results = list(drilldown.drilldown(docset, [('field_0', 0, False)]))
         self.assertEquals('field_0', results[0][0])
@@ -155,7 +160,7 @@ class DrilldownTest(CQ2TestCase):
             ('0', {'field_0': 'this is term_0'})
         ])
         drilldown = Drilldown()
-        drilldown.indexStarted(self.index.getIndexReader())
+        drilldown.indexStarted(self.index.getIndexReader(), tracker=self.mockTracker)
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
         results = list(drilldown.drilldown(docset))
         self.assertEquals('field_0', results[0][0])
@@ -163,7 +168,7 @@ class DrilldownTest(CQ2TestCase):
         self.addUntokenized([
             ('1', {'field_0': 'this is term_0', 'field_1': 'inquery'})
         ])
-        drilldown.indexStarted(self.index.getIndexReader())
+        drilldown.indexStarted(self.index.getIndexReader(), tracker=self.mockTracker)
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
         results = list(drilldown.drilldown(docset))
         self.assertEquals(2, len(results))
@@ -196,7 +201,7 @@ class DrilldownTest(CQ2TestCase):
         reader = IndexReader.open(self.tempdir)
 
         drilldown = Drilldown(['title'])
-        drilldown.indexStarted(reader)
+        drilldown.indexStarted(reader, tracker=self.mockTracker)
         query = TermQuery(Term("title", "dogs"))
         total, queryResults = self.index.executeQuery(query)
         queryDocset = self.index.docsetFromQuery(query)
@@ -245,7 +250,7 @@ class DrilldownTest(CQ2TestCase):
     def testCommit(self):
         reader = IndexReader.open(self.tempdir)
         drilldown = Drilldown(['title'])
-        drilldown.indexStarted(reader)
+        drilldown.indexStarted(reader, tracker=self.mockTracker)
         drilldown.addDocument(0, {'title': ['value']})
         drilldown.addDocument(1, {'title': ['value2']})
 
@@ -276,7 +281,7 @@ class DrilldownTest(CQ2TestCase):
         #print "---- 1 ----"
         index = LuceneIndex(self.tempdir)
         drilldown = Drilldown(['field_0'])
-        drilldown.indexStarted(index._reader)
+        drilldown.indexStarted(index._reader, tracker=index._tracker)
 
         index.delete('id:003')
         index.delete('id:006')
@@ -287,7 +292,7 @@ class DrilldownTest(CQ2TestCase):
         #print "---- 2 ----"
         index2 = LuceneIndex(self.tempdir)
         drilldown2 = Drilldown(['field_0'])
-        drilldown2.indexStarted(index2._reader)
+        drilldown2.indexStarted(index2._reader, tracker=index2._tracker)
         documents = []
         for i in range(8,89):
             recordId = 'id:%0.3d' % i
@@ -301,9 +306,7 @@ class DrilldownTest(CQ2TestCase):
         #print "---- 3 ----"
         index3 = LuceneIndex(self.tempdir)
         drilldown3 = Drilldown(['field_0'])
-        drilldown3.indexStarted(index3._reader)
-        unmappedDrilldownDocIds = [x[0] for x in list(drilldown3._docsetlists['field_0'])]
-        mappedDrilldownDocIds = [index3._lucene2docId[x] for x in unmappedDrilldownDocIds]
+        drilldown3.indexStarted(index3._reader, tracker=index3._tracker)
+        drilldownDocIds = [x[0] for x in list(drilldown3._docsetlists['field_0'])]
 
-        print unmappedDrilldownDocIds
-        print   mappedDrilldownDocIds
+        self.assertEquals([0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88], drilldownDocIds)

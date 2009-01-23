@@ -69,7 +69,7 @@ class LuceneDocIdTracker(object):
         return self._nextDocId - 1
 
     def getMap(self):
-        return self._docIds[:]
+        return self._docIds.copy()
 
     def mapLuceneId(self, luceneId):
         return self._docIds[luceneId]
