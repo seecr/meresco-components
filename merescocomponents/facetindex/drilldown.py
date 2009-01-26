@@ -84,12 +84,8 @@ class Drilldown(object):
     def deleteDocument(self, docId):
         self._commandQueue.append(FunctionCommand(self._delete, docId=docId))
 
-    def indexStarted(self, indexReader, tracker=None):
+    def indexStarted(self, indexReader, docIdMapping=None):
         t0 = time()
-
-        mapping = None
-        if tracker:
-            mapping = tracker.getMap()
 
         self._totaldocs = indexReader.numDocs()
         termDocs = indexReader.termDocs()
@@ -100,7 +96,7 @@ class Drilldown(object):
                     if not fieldname.startswith('__')]
         for fieldname in fieldNames:
             termEnum = indexReader.terms(Term(fieldname,''))
-            self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, mapping)
+            self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
         self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000
 

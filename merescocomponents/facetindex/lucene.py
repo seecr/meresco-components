@@ -84,7 +84,10 @@ class LuceneIndex(Observable):
         self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
 
     def observer_init(self):
-        self.do.indexStarted(self._reader, tracker=self._tracker)
+        self.do.indexStarted(self._reader, docIdMapping=self.getDocIdMapping())
+
+    def getDocIdMapping(self):
+        return self._lucene2docId
 
     def docsetFromQuery(self, pyLuceneQuery):
         t0 = time()
