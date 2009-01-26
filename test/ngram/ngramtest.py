@@ -178,7 +178,6 @@ class NGramTest(CQ2TestCase):
         self.assertSuggestions(['Punch', 'puca', 'puce', 'puck'], 'punch', LevenshteinSuggester(50, 5, 4))
         self.assertSuggestions(['Punch', 'capuche', 'Mapuche', 'Pampuch'], 'punch', RatioSuggester(50, 0.5, 4))
 
-
     def XXXXXXXXtestIntegrationWords(self):
         def addWord(index, word):
             d = Document()

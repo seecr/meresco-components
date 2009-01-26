@@ -61,6 +61,7 @@ from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
 from facetindex.incrementalindexingtest import IncrementalIndexingTest
 
 from ngram.ngramtest import NGramTest
+from ngram.cqlsuggestertest import CqlSuggesterTest
 
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest

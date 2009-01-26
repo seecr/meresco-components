@@ -260,7 +260,8 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, In
         if (mapping) {
             mappedDocset = new DocSet();
 
-            mappedDocset->setTerm(docset->term());
+            mappedDocset->_term = docset->_term;
+//             mappedDocset->setTerm(docset->term());
             for (std::vector<doc_t>::iterator it = docset->begin(); it < docset->end(); it++) {
                 mappedDocset->push_back(mapping->at((*it)));
             }

@@ -27,7 +27,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader
 from random import randint
-from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker
+from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
 from glob import glob
 from time import time
 from cq2utils.profileit import profile
@@ -164,7 +164,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         s0 = [100, 101, 102]
         self.processDocs(s0)
         self.writer.optimize()
-        self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), self.writer.docCount(), self.createTrackerDir())
+        self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), maxDoc=self.writer.docCount(), directory=self.createTrackerDir())
         s1 = [-100, 103, 104, 105, 106]
         self.processDocs(s1)
         foundIds, foundDocs = self.findAll()
@@ -174,7 +174,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         s0 = range(100, 200)
         self.processDocs(s0)
         self.writer.optimize()
-        self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), self.writer.docCount(), self.createTrackerDir())
+        self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), maxDoc=self.writer.docCount(), directory=self.createTrackerDir())
         s1 = [-100, 1001, 1002]
         self.processDocs(s1)
         foundIds, foundDocs = self.findAll()
@@ -225,6 +225,18 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(len(hits), tracker._segmentInfo[0].length)
         self.assertEquals(0, len(tracker._ramSegmentsInfo))
 
+    def testFailLoadWhenDataAlreadyInList(self):
+        tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker", maxDoc=10)
+        tracker.next()
+        tracker.next()
+        tracker.flush()
+
+        try:
+            tracker._load()
+            self.fail()
+        except LuceneDocIdTrackerException, e:
+            self.assertEquals('DocIdList not empty on load', str(e))
+
     def createTrackerDir(self):
         name = join(self.tempdir, 'tracker')
         isdir(name) and rmtree(name)
@@ -236,3 +248,11 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.next()
         tracker.flush()
+
+    def testStateFileNumbering(self):
+        tracker = LuceneDocIdTracker(10, directory = self.createTrackerDir(), maxDoc=10000)
+        s0 = [100, 101, 102]
+        self.processDocs(s0)
+        self.tracker.flush()
+        import os
+        print os.listdir(self.tempdir + "/tracker")

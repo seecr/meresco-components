@@ -32,18 +32,17 @@ setup(
     name = 'merescocomponents',
     packages = ['merescocomponents'],
     ext_modules = [
-        Extension(
-            "merescocomponents.facetindex._facetindex", [
-            'merescocomponents/facetindex/zipper.c',
-            'merescocomponents/facetindex/_docsetlist.cpp',
-            'merescocomponents/facetindex/_docset.cpp',
-            'merescocomponents/facetindex/_integerlist.cpp',
-            'merescocomponents/facetindex/fwpool.c',
-            'merescocomponents/facetindex/fwstring.c',
-            'merescocomponents/facetindex/trie_c.cpp',
-            ],
-            extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
-            extra_link_args = ['/usr/lib/python2.5/site-packages/_PyLucene.so']
+        Extension("merescocomponents.facetindex._facetindex", [
+                'merescocomponents/facetindex/zipper.c',
+                'merescocomponents/facetindex/_docsetlist.cpp',
+                'merescocomponents/facetindex/_docset.cpp',
+                'merescocomponents/facetindex/_integerlist.cpp',
+                'merescocomponents/facetindex/fwpool.c',
+                'merescocomponents/facetindex/fwstring.c',
+                'merescocomponents/facetindex/trie_c.cpp',
+                ],
+        	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
+                extra_link_args = ['/home/meresco/lib/python2.5/site-packages/_PyLucene.so']
         )
     ],
     version = '%VERSION%',

@@ -66,8 +66,9 @@ class LuceneIndex(Observable):
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
 
-        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName)
+        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=self.docCount())
         self._lucene2docId = self._tracker.getMap()
+        self._dinges = list(self._lucene2docId)
 
     def _reopenIndex(self):
         if self._writer:
@@ -91,13 +92,13 @@ class LuceneIndex(Observable):
 
     def docsetFromQuery(self, pyLuceneQuery):
         t0 = time()
+
         try:
             luceneIds = DocSet.fromQuery(self._searcher, pyLuceneQuery)
-            docIds = DocSet('', (self._lucene2docId[luceneId] for luceneId in luceneIds))
+            docIds = DocSet('', (self._dinges[luceneId] for luceneId in luceneIds))
             return docIds
         finally:
-            pass
-            #print 'docsetFromQuery (ms): ', (time()-t0)*1000
+            print 'docsetFromQuery (ms): ', (time()-t0)*1000
 
     def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
@@ -158,12 +159,14 @@ class LuceneIndex(Observable):
             self.tx.join(self)
 
     def commit(self):
+        t0 = time()
         for command in self._commandQueue:
             command.execute()
         self._commandQueue = []
         self._reopenIndex()
         self._tracker.flush()
         self._lucene2docId = self._tracker.getMap()
+        print "Commit", time()-t0, "QLen: ", len(self._commandQueue)
 
     def rollback(self):
         pass

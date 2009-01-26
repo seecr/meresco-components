@@ -41,23 +41,29 @@ class SegmentInfo(object):
             other.length == self.length and \
             other.offset == self.offset
 
+class LuceneDocIdTrackerException(Exception):
+    pass
+
 class LuceneDocIdTracker(object):
     """
         This class tracks docids for Lucene version 2.2.0
                                                     =====
     """
-    def __init__(self, mergeFactor, maxDoc=0, directory=None):
+    def __init__(self, mergeFactor, directory=None, maxDoc=0):
         assert directory != None
         self._directory = directory
         self._mergeFactor = mergeFactor
         self._ramSegmentsInfo = []
         self._segmentInfo = []
-        self._nextDocId = maxDoc
-        self._docIds = IntegerList(maxDoc)
+
+        self._nextDocId = 0
+        self._docIds = IntegerList()
         if isfile(join(directory, 'tracker.segments')):
             self._load()
         else:
             if maxDoc > 0:
+                self._nextDocId = maxDoc
+                self._docIds = IntegerList(maxDoc)
                 self._segmentInfo.append(SegmentInfo(maxDoc, 0))
 
     def next(self):
@@ -131,6 +137,9 @@ class LuceneDocIdTracker(object):
         f.close()
 
     def _load(self):
+        if len(self._docIds) != 0:
+            raise LuceneDocIdTrackerException('DocIdList not empty on load')
+
         f = open(join(self._directory, 'tracker.segments'))
         self._mergeFactor = int(f.next().strip())
         self._nextDocId = int(f.next().strip())
@@ -138,9 +147,11 @@ class LuceneDocIdTracker(object):
         for segmentData in segments:
             length, offset = map(int, segmentData)
             self._segmentInfo.append(SegmentInfo(length, offset))
+
         for i in range(len(self._segmentInfo)):
             f = open(join(self._directory, str(i) + '.docids'))
-            self._docIds.extend(eval(f.read()))
+            data = eval(f.read())
+            self._docIds.extend(data)
             f.close()
 
     def __eq__(self, other):
