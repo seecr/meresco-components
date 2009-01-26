@@ -55,7 +55,7 @@ class OaiJazzTest(CQ2TestCase):
         for i in xrange(1000):
             stamps.append(jazz._stamp())
             var = 30.0/2.0
-        self.assertEquals(list(sorted(set(stamps))), stamps)
+        self.assertEquals(list(sorted(set(stamps))), stamps, "Stamps not equal.")
         
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
