@@ -64,3 +64,7 @@ class CqlSuggesterTest(TestCase):
         self.assertEquals('wordz', cqlAST.children()[0].children()[0].children()[0].children()[0].children()[0])
         result = cqlsuggester.suggestForCql(cqlAST)
         self.assertEquals(['wordy', 'wordx'], result)
+
+
+
+        

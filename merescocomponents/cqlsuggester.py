@@ -1,10 +1,11 @@
-#copyright
 
 from merescocore.framework import Observable
-
+from cqltermvisitor import getAllTerms
 
 class CqlSuggester(Observable) :
     def suggestForCql(self, cqlAST) :
-        index = 0
-        currentTerm = cqlAST.children()[index].children()[0].children()[0].children()[0].children()[0]
-        return self.any.suggestionsFor(currentTerm)
+        termlist = getAllTerms(cqlAST)
+        for term in termlist:
+            suggestions = self.any.suggestionsFor(term)
+            return suggestions
+           

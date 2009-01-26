@@ -62,6 +62,7 @@ from facetindex.incrementalindexingtest import IncrementalIndexingTest
 
 from ngram.ngramtest import NGramTest
 from ngram.cqlsuggestertest import CqlSuggesterTest
+from ngram.cqltermvisitortest import CqlTermVisitorTest
 
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
