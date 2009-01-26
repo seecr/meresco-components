@@ -103,10 +103,7 @@ class OaiJazz(object):
         return stamp in self._tombStones
 
     def getAllMetadataFormats(self):
-        for prefix in self._prefixes.keys():
-            schema = open(join(self._directory, 'prefixesInfo', '%s.schema' % escapeName(prefix))).read()
-            namespace = open(join(self._directory, 'prefixesInfo', '%s.namespace' % escapeName(prefix))).read()
-            yield (prefix, schema, namespace)
+        return WrapIterable(self._getAllMetadataFormats())
 
     def getAllPrefixes(self):
         return self._prefixes.keys()
@@ -135,6 +132,12 @@ class OaiJazz(object):
             self._getPrefixList(prefix).append(stamp)
         self._stamp2identifier[str(stamp)]=identifier
 
+    def _getAllMetadataFormats(self):
+        for prefix in self._prefixes.keys():
+            schema = open(join(self._directory, 'prefixesInfo', '%s.schema' % escapeName(prefix))).read()
+            namespace = open(join(self._directory, 'prefixesInfo', '%s.namespace' % escapeName(prefix))).read()
+            yield (prefix, schema, namespace)
+    
     def _getSetList(self, setSpec):
         if setSpec not in self._sets:
             filename = join(self._directory, 'sets', '%s.list' % escapeName(setSpec))

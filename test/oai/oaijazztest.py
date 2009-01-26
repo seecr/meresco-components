@@ -34,6 +34,7 @@ from merescocomponents.oai import OaiJazz
 from merescocomponents.oai.oaijazz import _flattenSetHierarchy
 from StringIO import StringIO
 from lxml.etree import parse
+from merescocore.framework import Observable, be, Transparant
 
 from os import listdir
 
@@ -147,5 +148,17 @@ class OaiJazzTest(CQ2TestCase):
         newStamp = self.stampNumber
         self.jazz.addOaiRecord('id', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.assertEquals(newStamp, self.jazz.getUnique('id'))
+
+    def testWithObservablesAndUseOfAnyBreaksStuff(self):
+        self.jazz.addOaiRecord('23', metadataFormats=[('one','schema1', 'namespace1'), ('two','schema2', 'namespace2')])
+        server = be((Observable(),
+            (Transparant(),
+                (self.jazz,)
+            )
+        ))
+        server.once.observer_init()
+        mf = list(server.any.getAllMetadataFormats())
+        self.assertEquals(2, len(mf))
+        self.assertEquals(set(['one', 'two']), set(prefix for prefix, schema, namespace in mf))
 
 
