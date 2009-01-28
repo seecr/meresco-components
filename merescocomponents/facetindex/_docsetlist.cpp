@@ -255,18 +255,8 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, In
         JString* text = Term_text(term);
         jint freq = docFreq(termEnum->jobject);
 
-        DocSet *docset = DocSet::fromTermDocs(termDocs->jobject, freq, text);
-        DocSet *mappedDocset = docset;
-        if (mapping) {
-            mappedDocset = new DocSet();
-
-            mappedDocset->_term = docset->_term;
-//             mappedDocset->setTerm(docset->term());
-            for (std::vector<doc_t>::iterator it = docset->begin(); it < docset->end(); it++) {
-                mappedDocset->push_back(mapping->at((*it)));
-            }
-        }
-        list->addDocSet(mappedDocset);
+        DocSet *docset = DocSet::fromTermDocs(termDocs->jobject, freq, text, mapping);
+        list->addDocSet(docset);
     } while ( next(termEnum->jobject) );
 
     return list;

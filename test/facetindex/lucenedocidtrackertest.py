@@ -31,7 +31,7 @@ from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, 
 from glob import glob
 from time import time
 from cq2utils.profileit import profile
-from os import mkdir
+from os import mkdir, listdir
 from os.path import join, isdir
 from shutil import rmtree
 
@@ -250,9 +250,13 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.flush()
 
     def testStateFileNumbering(self):
-        tracker = LuceneDocIdTracker(10, directory = self.createTrackerDir(), maxDoc=10000)
-        s0 = [100, 101, 102]
-        self.processDocs(s0)
-        self.tracker.flush()
-        import os
-        print os.listdir(self.tempdir + "/tracker")
+        tracker = LuceneDocIdTracker(9, directory = self.createTrackerDir(), maxDoc=7)
+        for i in range(80):
+            tracker.next()
+        print "FLUSH"
+        tracker.flush()
+
+        tracker = LuceneDocIdTracker(9, directory = self.tempdir + "/tracker")
+
+        self.assertEquals(['0.docids', '1.docids', 'tracker.segments'] , sorted(listdir(self.tempdir + "/tracker")))
+

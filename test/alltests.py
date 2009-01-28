@@ -59,6 +59,7 @@ from facetindex.drilldowntest import DrilldownTest
 from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
 
 from facetindex.incrementalindexingtest import IncrementalIndexingTest
+from facetindex.integerlisttest import IntegerListTest
 
 from ngram.ngramtest import NGramTest
 from ngram.cqlsuggestertest import CqlSuggesterTest

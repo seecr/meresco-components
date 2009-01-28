@@ -77,11 +77,11 @@ DocSet_intersect.argtypes = [SELF, SELF]
 DocSet_intersect.restype = SELF
 
 DocSet_fromQuery = libDocSet.DocSet_fromQuery
-DocSet_fromQuery.argtypes = [py_object, py_object]
+DocSet_fromQuery.argtypes = [py_object, py_object, SELF]
 DocSet_fromQuery.restype = SELF
 
 DocSet_fromTermDocs = libDocSet.DocSet_fromTermDocs
-DocSet_fromTermDocs.argtypes = [py_object, c_int, c_char_p]
+DocSet_fromTermDocs.argtypes = [py_object, c_int, c_char_p, SELF]
 DocSet_fromTermDocs.restype = SELF
 
 DocSet_forTesting = libDocSet.DocSet_forTesting
@@ -95,13 +95,13 @@ DocSet_delete.restype = None
 class DocSet(object):
 
     @classmethod
-    def fromQuery(clazz, searcher, query):
-        r = DocSet_fromQuery(py_object(searcher), py_object(query))
+    def fromQuery(clazz, searcher, query, mapping=None):
+        r = DocSet_fromQuery(py_object(searcher), py_object(query), mapping)
         return clazz(cobj=r)
 
     @classmethod
-    def fromTermDocs(clazz, termdocs, freq, term=""):
-        r = DocSet_fromTermDocs(py_object(termdocs), freq, term)
+    def fromTermDocs(clazz, termdocs, freq, term="", mapping=None):
+        r = DocSet_fromTermDocs(py_object(termdocs), freq, term, mapping)
         return clazz(cobj=r)
 
     @classmethod
@@ -147,6 +147,7 @@ class DocSet(object):
     def add(self, doc):
         l = DocSet_len(self)
         if l > 0 and doc <= DocSet_get(self, l-1):
+            #print "term=", self.term(), "l=", l, "doc=", doc, "DocSet_get(self, l-1)=", DocSet_get(self, l-1)
             raise Exception('non-increasing docid')
         DocSet_add(self._cobj, doc)
 

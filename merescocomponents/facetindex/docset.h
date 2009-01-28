@@ -26,6 +26,7 @@
  * end license */
 #include <vector>
 #include "facetindex.h"
+#include "integerlist.h"
 
 extern "C" {
     #include "fwstring.h"
@@ -50,8 +51,8 @@ class DocSet : public std::vector<doc_t> {
         void    setTerm                  (JString* term);
         char*   term                     (void);
         void    remove                   (guint32 doc);
-        static DocSet*
-        fromTermDocs(JObject* termDocs, int freq, JString* term);
+        void    map                      (IntegerList* mapping);
+        static DocSet* fromTermDocs      (JObject* termDocs, int freq, JString* term, IntegerList* mapping);
 };
 
 extern "C" {
@@ -66,8 +67,8 @@ extern "C" {
     int     DocSet_combinedCardinality       (DocSet* docset, DocSet* rhs);
     int     DocSet_combinedCardinalitySearch (DocSet* docset, DocSet* rhs);
     DocSet* DocSet_intersect                 (DocSet* docset, DocSet* rhs);
-    DocSet* DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery);
-    DocSet* DocSet_fromTermDocs              (PyJObject* termDocs, int freq, char* term);
+    DocSet* DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping);
+    DocSet* DocSet_fromTermDocs              (PyJObject* termDocs, int freq, char* term, IntegerList* mapping);
     void    DocSet_delete                    (DocSet* docset);
 }
 

@@ -146,3 +146,26 @@ class IntegerListTest(TestCase):
         l[2] = -1
         l.mergeFromOffset(2)
         self.assertEquals([0, 1, 3, 4], list(l))
+
+    def testIndexBoundaryCheck(self):
+        l = IntegerList(5)
+        try:
+            l[0]
+            l[1]
+            l[2]
+            l[3]
+            l[4]
+            l[5]
+            self.fail('must raise exception')
+        except Exception, e:
+            self.assertEquals('5', str(e))
+        try:
+            l[-1]
+            l[-2]
+            l[-3]
+            l[-4]
+            l[-5]
+            l[-6]
+            self.fail('must raise exception')
+        except Exception, e:
+            self.assertEquals('-6', str(e))

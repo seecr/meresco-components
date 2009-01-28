@@ -79,5 +79,9 @@ class Document(object):
             key = field.name()
             if not key in dictionary:
                 dictionary[key] = []
-            dictionary[key].append(field.stringValue())
+            if not field.stringValue()  in dictionary[key]:
+                dictionary[key].append(field.stringValue())
         return dictionary
+
+    def __repr__(self):
+        return repr(self.asDict())

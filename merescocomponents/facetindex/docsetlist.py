@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -159,7 +161,8 @@ class DocSetList(object):
             CardinalityList_free(p)
 
     def addDocument(self, docid, terms):
-        for term in terms:
+        for term in (term.encode('utf-8') for term in terms):
+
             r = DocSetList_getForTerm(self, term)
             if r:
                 docset = DocSet(cobj=r)

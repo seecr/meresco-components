@@ -67,6 +67,7 @@ class Drilldown(object):
             docsetlist.deleteDoc(docId)
 
     def commit(self):
+        #print "Drilldown->commit()", len(self._commandQueue), str(self._commandQueue)
         try:
             for command in self._commandQueue:
                 command.execute()

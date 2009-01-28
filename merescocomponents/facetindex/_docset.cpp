@@ -43,8 +43,8 @@ DocSet* DocSet_forTesting(int size) {
         docset->push_back(i);
     return docset;
 }
-DocSet* DocSet_fromTermDocs(PyJObject* termDocs, int freq, char* term) {
-    DocSet* result = DocSet::fromTermDocs(termDocs->jobject, freq, NULL);
+DocSet* DocSet_fromTermDocs(PyJObject* termDocs, int freq, char* term, IntegerList* mapping) {
+    DocSet* result = DocSet::fromTermDocs(termDocs->jobject, freq, NULL, mapping);
     result->setTerm(term);
     return result;
 }
@@ -194,12 +194,13 @@ class HitCollector : public JHitCollector {
         }
 };
 
-DocSet* DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery) {
+DocSet* DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping) {
     HitCollector* resultCollector = new HitCollector();
     // Direct call of public void search(Query query, HitCollector results),
     // since there happens to be only one implementation which is not overridden
     // by any of MultiSearcher, IndexSearcher, ParallelSearche etc. Luckily!
     Searcher_search(psearcher->jobject, pquery->jobject, resultCollector);
+    resultCollector->docs->map(mapping);
     return resultCollector->docs;
 }
 
@@ -215,7 +216,7 @@ DocSet* DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery) {
 JIntArray* documents = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 JIntArray* ignored = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 
-DocSet* DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term) {
+DocSet* DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term, IntegerList* mapping) {
     // Call read() via Interface, because different implementations might be MultiTermDocs,
     // SegmentTermDocs, and the like.  Lookup only once instead of at every call. The
     // read() method is the 6th in the interface. Counting starts at 1.
@@ -242,5 +243,16 @@ DocSet* DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term) {
         docs->append((doc_t*)documents->data, additional);
         count += additional;
     }
+    docs->map(mapping);
     return docs;
+}
+
+void
+DocSet::map(IntegerList* mapping) {
+    if ( ! mapping ) {
+        return;
+    }
+    for (DocSet::iterator it = begin(); it < end(); it++) {
+        (*it) = (*mapping)[*it];
+    }
 }

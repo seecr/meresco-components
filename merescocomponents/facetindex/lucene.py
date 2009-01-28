@@ -46,7 +46,7 @@ class IncludeStopWordAnalyzer(object):
 
 class LuceneIndex(Observable):
 
-    def __init__(self, directoryName, transactionName=None, *ditwilikniet, **ditookniet):
+    def __init__(self, directoryName, transactionName=None,  *ditwilikniet, **ditookniet):
         Observable.__init__(self)
         self._searcher = None
         self._reader = None
@@ -54,21 +54,17 @@ class LuceneIndex(Observable):
         self._transactionName = transactionName
         self._commandQueue = []
         self._directoryName = directoryName
-
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
         self._reopenIndex()
-
         optimized = self.isOptimized()
         assert isfile(join(directoryName, 'tracker.segments')) or optimized, 'index must be optimized or tracker state must be present in directory'
-
         mergeFactor = self.getMergeFactor()
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
-
-        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=self.docCount())
+        maxDoc = self.docCount() if optimized else 0
+        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
         self._lucene2docId = self._tracker.getMap()
-        self._dinges = list(self._lucene2docId)
 
     def _reopenIndex(self):
         if self._writer:
@@ -85,17 +81,13 @@ class LuceneIndex(Observable):
         self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
 
     def observer_init(self):
-        self.do.indexStarted(self._reader, docIdMapping=self.getDocIdMapping())
-
-    def getDocIdMapping(self):
-        return self._lucene2docId
+        self.do.indexStarted(self._reader, docIdMapping=self._lucene2docId)
 
     def docsetFromQuery(self, pyLuceneQuery):
         t0 = time()
 
         try:
-            luceneIds = DocSet.fromQuery(self._searcher, pyLuceneQuery)
-            docIds = DocSet('', (self._dinges[luceneId] for luceneId in luceneIds))
+            docIds = DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
             return docIds
         finally:
             print 'docsetFromQuery (ms): ', (time()-t0)*1000
@@ -128,19 +120,18 @@ class LuceneIndex(Observable):
     def delete(self, identifier):
         docId = None
         luceneId = self._luceneIdForIdentifier(identifier)
-        if luceneId == None:
+        if luceneId == None:  # not in index (yet)
             for command in self._commandQueue:
                 if 'document' in command._kwargs:
                     docId = command._kwargs['document'].docId
                     break
         else:
             if not self._tracker.isDeleted(luceneId):
+                docId = self._tracker.map([luceneId]).next()
                 self._tracker.deleteLuceneId(luceneId)
-                docId = self._lucene2docId[luceneId]
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
             self.do.deleteDocument(docId=docId)
-
 
     def addDocument(self, luceneDocument=None):
         try:
@@ -159,14 +150,12 @@ class LuceneIndex(Observable):
             self.tx.join(self)
 
     def commit(self):
-        t0 = time()
         for command in self._commandQueue:
             command.execute()
         self._commandQueue = []
         self._reopenIndex()
         self._tracker.flush()
         self._lucene2docId = self._tracker.getMap()
-        print "Commit", time()-t0, "QLen: ", len(self._commandQueue)
 
     def rollback(self):
         pass
