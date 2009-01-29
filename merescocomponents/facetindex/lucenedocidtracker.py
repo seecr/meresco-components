@@ -55,16 +55,19 @@ class LuceneDocIdTracker(object):
         self._mergeFactor = mergeFactor
         self._ramSegmentsInfo = []
         self._segmentInfo = []
-
         self._nextDocId = 0
         self._docIds = IntegerList()
         if isfile(join(directory, 'tracker.segments')):
             self._load()
         else:
             if maxDoc > 0:
-                self._nextDocId = maxDoc
-                self._docIds = IntegerList(maxDoc)
-                self._segmentInfo.append(SegmentInfo(maxDoc, 0))
+                self._initializeFromOptimizedIndex(maxDoc)
+
+    def _initializeFromOptimizedIndex(self, maxDoc):
+        self._nextDocId = maxDoc
+        self._docIds = IntegerList(maxDoc)
+        self._segmentInfo.append(SegmentInfo(maxDoc, 0))
+        self._save()
 
     def next(self):
         self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds)))

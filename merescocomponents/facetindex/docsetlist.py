@@ -162,7 +162,6 @@ class DocSetList(object):
 
     def addDocument(self, docid, terms):
         for term in (term.encode('utf-8') for term in terms):
-
             r = DocSetList_getForTerm(self, term)
             if r:
                 docset = DocSet(cobj=r)

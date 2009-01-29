@@ -452,3 +452,18 @@ class DocSetListTest(LuceneTestCase):
         result = dsl.jaccards(DocSet('q',[]), 0, 100, 9, JACCARD_ONLY)
         self.assertEquals([('x', 0)], list(result))
 
+    def testSortingOnCardinalityDoesNotRuinTermLookup(self):
+        ds0 = DocSet('term0', [1,2])
+        ds1 = DocSet('term1', [1,2,3])
+        dsl = DocSetList()
+        dsl.add(ds0)
+        dsl.add(ds1)
+        ds0new = dsl.TEST_getDocsetForTerm('term0')
+        ds1new = dsl.TEST_getDocsetForTerm('term1')
+        self.assertEquals(ds0, ds0new)
+        self.assertEquals(ds1, ds1new)
+        dsl.sortOnCardinality()
+        ds0new = dsl.TEST_getDocsetForTerm('term0')
+        ds1new = dsl.TEST_getDocsetForTerm('term1')
+        self.assertEquals(ds0, ds0new)
+        self.assertEquals(ds1, ds1new)
