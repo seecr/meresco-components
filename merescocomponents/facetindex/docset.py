@@ -147,7 +147,6 @@ class DocSet(object):
     def add(self, doc):
         l = DocSet_len(self)
         if l > 0 and doc <= DocSet_get(self, l-1):
-            #print "term=", self.term(), "l=", l, "doc=", doc, "DocSet_get(self, l-1)=", DocSet_get(self, l-1)
             raise Exception('non-increasing docid')
         DocSet_add(self._cobj, doc)
 

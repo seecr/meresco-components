@@ -441,3 +441,14 @@ class DocSetListTest(LuceneTestCase):
         results = dsl.jaccards(DocSet('query',[1,2,3,4,5,6,7,8,9]), 11, 22, 9, JACCARD_ONLY)
         self.assertEquals([('term2', 22L), ('term1', 11L)], list(results))
 
+    def testZeroLengthSets(self):
+        ds1 = DocSet('x', [1])
+        dsl = DocSetList()
+        dsl.add(ds1)
+        self.assertEquals(1, len(dsl))
+        result = dsl.jaccards(DocSet('q',[]), 0, 100, 9, JACCARD_ONLY)
+        self.assertEquals([('x', 0L)], list(result))
+        ds1.delete(1)
+        result = dsl.jaccards(DocSet('q',[]), 0, 100, 9, JACCARD_ONLY)
+        self.assertEquals([('x', 0)], list(result))
+

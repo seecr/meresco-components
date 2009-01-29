@@ -248,15 +248,3 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.next()
         tracker.flush()
-
-    def testStateFileNumbering(self):
-        tracker = LuceneDocIdTracker(9, directory = self.createTrackerDir(), maxDoc=7)
-        for i in range(80):
-            tracker.next()
-        print "FLUSH"
-        tracker.flush()
-
-        tracker = LuceneDocIdTracker(9, directory = self.tempdir + "/tracker")
-
-        self.assertEquals(['0.docids', '1.docids', 'tracker.segments'] , sorted(listdir(self.tempdir + "/tracker")))
-

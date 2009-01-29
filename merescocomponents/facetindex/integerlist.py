@@ -96,7 +96,7 @@ class IntegerList(object):
                 return list(IntegerList(cobj=islice))
             finally:
                 IntegerList_delete(islice)
-        if i >= len(self): # or -i > len(self):
+        if i >= len(self) or -i > len(self):
             raise IndexError(i)
         return IntegerList_get(self, i)
 

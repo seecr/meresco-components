@@ -56,7 +56,12 @@ class LuceneIndex(Observable):
         self._directoryName = directoryName
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
+
+        self._writer = IndexWriter(
+            self._directoryName,
+            IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
         self._reopenIndex()
+
         optimized = self.isOptimized()
         assert isfile(join(directoryName, 'tracker.segments')) or optimized, 'index must be optimized or tracker state must be present in directory'
         mergeFactor = self.getMergeFactor()
@@ -66,12 +71,16 @@ class LuceneIndex(Observable):
         self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
         self._lucene2docId = self._tracker.getMap()
 
+    def getDocIdMapping(self):
+        return self._lucene2docId
+
     def _reopenIndex(self):
-        if self._writer:
-            self._writer.close()
-        self._writer = IndexWriter(
-            self._directoryName,
-            IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
+        #if self._writer:
+            #self._writer.close()
+        #self._writer = IndexWriter(
+            #self._directoryName,
+            #IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
+        self._writer.flush()
         if self._reader:
             self._reader.close()
         self._reader = IndexReader.open(self._directoryName)

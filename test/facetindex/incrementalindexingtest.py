@@ -126,3 +126,16 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.addDocument('1', field0='term0')
         self.assertEquals(['_delete', '_add'], [command.methodName() for command in self.index._commandQueue])
         self.assertEquals(['_delete', '_delete', '_add'], [command.methodName() for command in self.drilldown._commandQueue])
+
+    def addAndCommit(self, identifier):
+        self.addDocument(identifier, field0='term0')
+        self.index.commit()
+        self.drilldown.commit()
+
+    def testMultipleAdds(self):
+        from random import randint
+        for i in range(200):
+            self.addAndCommit(str(randint(1,10)))
+        for i in range(200):
+            self.addAndCommit(str(randint(1,10)))
+

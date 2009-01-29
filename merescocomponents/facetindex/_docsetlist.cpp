@@ -137,7 +137,10 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
     while ( lower < upper ) {
         DocSet* candidate = (*lower++);
         int c = candidate->combinedCardinality(docset);
-        int j = 100 * c / (candidate->size() + docset->size() - c);
+        int j = 0;
+        if ( c > 0 ) {
+            j = 100 * c / (candidate->size() + docset->size() - c);
+        }
 
         if ( j >= minimum && j <= maximum ) {
             if (algorithm == JACCARD_MI) {
