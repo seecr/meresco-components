@@ -38,10 +38,11 @@ int _head = 0;
 int _allocated = 5;
 PoolState *_pools = 0;
 
-void pool_init() {
+int pool_init() {
     if (_pools == 0) {
         _pools = (PoolState *) calloc(_allocated, sizeof(PoolState));
     }
+    return 1;
 }
 
 fwPool Pool_create(short elementType, size_t elementSize, int initialSize) {

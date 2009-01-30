@@ -67,7 +67,8 @@ class DocSetListTest(LuceneTestCase):
 
     def testAddMore(self):
         docsetlist = DocSetList()
-        docsetlist.add(DocSet('', [1,2]))
+        ds = DocSet('', [1,2])
+        docsetlist.add(ds)
         docsetlist.add(DocSet('', [3,4]))
         docsetlist.add(DocSet('', [5,6]))
         self.assertEquals(3, len(docsetlist))
@@ -182,7 +183,10 @@ class DocSetListTest(LuceneTestCase):
     #def testAppendToRow(self):
     def testAppendDocument(self):
         docsetlist = DocSetList()
+        self.assertEquals(0, len(docsetlist))
+        print 'A'
         docsetlist.addDocument(0, ['term0', 'term1'])
+        print 'B'
         self.assertEquals([('term0', 1), ('term1', 1)],
             list(docsetlist.termCardinalities(DocSet('', [0, 1]))))
         docsetlist.addDocument(1, ['term0', 'term1'])
@@ -266,7 +270,9 @@ class DocSetListTest(LuceneTestCase):
         m = DocSetList()
         m.add(DocSet('x', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
         m.add(DocSet('y', [1, 3, 5, 8, 18]))
-        self.assertEquals([('x', 1)], list(m.termCardinalities(DocSet('y', [0]))))
+        self.assertEquals([0,1,2,3,4,5,6,7,8,9], m[0])
+        self.assertEquals([1,3,5,8,18], m[1])
+        self.assertEquals([('x', 1)], list(m.termCardinalities(DocSet('q', [0]))))
         self.assertEquals([('x', 3), ('y', 1)], list(m.termCardinalities(DocSet('y', [0,1,2]))))
         self.assertEquals([('x', 4), ('y', 2)], list(m.termCardinalities(DocSet('y', [0,1,2,3]))))
         self.assertEquals([('x', 5), ('y', 2)], list(m.termCardinalities(DocSet('y', [0,1,2,3,4]))))

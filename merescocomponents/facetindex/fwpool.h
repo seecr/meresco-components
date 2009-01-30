@@ -36,10 +36,8 @@ typedef struct {
 typedef struct {
     int     _headElement;
     int     _allocatedElements;
-
     int     _freed_head;
     int     _freed_allocated;
-
     char*    pool;
     fwPtr*   freed;
     short   _elementType;
@@ -63,8 +61,6 @@ inline void* Pool_get(fwPool self, fwPtr ptr) {
 }
 int Pool_memory(fwPool self);
 int Pool_count(fwPool self);
-void pool_init(void);
-
-//inline int isNone(fwPtr ptr);
+int pool_init(void);
 
 #endif

@@ -68,21 +68,21 @@ from ngram.cqltermvisitortest import CqlTermVisitorTest
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
 
-from oai.fields2oairecordtest import Fields2OaiRecordTest
-from oai.oaijazzlucenetest import OaiJazzLuceneTest
-from oai.oaigetrecordtest import OaiGetRecordTest
-from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
-from oai.oailistsetstest import OaiListSetsTest
-from oai.oailisttest import OaiListTest
-from oai.oaipmhtest import OaiPmhTest
-from oai.oaitooltest import OaiToolTest
-from oai.oaiprovenancetest import OaiProvenanceTest
-from oai.resumptiontokentest import ResumptionTokenTest
-from oai.oaisetselecttest import OaiSetSelectTest
-from oai.xml2documenttest import Xml2DocumentTest
-from oai.oaijazztest import OaiJazzTest
-from oai.oaiaddrecordtest import OaiAddRecordTest
-from oai.oaijazzimplementationstest import OaiJazzWithFileAndLuceneTest, OaiJazzWithLuceneTest
+#from oai.fields2oairecordtest import Fields2OaiRecordTest
+#from oai.oaijazzlucenetest import OaiJazzLuceneTest
+#from oai.oaigetrecordtest import OaiGetRecordTest
+#from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
+#from oai.oailistsetstest import OaiListSetsTest
+#from oai.oailisttest import OaiListTest
+#from oai.oaipmhtest import OaiPmhTest
+#from oai.oaitooltest import OaiToolTest
+#from oai.oaiprovenancetest import OaiProvenanceTest
+#from oai.resumptiontokentest import ResumptionTokenTest
+#from oai.oaisetselecttest import OaiSetSelectTest
+#from oai.xml2documenttest import Xml2DocumentTest
+#from oai.oaijazzfiletest import OaiJazzFileTest
+#from oai.oaiaddrecordtest import OaiAddRecordTest
+#from oai.oaijazztest import OaiJazzWithFileTest, OaiJazzWithLuceneTest
 
 if __name__ == '__main__':
     unittest.main()

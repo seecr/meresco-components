@@ -131,7 +131,6 @@ inline ListItem* ListItem_state(fwPtr self) {
 }
 
 void ListNode_init() {
-    printf("sizeof(ListNodeState) = %d\n", sizeof(ListNodeState));
     _listNodePool = Pool_create(LIST, sizeof(ListNodeState),  5000);
     _listItemPool = Pool_create(0 /*NA*/, sizeof(ListItem), 100000);
 }
@@ -444,7 +443,14 @@ void TrieNode_addValue(fwPtr self, guint32 value, fwString term) {
 }
 
 void TrieNode_free(fwPtr self) {
-    printf("TrieNode_free - Not yet implemented!\n");
+    TrieNodeState* me = TrieNode_state(self);
+    for( int i = 0; i < 0x01<<ALPHABET_IN_BITS; i++ ) {
+        fwPtr child = me->child[i];
+        if ( ! isNone(child) ) {
+            interface(child)->free(child);
+        }
+    }
+    Pool_free(_trieNodePool, self);
 }
 
 void TrieNode_printit(fwPtr self, int indent) {

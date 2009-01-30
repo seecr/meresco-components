@@ -30,54 +30,67 @@
 
 extern "C" {
     #include "zipper.h"
+    #include "fwpool.h"
 }
 
+fwPool _docsetPool = Pool_create(0, sizeof(DocSet), 10000);
 
-DocSet* DocSet_create() {
-    return new DocSet();
+fwPtr DocSet_create(int size=0) {
+    fwPtr newOne = Pool_new(_docsetPool);
+    void* p = pDS(newOne);
+    if ( size > 0 ) {
+        new (p) DocSet(size);
+    } else {
+        new (p) DocSet();
+    }
+    return newOne;
 }
-DocSet* DocSet_forTesting(int size) {
-    DocSet* docset = new DocSet();
+void DocSet_delete(fwPtr docset) {
+    pDS(docset)->~DocSet();
+    Pool_free(_docsetPool, docset);
+}
+
+fwPtr DocSet_forTesting(int size) {
+    fwPtr ds = DocSet_create();
+    DocSet* docset = pDS(ds);
     docset->reserve(size);
     for ( int i = 0; i < size; i++ )
         docset->push_back(i);
-    return docset;
+    return ds;
 }
-DocSet* DocSet_fromTermDocs(PyJObject* termDocs, int freq, char* term, IntegerList* mapping) {
-    DocSet* result = DocSet::fromTermDocs(termDocs->jobject, freq, NULL, mapping);
-    result->setTerm(term);
+fwPtr DocSet_fromTermDocs(PyJObject* termDocs, int freq, char* term, IntegerList* mapping) {
+    fwPtr result = DocSet::fromTermDocs(termDocs->jobject, freq, NULL, mapping);
+    pDS(result)->setTerm(term);
     return result;
 }
-void DocSet_add(DocSet* docset, guint32 doc) {
-    docset->push_back(doc);
+void DocSet_add(fwPtr docset, guint32 doc) {
+    pDS(docset)->push_back(doc);
 }
-void DocSet_remove(DocSet* docset, guint32 doc) {
-    docset->remove(doc);
+void DocSet_remove(fwPtr docset, guint32 doc) {
+    pDS(docset)->remove(doc);
 }
-guint32 DocSet_get(DocSet* docset, int i) {
-    return docset->at(i);
+guint32 DocSet_get(fwPtr docset, int i) {
+    return pDS(docset)->at(i);
 }
-int DocSet_len(DocSet* docset) {
-    return docset->size();
+int DocSet_len(fwPtr docset) {
+    return pDS(docset)->size();
 }
-void DocSet_setTerm(DocSet* docset, char* term) {
-    docset->setTerm(term);
+void DocSet_setTerm(fwPtr docset, char* term) {
+    pDS(docset)->setTerm(term);
 }
-char* DocSet_term(DocSet* docset) {
-    return docset->term();
+char* DocSet_term(fwPtr docset) {
+    return pDS(docset)->term();
 }
-int DocSet_combinedCardinality(DocSet* docset, DocSet* rhs) {
-    return docset->combinedCardinality(rhs);
+int DocSet_combinedCardinality(fwPtr docset, fwPtr rhs) {
+    return pDS(docset)->combinedCardinality(pDS(rhs));
 }
-int DocSet_combinedCardinalitySearch(DocSet* docset, DocSet* rhs) {
-    return docset->combinedCardinalitySearch(rhs);
+int DocSet_combinedCardinalitySearch(fwPtr docset, fwPtr rhs) {
+    return pDS(docset)->combinedCardinalitySearch(pDS(rhs));
 }
-DocSet* DocSet_intersect(DocSet* docset, DocSet* rhs) {
-    return docset->intersect(rhs);
+fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
+    return pDS(docset)->intersect(pDS(rhs));
 }
-void DocSet_delete(DocSet* docset) {
-    delete docset;
-}
+
 
 void DocSet::setTerm(char* term) {
     _term = fwString_create(term);
@@ -147,15 +160,15 @@ int DocSet::combinedCardinality(DocSet* rhs) {
     return c;
 }
 
-DocSet* DocSet::intersect(DocSet* rhs) {
-    DocSet* result = new DocSet();
-    result->resize(this->size() > rhs->size() ? size() : rhs->size());
+fwPtr DocSet::intersect(DocSet* rhs) {
+    fwPtr result = DocSet_create();
+    pDS(result)->resize(this->size() > rhs->size() ? size() : rhs->size());
     push_back(0xFFFFFFFF);
     rhs->push_back(0xFFFFFFFF);
-    int size = intersectZipper(&this->front(), &rhs->front(), &result->front());
+    int size = intersectZipper(&this->front(), &rhs->front(), &pDS(result)->front());
     pop_back();
     rhs->pop_back();
-    result->resize(size);
+    pDS(result)->resize(size);
     return result;
 }
 
@@ -187,21 +200,21 @@ void DocSet::remove(guint32 doc) {
 
 class HitCollector : public JHitCollector {
     public:
-        DocSet* docs;
-        HitCollector() : docs( new DocSet() ) {}
+        fwPtr docset;
+        HitCollector() : docset( DocSet_create() ) {}
         virtual void aka_collect(register jint doc, register jfloat score) { // collect
-            docs->push_back(doc);
+            pDS(docset)->push_back(doc);
         }
 };
 
-DocSet* DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping) {
+fwPtr DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping) {
     HitCollector* resultCollector = new HitCollector();
     // Direct call of public void search(Query query, HitCollector results),
     // since there happens to be only one implementation which is not overridden
     // by any of MultiSearcher, IndexSearcher, ParallelSearche etc. Luckily!
     Searcher_search(psearcher->jobject, pquery->jobject, resultCollector);
-    resultCollector->docs->map(mapping);
-    return resultCollector->docs;
+    pDS(resultCollector->docset)->map(mapping);
+    return resultCollector->docset;
 }
 
 
@@ -216,12 +229,13 @@ DocSet* DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* m
 JIntArray* documents = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 JIntArray* ignored = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 
-DocSet* DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term, IntegerList* mapping) {
+fwPtr DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term, IntegerList* mapping) {
     // Call read() via Interface, because different implementations might be MultiTermDocs,
     // SegmentTermDocs, and the like.  Lookup only once instead of at every call. The
     // read() method is the 6th in the interface. Counting starts at 1.
     TermDocs_read read = (TermDocs_read) lookupIface(termDocs, &ITermDocs, 6);
-    DocSet* docs = new DocSet();
+    fwPtr docset = DocSet_create();
+    DocSet* docs = pDS(docset);
     if ( term )
         docs->setTerm(term);
     docs->reserve(freq); // <<== this really speeds up: from 3.1/3.2 => 2.6/2.7 seconds.
@@ -244,7 +258,7 @@ DocSet* DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term, Integer
         count += additional;
     }
     docs->map(mapping);
-    return docs;
+    return docset;
 }
 
 void

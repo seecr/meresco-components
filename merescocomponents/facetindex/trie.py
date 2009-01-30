@@ -26,7 +26,8 @@
 ## end license ##
 from ctypes import cdll, c_uint32, c_int, c_char_p, Structure, POINTER
 from os.path import join, abspath, dirname
-from docset import libDocSet as lib, DocSet
+from libfacetindex import libFacetIndex as lib
+from docset import DocSet
 
 #lib = cdll.LoadLibrary(join(abspath(dirname(__file__)), '_facetindex.so'))
 

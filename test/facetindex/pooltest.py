@@ -26,7 +26,8 @@
 ## end license ##
 from unittest import TestCase
 from ctypes import c_int, c_uint, c_short, Structure
-from merescocomponents.facetindex.docset import DocSet, libDocSet as lib
+from merescocomponents.facetindex.libfacetindex import libFacetIndex as lib
+from merescocomponents.facetindex.docset import DocSet
 
 fwPool = c_int
 class fwPtr(Structure):
@@ -64,13 +65,13 @@ class PoolTest(TestCase):
 
     def testCreate(self):
         pool1 = Pool(1, 10, 10)
-        self.assertEquals(5, pool1._as_parameter_)
+        self.assertEquals(6, pool1._as_parameter_)
         pool2 = Pool(2, 10, 10)
-        self.assertEquals(6, pool2._as_parameter_)
+        self.assertEquals(7, pool2._as_parameter_)
         pool3 = Pool(3, 10, 10)
-        self.assertEquals(7, pool3._as_parameter_)
+        self.assertEquals(8, pool3._as_parameter_)
         pool4 = Pool(4, 10, 10)
-        self.assertEquals(8, pool4._as_parameter_)
+        self.assertEquals(9, pool4._as_parameter_)
 
     def testNewItem(self):
         pool = Pool(3, 0, 10)

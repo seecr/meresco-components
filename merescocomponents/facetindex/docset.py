@@ -25,71 +25,72 @@
 #
 ## end license ##
 from os.path import dirname, abspath, join
-from ctypes import cdll, c_int, c_uint32, POINTER, py_object, c_char_p
+from ctypes import cdll, c_int, c_uint32, POINTER, py_object, c_char_p, Structure
+from libfacetindex import libFacetIndex
+from integerlist import INTEGERLIST
 
-SELF = POINTER(None)
+class DOCSET(Structure):
+    _fields_ = [("type", c_int, 2),
+                ("ptr", c_int, 30)]
 
 docsetpointer = POINTER(c_uint32)
 def docsettype(size):
     return (c_uint32*size)
 
-import PyLucene # make sure PyLucene/Java is initialized before loading _docset.so
-libDocSet = cdll.LoadLibrary(join(abspath(dirname(__file__)), '_facetindex.so'))
+DocSet_create = libFacetIndex.DocSet_create
+DocSet_create.argtypes = [c_int]
+DocSet_create.restype = DOCSET
 
-DocSet_create = libDocSet.DocSet_create
-DocSet_create.argtypes = []
-DocSet_create.restype = SELF
-
-DocSet_add = libDocSet.DocSet_add
-DocSet_add.argtypes = [SELF, c_uint32]
+DocSet_add = libFacetIndex.DocSet_add
+DocSet_add.argtypes = [DOCSET, c_uint32]
 DocSet_add.restype = None
 
-DocSet_remove = libDocSet.DocSet_remove
-DocSet_remove.argtypes = [SELF, c_uint32]
+DocSet_remove = libFacetIndex.DocSet_remove
+DocSet_remove.argtypes = [DOCSET, c_uint32]
 DocSet_remove.restype = None
 
-DocSet_get = libDocSet.DocSet_get
-DocSet_get.argtypes = [SELF, c_int]
+DocSet_get = libFacetIndex.DocSet_get
+DocSet_get.argtypes = [DOCSET, c_int]
 DocSet_get.restype = c_uint32
 
-DocSet_len = libDocSet.DocSet_len
-DocSet_len.argtypes = [SELF]
+DocSet_len = libFacetIndex.DocSet_len
+DocSet_len.argtypes = [DOCSET]
 DocSet_len.restype = int
 
-DocSet_term = libDocSet.DocSet_term
-DocSet_term.argtypes = [SELF]
+DocSet_term = libFacetIndex.DocSet_term
+DocSet_term.argtypes = [DOCSET]
 DocSet_term.restype = c_char_p
 
-DocSet_setTerm = libDocSet.DocSet_setTerm
-DocSet_setTerm.argtypes = [SELF, c_char_p]
+DocSet_setTerm = libFacetIndex.DocSet_setTerm
+DocSet_setTerm.argtypes = [DOCSET, c_char_p]
 DocSet_setTerm.restype = None
 
-DocSet_combinedCardinality = libDocSet.DocSet_combinedCardinality
-DocSet_combinedCardinality.argtypes = [SELF, SELF]
+DocSet_combinedCardinality = libFacetIndex.DocSet_combinedCardinality
+DocSet_combinedCardinality.argtypes = [DOCSET, DOCSET]
 DocSet_combinedCardinality.restype = c_int
 
-DocSet_combinedCardinalitySearch = libDocSet.DocSet_combinedCardinalitySearch
-DocSet_combinedCardinalitySearch.argtype = [SELF, SELF]
+DocSet_combinedCardinalitySearch = libFacetIndex.DocSet_combinedCardinalitySearch
+DocSet_combinedCardinalitySearch.argtype = [DOCSET, DOCSET]
 DocSet_combinedCardinalitySearch.restype = c_int
 
-DocSet_intersect = libDocSet.DocSet_intersect
-DocSet_intersect.argtypes = [SELF, SELF]
-DocSet_intersect.restype = SELF
+DocSet_intersect = libFacetIndex.DocSet_intersect
+DocSet_intersect.argtypes = [DOCSET, DOCSET]
+DocSet_intersect.restype = DOCSET
 
-DocSet_fromQuery = libDocSet.DocSet_fromQuery
-DocSet_fromQuery.argtypes = [py_object, py_object, SELF]
-DocSet_fromQuery.restype = SELF
+DocSet_fromQuery = libFacetIndex.DocSet_fromQuery
+DocSet_fromQuery.argtypes = [py_object, py_object, POINTER(None)]
+DocSet_fromQuery.restype = DOCSET
 
-DocSet_fromTermDocs = libDocSet.DocSet_fromTermDocs
-DocSet_fromTermDocs.argtypes = [py_object, c_int, c_char_p, SELF]
-DocSet_fromTermDocs.restype = SELF
+DocSet_fromTermDocs = libFacetIndex.DocSet_fromTermDocs
+DocSet_fromTermDocs.argtypes = [py_object, c_int, c_char_p, POINTER(None)]
+DocSet_fromTermDocs.restype = DOCSET
 
-DocSet_forTesting = libDocSet.DocSet_forTesting
+DocSet_forTesting = libFacetIndex.DocSet_forTesting
 DocSet_forTesting.argtypes = [c_int]
-DocSet_forTesting.restype = SELF
+DocSet_forTesting.restype = DOCSET
 
-DocSet_delete = libDocSet.DocSet_delete
-DocSet_delete.argtypes = [SELF]
+DocSet_delete = libFacetIndex.DocSet_delete
+DocSet_delete.argtypes = [DOCSET]
 DocSet_delete.restype = None
 
 class DocSet(object):
@@ -116,7 +117,7 @@ class DocSet(object):
             self._cobj = cobj
             self._own_cobj = False
         else:
-            self._cobj = DocSet_create()
+            self._cobj = DocSet_create(0)
             self._own_cobj = True
             for i in data:
                 DocSet_add(self._cobj, i)
@@ -125,8 +126,9 @@ class DocSet(object):
             DocSet_setTerm(self, term)
 
     def __del__(self):
-        if self._own_cobj:
-            DocSet_delete(self)
+        pass
+        #if self._own_cobj:
+        #    DocSet_delete(self)
 
     def __len__(self):
         return DocSet_len(self)
@@ -147,7 +149,7 @@ class DocSet(object):
     def add(self, doc):
         l = DocSet_len(self)
         if l > 0 and doc <= DocSet_get(self, l-1):
-            raise Exception('non-increasing docid')
+            raise Exception('non-increasing docid: %d must be > %d' % (doc, l))
         DocSet_add(self._cobj, doc)
 
     def delete(self, doc):

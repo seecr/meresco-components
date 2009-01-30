@@ -27,44 +27,44 @@
 
 from sys import maxint
 from ctypes import c_uint32, c_int32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
-from docset import libDocSet
+from libfacetindex import libFacetIndex
 
-SELF = POINTER(None)
+INTEGERLIST = POINTER(None)
 
-IntegerList_create = libDocSet.IntegerList_create
+IntegerList_create = libFacetIndex.IntegerList_create
 IntegerList_create.argtypes = [c_int]
-IntegerList_create.restype = SELF
+IntegerList_create.restype = INTEGERLIST
 
-IntegerList_delete = libDocSet.IntegerList_delete
-IntegerList_delete.argtypes = [SELF]
+IntegerList_delete = libFacetIndex.IntegerList_delete
+IntegerList_delete.argtypes = [INTEGERLIST]
 IntegerList_delete.restype = None
 
-IntegerList_append = libDocSet.IntegerList_append
-IntegerList_append.argtypes = [SELF, c_uint32]
+IntegerList_append = libFacetIndex.IntegerList_append
+IntegerList_append.argtypes = [INTEGERLIST, c_uint32]
 IntegerList_append.restype = None
 
-IntegerList_size = libDocSet.IntegerList_size
-IntegerList_size.argtypes = [SELF]
+IntegerList_size = libFacetIndex.IntegerList_size
+IntegerList_size.argtypes = [INTEGERLIST]
 IntegerList_size.restype = c_int
 
-IntegerList_get = libDocSet.IntegerList_get
-IntegerList_get.argtypes = [SELF, c_uint32]
+IntegerList_get = libFacetIndex.IntegerList_get
+IntegerList_get.argtypes = [INTEGERLIST, c_uint32]
 IntegerList_get.restype = c_int32
 
-IntegerList_set = libDocSet.IntegerList_set
-IntegerList_set.argtypes = [SELF, c_int, c_uint32]
+IntegerList_set = libFacetIndex.IntegerList_set
+IntegerList_set.argtypes = [INTEGERLIST, c_int, c_uint32]
 IntegerList_set.restype = None
 
-IntegerList_delitems = libDocSet.IntegerList_delitems
-IntegerList_delitems.argtypes = [SELF, c_int, c_int]
+IntegerList_delitems = libFacetIndex.IntegerList_delitems
+IntegerList_delitems.argtypes = [INTEGERLIST, c_int, c_int]
 IntegerList_delitems.restype = None
 
-IntegerList_slice = libDocSet.IntegerList_slice
-IntegerList_slice.argtypes = [SELF, c_int, c_int, c_int]
-IntegerList_slice.restype = SELF
+IntegerList_slice = libFacetIndex.IntegerList_slice
+IntegerList_slice.argtypes = [INTEGERLIST, c_int, c_int, c_int]
+IntegerList_slice.restype = INTEGERLIST
 
-IntegerList_mergeFromOffset = libDocSet.IntegerList_mergeFromOffset
-IntegerList_mergeFromOffset.argtypes = [SELF, c_int]
+IntegerList_mergeFromOffset = libFacetIndex.IntegerList_mergeFromOffset
+IntegerList_mergeFromOffset.argtypes = [INTEGERLIST, c_int]
 IntegerList_mergeFromOffset.restype = c_int
 
 
