@@ -184,9 +184,7 @@ class DocSetListTest(LuceneTestCase):
     def testAppendDocument(self):
         docsetlist = DocSetList()
         self.assertEquals(0, len(docsetlist))
-        print 'A'
         docsetlist.addDocument(0, ['term0', 'term1'])
-        print 'B'
         self.assertEquals([('term0', 1), ('term1', 1)],
             list(docsetlist.termCardinalities(DocSet('', [0, 1]))))
         docsetlist.addDocument(1, ['term0', 'term1'])

@@ -52,7 +52,7 @@ DocSetList::~DocSetList() {
 void DocSetList::addDocSet(fwPtr docset) {
     push_back(docset);
     if ( pDS(docset)->_term != fwStringNone )
-        TrieNode_addValue(termIndex2, size()-1, pDS(docset)->_term);
+        TrieNode_addValue(termIndex2, docset.ptr, pDS(docset)->_term);
 }
 
 void DocSetList::removeDoc(guint32 doc) {
@@ -63,10 +63,11 @@ void DocSetList::removeDoc(guint32 doc) {
 }
 
 fwPtr DocSetList::forTerm(char* term) {
-    guint32 termnr = TrieNode_getValue(termIndex2, term);
-    if ( termnr == fwValueNone )
+    guint32 docsetptr = TrieNode_getValue(termIndex2, term);
+    if ( docsetptr == fwValueNone )
         return fwNONE;
-    return at(termnr);
+    fwPtr docset = {0, docsetptr};
+    return docset;
 }
 
 
