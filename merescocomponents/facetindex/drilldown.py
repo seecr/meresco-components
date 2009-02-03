@@ -29,7 +29,7 @@ from PyLucene import Term, IndexReader # hmm, maybe we don't want this dependenc
 from time import time
 from sys import maxint
 from functioncommand import FunctionCommand
-from merescocore.framework import getCallstackVar
+from callstackscope import callstackscope
 
 class NoFacetIndexException(Exception):
 
@@ -78,7 +78,7 @@ class Drilldown(object):
         pass
 
     def begin(self):
-        tx = getCallstackVar('tx')
+        tx = callstackscope('__callstack_var_tx__') # rather derive from Observable oid and use self.tx
         if tx.name == self._transactionName:
             tx.join(self)
 

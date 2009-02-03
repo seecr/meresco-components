@@ -32,6 +32,7 @@ from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Struct
 from libfacetindex import libFacetIndex
 from docset import DocSet, DOCSET
 from integerlist import IntegerList
+from cq2utils import deallocator
 
 DOCSETLIST = POINTER(None)
 CARDINALITYLIST = POINTER(None)
@@ -92,6 +93,10 @@ DocSetList_sortOnCardinality = libFacetIndex.DocSetList_sortOnCardinality
 DocSetList_sortOnCardinality.argtypes = [DOCSETLIST]
 DocSetList_sortOnCardinality.restype = None
 
+DocSetList_sortOnTerm = libFacetIndex.DocSetList_sortOnTerm
+DocSetList_sortOnTerm.argtypes = [DOCSETLIST]
+DocSetList_sortOnTerm.restype = None
+
 CardinalityList_size = libFacetIndex.CardinalityList_size
 CardinalityList_size.argtypes = [CARDINALITYLIST]
 CardinalityList_size.restype = c_int
@@ -104,23 +109,24 @@ CardinalityList_free = libFacetIndex.CardinalityList_free
 CardinalityList_free.argtypes = [CARDINALITYLIST]
 CardinalityList_free.restype = None
 
+SORTEDONTERM = 1
+SORTEDONCARDINALITY = 2
+
 class DocSetList(object):
 
     @classmethod
     def fromTermEnum(clazz, termEnum, termDocs, integerList=None):
         r = DocSetList_fromTermEnum(py_object(termEnum), py_object(termDocs), integerList.getCObject() if integerList else 0)
-        return clazz(r)
+        return clazz(cobj=r)
 
     def __init__(self, cobj=None):
         if cobj:
             self._cobj = cobj
         else:
             self._cobj = DocSetList_create()
+        self._dealloc = deallocator(DocSetList_delete, cobj)
         self._as_parameter_ = self._cobj
-        self._sorted = False
-
-    def __del__(self):
-        DocSetList_delete(self)
+        self._sorted = None
 
     def __len__(self):
         return DocSetList_size(self)
@@ -134,11 +140,13 @@ class DocSetList(object):
             return
         docset.releaseData()
         DocSetList_add(self, docset)
-        self._sorted = False
+        self._sorted = None
 
     def termCardinalities(self, docset, maxResults=maxint, sorted=False):
         if sorted:
             self.sortOnCardinality()
+        elif self._sorted == None:
+            self.sortOnTerm()
         p = DocSetList_combinedCardinalities(self, docset, maxResults, sorted)
         try:
             for i in xrange(CardinalityList_size(p)):
@@ -167,7 +175,7 @@ class DocSetList(object):
             if r.ptr != -1:
                 docset = DocSet(cobj=r)
                 docset.add(docid)
-                self._sorted = False
+                self._sorted = None
             else:
                 docset = DocSet(term)
                 docset.add(docid)
@@ -177,12 +185,17 @@ class DocSetList(object):
         DocSetList_removeDoc(self, doc)
 
     def sortOnCardinality(self):
-        if not self._sorted:
+        if self._sorted != SORTEDONCARDINALITY:
             DocSetList_sortOnCardinality(self)
-            self._sorted = True
+            self._sorted = SORTEDONCARDINALITY
 
-    def sorted(self):
-        return self._sorted
+    def sortedOnCardinality(self):
+        return self._sorted == SORTEDONCARDINALITY
+
+    def sortOnTerm(self):
+        if self._sorted != SORTEDONTERM:
+            DocSetList_sortOnTerm(self)
+            self._sorted = SORTEDONTERM
 
     def TEST_getDocsetForTerm(self, term):
         r = DocSetList_getForTerm(self, term)

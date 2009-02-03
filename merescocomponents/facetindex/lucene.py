@@ -75,11 +75,6 @@ class LuceneIndex(Observable):
         return self._lucene2docId
 
     def _reopenIndex(self):
-        #if self._writer:
-            #self._writer.close()
-        #self._writer = IndexWriter(
-            #self._directoryName,
-            #IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
         self._writer.flush()
         if self._reader:
             self._reader.close()

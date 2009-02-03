@@ -25,6 +25,7 @@
 #
 ## end license ##
 from merescocore.framework import Transparant,  Observable
+from merescocomponents.facetindex import document
 from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
 from Levenshtein import distance, ratio
 from itertools import islice
@@ -83,6 +84,10 @@ class NGramFieldlet(Transparant):
 
     def addField(self, name, value):
         for word in unicode(value).split():
+            count, ids = self.any.executeQuery(TermQuery(Term(document.IDFIELD, word)))
+            if count > 0:
+                continue
+
             self.tx.locals['id'] = word
             ngrams = ' '.join(self._ngram(word))
             self.do.addField(self._fieldName, ngrams)

@@ -28,6 +28,7 @@ from os.path import dirname, abspath, join
 from ctypes import cdll, c_int, c_uint32, POINTER, py_object, c_char_p, Structure
 from libfacetindex import libFacetIndex
 from integerlist import INTEGERLIST
+from cq2utils import deallocator
 
 class DOCSET(Structure):
     _fields_ = [("type", c_int, 2),
@@ -93,42 +94,37 @@ DocSet_delete = libFacetIndex.DocSet_delete
 DocSet_delete.argtypes = [DOCSET]
 DocSet_delete.restype = None
 
+
 class DocSet(object):
 
     @classmethod
     def fromQuery(clazz, searcher, query, mapping=None):
         r = DocSet_fromQuery(py_object(searcher), py_object(query), mapping)
-        return clazz(cobj=r)
+        return clazz(cobj=r, own=True)
 
     @classmethod
     def fromTermDocs(clazz, termdocs, freq, term="", mapping=None):
         r = DocSet_fromTermDocs(py_object(termdocs), freq, term, mapping)
-        return clazz(cobj=r)
+        return clazz(cobj=r, own=True)
 
     @classmethod
     def forTesting(clazz, size):
         r = DocSet_forTesting(size)
-        c = clazz(cobj=r, term='test')
-        c._own_cobj = True;
+        c = clazz(cobj=r, term='test', own=True)
         return c
 
-    def __init__(self, term='', data=[], cobj=None, ):
+    def __init__(self, term='', data=[], cobj=None, own=False):
         if cobj:
             self._cobj = cobj
-            self._own_cobj = False
+            self._own_cobj = deallocator(DocSet_delete, self._cobj) if own else False
         else:
             self._cobj = DocSet_create(0)
-            self._own_cobj = True
-            for i in data:
-                DocSet_add(self._cobj, i)
+            self._own_cobj = deallocator(DocSet_delete, self._cobj)
         self._as_parameter_ = self._cobj
+        for i in data:
+            DocSet_add(self._cobj, i)
         if term:
             DocSet_setTerm(self, term)
-
-    def __del__(self):
-        pass
-        #if self._own_cobj:
-        #    DocSet_delete(self)
 
     def __len__(self):
         return DocSet_len(self)
@@ -160,6 +156,7 @@ class DocSet(object):
 
     def releaseData(self):
         assert self._own_cobj, 'object already released, perhaps duplicate add()?'
+        self._own_cobj.next()
         self._own_cobj = False;
 
     def combinedCardinality(self, rhs):
@@ -167,4 +164,4 @@ class DocSet(object):
 
     def intersect(self, rhs):
         r = DocSet_intersect(self, rhs)
-        return DocSet(cobj=r)
+        return DocSet(cobj=r, own=True)

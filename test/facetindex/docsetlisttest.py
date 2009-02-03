@@ -305,10 +305,10 @@ class DocSetListTest(LuceneTestCase):
         d.add(DocSet('x', [2,3]))
         d.add(DocSet('y', [1,2,3]))
         unsortedResult = d.termCardinalities(DocSet('q', [1,2,3]))
-        self.assertFalse(d.sorted())
+        self.assertFalse(d.sortedOnCardinality())
         self.assertEquals([('x', 2L), ('y', 3L)], list(unsortedResult))
         d.sortOnCardinality()
-        self.assertTrue(d.sorted())
+        self.assertTrue(d.sortedOnCardinality())
         sortedResult = d.termCardinalities(DocSet('q', [1,2,3]))
         self.assertEquals([('y', 3L), ('x', 2L)], list(sortedResult))
 
@@ -316,21 +316,21 @@ class DocSetListTest(LuceneTestCase):
         d = DocSetList()
         d.add(DocSet('x', [2,3]))
         d.sortOnCardinality()
-        self.assertTrue(d.sorted())
+        self.assertTrue(d.sortedOnCardinality())
         d.add(DocSet('x', [2,3]))
-        self.assertFalse(d.sorted())
+        self.assertFalse(d.sortedOnCardinality())
 
     def testUnsortedOnAddDocument(self):
         d = DocSetList()
         d.addDocument(0, ['term0'])
         d.sortOnCardinality()
-        self.assertTrue(d.sorted())
+        self.assertTrue(d.sortedOnCardinality())
         d.addDocument(0, ['term1'])
-        self.assertFalse(d.sorted())
+        self.assertFalse(d.sortedOnCardinality())
         d.sortOnCardinality()
-        self.assertTrue(d.sorted())
+        self.assertTrue(d.sortedOnCardinality())
         d.addDocument(1, ['term0'])
-        self.assertFalse(d.sorted())
+        self.assertFalse(d.sortedOnCardinality())
         self.assertEquals([[0, 1],[0]], list(d))
 
     def createSomeCarefullyPreparedDocsetToTestSorting(self):
@@ -342,6 +342,22 @@ class DocSetListTest(LuceneTestCase):
         d.add(DocSet('e', [0,1,2]))
         d.add(DocSet('f', [1,2,3,4,5,6]))
         return d
+
+    def testSortOnTerm(self):
+        d = DocSetList()
+        d.addDocument(0, ['a-term'])
+        d.addDocument(0, ['c-term'])
+        d.addDocument(0, ['b-term'])
+        d.sortOnTerm()
+        self.assertEquals( [('a-term', 1), ('b-term', 1), ('c-term', 1)], list(d.allCardinalities()))
+
+    def testSortOnTermByDefault(self):
+        d = DocSetList()
+        d.addDocument(0, ['a-term'])
+        d.addDocument(0, ['c-term'])
+        d.addDocument(0, ['b-term'])
+        result = d.termCardinalities(DocSet('q', [0]))
+        self.assertEquals( [('a-term', 1), ('b-term', 1), ('c-term', 1)], list(result))
 
     def testTopList(self):
         d = self.createSomeCarefullyPreparedDocsetToTestSorting()

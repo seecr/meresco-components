@@ -52,8 +52,6 @@ def createNGramHelix(observert):
         )
     )
 
-
-
 class NGramTest(CQ2TestCase):
     def testDNA(self):
         def ngramQuery(word, N=2):
@@ -68,6 +66,7 @@ class NGramTest(CQ2TestCase):
                 (TransactionScope('ngram'),
                     (Xml2Fields(),
                         (NGramFieldlet(2, 'ngrams'),
+                            (index,),
                             (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
                                 (index,)
                             )
@@ -105,19 +104,27 @@ class NGramTest(CQ2TestCase):
         self.assertEquals(set(['bo', 'oo', 'om']), set(ngrams('boom', N=2)))
 
     def testNGramFieldLet(self):
-        observert = CallTrace('Observert')
+        observert = CallTrace('Observert', returnValues={'executeQuery': (0, [])})
         ngramFieldlet = createNGramHelix(observert)
         ngramFieldlet.do.addField('field0', 'term0')
-        self.assertEquals(2, len(observert.calledMethods))
+        self.assertEquals(3, len(observert.calledMethods))
         self.assertEquals("begin()", str(observert.calledMethods[0]))
-        self.assertEquals('addField', observert.calledMethods[1].name)
-        self.assertEquals(('ngrams', 'te er rm m0'), observert.calledMethods[1].args)
+        self.assertEquals('addField', observert.calledMethods[2].name)
+        self.assertEquals(('ngrams', 'te er rm m0'), observert.calledMethods[2].args)
+
+    def testNGramFieldLetQueriesForWord(self):
+        observert = CallTrace('Observert', returnValues={'executeQuery': (1, [])})
+        ngramFieldlet = createNGramHelix(observert)
+        ngramFieldlet.do.addField('field0', 'term0')
+        self.assertEquals('[begin(), executeQuery(<class __id__>)]', str(observert.calledMethods))
 
     def testWordisIDinTransactionScope(self):
         txlocals = {}
         class Observert(Observable):
             def addField(self, *args):
                 txlocals.update(self.tx.locals)
+            def executeQuery(*args, **kwargs):
+                return 0, []
         x = createNGramHelix(Observert())
         x.do.addField('field0', 'term0')
         self.assertEquals({'id': u'term0'}, txlocals)

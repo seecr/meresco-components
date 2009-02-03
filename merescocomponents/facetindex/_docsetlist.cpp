@@ -44,7 +44,7 @@ DocSetList::DocSetList() {
 
 DocSetList::~DocSetList() {
     for ( unsigned int i = 0; i < size(); i++) {
-       //delete at(i);
+       DocSet_delete(at(i));
     }
     TrieNode_free(termIndex2);
 }
@@ -182,7 +182,7 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
     return results;
 }
 
-/////////////// C Interface to DocSetList ////////////////
+/////////////// C Interface to CardinalityList ////////////////
 
 cardinality_t* CardinalityList_at(CardinalityList* vector, int i) {
     return &vector->at(i);
@@ -191,8 +191,10 @@ int CardinalityList_size(CardinalityList* vector) {
     return vector->size();
 }
 void CardinalityList_free(CardinalityList* vector) {
-    free(vector);
+    delete vector;
 }
+
+/////////////// C Interface to DocSetList ////////////////
 
 DocSetList* DocSetList_create() {
     return new DocSetList();
@@ -269,4 +271,14 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, In
 
 void DocSetList_sortOnCardinality(DocSetList* docsetlist) {
     sort(docsetlist->begin(), docsetlist->end(), cmpCardinality);
+}
+
+bool cmpTerm(fwPtr lhs, fwPtr rhs) {
+    DocSet* plhs = pDS(lhs);
+    DocSet* prhs = pDS(rhs);
+    return strcmp(plhs->term(), prhs->term()) < 0;
+}
+
+void DocSetList_sortOnTerm(DocSetList* list) {
+    sort(list->begin(), list->end(), cmpTerm);
 }
