@@ -58,10 +58,8 @@ fwPtr DocSet_forTesting(int size) {
         docset->push_back(i);
     return ds;
 }
-fwPtr DocSet_fromTermDocs(PyJObject* termDocs, int freq, char* term, IntegerList* mapping) {
-    fwPtr result = DocSet::fromTermDocs(termDocs->jobject, freq, NULL, mapping);
-    pDS(result)->setTerm(term);
-    return result;
+fwPtr DocSet_fromTermDocs(PyJObject* termDocs, int freq,  IntegerList* mapping) {
+    return DocSet::fromTermDocs(termDocs->jobject, freq,  mapping);
 }
 void DocSet_add(fwPtr docset, guint32 doc) {
     pDS(docset)->push_back(doc);
@@ -75,39 +73,17 @@ guint32 DocSet_get(fwPtr docset, int i) {
 int DocSet_len(fwPtr docset) {
     return pDS(docset)->size();
 }
-void DocSet_setTerm(fwPtr docset, char* term) {
-    pDS(docset)->setTerm(term);
-}
-char* DocSet_term(fwPtr docset) {
-    return pDS(docset)->term();
-}
+
 int DocSet_combinedCardinality(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->combinedCardinality(pDS(rhs));
 }
+
 int DocSet_combinedCardinalitySearch(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->combinedCardinalitySearch(pDS(rhs));
 }
+
 fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->intersect(pDS(rhs));
-}
-
-
-void DocSet::setTerm(char* term) {
-    _term = fwString_create(term);
-}
-
-void DocSet::setTerm(JString* term) {
-    char* tmp = (char*) malloc(90000);
-    int w = term->writeUTF8CharsIn((char*)tmp);
-    tmp[w] = '\0';
-    setTerm(tmp);
-    free(tmp);
-}
-
-char* DocSet::term(void) {
-    if ( _term == fwStringNone )
-        return NULL;
-    return fwString_get(_term);
 }
 
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
@@ -229,15 +205,13 @@ fwPtr DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* map
 JIntArray* documents = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 JIntArray* ignored = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 
-fwPtr DocSet::fromTermDocs(JObject* termDocs, int freq, JString* term, IntegerList* mapping) {
+fwPtr DocSet::fromTermDocs(JObject* termDocs, int freq, IntegerList* mapping) {
     // Call read() via Interface, because different implementations might be MultiTermDocs,
     // SegmentTermDocs, and the like.  Lookup only once instead of at every call. The
     // read() method is the 6th in the interface. Counting starts at 1.
     TermDocs_read read = (TermDocs_read) lookupIface(termDocs, &ITermDocs, 6);
     fwPtr docset = DocSet_create();
     DocSet* docs = pDS(docset);
-    if ( term )
-        docs->setTerm(term);
     docs->reserve(freq); // <<== this really speeds up: from 3.1/3.2 => 2.6/2.7 seconds.
     jint count = read(termDocs, documents, ignored);
     docs->append((doc_t*)documents->data, count);
@@ -269,4 +243,8 @@ DocSet::map(IntegerList* mapping) {
     for (DocSet::iterator it = begin(); it < end(); it++) {
         (*it) = (*mapping)[*it];
     }
+}
+
+void DocSet::setTermOffset(guint32 offset) {
+    this->_termOffset = offset;
 }

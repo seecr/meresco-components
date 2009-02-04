@@ -38,20 +38,18 @@ extern "C" {
 
 class DocSet : public std::vector<doc_t> {
     public:
-        fwString _term;
+        guint32 _termOffset;
         DocSet(size_t n): std::vector<doc_t>(n, 0) {}
     public:
-        DocSet(): _term(fwStringNone) {};
+        DocSet(): _termOffset(0xFFFFFFFF) {};
         int     combinedCardinality      (DocSet* rhs);
         int     combinedCardinalitySearch(DocSet* longer);
         fwPtr   intersect                (DocSet* rhs);
         void    append                   (doc_t* docarray, int count);
-        void    setTerm                  (char* term);
-        void    setTerm                  (JString* term);
-        char*   term                     (void);
         void    remove                   (guint32 doc);
         void    map                      (IntegerList* mapping);
-        static  fwPtr fromTermDocs       (JObject* termDocs, int freq, JString* term, IntegerList* mapping);
+        static  fwPtr fromTermDocs       (JObject* termDocs, int freq, IntegerList* mapping);
+        void    setTermOffset            (guint32 offset);
 };
 
 static int x = pool_init();
@@ -63,19 +61,17 @@ inline DocSet* pDS(fwPtr ds) {
 }
 
 extern "C" {
-    fwPtr DocSet_create                    (int size);
-    fwPtr DocSet_forTesting                (int size);
+    fwPtr   DocSet_create                    (int size);
+    fwPtr   DocSet_forTesting                (int size);
     void    DocSet_add                       (fwPtr docset, guint32 doc);
     void    DocSet_remove                    (fwPtr docset, guint32 doc);
     guint32 DocSet_get                       (fwPtr docset, int i);
     int     DocSet_len                       (fwPtr docset);
-    void    DocSet_setTerm                   (fwPtr docset, char* term);
-    char*   DocSet_term                      (fwPtr docset);
     int     DocSet_combinedCardinality       (fwPtr docset, fwPtr rhs);
     int     DocSet_combinedCardinalitySearch (fwPtr docset, fwPtr rhs);
-    fwPtr DocSet_intersect                 (fwPtr docset, fwPtr rhs);
-    fwPtr DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping);
-    fwPtr DocSet_fromTermDocs              (PyJObject* termDocs, int freq, char* term, IntegerList* mapping);
+    fwPtr   DocSet_intersect                 (fwPtr docset, fwPtr rhs);
+    fwPtr   DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping);
+    fwPtr   DocSet_fromTermDocs              (PyJObject* termDocs, int freq, IntegerList* mapping);
     void    DocSet_delete                    (fwPtr docset);
 }
 

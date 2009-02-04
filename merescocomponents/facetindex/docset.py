@@ -58,14 +58,6 @@ DocSet_len = libFacetIndex.DocSet_len
 DocSet_len.argtypes = [DOCSET]
 DocSet_len.restype = int
 
-DocSet_term = libFacetIndex.DocSet_term
-DocSet_term.argtypes = [DOCSET]
-DocSet_term.restype = c_char_p
-
-DocSet_setTerm = libFacetIndex.DocSet_setTerm
-DocSet_setTerm.argtypes = [DOCSET, c_char_p]
-DocSet_setTerm.restype = None
-
 DocSet_combinedCardinality = libFacetIndex.DocSet_combinedCardinality
 DocSet_combinedCardinality.argtypes = [DOCSET, DOCSET]
 DocSet_combinedCardinality.restype = c_int
@@ -83,7 +75,7 @@ DocSet_fromQuery.argtypes = [py_object, py_object, POINTER(None)]
 DocSet_fromQuery.restype = DOCSET
 
 DocSet_fromTermDocs = libFacetIndex.DocSet_fromTermDocs
-DocSet_fromTermDocs.argtypes = [py_object, c_int, c_char_p, POINTER(None)]
+DocSet_fromTermDocs.argtypes = [py_object, c_int, POINTER(None)]
 DocSet_fromTermDocs.restype = DOCSET
 
 DocSet_forTesting = libFacetIndex.DocSet_forTesting
@@ -103,17 +95,17 @@ class DocSet(object):
         return clazz(cobj=r, own=True)
 
     @classmethod
-    def fromTermDocs(clazz, termdocs, freq, term="", mapping=None):
-        r = DocSet_fromTermDocs(py_object(termdocs), freq, term, mapping)
+    def fromTermDocs(clazz, termdocs, freq, mapping=None):
+        r = DocSet_fromTermDocs(py_object(termdocs), freq, mapping)
         return clazz(cobj=r, own=True)
 
     @classmethod
     def forTesting(clazz, size):
         r = DocSet_forTesting(size)
-        c = clazz(cobj=r, term='test', own=True)
+        c = clazz(cobj=r, own=True)
         return c
 
-    def __init__(self, term='', data=[], cobj=None, own=False):
+    def __init__(self, data=[], cobj=None, own=False):
         if cobj:
             self._cobj = cobj
             self._own_cobj = deallocator(DocSet_delete, self._cobj) if own else False
@@ -123,8 +115,6 @@ class DocSet(object):
         self._as_parameter_ = self._cobj
         for i in data:
             DocSet_add(self._cobj, i)
-        if term:
-            DocSet_setTerm(self, term)
 
     def __len__(self):
         return DocSet_len(self)
@@ -150,9 +140,6 @@ class DocSet(object):
 
     def delete(self, doc):
         DocSet_remove(self, doc)
-
-    def term(self):
-        return DocSet_term(self)
 
     def releaseData(self):
         assert self._own_cobj, 'object already released, perhaps duplicate add()?'

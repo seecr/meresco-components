@@ -29,20 +29,42 @@
 #include <glib.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <string>
 #include <vector>
 
 extern "C" {
 #include "trie_c.h"
 #include "fwpool.h"
+#include "fwstring.h"
 }
 
+/************** for TESTING ****************/
+extern "C" {
+    std::string stringPoolForTesting;
+    guint32 TrieNode_getValue2(fwPtr node, char *str) {
+        return TrieNode_getValue(node, str, &stringPoolForTesting[0]);
+    }
+    void TrieNode_addValue2(fwPtr node, guint32 value, char* str) {
+        int n = stringPoolForTesting.size();
+        stringPoolForTesting.append(str);
+        stringPoolForTesting.push_back('\0');
+        TrieNode_addValue(node, value, n, &stringPoolForTesting[0]);
+    }
+    void TrieNode_printit2(fwPtr node) {
+        TrieNode_printit(node, 0, &stringPoolForTesting[0]);
+    }
+}
+/*********** End for Testing ******************/
+
+
+void fwString_init(void);
 void TrieNode_init(void);
 void LeafNode_init(void);
 void StringNode_init(void);
 void ListNode_init(void);
 
 void trie_init(void) {
+    fwString_init();
     pool_init();
     TrieNode_init();
     LeafNode_init();
@@ -77,11 +99,11 @@ inline int isList(fwPtr ptr) {
 }
 
 /************** LISTNode ******************************/
-inline void ListNode_addValue(fwPtr node, guint32 value, fwString term, char* (*getString)(fwString));
-inline guint32 ListNode_getValue(fwPtr node, char* term, char* (*getString)(fwString));
+inline void ListNode_addValue(fwPtr node, guint32 value, stringNr term, stringPool pool);
+inline guint32 ListNode_getValue(fwPtr node, char* term, stringPool pool);
 void ListNode_getValues(fwPtr node, char* prefix, std::vector<guint32>* result, int caseSensitive);
 void ListNode_free(fwPtr node);
-void ListNode_printit(fwPtr node, int indent, char* (*getString)(fwString));
+void ListNode_printit(fwPtr node, int indent, stringPool pool);
 
 INode IListNode = {
     ListNode_addValue,
@@ -108,7 +130,7 @@ Improvement memory usages over raw Trie without ListNodes: 14.12/1.30 = 11x
 
 typedef struct {
     guint32 value;
-    fwString aString;
+    stringNr aString;
     fwPtr next;
 } ListItem;
 
@@ -134,7 +156,7 @@ void ListNode_init() {
     _listItemPool = Pool_create(0 /*NA*/, sizeof(ListItem), 100000);
 }
 
-fwPtr ListItem_create(guint32 value, fwString term) {
+fwPtr ListItem_create(guint32 value, stringNr term) {
     fwPtr newOne = Pool_new(_listItemPool);
     ListItem* listitem = ListItem_state(newOne);
     listitem->value = value;
@@ -152,10 +174,10 @@ fwPtr ListNode_create(guint32 value) {
     return newOne;
 }
 
-inline void ListNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString)) {
+inline void ListNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool) {
     ListNodeState* me = ListNode_state(self);
     if ( me->size > LISTSIZE ) {
-        printf("ListNode_addValue(): Ignoring new string '%s'\n", getString(term));
+        printf("ListNode_addValue(): Ignoring new string '%s'\n", &pool[term]);
         return;
     }
     if ( isNone( me->first ) ) {
@@ -179,7 +201,7 @@ inline void ListNode_addValue(fwPtr self, guint32 value, fwString term, char* (*
     me->size++;
 }
 
-inline guint32 ListNode_getValue(fwPtr self, char* term, char* (*getString)(fwString)) {
+inline guint32 ListNode_getValue(fwPtr self, char* term, stringPool pool) {
     ListNodeState* me = ListNode_state(self);
     if ( *term == '\0' ) {
         return me->value;
@@ -187,7 +209,7 @@ inline guint32 ListNode_getValue(fwPtr self, char* term, char* (*getString)(fwSt
     fwPtr last = me->first;
     while ( ! isNone(last) ) {
         ListItem* plast = ListItem_state(last);
-        char* string = getString(plast->aString);
+        char* string = &pool[plast->aString];
         if ( strcmp(term, string) == 0 ) {
             return plast->value;
         }
@@ -200,12 +222,12 @@ bool ListNode_hasRoom(fwPtr self) {
     return ListNode_state(self)->size < LISTSIZE;
 }
 
-void ListNode_addTo(fwPtr self, fwPtr other, char* (*getString)(fwString)) {
+void ListNode_addTo(fwPtr self, fwPtr other, stringPool pool) {
     ListNodeState* me = ListNode_state(self);
     fwPtr last = me->first;
     while ( ! isNone(last) ) {
         ListItem* plast = ListItem_state(last);
-        interface(other)->addValue(other, plast->value, plast->aString, getString);
+        interface(other)->addValue(other, plast->value, plast->aString, pool);
         last = ListItem_state(last)->next;
     }
 }
@@ -239,7 +261,7 @@ void ListNode_free(fwPtr self) {
     Pool_free(_listNodePool, self);
 }
 
-void ListNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
+void ListNode_printit(fwPtr self, int indent, stringPool pool) {
     ListNodeState* me = ListNode_state(self);
     for(int i=0;i<indent; i++) printf(" ");
     printf("%u List: %d elements.\n", self.ptr, me->size);
@@ -247,7 +269,7 @@ void ListNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
     while ( ! isNone(last) ) {
         ListItem* plast = ListItem_state(last);
         for(int i=0;i<indent; i++) printf(" ");
-        printf("  %s:%d\n", getString(plast->aString), plast->value);
+        printf("  %s:%d\n", &pool[plast->aString], plast->value);
         last = ListItem_state(last)->next;
     }
 }
@@ -262,10 +284,10 @@ typedef struct {
 }  TrieNodeState ;
 
 guint32 TrieNode_getValue(fwPtr self, char* term);
-void TrieNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString));
+void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool);
 void TrieNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive);
 void TrieNode_free(fwPtr self);
-void TrieNode_printit(fwPtr self, int indent, char* (*getString)(fwString));
+void TrieNode_printit(fwPtr self, int indent, stringPool pool);
 
 INode ITrieNode = { /* implements INode */
     TrieNode_addValue,
@@ -302,10 +324,10 @@ fwPtr TrieNode_create(guint32 value) {
 }
 
 fwPtr LeafNode_create(guint32 value);
-fwPtr StringNode_create(guint32 value, fwString string);
-inline guint32 LeafNode_getValue(fwPtr self, char* term, char* (*getString)(fwString));
-inline guint32 StringNode_getValue(fwPtr self, char* term, char* (*getString)(fwString));
-inline fwString StringNode_getString(fwPtr self);
+fwPtr StringNode_create(guint32 value, stringNr string);
+inline guint32 LeafNode_getValue(fwPtr self, char* term, stringPool pool);
+inline guint32 StringNode_getValue(fwPtr self, char* term, stringPool pool);
+inline stringNr StringNode_getString(fwPtr self);
 
 typedef struct {
     fwPtr parent;
@@ -342,10 +364,7 @@ Link TrieNode__findLink(fwPtr parent, unsigned char character, CreateFlag create
     return result;
 }
 
-guint32 TrieNode_getValue(fwPtr self, char* term, char* (*getString)(fwString)) {
-
-    if ( ! getString ) { getString = fwString_get; }
-
+guint32 TrieNode_getValue(fwPtr self, char* term, stringPool pool) {
     if (*term == '\0') {
         return TrieNode_state(self)->value;
     }
@@ -353,7 +372,7 @@ guint32 TrieNode_getValue(fwPtr self, char* term, char* (*getString)(fwString)) 
     if (isNone(link.child)) {
         return fwValueNone;
     }
-    return interface(link.child)->getValue(link.child, ++term, getString);
+    return interface(link.child)->getValue(link.child, ++term, pool);
 }
 
 void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive) {
@@ -398,41 +417,39 @@ void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, 
 
 }
 
-void TrieNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString)) {
-    if ( ! getString ) { getString = fwString_get; }
-
-    if (*getString(term) == '\0') {
+void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool) {
+    if (pool[term] == '\0') {
         TrieNode_state(self)->value = value;
         return;
     }
 
-    Link link = TrieNode__findLink(self, getString(term)[0], Create);
+    Link link = TrieNode__findLink(self, pool[term], Create);
 
     /********** Code to decide about what node type to create is ONLY here *******************/
     fwPtr child = link.child;
     if (isNone(child)) {
-        if (getString(term)[1] == '\0') {
+        if (pool[term+1] == '\0') {
             child = LeafNode_create(value);
         } else {
             child = StringNode_create(fwValueNone, term);
         }
     } else {
         if (isLeaf(child)) {
-            guint32 value = interface(child)->getValue(child, (char*) "", getString);
+            guint32 value = interface(child)->getValue(child, (char*) "", pool);
             interface(child)->free(child);
             child = ListNode_create(value);
         } else if (isString(child)) {
-            fwString string = StringNode_getString(child);
-            guint32 value = interface(child)->getValue(child, getString(string), getString);
+            stringNr string = StringNode_getString(child);
+            guint32 value = interface(child)->getValue(child, &pool[string], pool);
             interface(child)->free(child);
             child = ListNode_create(fwValueNone);
-            ListNode_addValue(child, value, string, getString);
+            ListNode_addValue(child, value, string, pool);
         }
         else if (isList(child)) {
             if ( ! ListNode_hasRoom(child) ) {
-                guint32 value = ListNode_getValue(child, (char*) "", getString);
+                guint32 value = ListNode_getValue(child, (char*) "", pool);
                 fwPtr newNode = TrieNode_create(value);
-                ListNode_addTo(child, newNode, getString);
+                ListNode_addTo(child, newNode, pool);
                 interface(child)->free(child);
                 child = newNode;
             }
@@ -441,7 +458,7 @@ void TrieNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getStri
     /*************************************************************************************************/
 
     TrieNode_state(link.parent)->child[link.letter] = child;
-    interface(child)->addValue(child, value, ++term, getString); /* ++term?!? dit gaat wel heel toevallig goed !!!
+    interface(child)->addValue(child, value, ++term, pool); /* ++term?!? dit gaat wel heel toevallig goed !!!
     het moet zijn: fwString_strdup(term, 1) of zo iets */
 
 }
@@ -457,10 +474,7 @@ void TrieNode_free(fwPtr self) {
     Pool_free(_trieNodePool, self);
 }
 
-void TrieNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
-
-    if ( ! getString ) getString = fwString_get;
-
+void TrieNode_printit(fwPtr self, int indent, stringPool pool) {
     TrieNodeState* me = TrieNode_state(self);
     int i;
     fwPtr child;
@@ -475,7 +489,7 @@ void TrieNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
     for(i=0; i<0x01<<ALPHABET_IN_BITS; i++) {
         child = me->child[i];
         if (!isNone(child)) {
-            interface(child)->printit(child, indent + 1, getString);
+            interface(child)->printit(child, indent + 1, pool);
         }
     }
 }
@@ -489,11 +503,11 @@ typedef struct {
     guint32 value;       /* 4 bytes */
 } LeafNodeState;
 
-guint32 LeafNode_getValue(fwPtr self, char* term, char* (*getString)(fwString));
+guint32 LeafNode_getValue(fwPtr self, char* term, stringPool pool);
 void LeafNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive);
-inline void LeafNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString));
+inline void LeafNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool);
 void LeafNode_free(fwPtr self);
-void LeafNode_printit(fwPtr self, int indent, char* (*getString)(fwString));
+void LeafNode_printit(fwPtr self, int indent, stringPool pool);
 
 INode ILeafNode = {
     LeafNode_addValue,
@@ -523,13 +537,13 @@ fwPtr LeafNode_create(guint32 value) {
     return newOne;
 }
 
-inline void LeafNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString)) {
+inline void LeafNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool) {
     /*if (*term != '\0')
         printf("LeafNodeState: term not zero: %s.\n", term);*/
     LeafNode_state(self)->value = value;
 }
 
-inline guint32 LeafNode_getValue(fwPtr self, char* term, char* (*getString)(fwString)) {
+inline guint32 LeafNode_getValue(fwPtr self, char* term, stringPool pool) {
     if (*term == '\0')
         return LeafNode_state(self)->value;
     return fwValueNone;
@@ -545,7 +559,7 @@ void LeafNode_free(fwPtr self) {
     Pool_free(_leafNodePool, self);
 }
 
-void LeafNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
+void LeafNode_printit(fwPtr self, int indent, stringPool pool) {
     int i;
     for(i=0;i<indent; i++) {
         printf(" ");
@@ -555,11 +569,11 @@ void LeafNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
 
 /************************************************* StringNodeState ************/
 
-inline void StringNode_addValue(fwPtr node, guint32 value, fwString term, char* (*getString)(fwString));
-inline guint32 StringNode_getValue(fwPtr node, char* term, char* (*getString)(fwString));
+inline void StringNode_addValue(fwPtr node, guint32 value, stringNr term, stringPool pool);
+inline guint32 StringNode_getValue(fwPtr node, char* term, stringPool pool);
 void StringNode_getValues(fwPtr node, char* prefix, std::vector<guint32>* result, int caseSensitive);
 void StringNode_free(fwPtr node);
-void StringNode_printit(fwPtr node, int indent, char* (*getString)(fwString));
+void StringNode_printit(fwPtr node, int indent, stringPool pool);
 
 INode IStringNode = {
     StringNode_addValue,
@@ -570,7 +584,7 @@ INode IStringNode = {
 
 typedef struct {
     guint32 value;
-    fwString aString;
+    stringNr aString;
 } StringNodeState;
 
 fwPool _stringNodePool;
@@ -583,7 +597,7 @@ void StringNode_init() {
     _stringNodePool = Pool_create(STRING, sizeof(StringNodeState), 64);
 }
 
-fwPtr StringNode_create(guint32 value, fwString string) {
+fwPtr StringNode_create(guint32 value, stringNr string) {
     fwPtr newOne = Pool_new(_stringNodePool);
     StringNodeState* node = StringNode_state(newOne);
     node->value = value;
@@ -591,13 +605,13 @@ fwPtr StringNode_create(guint32 value, fwString string) {
     return newOne;
 }
 
-inline void StringNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString)) {
+inline void StringNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool) {
     StringNode_state(self)->value = value;
     StringNode_state(self)->aString = term;
 }
 
-inline guint32 StringNode_getValue(fwPtr self, char* term, char* (*getString)(fwString)) {
-    char* string = getString(StringNode_state(self)->aString);
+inline guint32 StringNode_getValue(fwPtr self, char* term, stringPool pool) {
+    char* string = &pool[StringNode_state(self)->aString];
     if (strcmp((char*) term, (char *)string) == 0) {
         return StringNode_state(self)->value;
     }
@@ -623,16 +637,16 @@ void StringNode_free(fwPtr self) {
     Pool_free(_stringNodePool, self);
 }
 
-inline fwString StringNode_getString(fwPtr self) {
+inline stringNr StringNode_getString(fwPtr self) {
     return StringNode_state(self)->aString;
 }
 
-void StringNode_printit(fwPtr self, int indent, char* (*getString)(fwString)) {
+void StringNode_printit(fwPtr self, int indent, stringPool pool) {
     int i;
     for(i=0;i<indent; i++) {
         printf(" ");
     }
-    printf("%u String: %d: %s\n", self.ptr, StringNode_state(self)->value, getString(StringNode_state(self)->aString));
+    printf("%u String: %d: %s\n", self.ptr, StringNode_state(self)->value, &pool[StringNode_state(self)->aString]);
 }
 
 

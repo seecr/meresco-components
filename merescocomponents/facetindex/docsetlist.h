@@ -53,11 +53,14 @@ class DocSetList : public std::vector<fwPtr> {
     public:
         DocSetList();
         ~DocSetList();
-        void                 addDocSet(fwPtr docset);
+        void                 addDocSet(fwPtr docset, char *term);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
         CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm);
         fwPtr                forTerm(char* term);
         void                 removeDoc(guint32 doc);
+        char*                getTermForDocset(DocSet *docset);
+        bool                 cmpTerm(fwPtr lhs, fwPtr rhs);
+        void                 sortOnTerm(void);
 };
 
 /**************** C-interface for DocSetList ****************************/
@@ -66,7 +69,7 @@ extern "C" {
     int JACCARD_MI = 1;
     int JACCARD_X2 = 2;
     DocSetList*      DocSetList_create               (void);
-    void             DocSetList_add                  (DocSetList* list, fwPtr docset);
+    void             DocSetList_add                  (DocSetList* list, fwPtr docset, char* term);
     void             DocSetList_removeDoc            (DocSetList* list, guint32 doc);
     int              DocSetList_size                 (DocSetList* list);
     fwPtr            DocSetList_get                  (DocSetList* list, int i);
@@ -78,6 +81,7 @@ extern "C" {
     void             DocSetList_sortOnTerm           (DocSetList* list);
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
     void             DocSetList_printMemory          (DocSetList* list);
+    char*            DocSetList_getTermForDocset     (DocSetList* list, fwPtr docset);
     cardinality_t*   CardinalityList_at              (CardinalityList* vector, int i);
     int              CardinalityList_size            (CardinalityList* vector);
     void             CardinalityList_free            (CardinalityList* vector);

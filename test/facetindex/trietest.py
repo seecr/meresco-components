@@ -34,28 +34,14 @@ class TrieTest(TestCase):
         trie = Trie()
         self.assertTrue(trie != None)
 
-    def testGetTerm(self):
-        trie = Trie()
-        trie.add(0, "term0")
-        self.assertEquals("term0", trie.getTerm(0))
-        trie.add(1, "term1")
-        self.assertEquals("term0", trie.getTerm(0))
-        self.assertEquals("term1", trie.getTerm(1))
-
-    def testRealloc(self):
-        trie = Trie() # initally 1024 bytes
-        trie.add(0, 'a' * 2000) # realloc to 1536 ???
-        self.assertEquals('a' * 2000, trie.getTerm(0))
-        trie.add(0, 'b' * 2000) # realloc to 2304, 3456, 5184
-
     def testLargeValue(self):
         trie = Trie()
         trie.add(123456789, 'a')
 
     def testTrieWithOneValue(self):
         trie = Trie()
-        trie.add(0, '')
-        self.assertEquals(0, trie.getValue(''))
+        trie.add(0, 'x')
+        self.assertEquals(0, trie.getValue('x'))
 
     def testGetValueForDistinctTerms(self):
         trie = Trie()

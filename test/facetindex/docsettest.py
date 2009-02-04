@@ -33,33 +33,26 @@ class DocSetTest(LuceneTestCase):
     def testCreate(self):
         docset = DocSet()
         self.assertTrue(docset is not None)
-        self.assertEquals(None, docset.term())
-
-    def testSetTerm(self):
-        docset = DocSet()
-        self.assertEquals(None, docset.term())
-        docset = DocSet('term')
-        self.assertEquals('term', docset.term())
 
     def testLength(self):
         self.assertEquals(0, len(DocSet()))
-        self.assertEquals(2, len(DocSet('', [1,2])))
+        self.assertEquals(2, len(DocSet([1,2])))
 
     def testInit(self):
-        self.assertEquals(2, len(DocSet('', xrange(2))))
+        self.assertEquals(2, len(DocSet(xrange(2))))
 
     def testIterable(self):
         i = iter(DocSet())
         self.assertEquals([], list(i))
 
     def testIndexable(self):
-        self.assertEquals(2, DocSet('', [1,2])[1])
+        self.assertEquals(2, DocSet([1,2])[1])
 
     def XXXtestCombinedCardinality(self):
-        self.assertEquals(1, DocSet('', [1,2]).combinedCardinality(DocSet('', [2,3])))
+        self.assertEquals(1, DocSet([1,2]).combinedCardinality(DocSet([2,3])))
 
     def testDeleteDoc(self):
-        i = DocSet('x', xrange(10))
+        i = DocSet(xrange(10))
         self.assertEquals([0,1,2,3,4,5,6,7,8,9], i)
         i.delete(5)
         self.assertEquals([0,1,2,3,4,  6,7,8,9], i)
@@ -69,11 +62,11 @@ class DocSetTest(LuceneTestCase):
     def testDeleteOfDocumentOutOfRange(self):
         # this code triggers a docset of precisely N docids, so that delete will overflow the buffer
         for i in range(100):
-            ds = DocSet('?', range(i))
+            ds = DocSet(range(i))
             ds.delete(9999)
 
     def testDeleteAndReAddMaintainsSortOrder(self):
-        i = DocSet('x', xrange(10))
+        i = DocSet(xrange(10))
         self.assertEquals([0,1,2,3,4,5,6,7,8,9], i)
         i.delete(5)
         self.assertEquals([0,1,2,3,4,  6,7,8,9], i)
@@ -82,9 +75,9 @@ class DocSetTest(LuceneTestCase):
 
     def assertIntersect(self, lhs, rhs):
         soll = set(lhs).intersection(set(rhs))
-        intersection1 = DocSet('', lhs).intersect(DocSet('', rhs))
+        intersection1 = DocSet(lhs).intersect(DocSet(rhs))
         ist1 = set(iter(intersection1))
-        ist2 = set(iter(DocSet('', rhs).intersect(DocSet('', lhs))))
+        ist2 = set(iter(DocSet(rhs).intersect(DocSet(lhs))))
         self.assertEquals(soll, ist1)
         self.assertEquals(soll, ist2)
 
@@ -128,7 +121,7 @@ class DocSetTest(LuceneTestCase):
         termDocs = self.reader.termDocs()
         termDocs.seek(termEnum)
         self.assertTrue('MultiTermDocs' in str(termDocs))
-        docs = DocSet.fromTermDocs(termDocs, freq, termEnum.term().text())
+        docs = DocSet.fromTermDocs(termDocs, freq)
         self.assertEquals(range(11), list(iter(docs)))
 
     def testReadFrom_MULTI_TermDocsWithMoreDocs(self):
@@ -145,8 +138,8 @@ class DocSetTest(LuceneTestCase):
     def testSearchAlgorithm(self):
         def assertSearchCardinality(lhList, rhList):
             expected = len(set(lhList).intersection(rhList))
-            lhDocSet = DocSet('lhterm', lhList)
-            rhDocSet = DocSet('rhterm', rhList)
+            lhDocSet = DocSet(lhList)
+            rhDocSet = DocSet(rhList)
             self.assertEquals(expected, DocSet_combinedCardinalitySearch(lhDocSet, rhDocSet))
             self.assertEquals(expected, DocSet_combinedCardinalitySearch(rhDocSet, lhDocSet))
         assertSearchCardinality([0,1], [0,1,2,3])

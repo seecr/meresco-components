@@ -50,7 +50,7 @@ DocSetList_delete.argtypes = [DOCSETLIST]
 DocSetList_delete.restype = None
 
 DocSetList_add = libFacetIndex.DocSetList_add
-DocSetList_add.argtypes = [DOCSETLIST, DOCSET]
+DocSetList_add.argtypes = [DOCSETLIST, DOCSET, c_char_p]
 DocSetList_add.restype = None
 
 DocSetList_removeDoc = libFacetIndex.DocSetList_removeDoc
@@ -77,6 +77,10 @@ DocSetList_getForTerm.restype = DOCSET
 DocSetList_combinedCardinalities = libFacetIndex.DocSetList_combinedCardinalities
 DocSetList_combinedCardinalities.argtypes = [DOCSETLIST, DOCSET, c_uint32, c_int]
 DocSetList_combinedCardinalities.restype = CARDINALITYLIST
+
+DocSetList_getTermForDocset = libFacetIndex.DocSetList_getTermForDocset
+DocSetList_getTermForDocset.argtypes = [DOCSETLIST, DOCSET]
+DocSetList_getTermForDocset.restype = c_char_p
 
 DocSetList_jaccards = libFacetIndex.DocSetList_jaccards
 DocSetList_jaccards.argtypes = [DOCSETLIST, DOCSET, c_int, c_int, c_int, c_int]
@@ -140,11 +144,11 @@ class DocSetList(object):
         item = DocSetList_get(self, i)
         return DocSet(cobj=item)
 
-    def add(self, docset):
+    def add(self, docset, term='niks'):
         if len(docset) == 0:
             return
         docset.releaseData()
-        DocSetList_add(self, docset)
+        DocSetList_add(self, docset, term)
         self._sorted = None
 
     def termCardinalities(self, docset, maxResults=maxint, sorted=False):
@@ -162,7 +166,7 @@ class DocSetList(object):
 
     def allCardinalities(self):
         for docset in self:
-            yield (docset.term(), len(docset))
+            yield (DocSetList_getTermForDocset(self, docset), len(docset))
 
     def jaccards(self, docset, minimum, maximum, totaldocs, algorithm=JACCARD_MI):
         self.sortOnCardinality()
@@ -182,9 +186,9 @@ class DocSetList(object):
                 docset.add(docid)
                 self._sorted = None
             else:
-                docset = DocSet(term)
+                docset = DocSet()
                 docset.add(docid)
-                self.add(docset)
+                self.add(docset, term)
 
     def deleteDoc(self, doc):
         DocSetList_removeDoc(self, doc)
@@ -207,6 +211,9 @@ class DocSetList(object):
         if r:
             return DocSet(cobj=r)
         return None
+
+    def termForDocset(self, docset):
+        return DocSetList_getTermForDocset(self, docset)
 
     def applyDocIdMapping(self, mappingList):
         for docset in self:

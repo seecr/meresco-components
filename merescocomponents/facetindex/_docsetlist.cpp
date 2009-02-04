@@ -49,10 +49,30 @@ DocSetList::~DocSetList() {
     TrieNode_free(termIndex2);
 }
 
-void DocSetList::addDocSet(fwPtr docset) {
+class CompareTerm {
+    public:
+        DocSetList* mii;
+        CompareTerm(DocSetList* list) : mii(list) {}
+        bool operator ()(fwPtr lhs, fwPtr rhs) {
+            DocSet* plhs = pDS(lhs);
+            DocSet* prhs = pDS(rhs);
+            return strcmp(mii->getTermForDocset(plhs), mii->getTermForDocset(prhs)) < 0;
+        }
+};
+
+void DocSetList::sortOnTerm(void) {
+    sort(begin(), end(), CompareTerm(this));
+}
+
+void DocSetList::addDocSet(fwPtr docset, char *term) {
     push_back(docset);
-    if ( pDS(docset)->_term != fwStringNone )
-        TrieNode_addValue(termIndex2, docset.ptr, pDS(docset)->_term, fwString_get);
+    if ( term  ) {
+        stringNr n = this->termPool.size();
+        this->termPool.append(term);
+        this->termPool.push_back('\0');
+        pDS(docset)->setTermOffset(n);
+        TrieNode_addValue(termIndex2, docset.ptr, n, &termPool[0]);
+    }
 }
 
 void DocSetList::removeDoc(guint32 doc) {
@@ -63,7 +83,7 @@ void DocSetList::removeDoc(guint32 doc) {
 }
 
 fwPtr DocSetList::forTerm(char* term) {
-    guint32 docsetptr = TrieNode_getValue(termIndex2, term, fwString_get);
+    guint32 docsetptr = TrieNode_getValue(termIndex2, term, &termPool[0]);
     if ( docsetptr == fwValueNone )
         return fwNONE;
     fwPtr docset = {0, docsetptr};
@@ -75,6 +95,12 @@ bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
     return lhs.cardinality > rhs.cardinality;
 }
 
+char* DocSetList::getTermForDocset(DocSet *docset) {
+    if (docset->_termOffset == 0xFFFFFFFF) {
+        return "";
+    }
+    return &termPool[docset->_termOffset];
+}
 
 CardinalityList*
 DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort) {
@@ -88,7 +114,7 @@ DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort
             }
             guint32 cardinality = pDS(*it)->combinedCardinality(docset);
             if ( cardinality ) {
-                cardinality_t t = { pDS(*it)->term(), cardinality };
+                cardinality_t t = { getTermForDocset(pDS(*it)), cardinality };
                 results->push_back(t);
                 if ( results->size() > maxResults ) {
                     sort(results->begin(), results->end(), cmpCardinalityResults);
@@ -104,7 +130,7 @@ DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort
         for( unsigned int i=0; i < size() && results->size() < maxResults; i++ ) {
             guint32 cardinality = pDS(at(i))->combinedCardinality(docset);
             if ( cardinality ) {
-                cardinality_t t = { pDS(at(i))->term(), cardinality };
+                cardinality_t t = { getTermForDocset(pDS(at(i))), cardinality };
                 results->push_back(t);
             }
         }
@@ -165,7 +191,8 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
                             (N00/N)*log((N*N00)/(N0_*N_0));
                 if ( MI < 0.5 ) {
                     int n = int(MI * 10000.0);
-                    cardinality_t t = { candidate->term(), n};
+                    char *term = getTermForDocset(candidate);
+                    cardinality_t t = { term, n};
                     results->push_back(t);
                 }
             } else if (algorithm == JACCARD_X2) {
@@ -173,7 +200,7 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
 /*                double X2 = ((N11+N10+N01+N00)*pow(N11*N00-N10*N01,2.0)) /
                             ((N11+N01)*(N11+N10)*(N10+N00)*(N01+N00));*/
             } else {
-                cardinality_t t = { candidate->term(), j};
+                cardinality_t t = { getTermForDocset(candidate), j};
                 results->push_back(t);
             }
         }
@@ -200,8 +227,8 @@ DocSetList* DocSetList_create() {
     return new DocSetList();
 }
 
-void DocSetList_add(DocSetList* list, fwPtr docset) {
-    list->addDocSet(docset);
+void DocSetList_add(DocSetList* list, fwPtr docset, char* term) {
+    list->addDocSet(docset, term);
 }
 
 void DocSetList_removeDoc(DocSetList* list, guint32 doc) {
@@ -262,8 +289,13 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, In
         JString* text = Term_text(term);
         jint freq = docFreq(termEnum->jobject);
 
-        fwPtr ds = DocSet::fromTermDocs(termDocs->jobject, freq, text, mapping);
-        list->addDocSet(ds);
+        fwPtr ds = DocSet::fromTermDocs(termDocs->jobject, freq, mapping);
+        char* tmp = (char*) malloc(90000);
+        int w = text->writeUTF8CharsIn((char*)tmp);
+        tmp[w] = '\0';
+        list->addDocSet(ds, tmp);
+        free(tmp);
+
     } while ( next(termEnum->jobject) );
 
     return list;
@@ -273,17 +305,14 @@ void DocSetList_sortOnCardinality(DocSetList* docsetlist) {
     sort(docsetlist->begin(), docsetlist->end(), cmpCardinality);
 }
 
-bool cmpTerm(fwPtr lhs, fwPtr rhs) {
-    DocSet* plhs = pDS(lhs);
-    DocSet* prhs = pDS(rhs);
-    return strcmp(plhs->term(), prhs->term()) < 0;
-}
-
 void DocSetList_sortOnTerm(DocSetList* list) {
-    sort(list->begin(), list->end(), cmpTerm);
+    list->sortOnTerm();
 }
 
 void DocSetList_printMemory(DocSetList* list) {
     nodecount();
 }
 
+char* DocSetList_getTermForDocset(DocSetList *list, fwPtr docset) {
+    return list->getTermForDocset(pDS(docset));
+}
