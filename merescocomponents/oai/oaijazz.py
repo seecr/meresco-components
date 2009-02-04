@@ -37,8 +37,9 @@ from merescocomponents.facetindex import LuceneDict
 from merescocore.framework import getCallstackVar
 from bisect import bisect_left
 
+MERGE_TRIGGER = 1000
 class OaiJazz(object):
-    def __init__(self, aDirectory, transactionName='oai'):
+    def __init__(self, aDirectory):
         self._directory = aDirectory
         isdir(join(aDirectory, 'stamp2identifier')) or makedirs(join(aDirectory,'stamp2identifier'))
         isdir(join(aDirectory, 'sets')) or makedirs(join(aDirectory,'sets'))
@@ -47,9 +48,8 @@ class OaiJazz(object):
         self._prefixes = {}
         self._sets = {}
         self._stamp2identifier = LuceneDict(join(self._directory, 'stamp2identifier'))
-        self._tombStones = SortedFileList(join(self._directory, 'tombStones.list'))
+        self._tombStones = SortedFileList(join(self._directory, 'tombStones.list'), mergeTrigger=MERGE_TRIGGER)
         self._read()
-        self._transactionName = transactionName
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
@@ -141,13 +141,13 @@ class OaiJazz(object):
     def _getSetList(self, setSpec):
         if setSpec not in self._sets:
             filename = join(self._directory, 'sets', '%s.list' % escapeName(setSpec))
-            self._sets[setSpec] = SortedFileList(filename)
+            self._sets[setSpec] = SortedFileList(filename, mergeTrigger=MERGE_TRIGGER)
         return self._sets[setSpec]
     
     def _getPrefixList(self, prefix):
         if prefix not in self._prefixes:
             filename = join(self._directory, 'prefixes', '%s.list' % escapeName(prefix))
-            self._prefixes[prefix] = SortedFileList(filename)
+            self._prefixes[prefix] = SortedFileList(filename, mergeTrigger=MERGE_TRIGGER)
         return self._prefixes[prefix]
 
     def _fromTime(self, oaiFrom):

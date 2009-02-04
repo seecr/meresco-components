@@ -32,5 +32,5 @@ from oaisetselect import OaiSetSelect
 from uniquenumbergenerator import UniqueNumberGenerator
 from fields2oairecord import Fields2OaiRecordTx
 from oaijazz import OaiJazz
-from oaiaddrecord import OaiAddRecord
+from oaiaddrecord import OaiAddRecord, OaiAddRecordWithDefaults
 

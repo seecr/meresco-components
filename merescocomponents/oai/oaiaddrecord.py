@@ -52,6 +52,15 @@ class OaiAddRecord(Transparant):
                 return schema or oldschema, namespace or oldnamespace
         return schema, namespace
 
+class OaiAddRecordWithDefaults(Transparant):
+    def __init__(self, metadataFormats=[], sets=[]):
+        Transparant.__init__(self)
+        self._metadataFormats = metadataFormats
+        self._sets = sets
+        
+    def add(self, id, name, record):
+        self.do.addOaiRecord(identifier=id, sets=self._sets, metadataFormats=self._metadataFormats)
+
 def _findSchema(record):
     if 'amara.bindery.root_base' in str(type(record)):
         record = record.childNodes[0]
