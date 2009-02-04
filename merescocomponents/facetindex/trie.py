@@ -24,7 +24,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from ctypes import cdll, c_uint32, c_int, c_char_p, Structure, POINTER
+from ctypes import cdll, c_uint32, c_int, c_char_p, Structure, POINTER, pointer
 from os.path import join, abspath, dirname
 from libfacetindex import libFacetIndex as lib
 from docset import DocSet
@@ -50,16 +50,24 @@ trie_init()
 
 fwValueNone = c_uint32.in_dll(lib, 'fwValueNone')
 
+fwString_create = lib.fwString_create
+fwString_create.argtypes = [ c_char_p ]
+fwString_create.restype = fwString
+
+fwString_get = lib.fwString_get
+fwString_get.argtypes = [ fwString ]
+fwString_get.restype = c_char_p
+
 TrieNode_create = lib.TrieNode_create
 TrieNode_create.argtypes = [ c_uint32 ]
 TrieNode_create.restype = fwPtr
 
 TrieNode_addValue = lib.TrieNode_addValue
-TrieNode_addValue.argtypes = [ fwPtr, c_uint32, fwString ]
+TrieNode_addValue.argtypes = [ fwPtr, c_uint32, fwString, POINTER(None) ]
 TrieNode_addValue.restype = None
 
 TrieNode_getValue = lib.TrieNode_getValue
-TrieNode_getValue.argtypes = [ fwPtr, c_char_p ]
+TrieNode_getValue.argtypes = [ fwPtr, c_char_p, POINTER(None) ]
 TrieNode_getValue.restype = c_uint32
 
 TrieNode_getValues = lib.TrieNode_getValues
@@ -69,14 +77,6 @@ TrieNode_getValues.restype = None
 TrieNode_printit = lib.TrieNode_printit
 TrieNode_printit.argtypes = [ fwPtr, c_int ]
 TrieNode_printit.restype = None
-
-fwString_create = lib.fwString_create
-fwString_create.argtypes = [ c_char_p ]
-fwString_create.restype = fwString
-
-fwString_get = lib.fwString_get
-fwString_get.argtypes = [ fwString ]
-fwString_get.restype = c_char_p
 
 nodecount = lib.nodecount
 nodecount.argtypes = None
@@ -91,10 +91,10 @@ class Trie:
     def add(self, value, word):
         termnr = fwString_create(word)
         self._temp_value2fwstr[value] = termnr
-        TrieNode_addValue(self, value, termnr)
+        TrieNode_addValue(self, value, termnr, 0)
 
     def getValue(self, word, default=None):
-        r = TrieNode_getValue(self, word)
+        r = TrieNode_getValue(self, word, 0)
         if r == fwValueNone.value:
             return default
         return r

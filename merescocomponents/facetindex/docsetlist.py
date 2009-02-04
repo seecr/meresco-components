@@ -97,6 +97,10 @@ DocSetList_sortOnTerm = libFacetIndex.DocSetList_sortOnTerm
 DocSetList_sortOnTerm.argtypes = [DOCSETLIST]
 DocSetList_sortOnTerm.restype = None
 
+DocSetList_printMemory = libFacetIndex.DocSetList_printMemory
+DocSetList_printMemory.argtypes = [DOCSETLIST]
+DocSetList_printMemory.restype = None
+
 CardinalityList_size = libFacetIndex.CardinalityList_size
 CardinalityList_size.argtypes = [CARDINALITYLIST]
 CardinalityList_size.restype = c_int
@@ -108,6 +112,7 @@ CardinalityList_at.restype = POINTER(cardinality_t)
 CardinalityList_free = libFacetIndex.CardinalityList_free
 CardinalityList_free.argtypes = [CARDINALITYLIST]
 CardinalityList_free.restype = None
+
 
 SORTEDONTERM = 1
 SORTEDONCARDINALITY = 2
@@ -206,3 +211,6 @@ class DocSetList(object):
     def applyDocIdMapping(self, mappingList):
         for docset in self:
             docset.applyDocIdMapping(mappingList)
+
+    def printMemory(self):
+        DocSetList_printMemory(self)

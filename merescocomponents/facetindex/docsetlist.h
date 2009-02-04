@@ -26,6 +26,7 @@
  * end license */
 #include <Python.h>
 #include <vector>
+#include <string>
 #include "facetindex.h"
 #include "docset.h"
 #include "integerlist.h"
@@ -48,6 +49,7 @@ typedef std::vector<cardinality_t> CardinalityList;
 class DocSetList : public std::vector<fwPtr> {
     private:
         fwPtr termIndex2;
+        std::string termPool;
     public:
         DocSetList();
         ~DocSetList();
@@ -75,6 +77,7 @@ extern "C" {
     void             DocSetList_sortOnCardinality    (DocSetList* list);
     void             DocSetList_sortOnTerm           (DocSetList* list);
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
+    void             DocSetList_printMemory          (DocSetList* list);
     cardinality_t*   CardinalityList_at              (CardinalityList* vector, int i);
     int              CardinalityList_size            (CardinalityList* vector);
     void             CardinalityList_free            (CardinalityList* vector);

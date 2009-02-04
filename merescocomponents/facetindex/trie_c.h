@@ -36,11 +36,11 @@
 void trie_init(void);
 
 typedef struct {
-    void (*addValue)(fwPtr self, guint32 value, fwString term);
-    guint32 (*getValue)(fwPtr self, char* term);
+    void (*addValue)(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString));
+    guint32 (*getValue)(fwPtr self, char* term, char* (*getString)(fwString));
     void (*getValues)(fwPtr self, char *prefix, std::vector<guint32>* result,  int caseSensitive);
     void (*free)(fwPtr self);
-    void (*printit)(fwPtr self, int indent);
+    void (*printit)(fwPtr self, int indent, char* (*getString)(fwString));
 } INode;
 
 extern guint32 fwValueNone;
@@ -48,11 +48,11 @@ inline INode* interface(fwPtr self);
 
 fwPtr TrieNode_create(guint32 value);
 void TrieNode_free(fwPtr self);
-void TrieNode_addValue(fwPtr self, guint32 value, fwString term);
-guint32 TrieNode_getValue(fwPtr self, char* term);
+void TrieNode_addValue(fwPtr self, guint32 value, fwString term, char* (*getString)(fwString));
+guint32 TrieNode_getValue(fwPtr self, char* term, char* (*getString)(fwString));
 void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive);
 int TrieNode_memory(void);
-void TrieNode_printit(fwPtr self, int indent);
+void TrieNode_printit(fwPtr self, int indent, char* (*getString)(fwString));
 
 void nodecount(void);
 int isNone(fwPtr ptr);

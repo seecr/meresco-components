@@ -184,7 +184,7 @@ class PerformanceTuningTest(LuceneTestCase):
         self.assertTiming(0.01, tn1avg, 0.20)
         self.assertTiming(0.01, tn2avg, 0.20)
 
-    def XXXtestMemoryLeaks(self):
+    def testMemoryLeaks(self):
         from gc import collect
         self.createBigIndex(9, 2) # 10 records, 6 values
         termEnum = self.reader.terms(Term('field0',''))
@@ -197,6 +197,7 @@ class PerformanceTuningTest(LuceneTestCase):
                 termEnum = self.reader.terms(Term('field0',''))
                 termDocs = self.reader.termDocs()
                 dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+            print dsl.printMemory()
             del dsl, termEnum, termDocs
             collect()
             raw_input('done')

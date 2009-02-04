@@ -52,7 +52,7 @@ DocSetList::~DocSetList() {
 void DocSetList::addDocSet(fwPtr docset) {
     push_back(docset);
     if ( pDS(docset)->_term != fwStringNone )
-        TrieNode_addValue(termIndex2, docset.ptr, pDS(docset)->_term);
+        TrieNode_addValue(termIndex2, docset.ptr, pDS(docset)->_term, fwString_get);
 }
 
 void DocSetList::removeDoc(guint32 doc) {
@@ -63,7 +63,7 @@ void DocSetList::removeDoc(guint32 doc) {
 }
 
 fwPtr DocSetList::forTerm(char* term) {
-    guint32 docsetptr = TrieNode_getValue(termIndex2, term);
+    guint32 docsetptr = TrieNode_getValue(termIndex2, term, fwString_get);
     if ( docsetptr == fwValueNone )
         return fwNONE;
     fwPtr docset = {0, docsetptr};
@@ -282,3 +282,8 @@ bool cmpTerm(fwPtr lhs, fwPtr rhs) {
 void DocSetList_sortOnTerm(DocSetList* list) {
     sort(list->begin(), list->end(), cmpTerm);
 }
+
+void DocSetList_printMemory(DocSetList* list) {
+    nodecount();
+}
+
