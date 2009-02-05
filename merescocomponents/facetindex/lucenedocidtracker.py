@@ -135,14 +135,11 @@ class LuceneDocIdTracker(object):
 
         lastSegmentIndex = len(self._segmentInfo) - 1
         filename = join(self._directory, str(lastSegmentIndex) + '.docids')
-        f = open(filename, 'w')
-        f.write(repr(self._docIds[self._segmentInfo[lastSegmentIndex].offset:]))
-        f.close()
+        self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
 
     def _load(self):
         if len(self._docIds) != 0:
             raise LuceneDocIdTrackerException('DocIdList not empty on load')
-
         f = open(join(self._directory, 'tracker.segments'))
         self._mergeFactor = int(f.next().strip())
         self._nextDocId = int(f.next().strip())
@@ -152,10 +149,7 @@ class LuceneDocIdTracker(object):
             self._segmentInfo.append(SegmentInfo(length, offset))
 
         for i in range(len(self._segmentInfo)):
-            f = open(join(self._directory, str(i) + '.docids'))
-            data = eval(f.read())
-            self._docIds.extend(data)
-            f.close()
+            self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
 
     def __eq__(self, other):
         return type(other) == type(self) and \

@@ -175,8 +175,36 @@ class IntegerListTest(CQ2TestCase):
         l1 = IntegerList(5)
         l1.save(self.tempdir+'/list.bin')
         l2 = IntegerList()
-        l2.load(self.tempdir+'/list.bin')
+        l2.extendFrom(self.tempdir+'/list.bin')
         self.assertEquals(l1, l2)
+        l2.extendFrom(self.tempdir+'/list.bin')
+        self.assertEquals([0,1,2,3,4,0,1,2,3,4], l2)
+
+    def testSaveFromOffset(self):
+        l1 = IntegerList(5)
+        l1.save(self.tempdir+'/list.bin', offset=3)
+        l2 = IntegerList()
+        l2.extendFrom(self.tempdir+'/list.bin')
+        self.assertEquals([3,4], l2)
+
+    def testSaveInvalidOffset(self):
+        l1 = IntegerList(5)
+        try:
+            l1.save(self.tempdir+'/list.bin', offset=5)
+            self.fail()
+        except Exception, e:
+            self.assertEquals('Invalid index: 5 [0..5)', str(e))
+        try:
+            l1.save(self.tempdir+'/list.bin', offset=-1)
+            self.fail()
+        except Exception, e:
+            self.assertEquals('Invalid index: -1 [0..5)', str(e))
+
+    def testSaveEmpty(self):
+        l = IntegerList()
+        l.save(self.tempdir+'/empty')
+        l.extendFrom(self.tempdir+'/empty')
+        self.assertEquals([], l)
 
     def testSaveWrongDir(self):
         l1 = IntegerList(5)
@@ -189,7 +217,7 @@ class IntegerListTest(CQ2TestCase):
     def testLoadWrongDir(self):
         l1 = IntegerList(5)
         try:
-            l1.load('/doesnotexist')
+            l1.extendFrom('/doesnotexist')
             self.fail('must raise ioerror')
         except IOError, e:
             self.assertEquals("[Errno 2] No such file or directory: '/doesnotexist'", str(e))
@@ -197,10 +225,11 @@ class IntegerListTest(CQ2TestCase):
 
     def testLoadAndSaveSpeed(self):
         l = IntegerList(10**6)
+        l1 = IntegerList()
         t0 = time()
         l.save(self.tempdir+'/list.bin')
         t1 = time()
-        l.load(self.tempdir+'/list.bin')
+        l1.extendFrom(self.tempdir+'/list.bin')
         t2 = time()
         tsave = t1 - t0
         tload = t2 - t1

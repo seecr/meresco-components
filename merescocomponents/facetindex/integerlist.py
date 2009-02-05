@@ -69,12 +69,12 @@ IntegerList_mergeFromOffset.argtypes = [INTEGERLIST, c_int]
 IntegerList_mergeFromOffset.restype = c_int
 
 IntegerList_save = libFacetIndex.IntegerList_save
-IntegerList_save.argtypes = [INTEGERLIST, c_char_p]
+IntegerList_save.argtypes = [INTEGERLIST, c_char_p, c_int]
 IntegerList_save.restype = c_int
 
-IntegerList_load = libFacetIndex.IntegerList_load
-IntegerList_load.argtypes = [INTEGERLIST, c_char_p]
-IntegerList_load.restype = c_int
+IntegerList_extendFrom = libFacetIndex.IntegerList_extendFrom
+IntegerList_extendFrom.argtypes = [INTEGERLIST, c_char_p]
+IntegerList_extendFrom.restype = c_int
 
 
 class IntegerList(object):
@@ -140,12 +140,14 @@ class IntegerList(object):
     def getCObject(self):
         return self._cobj
 
-    def save(self, filename):
-        errno = IntegerList_save(self, filename)
+    def save(self, filename, offset=0):
+        errno = IntegerList_save(self, filename, offset)
+        if errno == -1:
+            raise IndexError("Invalid index: %d [0..%d)" % (offset, len(self)))
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
 
-    def load(self, filename):
-        errno = IntegerList_load(self, filename)
+    def extendFrom(self, filename):
+        errno = IntegerList_extendFrom(self, filename)
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))

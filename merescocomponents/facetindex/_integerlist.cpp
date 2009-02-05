@@ -69,12 +69,12 @@ int IntegerList_mergeFromOffset(IntegerList *iList, int offset) {
     return iList->mergeFromOffset(offset);
 }
 
-int IntegerList_save(IntegerList* list, char* filename) {
-    return list->save(filename);
+int IntegerList_save(IntegerList* list, char* filename, int offset) {
+    return list->save(filename, offset);
 }
 
-int IntegerList_load(IntegerList* list, char* filename) {
-    return list->load(filename);
+int IntegerList_extendFrom(IntegerList* list, char* filename) {
+    return list->extendFrom(filename);
 }
 
 
@@ -104,22 +104,26 @@ int IntegerList::mergeFromOffset(int offset) {
     return size() - offset;
 }
 
-int IntegerList::save(char* filename) {
+int IntegerList::save(char* filename, int offset) {
+    if ( offset < 0 || (offset >= size() && size() > 0) ) {
+        return -1;
+    }
     FILE* fp = fopen(filename, "wb");
     if ( !fp ) {
         return errno;
     }
-    fwrite(&front(), sizeof(guint32), size(), fp);
+    if ( size()-offset > 0 ) {
+        fwrite(&at(offset), sizeof(guint32), size()-offset, fp);
+    }
     fclose(fp);
     return 0;
 }
 
-int IntegerList::load(char* filename) {
+int IntegerList::extendFrom(char* filename) {
     FILE* fp = fopen(filename, "r");
     if ( !fp ) {
         return errno;
     }
-    clear();
     while ( ! feof(fp) ) {
         guint32 i;
         if ( fread(&i, sizeof(guint32), 1, fp) == 1)
