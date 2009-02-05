@@ -32,6 +32,7 @@ from bisect import bisect_left, bisect_right
 
 from merescocomponents import SortedFileList, FileList
 from merescocomponents.packer import IntStringPacker, IntPacker
+from time import time
 
 class FileListTest(CQ2TestCase):
     def testAppendAndWrite(self):
@@ -249,4 +250,16 @@ class FileListTest(CQ2TestCase):
         s._merge()
         self.assertEquals([1235], list(s))
         
-        
+    def xtestPerformance(self):
+        s = SortedFileList(join(self.tempdir, 'list'))
+        t0 = time()
+        for i in xrange(10**6):
+            s.append(i)
+            if i%100 == 99:
+                s.remove(i-1)
+            if i%1000 == 0:
+                print i, len(s)
+        t1 = time()
+        print t1 - t0
+        # Appends only, 10**6 within 220 seconds (4500/s)
+        # Appends and deletes 1/100, 10**6 within 2754 seconds (363/s)  mergeTrigger=100
