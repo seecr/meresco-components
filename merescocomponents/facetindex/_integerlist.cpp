@@ -27,6 +27,8 @@
 
 #include "integerlist.h"
 #include <vector>
+#include <stdio.h>
+#include <errno.h>
 
 IntegerList* IntegerList_create(int n) {
     return new IntegerList(n);
@@ -67,6 +69,13 @@ int IntegerList_mergeFromOffset(IntegerList *iList, int offset) {
     return iList->mergeFromOffset(offset);
 }
 
+int IntegerList_save(IntegerList* list, char* filename) {
+    return list->save(filename);
+}
+
+int IntegerList_load(IntegerList* list, char* filename) {
+    return list->load(filename);
+}
 
 
 /* ----------------------- C++ ---------------------------------------------*/
@@ -95,3 +104,27 @@ int IntegerList::mergeFromOffset(int offset) {
     return size() - offset;
 }
 
+int IntegerList::save(char* filename) {
+    FILE* fp = fopen(filename, "wb");
+    if ( !fp ) {
+        return errno;
+    }
+    fwrite(&front(), sizeof(guint32), size(), fp);
+    fclose(fp);
+    return 0;
+}
+
+int IntegerList::load(char* filename) {
+    FILE* fp = fopen(filename, "r");
+    if ( !fp ) {
+        return errno;
+    }
+    clear();
+    while ( ! feof(fp) ) {
+        guint32 i;
+        if ( fread(&i, sizeof(guint32), 1, fp) == 1)
+            push_back(i);
+    }
+    fclose(fp);
+    return 0;
+}

@@ -38,7 +38,8 @@ class IntegerList : public std::vector<guint32> {
         void append(guint32);
         IntegerList* slice(int, int, int);
         int mergeFromOffset(int);
-
+        int save(char* filename);
+        int load(char* filename);
 };
 
 extern "C" {
@@ -51,6 +52,8 @@ extern "C" {
     IntegerList*    IntegerList_slice                (IntegerList*, int, int, int);
     void            IntegerList_delitems             (IntegerList* list, int start, int stop);
     int             IntegerList_mergeFromOffset      (IntegerList* list, int);
+    int             IntegerList_save                 (IntegerList* list, char* filename);
+    int             IntegerList_load                 (IntegerList* list, char* filename);
 }
 
 #endif

@@ -24,11 +24,12 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from unittest import TestCase
+from cq2utils import CQ2TestCase
+from time import time
 
 from merescocomponents.facetindex import IntegerList
 
-class IntegerListTest(TestCase):
+class IntegerListTest(CQ2TestCase):
 
     def testConstruct(self):
         l = IntegerList()
@@ -169,3 +170,39 @@ class IntegerListTest(TestCase):
             self.fail('must raise exception')
         except Exception, e:
             self.assertEquals('-6', str(e))
+
+    def testSave(self):
+        l1 = IntegerList(5)
+        l1.save(self.tempdir+'/list.bin')
+        l2 = IntegerList()
+        l2.load(self.tempdir+'/list.bin')
+        self.assertEquals(l1, l2)
+
+    def testSaveWrongDir(self):
+        l1 = IntegerList(5)
+        try:
+            l1.save('/doesnotexist')
+            self.fail('must raise ioerror')
+        except IOError, e:
+            self.assertEquals("[Errno 13] No such file or directory: '/doesnotexist'", str(e))
+
+    def testLoadWrongDir(self):
+        l1 = IntegerList(5)
+        try:
+            l1.load('/doesnotexist')
+            self.fail('must raise ioerror')
+        except IOError, e:
+            self.assertEquals("[Errno 2] No such file or directory: '/doesnotexist'", str(e))
+        self.assertEquals([0,1,2,3,4], list(l1))
+
+    def testLoadAndSaveSpeed(self):
+        l = IntegerList(10**6)
+        t0 = time()
+        l.save(self.tempdir+'/list.bin')
+        t1 = time()
+        l.load(self.tempdir+'/list.bin')
+        t2 = time()
+        tsave = t1 - t0
+        tload = t2 - t1
+        self.assertTrue(0.01 < tsave < 0.05, tsave)
+        self.assertTrue(0.10 < tload < 0.50, tload)

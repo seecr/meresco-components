@@ -68,6 +68,14 @@ IntegerList_mergeFromOffset = libFacetIndex.IntegerList_mergeFromOffset
 IntegerList_mergeFromOffset.argtypes = [INTEGERLIST, c_int]
 IntegerList_mergeFromOffset.restype = c_int
 
+IntegerList_save = libFacetIndex.IntegerList_save
+IntegerList_save.argtypes = [INTEGERLIST, c_char_p]
+IntegerList_save.restype = c_int
+
+IntegerList_load = libFacetIndex.IntegerList_load
+IntegerList_load.argtypes = [INTEGERLIST, c_char_p]
+IntegerList_load.restype = c_int
+
 
 class IntegerList(object):
 
@@ -120,6 +128,9 @@ class IntegerList(object):
     def __eq__(self, rhs):
         return self[:] == rhs[:]
 
+    def __repr__(self):
+        return repr(list(i for i in self))
+
     def copy(self):
         return IntegerList(cobj=IntegerList_slice(self, 0, len(self), 1))
 
@@ -128,3 +139,13 @@ class IntegerList(object):
 
     def getCObject(self):
         return self._cobj
+
+    def save(self, filename):
+        errno = IntegerList_save(self, filename)
+        if errno:
+            raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
+
+    def load(self, filename):
+        errno = IntegerList_load(self, filename)
+        if errno:
+            raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
