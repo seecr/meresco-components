@@ -29,7 +29,6 @@
 #include "integerlist.h"
 
 extern "C" {
-    #include "fwstring.h"
     #include "fwpool.h"
 }
 

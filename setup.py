@@ -38,7 +38,6 @@ setup(
                 'merescocomponents/facetindex/_docset.cpp',
                 'merescocomponents/facetindex/_integerlist.cpp',
                 'merescocomponents/facetindex/fwpool.c',
-                'merescocomponents/facetindex/fwstring.c',
                 'merescocomponents/facetindex/trie_c.cpp',
                 ],
         	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],

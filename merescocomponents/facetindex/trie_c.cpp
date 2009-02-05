@@ -35,7 +35,6 @@
 extern "C" {
 #include "trie_c.h"
 #include "fwpool.h"
-#include "fwstring.h"
 }
 
 /************** for TESTING ****************/
@@ -57,14 +56,12 @@ extern "C" {
 /*********** End for Testing ******************/
 
 
-void fwString_init(void);
 void TrieNode_init(void);
 void LeafNode_init(void);
 void StringNode_init(void);
 void ListNode_init(void);
 
 void trie_init(void) {
-    fwString_init();
     pool_init();
     TrieNode_init();
     LeafNode_init();
