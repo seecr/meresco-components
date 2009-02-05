@@ -34,7 +34,6 @@ from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 from merescocomponents import SortedFileList
 from merescocomponents.facetindex import LuceneDict
-from merescocore.framework import getCallstackVar
 from bisect import bisect_left
 
 MERGE_TRIGGER = 1000
