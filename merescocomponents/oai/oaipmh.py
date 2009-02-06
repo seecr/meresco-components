@@ -33,10 +33,10 @@ from oailistmetadataformats import OaiListMetadataFormats
 from oailistsets import OaiListSets
 from oaisink import OaiSink
 
-class OaiPmh(Transparant):
+class OaiPmh(object):
     def __init__(self, repositoryName, adminEmail):
-        Transparant.__init__(self)
-        outside = self
+        outside = Transparant()
+        self.addObserver = outside.addObserver
         self._internalObserverTree = be(
             (Observable(),
                 (OaiIdentify(repositoryName=repositoryName, adminEmail=adminEmail), ),
