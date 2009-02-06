@@ -293,10 +293,10 @@ class DocSetListTest(LuceneTestCase):
         m = DocSetList()
         m.add(DocSet([0]), 'x')
         self.assertEquals([0], m[0])
-        m[0].add(1)
+        m.addDocument(1, 'x')
         self.assertEquals([0, 1], m[0])
         m.deleteDoc(1)
-        m[0].add(2)
+        m.addDocument(2, 'x')
         self.assertEquals([0,2], m[0])
         m.deleteDoc(9999)
 

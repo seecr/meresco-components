@@ -26,6 +26,7 @@
  * end license */
 #include <Python.h>
 #include <vector>
+#include <map>
 #include <string>
 #include "facetindex.h"
 #include "docset.h"
@@ -45,11 +46,13 @@ typedef struct {
 } cardinality_t;
 
 typedef std::vector<cardinality_t> CardinalityList;
+typedef std::vector<fwPtr> TermList;
 
 class DocSetList : public std::vector<fwPtr> {
     private:
         fwPtr termIndex2;
         std::string termPool;
+        std::map<guint32, TermList> docId2TermList;
     public:
         DocSetList();
         ~DocSetList();
@@ -61,6 +64,7 @@ class DocSetList : public std::vector<fwPtr> {
         char*                getTermForDocset(DocSet *docset);
         bool                 cmpTerm(fwPtr lhs, fwPtr rhs);
         void                 sortOnTerm(void);
+        void                 docId2terms_add(guint32 docid, fwPtr docset);
 };
 
 /**************** C-interface for DocSetList ****************************/
@@ -82,9 +86,12 @@ extern "C" {
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
     void             DocSetList_printMemory          (DocSetList* list);
     char*            DocSetList_getTermForDocset     (DocSetList* list, fwPtr docset);
+    void             DocSetList_docId2terms_add      (DocSetList* list, guint32 docid, fwPtr docset);
+
     cardinality_t*   CardinalityList_at              (CardinalityList* vector, int i);
     int              CardinalityList_size            (CardinalityList* vector);
     void             CardinalityList_free            (CardinalityList* vector);
+
 }
 
 #endif

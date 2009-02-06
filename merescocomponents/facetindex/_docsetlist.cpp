@@ -73,13 +73,26 @@ void DocSetList::addDocSet(fwPtr docset, char *term) {
         pDS(docset)->setTermOffset(n);
         TrieNode_addValue(termIndex2, docset.ptr, n, &termPool[0]);
     }
+    DocSet* ds = pDS(docset);
+    for ( DocSet::iterator i = ds->begin(); i < ds->end(); i++ ) {
+        guint32 docId = (*i);
+        this->docId2terms_add(docId, docset);
+    }
 }
 
-void DocSetList::removeDoc(guint32 doc) {
-    for (unsigned int i = 0; i < size(); i++ ) {
-        DocSet* docset = pDS(at(i));
-        docset->remove(doc);
+void DocSetList::docId2terms_add(guint32 docId, fwPtr docset) {
+
+    TermList& terms = this->docId2TermList[docId];
+    terms.push_back(docset);
+}
+
+void DocSetList::removeDoc(guint32 docId) {
+    TermList& terms = this->docId2TermList[docId];
+    for ( TermList::iterator t = terms.begin(); t < terms.end(); t++) {
+        DocSet* docset = pDS(*t);
+        docset->remove(docId);
     }
+    docId2TermList.erase(docId);
 }
 
 fwPtr DocSetList::forTerm(char* term) {
@@ -315,4 +328,8 @@ void DocSetList_printMemory(DocSetList* list) {
 
 char* DocSetList_getTermForDocset(DocSetList *list, fwPtr docset) {
     return list->getTermForDocset(pDS(docset));
+}
+
+void DocSetList_docId2terms_add(DocSetList *list, guint32 docId, fwPtr docset) {
+    list->docId2terms_add(docId, docset);
 }

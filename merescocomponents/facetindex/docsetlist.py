@@ -105,6 +105,10 @@ DocSetList_printMemory = libFacetIndex.DocSetList_printMemory
 DocSetList_printMemory.argtypes = [DOCSETLIST]
 DocSetList_printMemory.restype = None
 
+DocSetList_docId2terms_add = libFacetIndex.DocSetList_docId2terms_add
+DocSetList_docId2terms_add.argtypes = [DOCSETLIST, c_uint32, DOCSET]
+DocSetList_docId2terms_add.resType = None
+
 CardinalityList_size = libFacetIndex.CardinalityList_size
 CardinalityList_size.argtypes = [CARDINALITYLIST]
 CardinalityList_size.restype = c_int
@@ -184,6 +188,7 @@ class DocSetList(object):
             if r.ptr != -1:
                 docset = DocSet(cobj=r)
                 docset.add(docid)
+                DocSetList_docId2terms_add(self, docid, docset)
                 self._sorted = None
             else:
                 docset = DocSet()
