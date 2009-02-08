@@ -89,7 +89,7 @@ class LuceneDocIdTracker(object):
             self._segmentInfo.append(self._ramSegmentsInfo[0])
             self._ramSegmentsInfo = []
             self._maybeMerge(self._segmentInfo, lower = 0, upper = self._mergeFactor)
-            self._save()
+        self._save()
 
     def _maybeMerge(self, segments, lower, upper):
         reversedSegments = reversed(segments)
