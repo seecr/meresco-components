@@ -151,3 +151,5 @@ class DocSetTest(LuceneTestCase):
         assertSearchCardinality([3,4,5,6,7,8], [0,1,2,3,4,5])
         assertSearchCardinality([3,4,5,6,7,8], [            6,7,8,9,10])
         assertSearchCardinality([], [])
+        assertSearchCardinality([1,4], [2,4])       #tricky one, failed after deployment
+        assertSearchCardinality([1,4,5], [1,4,6])   #idem

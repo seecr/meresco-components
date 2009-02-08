@@ -102,8 +102,11 @@ int DocSet::combinedCardinalitySearch(DocSet* larger) {
         from = lower_bound(from, till, *lower);
         if ( from >= till )
             return c;
-        if ( *from++ == *lower )
+        if ( *from == *lower ) {
             c++;
+            from++;
+            lower++;
+        }
         // Upperbound pruning optimization only, you could remove it without breaking functionality
         upper = upper_bound(lower, upper, *(till-1));
         if ( upper <= lower )
@@ -111,8 +114,11 @@ int DocSet::combinedCardinalitySearch(DocSet* larger) {
         till = upper_bound(from, till, *(upper-1));
         if ( till <= from )
             return c;
-        if ( *--till == *(upper-1) )
+        if ( *(till-1) == *(upper-1) ) {
             c++;
+            till--;
+            upper--;
+        }
     }
 }
 
