@@ -147,3 +147,13 @@ class OaiPmhTest(OaiTestCase):
 
     def testIllegalArgumentsListMetadataFormats(self):
         self.assertBadArgument({'verb': ['ListMetadataFormats'], 'somethingElse': ['illegal']})
+
+    def testOaiPmhInATree(self):
+        observert = CallTrace('Observer')
+        observable = be((Observable(),
+            (OaiPmh(repositoryName='The Repository Name',
+                adminEmail='admin@email.extension'),
+                (observert,)
+            )
+        ))
+        self.assertTrue(observable, 'The above code failed.')

@@ -37,6 +37,7 @@ class OaiPmh(object):
     def __init__(self, repositoryName, adminEmail):
         outside = Transparant()
         self.addObserver = outside.addObserver
+        self.addStrand = outside.addStrand
         self._internalObserverTree = be(
             (Observable(),
                 (OaiIdentify(repositoryName=repositoryName, adminEmail=adminEmail), ),
