@@ -227,7 +227,7 @@ class OaiJazzLucene(Observable):
         allSets = set()
         if (True, True) == self.any.isAvailable('__all_sets__', '__sets__'):
             setsXml = parse(self.any.getStream('__all_sets__', '__sets__'))
-            allSets.update(setsXml.xpath('/sets:__sets__/sets:setSpec/text()', {'sets':'http://meresco.com/namespace/meresco/oai/sets'}))
+            allSets.update(setsXml.xpath('/sets:__sets__/sets:setSpec/text()', namespaces={'sets':'http://meresco.com/namespace/meresco/oai/sets'}))
         return allSets
 
     def _updateAllSets(self, sets):
