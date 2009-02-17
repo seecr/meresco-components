@@ -90,11 +90,7 @@ class LuceneIndex(Observable):
     def docsetFromQuery(self, pyLuceneQuery):
         t0 = time()
 
-        try:
-            docIds = DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
-            return docIds
-        finally:
-            print 'docsetFromQuery (ms): ', (time()-t0)*1000
+        return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
 
     def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
