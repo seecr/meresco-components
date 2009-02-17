@@ -157,7 +157,7 @@ class NGramTest(CQ2TestCase):
         ngramQuery = NGramQuery(2, 'ngrams')
         ngramQuery.addObserver(ngramindex)
         suggester.addObserver(ngramQuery)
-        results = suggester.suggestionsFor(term)
+        inclusive, results = suggester.suggestionsFor(term)
         self.assertEquals(expected, list(results))
 
     def testLevenshtein(self):

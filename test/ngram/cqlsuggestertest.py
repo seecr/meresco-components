@@ -56,15 +56,14 @@ class CqlSuggesterTest(TestCase):
         self.assertEquals((2, ['wordy', 'wordx']), index.executeQuery('nonsense', 99))
         suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
         suggester.addObserver(index)
-        self.assertEquals(['wordy', 'wordx'], suggester.suggestionsFor('wordz'))
-        self.assertEquals(['wordx'], suggester.suggestionsFor('wordy'))
+        self.assertEquals((False, ['wordy', 'wordx']), suggester.suggestionsFor('wordz'))
+        self.assertEquals((True, ['wordx']), suggester.suggestionsFor('wordy'))
         cqlsuggester = CqlSuggester()
         cqlsuggester.addObserver(suggester)
         cqlAST = parseString('wordz and wordy')
         self.assertEquals('wordz', cqlAST.children()[0].children()[0].children()[0].children()[0].children()[0])
         result = cqlsuggester.suggestForCql(cqlAST)
-        self.assertEquals(['wordy', 'wordx'], result)
+        self.assertEquals((False, ['wordy', 'wordx']), result)
 
 
 
-        

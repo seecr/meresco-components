@@ -59,22 +59,23 @@ class _Suggestion(Observable):
     def _suggestionsFor(self, word, sortkey):
         total, candidates = self.any.executeQuery(word, self._samples)
         results = sorted(candidates, key=sortkey)
-        if results and results[0] == word:
-            return results[1:self._maxResults+1]
+        inclusive = results and results[0] == word
+        if inclusive:
+            return (inclusive, results[1:self._maxResults+1])
         else:
-            return results[:self._maxResults]
+            return (inclusive, results[:self._maxResults])
 
 class LevenshteinSuggester(_Suggestion):
     def suggestionsFor(self, word):
         word = unicode(word)
-        result = self._suggestionsFor(word, lambda term: distance(unicode(term), word))
-        return [term for term in result if distance(unicode(term), word) <= self._threshold]
+        inclusive, result = self._suggestionsFor(word, lambda term: distance(unicode(term), word))
+        return inclusive, [term for term in result if distance(unicode(term), word) <= self._threshold]
 
 class RatioSuggester(_Suggestion):
     def suggestionsFor(self, word):
         word = unicode(word)
-        result = self._suggestionsFor(word, lambda term: 1-ratio(unicode(term), word))
-        return [term for term in result if ratio(unicode(term), word) > self._threshold]
+        inclusive, result = self._suggestionsFor(word, lambda term: 1-ratio(unicode(term), word))
+        return inclusive, [term for term in result if ratio(unicode(term), word) > self._threshold]
 
 class NGramFieldlet(Transparant):
     def __init__(self, n, fieldName):
