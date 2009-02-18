@@ -38,6 +38,7 @@ from bisect import bisect_left
 
 MERGE_TRIGGER = 1000
 class OaiJazz(object):
+
     def __init__(self, aDirectory):
         self._directory = aDirectory
         isdir(join(aDirectory, 'stamp2identifier')) or makedirs(join(aDirectory,'stamp2identifier'))
@@ -49,6 +50,9 @@ class OaiJazz(object):
         self._stamp2identifier = LuceneDict(join(self._directory, 'stamp2identifier'))
         self._tombStones = SortedFileList(join(self._directory, 'tombStones.list'), mergeTrigger=MERGE_TRIGGER)
         self._read()
+
+    def close(self):
+        self._stamp2identifier.close()
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
@@ -123,7 +127,7 @@ class OaiJazz(object):
         return self._sets.keys()
 
     # private methods
-    
+
     def _add(self, stamp, identifier, setSpecs, prefixes):
         for setSpec in setSpecs:
             self._getSetList(setSpec).append(stamp)
@@ -136,13 +140,13 @@ class OaiJazz(object):
             schema = open(join(self._directory, 'prefixesInfo', '%s.schema' % escapeName(prefix))).read()
             namespace = open(join(self._directory, 'prefixesInfo', '%s.namespace' % escapeName(prefix))).read()
             yield (prefix, schema, namespace)
-    
+
     def _getSetList(self, setSpec):
         if setSpec not in self._sets:
             filename = join(self._directory, 'sets', '%s.list' % escapeName(setSpec))
             self._sets[setSpec] = SortedFileList(filename, mergeTrigger=MERGE_TRIGGER)
         return self._sets[setSpec]
-    
+
     def _getPrefixList(self, prefix):
         if prefix not in self._prefixes:
             filename = join(self._directory, 'prefixes', '%s.list' % escapeName(prefix))
@@ -153,7 +157,7 @@ class OaiJazz(object):
         if not oaiFrom:
             return 0
         return int(mktime(strptime(oaiFrom, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
-    
+
     def _untilTime(self, oaiUntil):
         if not oaiUntil:
             return None
@@ -162,20 +166,20 @@ class OaiJazz(object):
 
     def _getIdentifier(self, stamp):
         return self._stamp2identifier.get(str(stamp), None)
-    
+
     def _getStamp(self, identifier):
         result = self._stamp2identifier.getKeysFor(str(identifier))
         if len(result) == 1:
             return int(result[0])
         return None
-        
+
     def _delete(self, identifier):
         stamp = self.getUnique(identifier)
-        del self._stamp2identifier[str(stamp)]
         stamp in self._tombStones and self._tombStones.remove(stamp)
         oldPrefixes = []
         oldSets = []
         if stamp != None:
+            del self._stamp2identifier[str(stamp)]
             for prefix, prefixStamps in self._prefixes.items():
                 if stamp in prefixStamps:
                     oldPrefixes.append(prefix)
@@ -228,4 +232,4 @@ def _flattenSetHierarchy(sets):
         for i in range(1, len(parts) + 1):
             result.add(':'.join(parts[:i]))
     return result
-    
+

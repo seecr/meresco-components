@@ -56,9 +56,10 @@ class OaiJazzTest(CQ2TestCase):
             stamps.append(jazz._stamp())
             var = 30.0/2.0
         self.assertEquals(list(sorted(set(stamps))), stamps, "Stamps not equal.")
-        
+
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
+        self.jazz.close()
         myJazz = OaiJazz(self.tempdir)
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
@@ -91,9 +92,9 @@ class OaiJazzTest(CQ2TestCase):
         #  1 * 10**7 oaiSelect took 0.347623825073
         # New implementation with LuceneDict and SortedFileList with delete support
         #  insert of 10*4 took 153 secs
-        #  oaiSelect took 0.1285 
-        
-        
+        #  oaiSelect took 0.1285
+
+
     def testGetDatestamp(self):
         self.jazz.addOaiRecord('123', metadataFormats=[('oai_dc', 'schema', 'namespace')])
         self.assertEquals('2008-07-06T05:04:03Z', self.jazz.getDatestamp('123'))
@@ -103,6 +104,12 @@ class OaiJazzTest(CQ2TestCase):
         self.jazz.delete('notExisting')
         jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(None, jazz2.getUnique('notExisting'))
+
+    def testDoNotPerformSuperfluousDeletes(self):
+        self.jazz.addOaiRecord('existing', metadataFormats=[('prefix','schema', 'namespace')])
+        self.jazz._stamp2identifier = CallTrace('mockdict', returnValues={'getKeysFor':[], '__delitem__':None})
+        self.jazz.delete('notExisting')
+        self.assertFalse("__delitem__" in str(self.jazz._stamp2identifier.calledMethods))
 
     # What happens if you do addOaiRecord('id1', prefix='aap') and afterwards
     #   addOaiRecord('id1', prefix='noot')
@@ -119,16 +126,18 @@ class OaiJazzTest(CQ2TestCase):
 
     def testAddOaiRecordPersistent(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec', 'setName')])
+        self.jazz.close()
         jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='prefix', sets=['setSpec'])))
 
     def testWeirdSetOrPrefixNamesDoNotMatter(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('/%^!@#$   \n\t','schema', 'namespace')], sets=[('set%2Spec\n\n', 'setName')])
+        self.jazz.close()
         jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
-        
 
-        
+
+
     # unique, for continueAfter
 
     def testDeleteIncrementsDatestampAndUnique(self):
@@ -160,5 +169,3 @@ class OaiJazzTest(CQ2TestCase):
         mf = list(server.any.getAllMetadataFormats())
         self.assertEquals(2, len(mf))
         self.assertEquals(set(['one', 'two']), set(prefix for prefix, schema, namespace in mf))
-
-

@@ -25,7 +25,6 @@
 #
 ## end license ##
 
-from lucene import IncludeStopWordAnalyzer
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, Document as LuceneDocument, Field, TermQuery, Term, MatchAllDocsQuery
 from tools import unlock
 
@@ -33,23 +32,23 @@ class LuceneDict(object):
     def __init__(self, directoryName):
         self._directoryName = directoryName
         unlock(self._directoryName)
-        self._writer = None
-        self._reader = None
-        self._searcher = None
-        self._reopenIndex()
-        
-    def _reopenIndex(self):
-        if self._writer:
-            self._writer.close()
-        self._writer = IndexWriter(
-            self._directoryName,
-            IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
-        if self._reader:
-            self._reader.close()
-        self._reader = IndexReader.open(self._directoryName)
-        if self._searcher:
+        self._writer = IndexWriter(directoryName, None, not IndexReader.indexExists(directoryName))
+        self._searcher = IndexSearcher(directoryName)
+        self._dirty = False
+
+    def getSearcher(self):
+        if self._dirty:
+            self._writer.flush()
             self._searcher.close()
-        self._searcher = IndexSearcher(self._reader)
+            self._searcher = IndexSearcher(self._directoryName)
+            self._dirty = False
+        return self._searcher
+
+    def close(self):
+        self._writer.close()
+        self._searcher.close()
+        self._writer = None
+        self._searcher = None
 
     def __setitem__(self, key, value):
         item = LuceneDocument()
@@ -57,23 +56,20 @@ class LuceneDict(object):
         item.add(Field('value', value, Field.Store.YES, Field.Index.UN_TOKENIZED))
         self._writer.deleteDocuments(Term('key', key))
         self._writer.addDocument(item)
-        self._reopenIndex()
+        self._dirty = True
 
     def __getitem__(self, key):
-        hits = self._searcher.search(TermQuery(Term('key', key)))
+        hits = self.getSearcher().search(TermQuery(Term('key', key)))
         if len(hits) != 1:
             raise KeyError(key)
         return hits.doc(0).getField('value').stringValue()
 
     def __delitem__(self, key):
         self._writer.deleteDocuments(Term('key', key))
-        self._reopenIndex()
+        self._dirty = True
 
     def __contains__(self, key):
-        return len(self._searcher.search(TermQuery(Term('key', key)))) == 1
-
-    def __len__(self):
-        return self._reader.numDocs()
+        return len(self.getSearcher().search(TermQuery(Term('key', key)))) == 1
 
     def has_key(self, key):
         return key in self
@@ -90,7 +86,7 @@ class LuceneDict(object):
         return self[key]
 
     def items(self):
-        hits = self._searcher.search(MatchAllDocsQuery())
+        hits = self.getSearcher().search(MatchAllDocsQuery())
         for i in xrange(len(hits)):
             yield (hits.doc(i).getField('key').stringValue(), hits.doc(i).getField('value').stringValue())
 
@@ -99,8 +95,7 @@ class LuceneDict(object):
 
     def values(self):
         return (value for key,value in self.items())
-    
+
     def getKeysFor(self, value):
-        hits = self._searcher.search(TermQuery(Term('value', value)))
+        hits = self.getSearcher().search(TermQuery(Term('value', value)))
         return [hits.doc(i).getField('key').stringValue() for i in range(len(hits))]
-        

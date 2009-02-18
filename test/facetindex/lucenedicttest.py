@@ -38,7 +38,6 @@ class LuceneDictTest(CQ2TestCase):
         self.assertEquals('some string', d['1'])
         d['1'] = 'some other string'
         self.assertEquals('some other string', d['1'])
-        self.assertEquals(1, len(d))
 
     def testNoneExistingKey(self):
         d = LuceneDict(self.tempdir)
@@ -50,10 +49,14 @@ class LuceneDictTest(CQ2TestCase):
 
     def testDelete(self):
         d = LuceneDict(self.tempdir)
-        d['1'] = 'some other string'
-        self.assertEquals(1, len(d))
+        d['1'] = 'a string'
+        self.assertEquals('a string', d['1'])
         del d['1']
-        self.assertEquals(0, len(d))
+        try:
+            d['1']
+            self.fail('must not come here')
+        except KeyError:
+            pass
 
     def testHasKey(self):
         d = LuceneDict(self.tempdir)
@@ -93,7 +96,23 @@ class LuceneDictTest(CQ2TestCase):
         d['1'] = 'one'
         d['2'] = 'two'
         self.assertEquals(['1'], d.getKeysFor('one'))
-        
+
+    def testStopWord(self):
+        d = LuceneDict(self.tempdir)
+        d['the'] = 'an'
+        self.assertEquals('an', d['the'])
+
+    def testCase(self):
+        d = LuceneDict(self.tempdir)
+        d['The'] = 'De'
+        d['the'] = 'de'
+        self.assertEquals('De', d['The'])
+        self.assertEquals('de', d['the'])
+
+    def testSpaces(self):
+        d = LuceneDict(self.tempdir)
+        d['The one'] = 'De ene'
+        self.assertEquals('De ene', d['The one'])
 
 #items()¶
 #keys()¶
