@@ -107,7 +107,7 @@ class OaiJazzTest(CQ2TestCase):
 
     def testDoNotPerformSuperfluousDeletes(self):
         self.jazz.addOaiRecord('existing', metadataFormats=[('prefix','schema', 'namespace')])
-        self.jazz._stamp2identifier = CallTrace('mockdict', returnValues={'getKeysFor':[], '__delitem__':None})
+        self.jazz._stamp2identifier = CallTrace('mockdict', returnValues={'getKeysFor': None, '__delitem__':None})
         self.jazz.delete('notExisting')
         self.assertFalse("__delitem__" in str(self.jazz._stamp2identifier.calledMethods))
 

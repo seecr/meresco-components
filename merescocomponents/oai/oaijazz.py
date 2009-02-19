@@ -33,8 +33,11 @@ from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 from merescocomponents import SortedFileList
-from merescocomponents.facetindex import LuceneDict
+
 from bisect import bisect_left
+
+from merescocomponents.facetindex import LuceneDict
+from berkeleydict import BerkeleyDict
 
 MERGE_TRIGGER = 1000
 class OaiJazz(object):
@@ -47,12 +50,13 @@ class OaiJazz(object):
         isdir(join(aDirectory, 'prefixesInfo')) or makedirs(join(aDirectory,'prefixesInfo'))
         self._prefixes = {}
         self._sets = {}
-        self._stamp2identifier = LuceneDict(join(self._directory, 'stamp2identifier'))
+        self._stamp2identifier = BerkeleyDict(join(self._directory, 'stamp2identifier'))
         self._tombStones = SortedFileList(join(self._directory, 'tombStones.list'), mergeTrigger=MERGE_TRIGGER)
         self._read()
 
     def close(self):
-        self._stamp2identifier.close()
+        #self._stamp2identifier.close()
+        pass
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
@@ -168,10 +172,10 @@ class OaiJazz(object):
         return self._stamp2identifier.get(str(stamp), None)
 
     def _getStamp(self, identifier):
-        result = self._stamp2identifier.getKeysFor(str(identifier))
-        if len(result) == 1:
-            return int(result[0])
-        return None
+        result = self._stamp2identifier.getKeyFor(identifier)
+        if result != None:
+            result = int(result)
+        return result
 
     def _delete(self, identifier):
         stamp = self.getUnique(identifier)

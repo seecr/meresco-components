@@ -25,12 +25,35 @@
 #
 ## end license ##
 
-from oaipmh import OaiPmh
-from oaijazzlucene import OaiJazzLucene
-from oaiprovenance import OaiProvenance
-from oaisetselect import OaiSetSelect
-from uniquenumbergenerator import UniqueNumberGenerator
-from fields2oairecord import Fields2OaiRecordTx
-from oaijazz import OaiJazz
-from oaiaddrecord import OaiAddRecord, OaiAddRecordWithDefaults
-from berkeleydict import BerkeleyDict
+from bsddb import btopen
+from os.path import join
+
+class BerkeleyDict(object):
+    def __init__(self, directory):
+        self._keyvalueDict = btopen(join(directory, 'keyvalue'))
+        self._valuekeyDict = btopen(join(directory, 'valuekey'))
+
+    def __contains__(self, key):
+        return self._keyvalueDict.__contains__(key)
+
+    def __setitem__(self, key, value):
+        self._keyvalueDict.__setitem__(key, value)
+        self._valuekeyDict.__setitem__(value, key)
+        self._keyvalueDict.sync()
+        self._valuekeyDict.sync()
+
+    def __getitem__(self, key):
+        return self._keyvalueDict.__getitem__(key)
+
+    def __delitem__(self, key):
+        value = self._keyvalueDict[key]
+        self._keyvalueDict.__delitem__(key)
+        self._valuekeyDict.__delitem__(value)
+        self._keyvalueDict.sync()
+        self._valuekeyDict.sync()
+
+    def get(self, key, default=None):
+        return self._keyvalueDict.get(key, default=default)
+
+    def getKeyFor(self, value):
+        return self._valuekeyDict.get(value, None)
