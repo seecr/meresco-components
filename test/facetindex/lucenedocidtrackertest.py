@@ -233,7 +233,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(0, len(tracker._ramSegmentsInfo))
 
     def testFailLoadWhenDataAlreadyInList(self):
-        tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker", maxDoc=10)
+        tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.getTrackerDir(), maxDoc=10)
         tracker.next()
         tracker.next()
         tracker.flush()
@@ -244,8 +244,11 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         except LuceneDocIdTrackerException, e:
             self.assertEquals('DocIdList not empty on load', str(e))
 
+    def getTrackerDir(self):
+        return join(self.tempdir, 'tracker')
+
     def createTrackerDir(self):
-        name = join(self.tempdir, 'tracker')
+        name = self.getTrackerDir()
         isdir(name) and rmtree(name)
         mkdir(name)
         return name
@@ -255,3 +258,27 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.next()
         tracker.flush()
+
+    def testTrackerSavedDeletesOfOldDocIds(self):
+        tracker = LuceneDocIdTracker(2, directory = self.createTrackerDir())
+        tracker.next()
+        tracker.next()
+        tracker.next()
+        tracker.next() # generates a merge and a save of segment 0, of size 4
+        tracker.next() # creates a second segment, which must be saved properly on deletes
+        tracker.next()
+        tracker.deleteLuceneId(0) # delete first document in already saved segement 0
+        tracker.close()
+        tracker = LuceneDocIdTracker(2, directory = self.getTrackerDir())
+        self.assertTrue(tracker.isDeleted(0))
+
+    def testTrackerSavedDeletesOfOldDocIdsIDontKnowIfThisShouldWork(self):
+        tracker = LuceneDocIdTracker(2, directory = self.createTrackerDir())
+        tracker.next()
+        tracker.next()
+        tracker.next()
+        tracker.deleteLuceneId(0)
+        tracker.close()
+        tracker = LuceneDocIdTracker(2, directory = self.getTrackerDir())
+        # This should not work I think, because 0 is no longer valid (merged!) ?
+        self.assertTrue(tracker.isDeleted(0))

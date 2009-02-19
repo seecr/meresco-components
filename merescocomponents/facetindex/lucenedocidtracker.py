@@ -108,7 +108,7 @@ class LuceneDocIdTracker(object):
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
 
     def deleteLuceneId(self, luceneId):
-        assert self._docIds[luceneId] != -1
+        assert self._docIds[luceneId] != -1, (self._docIds, luceneId)
         docId = self._docIds[luceneId]
         self._docIds[luceneId] = -1
         self._flushRamSegments()
@@ -132,10 +132,10 @@ class LuceneDocIdTracker(object):
         f.write('\n')
         f.write(str(self._segmentInfo))
         f.close()
-
-        lastSegmentIndex = len(self._segmentInfo) - 1
-        filename = join(self._directory, str(lastSegmentIndex) + '.docids')
-        self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
+        #lastSegmentIndex = len(self._segmentInfo) - 1
+        #filename = join(self._directory, str(lastSegmentIndex) + '.docids')
+        #self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
+        self._docIds.save(join(self._directory, 'all.docids'), 0)
 
     def _load(self):
         if len(self._docIds) != 0:
@@ -147,9 +147,9 @@ class LuceneDocIdTracker(object):
         for segmentData in segments:
             length, offset = map(int, segmentData)
             self._segmentInfo.append(SegmentInfo(length, offset))
-
-        for i in range(len(self._segmentInfo)):
-            self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
+        #for i in range(len(self._segmentInfo)):
+        #    self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
+        self._docIds.extendFrom(join(self._directory, 'all.docids'))
 
     def __eq__(self, other):
         return type(other) == type(self) and \
@@ -160,7 +160,7 @@ class LuceneDocIdTracker(object):
             self._ramSegmentsInfo == other._ramSegmentsInfo
 
     def __repr__(self):
-        return 'tracker:' + repr(self._mergeFactor) + '/' + repr(self._nextDocId) + repr(self._segmentInfo) + repr(self._ramSegmentsInfo)
+        return 'tracker:' + repr(self._mergeFactor) + '/' + repr(self._nextDocId) + repr(self._segmentInfo) + repr(self._ramSegmentsInfo) + repr(self._docIds)
 
     def close(self):
         self.flush()

@@ -27,7 +27,7 @@
 
 from os.path import isdir, isfile, join
 from os import makedirs
-from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
+from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, Field, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
 from time import time
 
 from document import IDFIELD
@@ -88,8 +88,6 @@ class LuceneIndex(Observable):
         self.do.indexStarted(self._reader, docIdMapping=self._lucene2docId)
 
     def docsetFromQuery(self, pyLuceneQuery):
-        t0 = time()
-
         return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
 
     def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None):
@@ -98,8 +96,11 @@ class LuceneIndex(Observable):
             hits = self._searcher.search(pyLuceneQuery, sortField)
         else:
             hits = self._searcher.search(pyLuceneQuery)
-
-        luceneIds = [hits.id(i) for i in range(start,min(len(hits),stop))]
+        #for i in range(len(hits)):
+            #luceneId = hits.id(i)
+            #docId = self._tracker.map([luceneId]).next()
+            #docIdfromDocument = hits[i].get('docId')
+            #assert  docId == int(docIdfromDocument), (docId, docIdfromDocument)
         return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
 
     def _luceneIdForIdentifier(self, identifier):
@@ -117,28 +118,36 @@ class LuceneIndex(Observable):
     def _add(self, document):
         document.addToIndexWith(self._writer)
 
-    def delete(self, identifier):
+    def _luceneDelete(self, identifier):
         docId = None
         luceneId = self._luceneIdForIdentifier(identifier)
-        if luceneId == None:  # not in index (yet)
+        if luceneId == None:  # not in index, perhaps it is in the queue?
             for command in self._commandQueue:
                 if 'document' in command._kwargs:
-                    docId = command._kwargs['document'].docId
-                    break
-        else:
+                    if command._kwargs['document'].identifier == identifier:
+                        docId = command._kwargs['document'].docId
+                        break
+        else:  # in index, so delete it first
+            # it might already have been delete by a previous delete()
             if not self._tracker.isDeleted(luceneId):
                 docId = self._tracker.map([luceneId]).next()
                 self._tracker.deleteLuceneId(luceneId)
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
+        return docId
+
+    def delete(self, identifier):
+        docId = self._luceneDelete(identifier)
+        if docId != None:
             self.do.deleteDocument(docId=docId)
 
     def addDocument(self, luceneDocument=None):
         try:
             luceneDocument.validate()
+            self._luceneDelete(luceneDocument.identifier)
             docId = self._tracker.next()
             luceneDocument.docId = docId
-            self.delete(luceneDocument.identifier)
+            #luceneDocument._document.add(Field('docId', str(docId), Field.Store.YES, Field.Index.UN_TOKENIZED))
             self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
         except:

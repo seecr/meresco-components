@@ -87,12 +87,16 @@ void DocSetList::docId2terms_add(guint32 docId, fwPtr docset) {
 }
 
 void DocSetList::removeDoc(guint32 docId) {
-    TermList& terms = this->docId2TermList[docId];
+    for ( DocSetList::iterator i = begin(); i < end(); i++ ) {
+        DocSet* ds = pDS(*i);
+        ds->remove(docId);
+    }
+/*    TermList& terms = this->docId2TermList[docId];
     for ( TermList::iterator t = terms.begin(); t < terms.end(); t++) {
         DocSet* docset = pDS(*t);
         docset->remove(docId);
     }
-    docId2TermList.erase(docId);
+    docId2TermList.erase(docId);*/
 }
 
 fwPtr DocSetList::forTerm(char* term) {

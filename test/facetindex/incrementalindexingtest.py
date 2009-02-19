@@ -104,28 +104,27 @@ class IncrementalIndexingTest(CQ2TestCase):
     def testAddDocumentAndThenDeleteIt(self):
         self.assertEquals(0, self.index.queueLength())
         self.assertEquals(0, self.drilldown.queueLength())
-        self.addDocument('1', field0='term0')
-        self.index.delete('1')
+        self.addDocument('1', field0='term0') # internally: add, delegated to drilldown
+        self.index.delete('1')                # internally: delete, delegated to drilldown
         self.assertEquals(2, self.index.queueLength())     # add, delete
         self.assertEquals(['_add', '_delete'], [command.methodName() for command in self.index._commandQueue])
-        self.assertEquals(3, self.drilldown.queueLength()) # delete, add, delete
+        #self.assertEquals(2, self.drilldown.queueLength()) # add, delete
         self.assertEquals([
             '_delete(docId=0)',
             "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
             '_delete(docId=0)'], list(repr(command) for command in self.drilldown._commandQueue))
 
-
     def testDeleteDocumentAndThenAddIt(self):
         self.addDocument('1', field0='term0')
         self.index.commit()
         self.drilldown.commit()
-
         self.assertEquals(0, self.index.queueLength())
         self.assertEquals(0, self.drilldown.queueLength())
         self.index.delete('1')
-        self.addDocument('1', field0='term0')
+        self.addDocument('1', field0='term0') # re-add: delete + add
         self.assertEquals(['_delete', '_add'], [command.methodName() for command in self.index._commandQueue])
-        self.assertEquals(['_delete', '_delete', '_add'], [command.methodName() for command in self.drilldown._commandQueue])
+        self.assertEquals(['_delete', '_delete', '_add'],
+            [command.methodName() for command in self.drilldown._commandQueue])
 
     def addAndCommit(self, identifier):
         self.addDocument(identifier, field0='term0')
@@ -139,3 +138,18 @@ class IncrementalIndexingTest(CQ2TestCase):
         for i in range(200):
             self.addAndCommit(str(randint(1,10)))
 
+    def testDoNotDelegatePrivateDelete(self):
+        self.addDocument('1', field0='term0') # internally: add
+        self.index.commit()
+        self.addDocument('1', field0='term0') # internally: delete, add
+        self.index.commit()
+        # now drilldown only contains his own delete/add sequence twice
+        self.assertEquals(['_delete', '_add', '_delete', '_add'],
+            [command.methodName() for command in self.drilldown._commandQueue])
+
+    def testDeleteOfDocumentInQueueFindsTheRightDocument(self):
+        self.addDocument('1', field0='term0') # docId 0
+        self.addDocument('2', field0='term0') # dodId 1
+        self.index.delete('2')                # looks for doc '2' in queue => delete 1
+        self.index.commit()
+        self.assertEquals('_delete(docId=1)', str(self.drilldown._commandQueue[-1]))

@@ -149,7 +149,7 @@ class PerformanceTuningTest(LuceneTestCase):
             t0 = time()
             small.combinedCardinality(all2)
             t2 += time() - t0
-        self.assertTrue( 0.8 < abs(t1/t2) < 1.2, t1/t2 )
+        self.assertTrue( 0.4 < abs(t1/t2) < 2.0, t1/t2 )
 
     def testSwitchPoint(self):
         # This test is used to tune the selection of intersection algoritms in _docset.cpp
