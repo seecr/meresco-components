@@ -31,6 +31,7 @@ from Levenshtein import distance, ratio
 from itertools import islice
 
 def ngrams(word, N=2):
+    word = unicode(word)
     for n in range(2, N+1):
         for i in range(len(word)-n+1):
             yield word[i:i+n]
@@ -80,8 +81,8 @@ class RatioSuggester(_Suggestion):
 class NGramFieldlet(Transparant):
     def __init__(self, n, fieldName):
         Transparant.__init__(self)
-        self._n = n
         self._fieldName = fieldName
+        self._ngram = lambda word:ngrams(word, n)
 
     def addField(self, name, value):
         for word in unicode(value).split():
@@ -95,7 +96,3 @@ class NGramFieldlet(Transparant):
             #for ngram in self._ngram(word):
                 #self.do.addField(self._fieldName, ngram)
 
-    def _ngram(self, word):
-        for n in range(2, self._n+1):
-            for i in range(len(word)-n+1):
-                yield word[i:i+n]

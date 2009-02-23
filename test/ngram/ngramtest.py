@@ -99,6 +99,22 @@ class NGramTest(CQ2TestCase):
         hits = searcher.search(TermQuery(Term('ngrams', 'ap')))
         self.assertEquals('appelboom', hits[0].get('term'))
 
+    def testCreateIndexWithFunkyCharacters(self):
+        def addWord(index, word):
+            d = Document()
+            d.add(Field('term', word, Field.Store.YES, Field.Index.TOKENIZED))
+            d.add(Field('ngrams', ' '.join(ngrams(word)), Field.Store.NO, Field.Index.TOKENIZED))
+            index.addDocument(d)
+        index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        addWord(index,'Škvarla')
+        addWord(index,'Mockovčiaková')
+        addWord(index,'Jiří')
+        index.flush()
+        searcher = IndexSearcher(self.tempdir)
+        hits = searcher.search(TermQuery(Term('ngrams', 'ar')))
+        self.assertEquals('Škvarla', hits[0].get('term'))
+
+
     def testNgram(self):
         self.assertEquals(set(['bo', 'oo', 'om', 'boo', 'oom', 'boom']), set(ngrams('boom', N=4)))
         self.assertEquals(set(['bo', 'oo', 'om']), set(ngrams('boom', N=2)))
