@@ -27,7 +27,7 @@
 from os.path import dirname, abspath, isdir, join            #DO_NOT_DISTRIBUTE
 if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
     from os import system                                    #DO_NOT_DISTRIBUTE
-    system("cd %s/../..; python setup.py build_ext --inplace"  % abspath(dirname(__file__))) #DO_NOT_DISTRIBUTE
+    system("cd %s/../..; python2.5 setup.py build_ext --inplace"  % abspath(dirname(__file__))) #DO_NOT_DISTRIBUTE
                                                              #DO_NOT_DISTRIBUTE
 
 from lucene import LuceneIndex
