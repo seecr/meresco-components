@@ -31,7 +31,7 @@ from merescocomponents.facetindex import DocSetList, DocSet
 from merescocomponents.facetindex.docsetlist import JACCARD_ONLY
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
-from cq2utils import Wildcard
+from cq2utils import MATCHALL
 
 #Facts about Lucene:
 # 1.  IndexReader.open() returns a MultiIndexReader reading multiple segments
@@ -177,7 +177,7 @@ class DocSetListTest(LuceneTestCase):
         termDocs = self.reader.termDocs()
         dsl = DocSetList.fromTermEnum(termEnum, termDocs)
         cs = dsl.termCardinalities(DocSet([1,2,3,4,5,6,7,8,9]))
-        NA = Wildcard()
+        NA = MATCHALL
         self.assertEquals([('t€rm0', NA), ('t€rm1', NA), ('t€rm2', NA)], list(cs))
 
     #def testAppendToRow(self):
