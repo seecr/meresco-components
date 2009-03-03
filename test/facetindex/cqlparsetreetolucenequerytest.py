@@ -28,7 +28,7 @@ from unittest import TestCase
 
 from PyLucene import TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, PrefixQuery
 
-from cqlparser import parseString as parseCql
+from cqlparser import parseString as parseCql, UnsupportedCQL
 from merescocomponents.facetindex.cqlparsetreetolucenequery import Composer
 
 class CqlParseTreeToLuceneQueryTest(TestCase):
@@ -162,3 +162,10 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         self.assertEquals(expected, result)
 
 
+    def testUnsupportedCQL(self):
+        for relation in ['>','<', '>=', '<=']:
+            try:
+                Composer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql('index %(relation)s term' % locals()))
+                self.fail()
+            except UnsupportedCQL:
+                pass

@@ -25,7 +25,7 @@
 #
 ## end license ##
 from PyLucene import TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, LowerCaseFilter, StandardFilter, StandardTokenizer, PrefixQuery
-from cqlparser import CqlVisitor
+from cqlparser import CqlVisitor, UnsupportedCQL
 from StringIO import StringIO
 from re import compile
 
@@ -98,8 +98,10 @@ class CqlAst2LuceneVisitor(CqlVisitor):
 
             if relation in ['==', 'exact']:
                 query = TermQuery(Term(left, right))
-            else:
+            elif relation == '=':
                 query = _termOrPhraseQuery(left, right)
+            else:
+                raise UnsupportedCQL("Only =, == and exact are supported for the field '%s'" % left)
 
             query.setBoost(boost)
             return query
