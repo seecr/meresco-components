@@ -30,7 +30,7 @@ from distutils.extension import Extension
 
 setup(
     name = 'merescocomponents',
-    packages = ['merescocomponents'],
+    packages = ['merescocomponents', 'merescocomponents.facetindex', 'merescocomponents.facetindex.tools', 'merescocomponents.oai'],
     ext_modules = [
         Extension("merescocomponents.facetindex._facetindex", [
                 'merescocomponents/facetindex/zipper.c',
