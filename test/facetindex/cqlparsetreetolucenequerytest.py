@@ -29,7 +29,7 @@ from unittest import TestCase
 from PyLucene import TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, PrefixQuery
 
 from cqlparser import parseString as parseCql, UnsupportedCQL
-from merescocomponents.facetindex.cqlparsetreetolucenequery import Composer
+from merescocomponents.facetindex.cqlparsetreetolucenequery import LuceneQueryComposer
 
 class CqlParseTreeToLuceneQueryTest(TestCase):
 
@@ -115,7 +115,7 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         self.assertConversion(query, "title =/boost=2.0 cats")
 
     def testUnqualifiedTermFields(self):
-        result = Composer(unqualifiedTermFields=[("field0", 0.2), ("field1", 2.0)]).compose(parseCql("value"))
+        result = LuceneQueryComposer(unqualifiedTermFields=[("field0", 0.2), ("field1", 2.0)]).compose(parseCql("value"))
 
         query = BooleanQuery()
         left = TermQuery(Term("field0", "value"))
@@ -144,7 +144,7 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         query = TermQuery(Term('field', 'prefix'))
         self.assertConversion(query, 'field=prefix**')
 
-        result = Composer(unqualifiedTermFields=[("field0", 0.2), ("field1", 2.0)]).compose(parseCql("prefix*"))
+        result = LuceneQueryComposer(unqualifiedTermFields=[("field0", 0.2), ("field1", 2.0)]).compose(parseCql("prefix*"))
 
         query = BooleanQuery()
         left = PrefixQuery(Term("field0", "prefix"))
@@ -158,14 +158,14 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         self.assertEquals(query, result)
 
     def assertConversion(self, expected, input):
-        result = Composer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql(input))
+        result = LuceneQueryComposer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql(input))
         self.assertEquals(expected, result)
 
 
     def testUnsupportedCQL(self):
         for relation in ['>','<', '>=', '<=']:
             try:
-                Composer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql('index %(relation)s term' % locals()))
+                LuceneQueryComposer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql('index %(relation)s term' % locals()))
                 self.fail()
             except UnsupportedCQL:
                 pass

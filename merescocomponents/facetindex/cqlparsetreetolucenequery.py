@@ -117,7 +117,7 @@ class CqlAst2LuceneVisitor(CqlVisitor):
         return relation, boost
 
 
-class Composer:
+class LuceneQueryComposer:
     def __init__(self, unqualifiedTermFields):
         self._unqualifiedTermFields = unqualifiedTermFields
 

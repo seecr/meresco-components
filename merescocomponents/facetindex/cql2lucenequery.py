@@ -28,14 +28,14 @@
 from merescocore.framework import Observable
 
 from meresco.components.statistics import Logger
-from cqlparsetreetolucenequery import Composer
+from cqlparsetreetolucenequery import LuceneQueryComposer
 from clausecollector import ClauseCollector
 
 class CQL2LuceneQuery(Observable, Logger):
 
     def __init__(self, unqualifiedFields):
         Observable.__init__(self)
-        self._cqlComposer = Composer(unqualifiedFields)
+        self._cqlComposer = LuceneQueryComposer(unqualifiedFields)
 
     def executeCQL(self, cqlAbstractSyntaxTree, *args, **kwargs):
         ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()

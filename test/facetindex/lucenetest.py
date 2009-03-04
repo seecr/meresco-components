@@ -37,7 +37,6 @@ from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex
 
 from merescocomponents.facetindex import CQL2LuceneQuery
-from merescocomponents.facetindex.cqlparsetreetolucenequery import Composer
 
 from cqlparser import parseString
 
