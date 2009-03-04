@@ -39,9 +39,4 @@ from integerlist import IntegerList
 from trie import Trie
 from cql2lucenequery import CQL2LuceneQuery
 from fields2lucenedocument import Fields2LuceneDocumentTx
-from lucenedict import LuceneDict
 
-#temp for developing incremental indexing
-#from document2 import Document2
-#from lucene2 import LuceneIndex2
-#from indexfacade import IndexFacade

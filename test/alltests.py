@@ -44,7 +44,6 @@ from sorteditertoolstest import SortedItertoolsTest
 from filelisttest import FileListTest
 from packertest import PackerTest
 
-from facetindex.lucenedicttest import LuceneDictTest
 from facetindex.performancetuningtest import PerformanceTuningTest
 from facetindex.docsettest import DocSetTest
 from facetindex.docsetlisttest import DocSetListTest

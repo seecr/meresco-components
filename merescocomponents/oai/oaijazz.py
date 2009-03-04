@@ -36,7 +36,6 @@ from merescocomponents import SortedFileList
 
 from bisect import bisect_left
 
-from merescocomponents.facetindex import LuceneDict
 from berkeleydict import BerkeleyDict
 
 MERGE_TRIGGER = 1000
