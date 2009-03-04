@@ -92,7 +92,6 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
                 self.deleteDoc(-doc)
             else:
                 self.addDoc(doc)
-            #print '>lucene:', self.findAll()
 
     def findAll(self):
         self.writer.flush()
@@ -268,6 +267,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next() # creates a second segment, which must be saved properly on deletes
         tracker.next()
         tracker.deleteLuceneId(0) # delete first document in already saved segement 0
+        self.assertTrue(tracker.isDeleted(0))
         tracker.close()
         tracker = LuceneDocIdTracker(2, directory = self.getTrackerDir())
         self.assertTrue(tracker.isDeleted(0))

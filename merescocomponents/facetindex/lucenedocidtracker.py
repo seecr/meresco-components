@@ -30,10 +30,17 @@ from os.path import join, isfile
 from integerlist import IntegerList
 
 class SegmentInfo(object):
-    def __init__(self, length, offset, filename, cleanup=True):
+    def __init__(self, length, offset):
         self.length = length
         self.offset = offset
         self._deleted = []
+        self._filename = None
+
+    def openIfNew(self, filename):
+        if not self._filename:
+            self.open(filename)
+
+    def open(self, filename, cleanup=True):
         self._filename = filename
         if cleanup:
             open(filename, 'w').close()
@@ -83,19 +90,14 @@ class LuceneDocIdTracker(object):
             if maxDoc > 0:
                 self._initializeFromOptimizedIndex(maxDoc)
 
-    def _newSegmentInfo(self, length, offset, cleanup=True):
-        segmentNr = len(self._segmentInfo)
-        filename = join(self._directory, str(segmentNr) + '.deleted')
-        return SegmentInfo(length, offset, filename, cleanup)
-
     def _initializeFromOptimizedIndex(self, maxDoc):
         self._nextDocId = maxDoc
         self._docIds = IntegerList(maxDoc)
-        self._segmentInfo.append(self._newSegmentInfo(maxDoc, 0))
+        self._segmentInfo.append(SegmentInfo(maxDoc, 0))
         self._save()
 
     def next(self):
-        self._ramSegmentsInfo.append(self._newSegmentInfo(1, len(self._docIds)))
+        self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds)))
         self._docIds.append(self._nextDocId)
         self._nextDocId += 1
         if len(self._ramSegmentsInfo) >= self._mergeFactor:
@@ -126,7 +128,7 @@ class LuceneDocIdTracker(object):
 
     def _merge(self, segments, newOffset, lower, upper):
         newSegmentLength = self._docIds.mergeFromOffset(newOffset)
-        si = self._newSegmentInfo(newSegmentLength, newOffset)
+        si = SegmentInfo(newSegmentLength, newOffset)
         del segments[-self._mergeFactor:]
         segments.append(si)
         if newSegmentLength > upper:
@@ -158,6 +160,9 @@ class LuceneDocIdTracker(object):
         f.write('\n')
         f.write(str(self._segmentInfo))
         f.close()
+        if self._segmentInfo:
+            segmentNr = len(self._segmentInfo) - 1
+            self._segmentInfo[-1].openIfNew(join(self._directory, str(segmentNr) + '.deleted'))
         for segment in self._segmentInfo:
             segment.saveDeleted()
         lastSegmentIndex = len(self._segmentInfo) - 1
@@ -173,7 +178,9 @@ class LuceneDocIdTracker(object):
         segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
         for i, segmentData in enumerate(segments):
             length, offset = int(segmentData[0]), int(segmentData[1])
-            segment = self._newSegmentInfo(length, offset, cleanup=False)
+            segment = SegmentInfo(length, offset)
+            filename = join(self._directory, str(i) + '.deleted')
+            segment.open(filename, cleanup=False)
             self._segmentInfo.append(segment)
 
         for i, segment in enumerate(self._segmentInfo):
