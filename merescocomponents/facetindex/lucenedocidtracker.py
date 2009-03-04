@@ -35,7 +35,7 @@ class SegmentInfo(object):
         self.offset = offset
         self._deleted = []
     def __repr__(self):
-        return '%d@%d@%s' % (self.length, self.offset, self._deleted)
+        return '%d@%d' % (self.length, self.offset)
     def __eq__(self, other):
         return \
             type(other) == SegmentInfo and \
@@ -43,11 +43,16 @@ class SegmentInfo(object):
             other.offset == self.offset and \
             other._deleted == self._deleted
 
-    def _setDeletedMoetSnelWeg(self, deleted):
-        self._deleted = deleted
-
     def _getDeletedMoetWeg(self):
         return self._deleted
+
+    def loadDeleted(self, filename):
+        self._deleted = eval(open(filename).read())
+
+    def saveDeleted(self, filename):
+        f = open(filename, 'w')
+        f.write(repr(self._deleted))
+        f.close()
 
 class LuceneDocIdTrackerException(Exception):
     pass
@@ -141,6 +146,8 @@ class LuceneDocIdTracker(object):
         f.write('\n')
         f.write(str(self._segmentInfo))
         f.close()
+        for i, segment in enumerate(self._segmentInfo):
+            segment.saveDeleted(join(self._directory, str(i) + '.deleted'))
         lastSegmentIndex = len(self._segmentInfo) - 1
         filename = join(self._directory, str(lastSegmentIndex) + '.docids')
         self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
@@ -152,11 +159,11 @@ class LuceneDocIdTracker(object):
         self._mergeFactor = int(f.next().strip())
         self._nextDocId = int(f.next().strip())
         segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
-        for segmentData in segments:
-            length, offset, deleted = int(segmentData[0]), int(segmentData[1]), eval(segmentData[2])
+        for i, segmentData in enumerate(segments):
+            length, offset = int(segmentData[0]), int(segmentData[1])
             segment = SegmentInfo(length, offset)
             self._segmentInfo.append(segment)
-            segment._setDeletedMoetSnelWeg(deleted)
+            segment.loadDeleted(join(self._directory, str(i) + '.deleted'))
 
         for i, segment in enumerate(self._segmentInfo):
             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))

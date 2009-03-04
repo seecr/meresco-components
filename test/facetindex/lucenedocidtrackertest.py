@@ -175,7 +175,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.writer.optimize()
         self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), maxDoc=self.writer.docCount(), directory=self.createTrackerDir())
         self.processDocs([102])
-        self.assertEquals(['0.docids', 'tracker.segments'], sorted(listdir(join(self.tempdir, 'tracker'))))
+        self.assertEquals(['0.deleted', '0.docids', 'tracker.segments'], sorted(listdir(join(self.tempdir, 'tracker'))))
 
     def testPickupStateWhereLuceneLeftItOnBiggerScale(self):
         s0 = range(100, 200)
