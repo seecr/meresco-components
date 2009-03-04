@@ -30,18 +30,24 @@ from os.path import join, isfile
 from integerlist import IntegerList
 
 class SegmentInfo(object):
-    def __init__(self, length, offset, deleted):
+    def __init__(self, length, offset):
         self.length = length
         self.offset = offset
-        self.deleted = deleted
+        self._deleted = []
     def __repr__(self):
-        return '%d@%d@%s' % (self.length, self.offset, self.deleted)
+        return '%d@%d@%s' % (self.length, self.offset, self._deleted)
     def __eq__(self, other):
         return \
             type(other) == SegmentInfo and \
             other.length == self.length and \
             other.offset == self.offset and \
-            other.deleted == self.deleted
+            other._deleted == self._deleted
+
+    def _setDeletedMoetSnelWeg(self, deleted):
+        self._deleted = deleted
+
+    def _getDeletedMoetWeg(self):
+        return self._deleted
 
 class LuceneDocIdTrackerException(Exception):
     pass
@@ -68,11 +74,11 @@ class LuceneDocIdTracker(object):
     def _initializeFromOptimizedIndex(self, maxDoc):
         self._nextDocId = maxDoc
         self._docIds = IntegerList(maxDoc)
-        self._segmentInfo.append(SegmentInfo(maxDoc, 0, []))
+        self._segmentInfo.append(SegmentInfo(maxDoc, 0))
         self._save()
 
     def next(self):
-        self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds), []))
+        self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds)))
         self._docIds.append(self._nextDocId)
         self._nextDocId += 1
         if len(self._ramSegmentsInfo) >= self._mergeFactor:
@@ -103,7 +109,7 @@ class LuceneDocIdTracker(object):
 
     def _merge(self, segments, newOffset, lower, upper):
         newSegmentLength = self._docIds.mergeFromOffset(newOffset)
-        si = SegmentInfo(newSegmentLength, newOffset, [])
+        si = SegmentInfo(newSegmentLength, newOffset)
         del segments[-self._mergeFactor:]
         segments.append(si)
         if newSegmentLength > upper:
@@ -113,7 +119,7 @@ class LuceneDocIdTracker(object):
         assert self._docIds[luceneId] != -1, (self._docIds, luceneId)
         docId = self._docIds[luceneId]
         self._docIds[luceneId] = -1
-        self._segmentForLuceneId(luceneId).deleted.append(luceneId)
+        self._segmentForLuceneId(luceneId)._getDeletedMoetWeg().append(luceneId)
         self._flushRamSegments()
         return docId
 
@@ -135,10 +141,9 @@ class LuceneDocIdTracker(object):
         f.write('\n')
         f.write(str(self._segmentInfo))
         f.close()
-        #lastSegmentIndex = len(self._segmentInfo) - 1
-        #filename = join(self._directory, str(lastSegmentIndex) + '.docids')
-        #self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
-        self._docIds.save(join(self._directory, 'all.docids'), 0)
+        lastSegmentIndex = len(self._segmentInfo) - 1
+        filename = join(self._directory, str(lastSegmentIndex) + '.docids')
+        self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
 
     def _load(self):
         if len(self._docIds) != 0:
@@ -149,13 +154,15 @@ class LuceneDocIdTracker(object):
         segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
         for segmentData in segments:
             length, offset, deleted = int(segmentData[0]), int(segmentData[1]), eval(segmentData[2])
-            self._segmentInfo.append(SegmentInfo(length, offset, deleted))
+            segment = SegmentInfo(length, offset)
+            self._segmentInfo.append(segment)
+            segment._setDeletedMoetSnelWeg(deleted)
 
         for i, segment in enumerate(self._segmentInfo):
             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
-            for deleted in segment.deleted:
+            for deleted in segment._getDeletedMoetWeg():
                 self._docIds[deleted] = -1
-            
+
     def __eq__(self, other):
         return type(other) == type(self) and \
             self._mergeFactor == other._mergeFactor and \
@@ -173,7 +180,7 @@ class LuceneDocIdTracker(object):
                 if segment.offset + segment.length >= luceneId:
                     return segment
             return None
-            
+
         result = find(self._segmentInfo, luceneId)
         if result != None:
             return result
@@ -181,6 +188,6 @@ class LuceneDocIdTracker(object):
         if result == None:
             raise Exception("Can't find luceneId %s in %s" % (luceneId, self))
         return result
-    
+
     def close(self):
         self.flush()

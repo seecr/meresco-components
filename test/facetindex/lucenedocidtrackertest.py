@@ -272,40 +272,17 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker = LuceneDocIdTracker(2, directory = self.getTrackerDir())
         self.assertTrue(tracker.isDeleted(0))
 
-    def testTrackerSavedDeletesOfOldDocIdsIDontKnowIfThisShouldWork(self):
-        tracker = LuceneDocIdTracker(2, directory = self.createTrackerDir())
-        tracker.next()
-        tracker.next()
-        tracker.next()
-        tracker.deleteLuceneId(0)
-        tracker.close()
-        tracker = LuceneDocIdTracker(2, directory = self.getTrackerDir())
-        # This should not work I think, because 0 is no longer valid (merged!) ?
-        self.assertTrue(tracker.isDeleted(0))
-
-    #ingemerged v. Klaas, ev. dubbel
-    def testDelete(self):
-        tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
-        for i in range(5):
-            tracker.next()
-        tracker.deleteLuceneId(0)
-        tracker.flush()
-        
-        tracker2 = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
-        self.assertEquals(tracker, tracker2)
-
-    #ingemerged v. Klaas, ev. dubbel
     def testDeletesAreDeletedOnMerge(self):
         """i.e. Delete information is deleted on merge"""
         tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
         for i in range(5):
             tracker.next()
         tracker.deleteLuceneId(0)
-        
+
         tracker.next()
         tracker.next()
         tracker.flush()
-        
+
         tracker2 = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
 
