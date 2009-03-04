@@ -26,7 +26,6 @@
 ## end license ##
 
 from oaipmh import OaiPmh
-from oaijazzlucene import OaiJazzLucene
 from oaiprovenance import OaiProvenance
 from oaisetselect import OaiSetSelect
 from uniquenumbergenerator import UniqueNumberGenerator

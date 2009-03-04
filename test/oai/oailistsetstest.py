@@ -29,7 +29,6 @@ from os.path import join
 from cq2utils.calltrace import CallTrace
 
 from oaitestcase import OaiTestCase
-from merescocomponents.oai import OaiJazzLucene
 from merescocomponents.oai.oailistsets import OaiListSets
 from merescocomponents.facetindex import LuceneIndex
 from merescocore.components import StorageComponent

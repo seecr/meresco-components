@@ -25,7 +25,6 @@
 #
 ## end license ##
 
-from oaijazzlucenetest import TimerForTestSupport
 from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import LuceneIndex
 from os.path import join
@@ -36,13 +35,18 @@ from StringIO import StringIO
 from lxml.etree import parse
 from merescocomponents.oai.oailist import OaiList
 
-from merescocomponents.oai import OaiJazz, OaiJazzLucene, OaiAddRecord
+from merescocomponents.oai import OaiJazz, OaiAddRecord
 
-class OaiJazzImplementationTest(CQ2TestCase):
+class OaiJazzImplementationsTest(CQ2TestCase):
+    def setUp(self):
+        CQ2TestCase.setUp(self)
+        self.jazz = OaiJazz(self.tempdir)
+        self.oaiAddRecord = OaiAddRecord()
+        self.oaiAddRecord.addObserver(self.jazz)
+
     def addDocuments(self, size):
         for id in range(1,size+1):
             self._addRecord(id)
-        self.commit()
 
     def _addRecord(self, anId):
         self.jazz.addOaiRecord('%05d' % anId, metadataFormats=[('oai_dc', 'dc.xsd', 'oai_dc.example.org')])
@@ -71,7 +75,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         self.jazz.addOaiRecord('id1', sets=[('set1', 'set1name')], metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.addOaiRecord('id2', sets=[('set2', 'set2name')], metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.addOaiRecord('id3', sets=[('set3', 'set1name')], metadataFormats=[('prefix','schema', 'namespace')])
-        self.commit()
         self.assertEquals(['id1','id2'], list(self.jazz.oaiSelect(sets=['set1','set2'], prefix='prefix')))
 
     def testDeleteIncrementsDatestampAndUnique(self):
@@ -81,7 +84,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         unique = self.jazz.getUnique('23')
         sleep(1)
         self.jazz.delete('23')
-        self.commit()
         self.assertNotEqual(stamp,  self.jazz.getDatestamp('23'))
         self.assertTrue(int(self.jazz.getUnique('23')) > int(unique))
 
@@ -93,7 +95,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
         self.oaiAddRecord.add('123', 'oai_dc', bind_string(header % 1).header)
         self.oaiAddRecord.add('124', 'oai_dc', bind_string(header % 2).header)
-        self.commit()
         results = self.jazz.oaiSelect(sets=['1'], prefix='oai_dc')
         self.assertEquals(1, len(list(results)))
         results = self.jazz.oaiSelect(sets=['2'], prefix='oai_dc')
@@ -103,10 +104,8 @@ class OaiJazzImplementationTest(CQ2TestCase):
 
     def testGetAndAllSets(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix1', 'schema', 'namespace')], sets=[('setSpec1', 'setName1')])
-        self.commit()
         self.assertEquals(set(['setSpec1']), set(self.jazz.getSets('id:1')))
         self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix1', 'schema', 'namespace')], sets=[('setSpec1', 'setName1'), ('setSpec2:setSpec3', 'setName23')])
-        self.commit()
         self.assertEquals(set(['setSpec1']), set(self.jazz.getSets('id:1')))
         self.assertEquals(set(['setSpec1', 'setSpec2', 'setSpec2:setSpec3']), set(self.jazz.getSets('id:2')))
         self.assertEquals(set([]), set(self.jazz.getSets('doesNotExist')))
@@ -115,7 +114,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
     def testHierarchicalSets(self):
         self.jazz.addOaiRecord('record123', metadataFormats=[('oai_dc', 'schema', 'namespace')], sets=[('set1:set2:set3', 'setName123')])
         self.jazz.addOaiRecord('record124', metadataFormats=[('oai_dc', 'schema', 'namespace')], sets=[('set1:set2:set4', 'setName124')])
-        self.commit()
         
         self.assertEquals(['record123', 'record124'], list(self.jazz.oaiSelect(prefix='oai_dc', sets=['set1'])))
         self.assertEquals(['record123', 'record124'], list(self.jazz.oaiSelect(prefix='oai_dc', sets=['set1:set2'])))
@@ -123,14 +121,12 @@ class OaiJazzImplementationTest(CQ2TestCase):
 
     def testAddOaiRecordPrefixOnly(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         
         recordIds = self.jazz.oaiSelect(prefix='prefix')
         self.assertEquals(['oai://1234?34'], list(recordIds))
 
     def testAddOaiRecord(self):
         self.jazz.addOaiRecord('identifier', sets=[('setSpec', 'setName')], metadataFormats=[('prefix','schema', 'namespace')])
-        self.commit()
         self.assertEquals(['identifier'], list(self.jazz.oaiSelect(prefix='prefix')))
         self.assertEquals(['identifier'], list(self.jazz.oaiSelect(sets=['setSpec'],prefix='prefix')))
         self.assertEquals([], list(self.jazz.oaiSelect(sets=['unknown'],prefix='prefix')))
@@ -138,25 +134,21 @@ class OaiJazzImplementationTest(CQ2TestCase):
     def testAddOaiRecordWithNoSets(self):
         self.jazz.addOaiRecord('id1', sets=[], metadataFormats=[('prefix','schema', 'namespace')])
         self.jazz.addOaiRecord('id2', sets=[], metadataFormats=[('prefix','schema', 'namespace')])
-        self.commit()
         self.assertEquals(['id1', 'id2'], list(self.jazz.oaiSelect(prefix='prefix')))
 
     def testUpdateOaiRecord(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         result = self.jazz.oaiSelect(prefix='prefix')
         self.assertEquals(['id:1'],list(result))
 
     def testUpdateOaiRecordSet(self):
         self.jazz.addOaiRecord('id:1', sets=[('setSpec1', 'setName1')], metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         
         result = self.jazz.oaiSelect(prefix='prefix', sets=['setSpec1'])
         self.assertEquals(1, len(list(result)))
 
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         
         result = self.jazz.oaiSelect(prefix='prefix')
         self.assertEquals(['id:1'],list(result))
@@ -169,7 +161,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         self.oaiAddRecord.add('124', 'lom', bind_string('<lom/>'))
         self.oaiAddRecord.add('121', 'lom', bind_string('<lom/>'))
         self.oaiAddRecord.add('122', 'lom', bind_string('<lom/>'))
-        self.commit()
         results = self.jazz.oaiSelect(prefix='oai_dc')
         self.assertEquals(1, len(list(results)))
         results = self.jazz.oaiSelect(prefix='lom')
@@ -180,7 +171,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         self.jazz.addOaiRecord('124', metadataFormats=[('lom', 'schema', 'namespace')])
         self.jazz.addOaiRecord('121', metadataFormats=[('lom', 'schema', 'namespace')])
         self.jazz.addOaiRecord('122', metadataFormats=[('lom', 'schema', 'namespace')])
-        self.commit()
         results = self.jazz.oaiSelect(prefix='oai_dc')
         self.assertEquals(['123'], list(results))
         results =self.jazz.oaiSelect(prefix='lom')
@@ -191,18 +181,15 @@ class OaiJazzImplementationTest(CQ2TestCase):
 
     def testDelete(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
-        self.commit()
         self.assertFalse(self.jazz.isDeleted('42'))
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
         self.jazz.delete('42')
-        self.commit()
         self.assertTrue(self.jazz.isDeleted('42'))
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='oai_dc')))
 
     def testDeleteKeepsSetsAndPrefixes(self):
         self.jazz.addOaiRecord('42', sets=[('setSpec1', 'setName1'),('setSpec2', 'setName2')], metadataFormats=[('prefix1','schema', 'namespace'), ('prefix2','schema', 'namespace')])
         self.jazz.delete('42')
-        self.commit()
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix1')))
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix2')))
         self.assertEquals(['42'], list(self.jazz.oaiSelect(prefix='prefix1', sets=['setSpec1'])))
@@ -213,7 +200,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
     def testDeleteAndReadd(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
         self.jazz.delete('42')
-        self.commit()
         self.assertTrue(self.jazz.isDeleted('42'))
         self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
         self.assertFalse(self.jazz.isDeleted('42'))
@@ -229,7 +215,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         self.jazz.addOaiRecord('2', metadataFormats=[('prefix','schema', 'namespace')])
         self._setTime(2007, 9, 24)
         self.jazz.addOaiRecord('1', metadataFormats=[('prefix','schema', 'namespace')])
-        self.commit()
         
         result = self.jazz.oaiSelect(prefix='prefix', oaiFrom="2007-09-22T00:00:00Z")
         self.assertEquals(3, len(list(result)))
@@ -239,28 +224,23 @@ class OaiJazzImplementationTest(CQ2TestCase):
     def testOaiSelectWithContinuAt(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
         self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         
         continueAfter = str(self.jazz.getUnique('id:1'))
         self.assertEquals(['id:2'], list(self.jazz.oaiSelect(prefix='prefix', continueAfter=continueAfter)))
 
         #add again will change the unique value
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         self.assertEquals(['id:2', 'id:1'], list(self.jazz.oaiSelect(prefix='prefix', continueAfter=continueAfter)))
         
     def testGetAllMetadataFormats(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         self.assertEquals([('prefix', 'schema', 'namespace')], list(self.jazz.getAllMetadataFormats()))
         self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix2', 'schema2', 'namespace2')])
-        self.commit()
         self.assertEquals(set([('prefix', 'schema', 'namespace'), ('prefix2', 'schema2', 'namespace2')]), set(self.jazz.getAllMetadataFormats()))
 
     def testGetAndAllPrefixes(self):
         self.jazz.addOaiRecord('id:1', metadataFormats=[('prefix1', 'schema', 'namespace')])
         self.jazz.addOaiRecord('id:2', metadataFormats=[('prefix1', 'schema', 'namespace'), ('prefix2', 'schema', 'namespace')])
-        self.commit()
         self.assertEquals(set(['prefix1', 'prefix2']), set(self.jazz.getAllPrefixes()))
         self.assertEquals(set(['prefix1']), set(self.jazz.getPrefixes('id:1')))
         self.assertEquals(set(['prefix1', 'prefix2']) , set(self.jazz.getPrefixes('id:2')))
@@ -270,7 +250,6 @@ class OaiJazzImplementationTest(CQ2TestCase):
         BATCH_SIZE = 10
         for i in xrange(BATCH_SIZE + 5):
             self.jazz.addOaiRecord('id:%i' % i, metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.commit()
         output = StringIO()
         oaiList = OaiList(batchSize=BATCH_SIZE)
         oaiList.addObserver(self.jazz)
@@ -303,60 +282,30 @@ class OaiJazzImplementationTest(CQ2TestCase):
         self.oaiAddRecord.add('457', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
         self.oaiAddRecord.add('457', 'oai_dc', bind_string('<oai_dc/>'))
-        self.commit()
         metadataFormats = set(self.jazz.getAllMetadataFormats())
         self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')]), metadataFormats)
 
     def testIncompletePrefixInfo(self):
         self.oaiAddRecord.add('457', 'dc2', bind_string('<oai_dc/>').oai_dc)
-        self.commit()
         metadataFormats = set(self.jazz.getAllMetadataFormats())
         self.assertEquals(set([('dc2', '', '')]), metadataFormats)
 
     def testMetadataPrefixesOnly(self):
         self.oaiAddRecord.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
              xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
-        self.commit()
         prefixes = set(self.jazz.getAllPrefixes())
         self.assertEquals(set(['oai_dc']), prefixes)
         self.oaiAddRecord.add('457', 'dc2', bind_string('<oai_dc:dc xmlns:oai_dc="http://dc2"/>').dc)
-        self.commit()
         prefixes = set(self.jazz.getAllPrefixes())
         self.assertEquals(set(['oai_dc', 'dc2']), prefixes)
         
     def testGetPrefixes(self):
         self.oaiAddRecord.add('123', 'oai_dc', bind_string('<dc/>').dc)
         self.oaiAddRecord.add('123', 'lom', bind_string('<lom/>').lom)
-        self.commit()
         parts = set(self.jazz.getPrefixes('123'))
         self.assertEquals(set(['oai_dc', 'lom']), parts)
         self.assertEquals(['123'], list(self.jazz.oaiSelect(prefix='lom')))
         self.assertEquals(['123'], list(self.jazz.oaiSelect(prefix='oai_dc')))
-
-
-
-class OaiJazzWithLuceneTest(OaiJazzImplementationTest):
-    def setUp(self):
-        OaiJazzImplementationTest.setUp(self)
-        self._luceneIndex = LuceneIndex(join(self.tempdir, "lucene-index"))
-        self._storage = StorageComponent(join(self.tempdir,'storage'))
-        self.jazz = OaiJazzLucene(self._luceneIndex, self._storage, iter(xrange(9999)))
-        self.oaiAddRecord = OaiAddRecord()
-        self.oaiAddRecord.addObserver(self.jazz)
-        def commit():
-            self._luceneIndex.commit()
-        self.commit = commit
-
-    def _setTime(self, year, month, day):
-        self.jazz._gettime = lambda: (year, month, day, 14, 27, 53, 0, 267, 0)
-
-class OaiJazzWithFileAndLuceneTest(OaiJazzImplementationTest):
-    def setUp(self):
-        OaiJazzImplementationTest.setUp(self)
-        self.jazz = OaiJazz(self.tempdir)
-        self.oaiAddRecord = OaiAddRecord()
-        self.oaiAddRecord.addObserver(self.jazz)
-        self.commit = lambda: None
 
     def _setTime(self, year, month, day):
         self.jazz._stamp = lambda: int(mktime((year, month, day, 0, 1, 0, 0, 0 ,0))*1000000.0)

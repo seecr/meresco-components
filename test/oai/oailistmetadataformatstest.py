@@ -30,7 +30,7 @@ from amara.binderytools import bind_string
 from oaitestcase import OaiTestCase
 from merescocomponents.facetindex import LuceneIndex
 from merescocore.components import StorageComponent
-from merescocomponents.oai import OaiJazzLucene, OaiAddRecord, OaiJazz
+from merescocomponents.oai import OaiAddRecord, OaiJazz
 from merescocomponents.oai.oailistmetadataformats import OaiListMetadataFormats
 from merescocore.framework import be, Observable
 
@@ -98,14 +98,6 @@ class OaiListMetadataFormatsTest(OaiTestCase):
   </ListMetadataFormats>""", self.stream.getvalue())
         self.assertValidString(self.stream.getvalue())
 
-    def testListMetadataFormatsForIdentifierLucene(self):
-        jazz = OaiJazzLucene(
-            LuceneIndex(join(self.tempdir, 'index'), CallTrace('timer')),
-            StorageComponent(join(self.tempdir,'storage')),
-            iter(xrange(99)))
-        self.assertWithJazz(jazz)
-        jazz.close()
-    
     def testListMetadataFormatsForIdentifierFile(self):
         jazz = OaiJazz(self.tempdir)
         self.assertWithJazz(jazz)

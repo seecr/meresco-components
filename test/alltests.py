@@ -69,7 +69,6 @@ from ngram.cqltermvisitortest import CqlTermVisitorTest
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
 
 from oai.fields2oairecordtest import Fields2OaiRecordTest
-from oai.oaijazzlucenetest import OaiJazzLuceneTest
 from oai.oaigetrecordtest import OaiGetRecordTest
 from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
 from oai.oailistsetstest import OaiListSetsTest
@@ -82,7 +81,7 @@ from oai.oaisetselecttest import OaiSetSelectTest
 from oai.xml2documenttest import Xml2DocumentTest
 from oai.oaijazztest import OaiJazzTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
-from oai.oaijazzimplementationstest import OaiJazzWithFileAndLuceneTest, OaiJazzWithLuceneTest
+from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
 from oai.berkeleydicttest import BerkeleyDictTest
 
 if __name__ == '__main__':

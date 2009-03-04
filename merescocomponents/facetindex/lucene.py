@@ -46,7 +46,7 @@ class IncludeStopWordAnalyzer(object):
 
 class LuceneIndex(Observable):
 
-    def __init__(self, directoryName, transactionName=None,  *ditwilikniet, **ditookniet):
+    def __init__(self, directoryName, transactionName=None):
         Observable.__init__(self)
         self._searcher = None
         self._reader = None
