@@ -30,16 +30,18 @@ from os.path import join, isfile
 from integerlist import IntegerList
 
 class SegmentInfo(object):
-    def __init__(self, length, offset):
+    def __init__(self, length, offset, deleted):
         self.length = length
         self.offset = offset
+        self.deleted = deleted
     def __repr__(self):
-        return '%d@%d' % (self.length, self.offset)
+        return '%d@%d@%s' % (self.length, self.offset, self.deleted)
     def __eq__(self, other):
         return \
             type(other) == SegmentInfo and \
             other.length == self.length and \
-            other.offset == self.offset
+            other.offset == self.offset and \
+            other.deleted == self.deleted
 
 class LuceneDocIdTrackerException(Exception):
     pass
@@ -66,11 +68,11 @@ class LuceneDocIdTracker(object):
     def _initializeFromOptimizedIndex(self, maxDoc):
         self._nextDocId = maxDoc
         self._docIds = IntegerList(maxDoc)
-        self._segmentInfo.append(SegmentInfo(maxDoc, 0))
+        self._segmentInfo.append(SegmentInfo(maxDoc, 0, []))
         self._save()
 
     def next(self):
-        self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds)))
+        self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds), []))
         self._docIds.append(self._nextDocId)
         self._nextDocId += 1
         if len(self._ramSegmentsInfo) >= self._mergeFactor:
@@ -101,7 +103,7 @@ class LuceneDocIdTracker(object):
 
     def _merge(self, segments, newOffset, lower, upper):
         newSegmentLength = self._docIds.mergeFromOffset(newOffset)
-        si = SegmentInfo(newSegmentLength, newOffset)
+        si = SegmentInfo(newSegmentLength, newOffset, [])
         del segments[-self._mergeFactor:]
         segments.append(si)
         if newSegmentLength > upper:
@@ -111,6 +113,7 @@ class LuceneDocIdTracker(object):
         assert self._docIds[luceneId] != -1, (self._docIds, luceneId)
         docId = self._docIds[luceneId]
         self._docIds[luceneId] = -1
+        self._segmentForLuceneId(luceneId).deleted.append(luceneId)
         self._flushRamSegments()
         return docId
 
@@ -145,12 +148,14 @@ class LuceneDocIdTracker(object):
         self._nextDocId = int(f.next().strip())
         segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
         for segmentData in segments:
-            length, offset = map(int, segmentData)
-            self._segmentInfo.append(SegmentInfo(length, offset))
-        #for i in range(len(self._segmentInfo)):
-        #    self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
-        self._docIds.extendFrom(join(self._directory, 'all.docids'))
+            length, offset, deleted = int(segmentData[0]), int(segmentData[1]), eval(segmentData[2])
+            self._segmentInfo.append(SegmentInfo(length, offset, deleted))
 
+        for i, segment in enumerate(self._segmentInfo):
+            self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
+            for deleted in segment.deleted:
+                self._docIds[deleted] = -1
+            
     def __eq__(self, other):
         return type(other) == type(self) and \
             self._mergeFactor == other._mergeFactor and \
@@ -162,5 +167,20 @@ class LuceneDocIdTracker(object):
     def __repr__(self):
         return 'tracker:' + repr(self._mergeFactor) + '/' + repr(self._nextDocId) + repr(self._segmentInfo) + repr(self._ramSegmentsInfo) + repr(self._docIds)
 
+    def _segmentForLuceneId(self, luceneId):
+        def find(segments, luceneId):
+            for segment in segments:
+                if segment.offset + segment.length >= luceneId:
+                    return segment
+            return None
+            
+        result = find(self._segmentInfo, luceneId)
+        if result != None:
+            return result
+        result = find(self._ramSegmentsInfo, luceneId)
+        if result == None:
+            raise Exception("Can't find luceneId %s in %s" % (luceneId, self))
+        return result
+    
     def close(self):
         self.flush()
