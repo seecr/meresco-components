@@ -164,7 +164,7 @@ class PerformanceTuningTest(LuceneTestCase):
         SWITCHPOINT = 100 # 2008/09/18, seems good, EJG
         M = DocSetList()
         for i in xrange(100):
-            M.add(DocSet.forTesting(nrOfDocs))
+            M.add(DocSet.forTesting(nrOfDocs), 'someTerm')
         N1 = DocSet.forTesting(nrOfDocs/SWITCHPOINT)
         N2 = DocSet(xrange(nrOfDocs-nrOfDocs/SWITCHPOINT, nrOfDocs))
         N3 = DocSet(sorted(sample(xrange(nrOfDocs), nrOfDocs/SWITCHPOINT)))

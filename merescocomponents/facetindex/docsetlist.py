@@ -147,10 +147,11 @@ class DocSetList(object):
         return DocSetList_size(self)
 
     def __getitem__(self, i):
+        """TESTING purposes"""
         item = DocSetList_get(self, i)
         return DocSet(cobj=item)
 
-    def add(self, docset, term='niks'):
+    def add(self, docset, term):
         if len(docset) == 0:
             return
         docset.releaseData()

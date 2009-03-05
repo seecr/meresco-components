@@ -70,10 +70,9 @@ class DocSetListTest(LuceneTestCase):
 
     def testAddMore(self):
         docsetlist = DocSetList()
-        ds = DocSet([1,2])
-        docsetlist.add(ds)
-        docsetlist.add(DocSet([3,4]))
-        docsetlist.add(DocSet([5,6]))
+        docsetlist.add(DocSet([1,2]), 'someTerm')
+        docsetlist.add(DocSet([3,4]), 'someTerm')
+        docsetlist.add(DocSet([5,6]), 'someTerm')
         self.assertEquals(3, len(docsetlist))
         self.assertEquals(DocSet([1,2]), docsetlist[0])
         self.assertEquals(DocSet([3,4]), docsetlist[1])
@@ -88,9 +87,9 @@ class DocSetListTest(LuceneTestCase):
         docsetlist = DocSetList()
         bufferSize = 1000
         for i in xrange(bufferSize):
-            docsetlist.add(DocSet([1]))
+            docsetlist.add(DocSet([1]), 'someTerm')
         try:
-            docsetlist.add(DocSet([99,87]))
+            docsetlist.add(DocSet([99,87]), 'someTerm')
         except IndexError, e:
             self.fail('must not raise exception')
         self.assertEquals(bufferSize+1, len(docsetlist))
@@ -99,14 +98,14 @@ class DocSetListTest(LuceneTestCase):
     def testDoNotFreeMemory1(self):
         docsetlist = DocSetList()
         d1 = DocSet([8])
-        docsetlist.add(d1)
+        docsetlist.add(d1, 'someTerm')
         del d1
         self.assertEquals(8, docsetlist[0][0])
 
     def testDoNotFreeMemory2(self):
         docsetlist = DocSetList()
         d1 = DocSet([8])
-        docsetlist.add(d1)
+        docsetlist.add(d1, 'someTerm')
         d1_copy = docsetlist[0]
         del d1_copy
         self.assertEquals(8, docsetlist[0][0])
@@ -114,9 +113,9 @@ class DocSetListTest(LuceneTestCase):
     def testCheckForDuplicateAdd(self):
         docsetlist = DocSetList()
         d1 = DocSet([8])
-        docsetlist.add(d1)
+        docsetlist.add(d1, 'someTerm')
         try:
-            docsetlist.add(d1)
+            docsetlist.add(d1, 'someTerm')
         except AssertionError, e:
             self.assertEquals('object already released, perhaps duplicate add()?', str(e))
 
