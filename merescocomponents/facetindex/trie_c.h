@@ -48,16 +48,18 @@ typedef struct {
 extern guint32 fwValueNone;
 inline INode* interface(fwPtr self);
 
-fwPtr TrieNode_create(guint32 value);
-void TrieNode_free(fwPtr self);
-void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool);
-guint32 TrieNode_getValue(fwPtr self, char* term, stringPool pool);
-void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive);
-int TrieNode_memory(void);
-void TrieNode_printit(fwPtr self, int indent, stringPool pool);
+extern "C" {
+    fwPtr TrieNode_create(guint32 value);
+    void TrieNode_free(fwPtr self);
+    void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, stringPool pool);
+    guint32 TrieNode_getValue(fwPtr self, char* term, stringPool pool);
+    void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive);
+    int TrieNode_memory(void);
+    void TrieNode_printit(fwPtr self, int indent, stringPool pool);
 
-void nodecount(void);
-int isNone(fwPtr ptr);
+    void nodecount(void);
+    int isNone(fwPtr ptr);
+}
 
 #endif
 

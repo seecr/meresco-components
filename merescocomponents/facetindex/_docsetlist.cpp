@@ -38,15 +38,11 @@ extern "C" {
 
 /**************** C++ implementation of DocSetList****************************/
 
-DocSetList::DocSetList() {
-    termIndex2 = TrieNode_create(fwValueNone);
-}
 
 DocSetList::~DocSetList() {
     for ( unsigned int i = 0; i < size(); i++) {
        DocSet_delete(at(i));
     }
-    TrieNode_free(termIndex2);
 }
 
 class CompareTerm {
@@ -67,11 +63,8 @@ void DocSetList::sortOnTerm(void) {
 void DocSetList::addDocSet(fwPtr docset, char *term) {
     push_back(docset);
     if ( term  ) {
-        stringNr n = this->termPool.size();
-        this->termPool.append(term);
-        this->termPool.push_back('\0');
-        pDS(docset)->setTermOffset(n);
-        TrieNode_addValue(termIndex2, docset.ptr, n, &termPool[0]);
+        guint32 termId = dictionary.add(term, docset.ptr);
+        pDS(docset)->setTermOffset(termId);
     }
     DocSet* ds = pDS(docset);
     for ( DocSet::iterator i = ds->begin(); i < ds->end(); i++ ) {
@@ -99,9 +92,10 @@ void DocSetList::removeDoc(guint32 docId) {
     docId2TermList.erase(docId);*/
 }
 
+        
 fwPtr DocSetList::forTerm(char* term) {
-    guint32 docsetptr = TrieNode_getValue(termIndex2, term, &termPool[0]);
-    if ( docsetptr == fwValueNone )
+    guint32 docsetptr = dictionary.getValue(term);
+    if ( docsetptr == 0xFFFFFFFF )
         return fwNONE;
     fwPtr docset = {0, docsetptr};
     return docset;
@@ -113,10 +107,7 @@ bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
 }
 
 char* DocSetList::getTermForDocset(DocSet *docset) {
-    if (docset->_termOffset == 0xFFFFFFFF) {
-        return "";
-    }
-    return &termPool[docset->_termOffset];
+    return dictionary.getTerm(docset->_termOffset);
 }
 
 CardinalityList*
@@ -226,6 +217,10 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
     return results;
 }
 
+void DocSetList::nodecount(void) {
+    dictionary.nodecount();
+}
+
 /////////////// C Interface to CardinalityList ////////////////
 
 cardinality_t* CardinalityList_at(CardinalityList* vector, int i) {
@@ -327,7 +322,7 @@ void DocSetList_sortOnTerm(DocSetList* list) {
 }
 
 void DocSetList_printMemory(DocSetList* list) {
-    nodecount();
+    list->nodecount();
 }
 
 char* DocSetList_getTermForDocset(DocSetList *list, fwPtr docset) {

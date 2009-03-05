@@ -31,10 +31,7 @@
 #include "facetindex.h"
 #include "docset.h"
 #include "integerlist.h"
-
-extern "C" {
-    #include "trie_c.h"
-}
+#include "triedict.h"
 
 #ifndef __docsetlist_h__
 #define __docsetlist_h__
@@ -50,11 +47,9 @@ typedef std::vector<fwPtr> TermList;
 
 class DocSetList : public std::vector<fwPtr> {
     private:
-        fwPtr termIndex2;
-        std::string termPool;
         std::map<guint32, TermList> docId2TermList;
+        TrieDict             dictionary;
     public:
-        DocSetList();
         ~DocSetList();
         void                 addDocSet(fwPtr docset, char *term);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
@@ -65,6 +60,7 @@ class DocSetList : public std::vector<fwPtr> {
         bool                 cmpTerm(fwPtr lhs, fwPtr rhs);
         void                 sortOnTerm(void);
         void                 docId2terms_add(guint32 docid, fwPtr docset);
+        void                 nodecount(void);
 };
 
 /**************** C-interface for DocSetList ****************************/

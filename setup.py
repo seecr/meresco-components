@@ -39,6 +39,7 @@ setup(
                 'merescocomponents/facetindex/_integerlist.cpp',
                 'merescocomponents/facetindex/fwpool.c',
                 'merescocomponents/facetindex/trie_c.cpp',
+                'merescocomponents/facetindex/_triedict.cpp',
                 ],
         	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
                 extra_link_args = ['/usr/lib/python2.5/site-packages/_PyLucene.so']
