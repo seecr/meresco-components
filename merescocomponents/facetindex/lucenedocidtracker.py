@@ -33,7 +33,7 @@ class SegmentInfo(object):
     def __init__(self, length, offset):
         self.length = length
         self.offset = offset
-        self._deleted = []
+        self._deleted = IntegerList()
         self._filename = None
 
     def openIfNew(self, filename):
@@ -59,14 +59,13 @@ class SegmentInfo(object):
         self._deleted.append(luceneId)
 
     def deletedLuceneIds(self):
-        return (int(s) for s in open(self._filename))
+        l = IntegerList()
+        l.extendFrom(self._filename)
+        return l
 
     def saveDeleted(self):
-        f = open(self._filename, 'a')
-        for i in self._deleted:
-            f.write(str(i) + '\n')
-        f.close()
-        self._deleted = []
+        self._deleted.extendTo(self._filename)
+        self._deleted = IntegerList()
 
 class LuceneDocIdTrackerException(Exception):
     pass

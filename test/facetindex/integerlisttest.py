@@ -235,3 +235,29 @@ class IntegerListTest(CQ2TestCase):
         tload = t2 - t1
         self.assertTrue(0.01 < tsave < 0.05, tsave)
         self.assertTrue(0.10 < tload < 0.50, tload)
+
+    def testExtendTo(self):
+        def check(expected):
+            l2 = IntegerList()
+            l2.extendFrom(self.tempdir+'/list.bin')
+            self.assertEquals(expected, l2)
+
+        l1 = IntegerList()
+        l1.extendTo(self.tempdir + '/list.bin')
+        check([])
+        
+        l1 = IntegerList()
+        l1.append(94)
+        l1.append(34)
+        l1.append(81)
+        
+        l1.extendTo(self.tempdir + '/list.bin')
+        check([94, 34, 81])
+
+        l1 = IntegerList()
+        l1.append(8)
+        l1.append(4)
+        l1.append(16)
+
+        l1.extendTo(self.tempdir + '/list.bin')
+        check([94, 34, 81, 8, 4, 16])

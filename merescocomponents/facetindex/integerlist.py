@@ -76,6 +76,9 @@ IntegerList_extendFrom = libFacetIndex.IntegerList_extendFrom
 IntegerList_extendFrom.argtypes = [INTEGERLIST, c_char_p]
 IntegerList_extendFrom.restype = c_int
 
+IntegerList_extendTo = libFacetIndex.IntegerList_extendTo
+IntegerList_extendTo.argtypes = [INTEGERLIST, c_char_p]
+IntegerList_extendTo.restype = c_int
 
 class IntegerList(object):
 
@@ -149,5 +152,10 @@ class IntegerList(object):
 
     def extendFrom(self, filename):
         errno = IntegerList_extendFrom(self, filename)
+        if errno:
+            raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
+
+    def extendTo(self, filename):
+        errno = IntegerList_extendTo(self, filename)
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))

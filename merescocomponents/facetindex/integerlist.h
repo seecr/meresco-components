@@ -40,6 +40,7 @@ class IntegerList : public std::vector<guint32> {
         int mergeFromOffset(int);
         int save(char* filename, int offset);
         int extendFrom(char* filename);
+        int extendTo(char* filename);
 };
 
 extern "C" {
@@ -54,6 +55,7 @@ extern "C" {
     int             IntegerList_mergeFromOffset      (IntegerList* list, int);
     int             IntegerList_save                 (IntegerList* list, char* filename, int offset);
     int             IntegerList_extendFrom           (IntegerList* list, char* filename);
+    int             IntegerList_extendTo             (IntegerList* list, char* filename);
 }
 
 #endif

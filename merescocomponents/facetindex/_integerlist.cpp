@@ -77,6 +77,10 @@ int IntegerList_extendFrom(IntegerList* list, char* filename) {
     return list->extendFrom(filename);
 }
 
+int IntegerList_extendTo(IntegerList* list, char* filename) {
+    return list->extendTo(filename);
+}
+
 
 /* ----------------------- C++ ---------------------------------------------*/
 
@@ -128,6 +132,18 @@ int IntegerList::extendFrom(char* filename) {
         guint32 i;
         if ( fread(&i, sizeof(guint32), 1, fp) == 1)
             push_back(i);
+    }
+    fclose(fp);
+    return 0;
+}
+
+int IntegerList::extendTo(char* filename) {
+    FILE* fp = fopen(filename, "a");
+    if ( !fp ) {
+        return errno;
+    }
+    if ( size() > 0 ) {
+        fwrite(&at(0), sizeof(guint32), size(), fp);
     }
     fclose(fp);
     return 0;
