@@ -185,6 +185,9 @@ class LuceneDocIdTracker(object):
 
         for i, segment in enumerate(self._segmentInfo):
             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
+            klaas = IntegerList()
+            klaas.extendFrom(join(self._directory, str(i) + '.docids'))
+            
             for deleted in segment.deletedLuceneIds():
                 self._docIds[deleted] = -1
 
@@ -200,19 +203,14 @@ class LuceneDocIdTracker(object):
         return 'tracker:' + repr(self._mergeFactor) + '/' + repr(self._nextDocId) + repr(self._segmentInfo) + repr(self._ramSegmentsInfo) + repr(self._docIds)
 
     def _segmentForLuceneId(self, luceneId):
-        def find(segments, luceneId):
-            for segment in segments:
-                if segment.offset + segment.length >= luceneId:
-                    return segment
-            return None
-
-        result = find(self._segmentInfo, luceneId)
-        if result != None:
-            return result
-        result = find(self._ramSegmentsInfo, luceneId)
-        if result == None:
-            raise Exception("Can't find luceneId %s in %s" % (luceneId, self))
-        return result
+        for segment in reversed(self._ramSegmentsInfo):
+            if luceneId >= segment.offset and luceneId < segment.offset + segment.length:
+                return segment
+        for segment in reversed(self._segmentInfo):
+            if luceneId >= segment.offset and luceneId < segment.offset + segment.length:
+                return segment
+        raise Exception("Can't find luceneId %s in %s" % (luceneId, self))
+        
 
     def close(self):
         self.flush()
