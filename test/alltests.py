@@ -51,6 +51,7 @@ from facetindex.trietest import TrieTest
 from facetindex.pooltest import PoolTest
 from facetindex.cqlparsetreetolucenequerytest import CqlParseTreeToLuceneQueryTest
 from facetindex.cql2lucenequerytest import Cql2LuceneQueryTest
+from facetindex.triedicttest import TrieDictTest
 
 from facetindex.documenttest import DocumentTest
 from facetindex.lucenetest import LuceneTest

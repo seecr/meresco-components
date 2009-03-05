@@ -29,6 +29,7 @@
 from time import time
 from merescocomponents.facetindex import DocSetList, DocSet
 from merescocomponents.facetindex.docsetlist import JACCARD_ONLY
+from merescocomponents.facetindex.triedict import TrieDict
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
 from cq2utils import MATCHALL
@@ -479,12 +480,22 @@ class DocSetListTest(LuceneTestCase):
         dsl = DocSetList()
         dsl.add(ds0, 'term0')
         dsl.add(ds1, 'term1')
-        ds0new = dsl.TEST_getDocsetForTerm('term0')
-        ds1new = dsl.TEST_getDocsetForTerm('term1')
+        ds0new = dsl._TEST_getDocsetForTerm('term0')
+        ds1new = dsl._TEST_getDocsetForTerm('term1')
         self.assertEquals(ds0, ds0new)
         self.assertEquals(ds1, ds1new)
         dsl.sortOnCardinality()
-        ds0new = dsl.TEST_getDocsetForTerm('term0')
-        ds1new = dsl.TEST_getDocsetForTerm('term1')
+        ds0new = dsl._TEST_getDocsetForTerm('term0')
+        ds1new = dsl._TEST_getDocsetForTerm('term1')
         self.assertEquals(ds0, ds0new)
         self.assertEquals(ds1, ds1new)
+
+    def XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXtestUseSharedDictionary(self):
+        sharedDictionary = TrieDict()
+        dsl1 = DocSetList(dictionary=sharedDictionary)
+        dsl2 = DocSetList(dictionary=sharedDictionary)
+        dsl1.add(DocSet([0]), 'term0shared')
+        dsl2.add(DocSet([2]), 'term0shared')
+        termIds1 = [termId for termId, count in dsl1._TEST_getRawCardinalities(DocSet([0,2]))]
+        termIds2 = [termId for termId, count in dsl2._TEST_getRawCardinalities(DocSet([0,2]))]
+        self.assertEquals(termIds1, termIds2)

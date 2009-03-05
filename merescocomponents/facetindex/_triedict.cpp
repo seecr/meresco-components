@@ -35,3 +35,12 @@ char* TrieDict::getTerm(termid termId) {
 void TrieDict::nodecount(void) {
     nodecount();
 }
+
+TrieDict* TrieDict_create(void) {
+    return new TrieDict();
+}
+
+void TrieDict_delete(TrieDict* trieDict) {
+    delete trieDict;
+}
+

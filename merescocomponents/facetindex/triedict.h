@@ -24,5 +24,8 @@ class TrieDict {
         char*              getTerm(termid termId);
         void               nodecount(void);
 };
-
+extern "C" {
+    TrieDict*              TrieDict_create(void);
+    void                   TrieDict_delete(TrieDict*);
+}
 #endif

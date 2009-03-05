@@ -137,7 +137,7 @@ class DocSetList(object):
             self._cobj = cobj
         else:
             self._cobj = DocSetList_create()
-        self._dealloc = deallocator(DocSetList_delete, cobj)
+            self._dealloc = deallocator(DocSetList_delete, self._cobj)
         self._as_parameter_ = self._cobj
         self._sorted = None
 
@@ -167,6 +167,23 @@ class DocSetList(object):
                 yield (c.contents.term, c.contents.cardinality)
         finally:
             CardinalityList_free(p)
+
+    def _TEST_getRawCardinalities(self, docset):
+        class cardinality_t_RAW(Structure):
+            _fields_ = [('term',        POINTER(None)),
+                        ('cardinality', c_uint32)]
+        cardinalityList_at_original_restype = CardinalityList_at.restype
+        try:
+            CardinalityList_at.restype = POINTER(cardinality_t_RAW)
+            p = DocSetList_combinedCardinalities(self, docset, maxint, False)
+            try:
+                for i in xrange(CardinalityList_size(p)):
+                    c = CardinalityList_at(p, i)
+                    yield (c.contents.term, c.contents.cardinality)
+            finally:
+                CardinalityList_free(p)
+        finally:
+            CardinalityList_at.restype = cardinalityList_at_original_restype
 
     def allCardinalities(self):
         for docset in self:
@@ -211,7 +228,7 @@ class DocSetList(object):
             DocSetList_sortOnTerm(self)
             self._sorted = SORTEDONTERM
 
-    def TEST_getDocsetForTerm(self, term):
+    def _TEST_getDocsetForTerm(self, term):
         r = DocSetList_getForTerm(self, term)
         if r:
             return DocSet(cobj=r)
