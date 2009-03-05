@@ -287,19 +287,17 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(tracker, tracker2)
 
     def testDelete2LuceneIdsInOneSegment(self):
-        """i.e. Delete information is deleted on merge"""
         tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         tracker.next()
         tracker.flush()
         tracker.next()
         tracker.flush()
         tracker.deleteLuceneId(1)
-        
+
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
 
     def testSameProblemSlightlyDifferentAngle(self):
-        """i.e. Delete information is deleted on merge"""
         tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         tracker.next()
         tracker.flush()
