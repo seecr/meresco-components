@@ -491,10 +491,10 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals(ds0, ds0new)
         self.assertEquals(ds1, ds1new)
 
-    def XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXtestUseSharedDictionary(self):
+    def testUseSharedStringPool(self):
         sharedDictionary = TrieDict()
-        dsl1 = DocSetList(dictionary=sharedDictionary)
-        dsl2 = DocSetList(dictionary=sharedDictionary)
+        dsl1 = DocSetList()
+        dsl2 = DocSetList()
         dsl1.add(DocSet([0]), 'term0shared')
         dsl2.add(DocSet([2]), 'term0shared')
         termIds1 = [termId for termId, count in dsl1._TEST_getRawCardinalities(DocSet([0,2]))]

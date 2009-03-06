@@ -33,15 +33,19 @@
 #include <string>
 #include <glib.h>
 
+extern "C" {
+    #include "fwpool.h"
+}
+
 typedef guint32 termid;
 
 class StringPool {
     private:
-        //fwPtr termIndex;
-        std::string termPool;
+        fwPtr termIndex;
+        std::string allterms;
     public:
-        //StringPool(void);
-        //~StringPool(void);
+        StringPool(void);
+        ~StringPool(void);
         termid             add(char* term);
         //bool               contains(char* term);
         char*              get(termid);

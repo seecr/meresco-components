@@ -61,12 +61,16 @@ void LeafNode_init(void);
 void StringNode_init(void);
 void ListNode_init(void);
 
+int init_done = 0;
 void trie_init(void) {
-    pool_init();
-    TrieNode_init();
-    LeafNode_init();
-    StringNode_init();
-    ListNode_init();
+    if ( ! init_done ) {
+        pool_init();
+        TrieNode_init();
+        LeafNode_init();
+        StringNode_init();
+        ListNode_init();
+        init_done = 1;
+    }
 }
 
 guint32 fwValueNone;

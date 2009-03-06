@@ -28,17 +28,25 @@
  * end license */
 
 #include "stringpool.h"
+#include "trie_c.h"
 
-// StringPool::StringPool() {
-// }
-//
-// StringPool::~StringPool() {
-// }
+StringPool::StringPool() {
+    trie_init();
+    termIndex = TrieNode_create(fwValueNone);
+}
+
+StringPool::~StringPool() {
+    TrieNode_free(termIndex);
+}
 
 termid StringPool::add(char* term) {
-    termid termId = this->termPool.size();
-    this->termPool.append(term);
-    this->termPool.push_back('\0');
+    termid termId = TrieNode_getValue(termIndex, term, this);
+    if ( termId == fwValueNone ) {
+        termId = this->allterms.size();
+        this->allterms.append(term);
+        this->allterms.push_back('\0');
+        TrieNode_addValue(termIndex, termId, termId, this);
+    }
     return termId;
 }
 
@@ -46,8 +54,5 @@ char* StringPool::get(termid termId) {
     if (termId == 0xFFFFFFFF) {
         return "";
     }
-    return &this->termPool[termId];
+    return &this->allterms[termId];
 }
-
-
-

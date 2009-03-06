@@ -30,13 +30,14 @@
 #include "triedict.h"
 #include "trie_c.h"
 
-TrieDict::TrieDict(): termPool(new StringPool()) {
+StringPool globalStringPool;
+
+TrieDict::TrieDict(): termPool(&globalStringPool) {
     termIndex = TrieNode_create(fwValueNone);
 }
 
 TrieDict::~TrieDict() {
     TrieNode_free(termIndex);
-    delete termPool;
 }
 
 termid TrieDict::add(char* term, value value) {

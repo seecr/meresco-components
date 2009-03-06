@@ -37,7 +37,6 @@
 
 typedef guint32 stringNr;
 
-void trie_init(void);
 
 typedef struct {
     void (*addValue)(fwPtr self, guint32 value, stringNr term, StringPool* pool);
@@ -51,6 +50,7 @@ extern guint32 fwValueNone;
 inline INode* interface(fwPtr self);
 
 extern "C" {
+    void trie_init(void);
     fwPtr TrieNode_create(guint32 value);
     void TrieNode_free(fwPtr self);
     void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool);
