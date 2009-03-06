@@ -55,6 +55,7 @@ class DocSetList : public std::vector<fwPtr> {
         ~DocSetList();
         void                 addDocSet(fwPtr docset, char *term);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
+        DocSetList*          intersect(DocSet* docset); 
         CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm);
         fwPtr                forTerm(char* term);
         void                 removeDoc(guint32 doc);

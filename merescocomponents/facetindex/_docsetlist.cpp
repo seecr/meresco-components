@@ -143,8 +143,22 @@ DocSetList::combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort
     }
     return results;
 }
+
 bool cmpCardinality(fwPtr lhs, fwPtr rhs) {
     return pDS(lhs)->size() > pDS(rhs)->size();
+}
+
+DocSetList* DocSetList::intersect(DocSet* docset) {
+    DocSetList* results = new DocSetList();
+    for( unsigned int i=0; i < size() ; i++ ) {
+        fwPtr intersection = pDS(at(i))->intersect(docset);
+        if ( ! pDS(intersection)->size() ) {
+            DocSet_delete(intersection);
+        } else {
+            results->push_back(intersection);
+        }
+    }
+    return results;
 }
 
 class DummyDocSet : public DocSet {
