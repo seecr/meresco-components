@@ -30,34 +30,30 @@
 #include "triedict.h"
 #include "trie_c.h"
 
-TrieDict::TrieDict() {
+TrieDict::TrieDict(): termPool(new StringPool()) {
     termIndex = TrieNode_create(fwValueNone);
 }
 
 TrieDict::~TrieDict() {
     TrieNode_free(termIndex);
+    delete termPool;
 }
 
 termid TrieDict::add(char* term, value value) {
-    termid termId = this->termPool.size();
-    this->termPool.append(term);
-    this->termPool.push_back('\0');
-    TrieNode_addValue(termIndex, value, termId, &this->termPool[0]);
+    termid termId = this->termPool->add(term);
+    TrieNode_addValue(termIndex, value, termId, this->termPool);
     return termId;
 }
 
 value TrieDict::getValue(char* term) {
-    value value = TrieNode_getValue(termIndex, term, &this->termPool[0]);
+    value value = TrieNode_getValue(termIndex, term, this->termPool);
     if ( value == fwValueNone )
         return 0xFFFFFFFF;
     return value;
 }
 
 char* TrieDict::getTerm(termid termId) {
-    if (termId == 0xFFFFFFFF) {
-        return "";
-    }
-    return &this->termPool[termId];
+    return this->termPool->get(termId);
 }
 
 void TrieDict::nodecount(void) {

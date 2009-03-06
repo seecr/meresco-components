@@ -27,34 +27,24 @@
  *
  * end license */
 
-#ifndef __triedict_h__
-#define __triedict_h__
+#ifndef __stringpool_h__
+#define __stringpool_h__
 
 #include <string>
 #include <glib.h>
-#include "stringpool.h"
-
-extern "C" {
-    #include "fwpool.h"
-}
 
 typedef guint32 termid;
-typedef guint32 value;
 
-class TrieDict {
+class StringPool {
     private:
-        fwPtr termIndex;
-        StringPool* termPool;
+        //fwPtr termIndex;
+        std::string termPool;
     public:
-        TrieDict(void);
-        ~TrieDict(void);
-        termid             add(char* term, value value);
-        value              getValue(char* term);
-        char*              getTerm(termid termId);
-        void               nodecount(void);
+        //StringPool(void);
+        //~StringPool(void);
+        termid             add(char* term);
+        //bool               contains(char* term);
+        char*              get(termid);
 };
-extern "C" {
-    TrieDict*              TrieDict_create(void);
-    void                   TrieDict_delete(TrieDict*);
-}
+
 #endif
