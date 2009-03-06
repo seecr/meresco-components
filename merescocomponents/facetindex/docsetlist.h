@@ -78,6 +78,7 @@ extern "C" {
     fwPtr            DocSetList_get                  (DocSetList* list, int i);
     fwPtr            DocSetList_getForTerm           (DocSetList* list, char* term);
     CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr docset, guint32 maxResults, int doSort);
+    DocSetList* DocSetList_intersect(DocSetList* list, fwPtr docset);
     CardinalityList* DocSetList_jaccards             (DocSetList* list, fwPtr docset, int minimum, int maximum, int totaldocs, int algorithm);
     void             DocSetList_delete               (DocSetList* list);
     void             DocSetList_sortOnCardinality    (DocSetList* list);

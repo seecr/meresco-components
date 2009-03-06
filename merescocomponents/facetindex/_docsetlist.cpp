@@ -150,6 +150,7 @@ bool cmpCardinality(fwPtr lhs, fwPtr rhs) {
 
 DocSetList* DocSetList::intersect(DocSet* docset) {
     DocSetList* results = new DocSetList();
+    results->reserve(size() + 1);
     for( unsigned int i=0; i < size() ; i++ ) {
         fwPtr intersection = pDS(at(i))->intersect(docset);
         if ( ! pDS(intersection)->size() ) {
@@ -278,6 +279,11 @@ fwPtr DocSetList_getForTerm(DocSetList* list, char* term) {
 CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr ds, guint32 maxResults, int doSort) {
     DocSet* docset = pDS(ds);
     return list->combinedCardinalities(docset, maxResults, doSort);
+}
+
+DocSetList* DocSetList_intersect(DocSetList* list, fwPtr ds) {
+    DocSet* docset = pDS(ds);
+    return list->intersect(docset);
 }
 
 CardinalityList* DocSetList_jaccards(DocSetList* list, fwPtr ds, int minimum, int maximum, int totaldocs, int algorithm) {
