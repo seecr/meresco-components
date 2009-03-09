@@ -162,6 +162,14 @@ DocSetList* DocSetList::intersect(DocSet* docset) {
     return results;
 }
 
+DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
+    // ensure sorted on termID
+    DocSetList* result = new DocSetList();
+    result->addDocSet(DocSet_create(0), "t0");
+    result->addDocSet(DocSet_create(0), "t1");
+    return result;
+}
+
 class DummyDocSet : public DocSet {
     public:
         DummyDocSet(size_t size) : DocSet(size) { }
@@ -284,6 +292,10 @@ CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr ds, gu
 DocSetList* DocSetList_intersect(DocSetList* list, fwPtr ds) {
     DocSet* docset = pDS(ds);
     return list->intersect(docset);
+}
+
+DocSetList* DocSetList_termIntersect(DocSetList* self, DocSetList* rhs) {
+    return self->termIntersect(rhs);
 }
 
 CardinalityList* DocSetList_jaccards(DocSetList* list, fwPtr ds, int minimum, int maximum, int totaldocs, int algorithm) {

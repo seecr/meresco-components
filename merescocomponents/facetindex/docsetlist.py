@@ -84,6 +84,10 @@ DocSetList_intersect = libFacetIndex.DocSetList_intersect
 DocSetList_intersect.argtypes = [DOCSETLIST, DOCSET]
 DocSetList_intersect.restype = DOCSETLIST
 
+DocSetList_termIntersect = libFacetIndex.DocSetList_termIntersect
+DocSetList_termIntersect.argtypes = [DOCSETLIST, DOCSETLIST]
+DocSetList_termIntersect.restype = DOCSETLIST
+
 DocSetList_getTermForDocset = libFacetIndex.DocSetList_getTermForDocset
 DocSetList_getTermForDocset.argtypes = [DOCSETLIST, DOCSET]
 DocSetList_getTermForDocset.restype = c_char_p
@@ -138,11 +142,13 @@ class DocSetList(object):
         r = DocSetList_fromTermEnum(py_object(termEnum), py_object(termDocs), integerList.getCObject() if integerList else 0)
         return clazz(cobj=r)
 
-    def __init__(self, cobj=None):
+    def __init__(self, cobj=None, own=False):
         if cobj:
             self._cobj = cobj
         else:
             self._cobj = DocSetList_create()
+            own = True
+        if own :
             self._dealloc = deallocator(DocSetList_delete, self._cobj)
         self._as_parameter_ = self._cobj
         self._sorted = None
@@ -177,9 +183,12 @@ class DocSetList(object):
 
     def intersect(self, docset):
         cobj = DocSetList_intersect(self, docset)
-        result = DocSetList(cobj)
-        result._dealloc = deallocator(DocSetList_delete, cobj)
-        return result
+        return DocSetList(cobj, own=True)
+
+    def termIntersect(self, docsetList):
+        cobj = DocSetList_termIntersect(self, docsetList)
+        print 'NOOT', cobj
+        return DocSetList(cobj, own=True)
 
     def _TEST_getRawCardinalities(self, docset):
         class cardinality_t_RAW(Structure):
