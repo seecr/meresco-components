@@ -60,8 +60,7 @@ class CompareTerm {
 
 class CompareTermId {
     public:
-        DocSetList* mii;
-        CompareTermId(DocSetList* list) : mii(list) {}
+        CompareTermId(DocSetList* list) {}
         bool operator ()(fwPtr lhs, fwPtr rhs) {
             return pDS(lhs)->_termOffset < pDS(rhs)->_termOffset;
         }
@@ -177,11 +176,31 @@ DocSetList* DocSetList::intersect(DocSet* docset) {
 
 DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     // ensure sorted on termID
-    //sortOnTermId();
-    //rhs->sortOnTermId();
+    sortOnTermId();
+    rhs->sortOnTermId();
     DocSetList* result = new DocSetList();
-    result->addDocSet(DocSet_create(0), "t0");
-    result->addDocSet(DocSet_create(0), "t1");
+
+    DocSetList::iterator lhs_iter = begin();
+    DocSetList::iterator rhs_iter = rhs->begin();
+    
+    while ( lhs_iter < end() && rhs_iter < rhs->end()) {
+        if ( pDS(*lhs_iter)->_termOffset == pDS(*rhs_iter)->_termOffset ) {
+            fwPtr d = DocSet_create(0);
+            pDS(d)->assign(pDS(*lhs_iter)->begin(), pDS(*lhs_iter)->end());
+            result->addDocSet(d, getTermForDocset(pDS(*lhs_iter)));
+            lhs_iter++;
+        }
+
+        while ( lhs_iter < end() &&
+                pDS(*lhs_iter)->_termOffset < pDS(*rhs_iter)->_termOffset )
+            lhs_iter++;
+        
+        while ( rhs_iter < rhs->end() &&
+                pDS(*rhs_iter)->_termOffset < pDS(*lhs_iter)->_termOffset )
+            rhs_iter++;
+
+    }
+
     return result;
 }
 

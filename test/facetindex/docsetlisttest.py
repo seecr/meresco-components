@@ -172,9 +172,9 @@ class DocSetListTest(LuceneTestCase):
         docsetlist0.add(DocSet([0]), 'not_in_1')
 
         docsetlist1 = DocSetList()
-        docsetlist1.add(DocSet([]), 't0')
-        docsetlist1.add(DocSet([]), 't1')
-        docsetlist1.add(DocSet([]), 'not_in_0')
+        docsetlist1.add(DocSet([8]), 't0')
+        docsetlist1.add(DocSet([8]), 't1')
+        docsetlist1.add(DocSet([8]), 'not_in_0')
 
         docsetlistResult = docsetlist0.termIntersect(docsetlist1)
         self.assertEquals([0, 1, 2], docsetlistResult._TEST_getDocsetForTerm('t1'))
