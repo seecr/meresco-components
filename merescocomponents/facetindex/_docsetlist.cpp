@@ -58,8 +58,21 @@ class CompareTerm {
         }
 };
 
+class CompareTermId {
+    public:
+        DocSetList* mii;
+        CompareTermId(DocSetList* list) : mii(list) {}
+        bool operator ()(fwPtr lhs, fwPtr rhs) {
+            return pDS(lhs)->_termOffset < pDS(rhs)->_termOffset;
+        }
+};
+
 void DocSetList::sortOnTerm(void) {
     sort(begin(), end(), CompareTerm(this));
+}
+
+void DocSetList::sortOnTermId(void) {
+    sort(begin(), end(), CompareTermId(this));
 }
 
 void DocSetList::addDocSet(fwPtr docset, char *term) {
@@ -164,6 +177,8 @@ DocSetList* DocSetList::intersect(DocSet* docset) {
 
 DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     // ensure sorted on termID
+    //sortOnTermId();
+    //rhs->sortOnTermId();
     DocSetList* result = new DocSetList();
     result->addDocSet(DocSet_create(0), "t0");
     result->addDocSet(DocSet_create(0), "t1");
@@ -349,6 +364,10 @@ void DocSetList_sortOnCardinality(DocSetList* docsetlist) {
 
 void DocSetList_sortOnTerm(DocSetList* list) {
     list->sortOnTerm();
+}
+
+void DocSetList_sortOnTermId(DocSetList* list) {
+    list->sortOnTermId();
 }
 
 void DocSetList_printMemory(DocSetList* list) {

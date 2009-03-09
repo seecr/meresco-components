@@ -521,11 +521,29 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals(ds1, ds1new)
 
     def testUseSharedStringPool(self):
-        sharedDictionary = TrieDict()
         dsl1 = DocSetList()
         dsl2 = DocSetList()
         dsl1.add(DocSet([0]), 'term0shared')
         dsl2.add(DocSet([2]), 'term0shared')
-        termIds1 = [termId for termId, count in dsl1._TEST_getRawCardinalities(DocSet([0,2]))]
-        termIds2 = [termId for termId, count in dsl2._TEST_getRawCardinalities(DocSet([0,2]))]
+        termIds1 = [termPointer for termPointer, count in dsl1._TEST_getRawCardinalities(DocSet([0,2]))]
+        termIds2 = [termPointer for termPointer, count in dsl2._TEST_getRawCardinalities(DocSet([0,2]))]
         self.assertEquals(termIds1, termIds2)
+
+    def testSortOnTermId(self):
+        docSetList = DocSetList()
+        docSetList.add(DocSet([0]), '__unique__xyz_term0')
+        docSetList.add(DocSet([1]), '__unique__xyz_term1')
+        docSetList.add(DocSet([2]), '__unique__xyz_term2')
+        
+        docSetList.sortOnTermId()
+        for i in range(3):
+            self.assertEquals(DocSet([i]), docSetList[i])
+
+        docSetList = DocSetList()
+        docSetList.add(DocSet([2]), '__unique__xyz_term2')
+        docSetList.add(DocSet([1]), '__unique__xyz_term1')
+        docSetList.add(DocSet([0]), '__unique__xyz_term0')
+
+        docSetList.sortOnTermId()
+        for i in range(3):
+            self.assertEquals(DocSet([i]), docSetList[i])

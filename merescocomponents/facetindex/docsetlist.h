@@ -63,6 +63,7 @@ class DocSetList : public std::vector<fwPtr> {
         char*                getTermForDocset(DocSet *docset);
         bool                 cmpTerm(fwPtr lhs, fwPtr rhs);
         void                 sortOnTerm(void);
+        void                 sortOnTermId(void);
         void                 docId2terms_add(guint32 docid, fwPtr docset);
         void                 nodecount(void);
 };
@@ -85,6 +86,8 @@ extern "C" {
     void             DocSetList_delete               (DocSetList* list);
     void             DocSetList_sortOnCardinality    (DocSetList* list);
     void             DocSetList_sortOnTerm           (DocSetList* list);
+    void             DocSetList_sortOnTermId
+             (DocSetList* list);
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
     void             DocSetList_printMemory          (DocSetList* list);
     char*            DocSetList_getTermForDocset     (DocSetList* list, fwPtr docset);

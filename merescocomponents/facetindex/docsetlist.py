@@ -111,6 +111,10 @@ DocSetList_sortOnTerm = libFacetIndex.DocSetList_sortOnTerm
 DocSetList_sortOnTerm.argtypes = [DOCSETLIST]
 DocSetList_sortOnTerm.restype = None
 
+DocSetList_sortOnTermId = libFacetIndex.DocSetList_sortOnTermId
+DocSetList_sortOnTermId.argtypes = [DOCSETLIST]
+DocSetList_sortOnTermId.restype = None
+
 DocSetList_printMemory = libFacetIndex.DocSetList_printMemory
 DocSetList_printMemory.argtypes = [DOCSETLIST]
 DocSetList_printMemory.restype = None
@@ -134,6 +138,7 @@ CardinalityList_free.restype = None
 
 SORTEDONTERM = 1
 SORTEDONCARDINALITY = 2
+SORTEDONTERMID = 3
 
 class DocSetList(object):
 
@@ -187,7 +192,6 @@ class DocSetList(object):
 
     def termIntersect(self, docsetList):
         cobj = DocSetList_termIntersect(self, docsetList)
-        print 'NOOT', cobj
         return DocSetList(cobj, own=True)
 
     def _TEST_getRawCardinalities(self, docset):
@@ -249,6 +253,11 @@ class DocSetList(object):
         if self._sorted != SORTEDONTERM:
             DocSetList_sortOnTerm(self)
             self._sorted = SORTEDONTERM
+
+    def sortOnTermId(self):
+        if self._sorted != SORTEDONTERMID:
+            DocSetList_sortOnTermId(self)
+            self._sorted = SORTEDONTERMID
 
     def _TEST_getDocsetForTerm(self, term):
         r = DocSetList_getForTerm(self, term)
