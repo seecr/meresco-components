@@ -176,9 +176,9 @@ class DocSetList(object):
             CardinalityList_free(p)
 
     def intersect(self, docset):
-        result = DocSetList_intersect(self, docset)
-        result = DocSetList(result)
-        result._dealloc = deallocator(DocSetList_delete, self._cobj)
+        cobj = DocSetList_intersect(self, docset)
+        result = DocSetList(cobj)
+        result._dealloc = deallocator(DocSetList_delete, cobj)
         return result
 
     def _TEST_getRawCardinalities(self, docset):

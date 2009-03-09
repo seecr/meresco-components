@@ -156,7 +156,7 @@ DocSetList* DocSetList::intersect(DocSet* docset) {
         if ( ! pDS(intersection)->size() ) {
             DocSet_delete(intersection);
         } else {
-            results->push_back(intersection);
+            results->addDocSet(intersection, getTermForDocset(pDS(at(i))));
         }
     }
     return results;

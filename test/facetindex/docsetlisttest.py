@@ -155,17 +155,15 @@ class DocSetListTest(LuceneTestCase):
 
     def testIntersect(self):
         docsetlist = DocSetList()
-        d1 = DocSet([1,2,3])
-        d2 = DocSet([7,8,9]) # intersection empty
-        d3 = DocSet([3,4,5])
-        docsetlist.add(d1, 't0')
-        docsetlist.add(d2, 't1')
-        docsetlist.add(d3, 't2')
-        intersections = docsetlist.intersect(DocSet([3,4]))
-        #self.assertEquals(('t0',1), cards.next())
-        #self.assertEquals(('t2',2), cards.next())
-        #cards = docsetlist.termCardinalities(DocSet([3,4]))
-        #self.assertEquals([('t0',1), ('t2',2)], list(cards))
+        docsetlist.add(DocSet([1, 2, 3]), 't0')
+        docsetlist.add(DocSet([7, 8, 9]), 't1') # intersection empty
+        docsetlist.add(DocSet([3, 4, 5]), 't2')
+        intersections = docsetlist.intersect(DocSet([3, 4]))
+        self.assertEquals([3], intersections[0])
+        self.assertEquals([3, 4], intersections[1])
+        self.assertEquals(2, len(intersections))
+        self.assertEquals([3], intersections._TEST_getDocsetForTerm('t0'))
+        self.assertEquals([3, 4], intersections._TEST_getDocsetForTerm('t2'))
 
     def testReadTermsFrom_SEGMENT_reader(self):
         self.createBigIndex(10, 1) # 10 records, two values 0 and 1
