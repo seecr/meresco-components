@@ -47,6 +47,10 @@ typedef struct {
 typedef std::vector<cardinality_t> CardinalityList;
 typedef std::vector<fwPtr> TermList;
 
+class DocSetIterator : protected DocSet::iterator {
+
+};
+
 class DocSetList : public std::vector<fwPtr> {
     private:
         std::map<guint32, TermList> docId2TermList;
@@ -66,6 +70,7 @@ class DocSetList : public std::vector<fwPtr> {
         void                 sortOnTermId(void);
         void                 docId2terms_add(guint32 docid, fwPtr docset);
         void                 nodecount(void);
+        DocSetIterator       begin_docId(void);
 };
 
 /**************** C-interface for DocSetList ****************************/

@@ -47,6 +47,7 @@ DocSetList::~DocSetList() {
     }
 }
 
+
 class CompareTerm {
     public:
         DocSetList* mii;
@@ -73,6 +74,12 @@ void DocSetList::sortOnTerm(void) {
 void DocSetList::sortOnTermId(void) {
     sort(begin(), end(), CompareTermId(this));
 }
+
+
+DocSetIterator DocSetList::begin_docId(void) {
+    return DocSetIterator();
+}
+
 
 void DocSetList::addDocSet(fwPtr docset, char *term) {
     push_back(docset);
@@ -182,7 +189,7 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
 
     DocSetList::iterator lhs_iter = begin();
     DocSetList::iterator rhs_iter = rhs->begin();
-    
+
     while ( lhs_iter < end() && rhs_iter < rhs->end()) {
         if ( pDS(*lhs_iter)->_termOffset == pDS(*rhs_iter)->_termOffset ) {
             fwPtr d = DocSet_create(0);
@@ -194,7 +201,7 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
         while ( lhs_iter < end() &&
                 pDS(*lhs_iter)->_termOffset < pDS(*rhs_iter)->_termOffset )
             lhs_iter++;
-        
+
         while ( rhs_iter < rhs->end() &&
                 pDS(*rhs_iter)->_termOffset < pDS(*lhs_iter)->_termOffset )
             rhs_iter++;

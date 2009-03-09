@@ -27,6 +27,7 @@
  *
  * end license */
 #include <vector>
+#include <iterator>
 #include "facetindex.h"
 #include "integerlist.h"
 
@@ -36,6 +37,17 @@ extern "C" {
 
 #ifndef __docset_h__
 #define __docset_h__
+
+class OnResult {
+    public:
+        virtual void operator () (guint32 docId) = 0;
+};
+
+template <class ForwardIterator, class T>
+void combinedCardinalitySearch2(
+        ForwardIterator from, ForwardIterator till,
+        ForwardIterator lower, ForwardIterator upper,
+        OnResult& onresult);
 
 class DocSet : public std::vector<doc_t> {
     public:

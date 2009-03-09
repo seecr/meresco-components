@@ -88,41 +88,57 @@ fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->intersect(pDS(rhs));
 }
 
-int DocSet::combinedCardinalitySearch(DocSet* larger) {
-    if ( size() == 0 )
-       return 0;
-    std::vector<guint32>::iterator from = begin();
-    std::vector<guint32>::iterator till = end();
-    std::vector<guint32>::iterator lower = larger->begin();
-    std::vector<guint32>::iterator upper = larger->end();
-    int c = 0;
+template <class ForwardIterator, class T>
+void combinedCardinalitySearch2(
+        ForwardIterator from, ForwardIterator till,
+        ForwardIterator lower, ForwardIterator upper,
+        OnResult& onresult) {
+    if ( till - from == 0 )
+       return;
     while ( 1 ) {
         // Lowerbound pruning
         lower = lower_bound(lower, upper, *from);
         if ( lower >= upper )
-            return c;
+            return;
         from = lower_bound(from, till, *lower);
         if ( from >= till )
-            return c;
+            return;
         if ( *from == *lower ) {
-            c++;
+            onresult(*from);
             from++;
             lower++;
         }
         // Upperbound pruning optimization only, you could remove it without breaking functionality
         upper = upper_bound(lower, upper, *(till-1));
         if ( upper <= lower )
-            return c;
+            return;
         till = upper_bound(from, till, *(upper-1));
         if ( till <= from )
-            return c;
+            return;
         if ( *(till-1) == *(upper-1) ) {
-            c++;
+            onresult(*(till-1));
             till--;
             upper--;
         }
     }
 }
+
+class CardinalityCounter : public OnResult {
+    public:
+        guint32 c;
+        CardinalityCounter() : c(0) {};
+        void operator () (guint32 docId) {
+            c++;
+        }
+};
+
+int DocSet::combinedCardinalitySearch(DocSet* larger) {
+    CardinalityCounter counter;
+    combinedCardinalitySearch2<DocSet::iterator, guint32>
+        (begin(), end(), larger->begin(), larger->end(), counter);
+    return counter.c;
+}
+
 
 #define SWITCHPOINT 100 // for random docsset, this is the trippoint
 int DocSet::combinedCardinality(DocSet* rhs) {
