@@ -550,9 +550,15 @@ class DocSetListTest(LuceneTestCase):
 
     def testInnerUnion(self):
         docSetList = DocSetList()
+        self.assertEquals(DocSet([]), docSetList.innerUnion())
+
         docSetList.add(DocSet([0]), 'term0')
+        self.assertEquals(DocSet([0]), docSetList.innerUnion())
+
         docSetList.add(DocSet([2]), 'term1')
-        result = docSetList.innerUnion()
-        self.assertEquals(DocSet([0,2]), result)
+        self.assertEquals(DocSet([0, 2]), docSetList.innerUnion())
+
+        docSetList.add(DocSet([2]), 'term2')
+        self.assertEquals(DocSet([0, 2]), docSetList.innerUnion())
 
         

@@ -248,7 +248,7 @@ fwPtr DocSetList::innerUnion() {
         for ( DocSet::iterator d = ds->begin(); d < ds->end(); d++ ) {
             guint32 docId = *d;
             if ( docId >= result.size() ) {
-                result.resize(docId+1);
+                result.resize(docId + 1);
             }
             result[docId] = true;
         }
