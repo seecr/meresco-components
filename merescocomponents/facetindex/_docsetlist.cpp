@@ -242,8 +242,24 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
 }
 
 fwPtr DocSetList::innerUnion() {
-    fwPtr result = DocSet_create(0);
-    return result;
+    std::vector<bool> result ;
+    for ( DocSetList::iterator i = begin(); i < end(); i++ ) {
+        DocSet* ds = pDS(*i);
+        for ( DocSet::iterator d = ds->begin(); d < ds->end(); d++ ) {
+            guint32 docId = *d;
+            if ( docId >= result.size() ) {
+                result.resize(docId+1);
+            }
+            result[docId] = true;
+        }
+    }
+    fwPtr resultDocSet = DocSet_create(0);
+    for ( int i = 0; i < result.size(); i++ ) {
+        if ( result[i] ) {
+            pDS(resultDocSet)->push_back(i);
+        }
+    }
+    return resultDocSet;
 }
 
 class DummyDocSet : public DocSet {
