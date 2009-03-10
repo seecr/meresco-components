@@ -306,6 +306,21 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(7-3, len(hits))
         self.assertEquals(['3', '4', '5', '6'], hits)
 
+    def testFilter(self):
+        def addDoc(n):
+            doc = Document(str(n))
+            doc.addIndexedField('field', str(n))
+            self._luceneIndex.addDocument(doc)
+        for n in range(20):
+            addDoc(n)
+        self._luceneIndex.commit()
+        filter = [3, 4, 5, 9, 11, 12, 13]
+        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), filter=filter)
+        self.assertEquals([str(i) for i in filter], hits)
+        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), 2, 5, filter=filter)
+        self.assertEquals(5-2, len(hits))
+        self.assertEquals([str(i) for i in filter][2:5], hits)
+
     def testFailureRollsBack(self):
         self.addDocument('1', field1='ape')
         try:

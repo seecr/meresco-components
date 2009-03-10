@@ -92,18 +92,28 @@ class LuceneIndex(Observable):
     def docsetFromQuery(self, pyLuceneQuery):
         return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
 
-    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None):
+    def _filterHits(self, hits, start, stop, filter):
+        results = 0
+        for i in range(len(hits)):
+            if self._lucene2docId[hits.id(i)] in filter:
+                results += 1
+                if results > stop:
+                    return
+                if results > start :
+                    yield hits[i].get(IDFIELD)
+
+
+    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, filter=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
         if sortField:
             hits = self._searcher.search(pyLuceneQuery, sortField)
         else:
             hits = self._searcher.search(pyLuceneQuery)
-        #for i in range(len(hits)):
-            #luceneId = hits.id(i)
-            #docId = self._tracker.map([luceneId]).next()
-            #docIdfromDocument = hits[i].get('docId')
-            #assert  docId == int(docIdfromDocument), (docId, docIdfromDocument)
-        return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
+        if filter == None:
+            return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
+        result = list(self._filterHits(hits, start, stop, filter))
+        return len(result), result
+
 
     def _luceneIdForIdentifier(self, identifier):
         hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)))
