@@ -165,7 +165,7 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals([3], intersections._TEST_getDocsetForTerm('t0'))
         self.assertEquals([3, 4], intersections._TEST_getDocsetForTerm('t2'))
 
-    def XXXXXXXXXXXXXXXXXXXXXXXXXXXtestTermIntersect(self):
+    def testTermIntersect(self):
         docsetlist0 = DocSetList()
         docsetlist0.add(DocSet([0, 1, 2]), 't1')
         docsetlist0.add(DocSet([0, 1]), 't0')
@@ -177,9 +177,13 @@ class DocSetListTest(LuceneTestCase):
         docsetlist1.add(DocSet([8]), 'not_in_0')
 
         docsetlistResult = docsetlist0.termIntersect(docsetlist1)
+        print 'A'
         self.assertEquals([0, 1, 2], docsetlistResult._TEST_getDocsetForTerm('t1'))
+        print 'B'
         self.assertEquals([0, 1   ], docsetlistResult._TEST_getDocsetForTerm('t0'))
+        print 'C'
         self.assertEquals(2, len(docsetlistResult))
+        print 'D'
 
 
     def testReadTermsFrom_SEGMENT_reader(self):

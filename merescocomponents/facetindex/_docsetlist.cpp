@@ -28,6 +28,7 @@
  * end license */
 #include "pyjava.h"
 #include "docsetlist.h"
+#include "docset.h"
 #include "integerlist.h"
 
 extern "C" {
@@ -77,7 +78,11 @@ void DocSetList::sortOnTermId(void) {
 
 
 DocSetIterator DocSetList::begin_docId(void) {
-    return DocSetIterator();
+    return DocSetIterator(begin());
+}
+
+DocSetIterator DocSetList::end_docId(void) {
+    return DocSetIterator(end());
 }
 
 
@@ -121,6 +126,10 @@ fwPtr DocSetList::forTerm(char* term) {
 
 bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
     return lhs.cardinality > rhs.cardinality;
+}
+
+char* DocSetList::getTermForId(guint32 termId) {
+    return dictionary.getTerm(termId);
 }
 
 char* DocSetList::getTermForDocset(DocSet *docset) {
@@ -181,34 +190,55 @@ DocSetList* DocSetList::intersect(DocSet* docset) {
     return results;
 }
 
+class TermCollector : public OnResult {
+    private:
+        DocSetList* _parent;
+        DocSetList* _result;
+    public:
+        TermCollector(DocSetList* parent, DocSetList* result) : _parent( parent ), _result (result) {};
+        void operator () (guint32 termId) {
+            printf("Adding %d\n", termId);
+            char* term = _parent->getTermForId(termId);
+            printf("Adding %s\n", term);
+            // TODO create a more shallow copy by using termId only
+            _result->addDocSet(_parent->forTerm(term), term);
+        }
+};
+
 DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     // ensure sorted on termID
     sortOnTermId();
     rhs->sortOnTermId();
     DocSetList* result = new DocSetList();
 
-    DocSetList::iterator lhs_iter = begin();
-    DocSetList::iterator rhs_iter = rhs->begin();
+    DocSetIterator from = begin_docId();
+    DocSetIterator till = end_docId();
+    DocSetIterator rhs_from = rhs->begin_docId();
+    DocSetIterator rhs_till = rhs->end_docId();
 
-    while ( lhs_iter < end() && rhs_iter < rhs->end()) {
-        if ( pDS(*lhs_iter)->_termOffset == pDS(*rhs_iter)->_termOffset ) {
-            fwPtr d = DocSet_create(0);
-            pDS(d)->assign(pDS(*lhs_iter)->begin(), pDS(*lhs_iter)->end());
-            result->addDocSet(d, getTermForDocset(pDS(*lhs_iter)));
-            lhs_iter++;
-        }
-
-        while ( lhs_iter < end() &&
-                pDS(*lhs_iter)->_termOffset < pDS(*rhs_iter)->_termOffset )
-            lhs_iter++;
-
-        while ( rhs_iter < rhs->end() &&
-                pDS(*rhs_iter)->_termOffset < pDS(*lhs_iter)->_termOffset )
-            rhs_iter++;
-
-    }
+    TermCollector onresult(this, result);
+    intersect_generic<DocSetIterator>(from, till, rhs_from, rhs_till, onresult);
 
     return result;
+
+//     while ( lhs_iter < end() && rhs_iter < rhs->end()) {
+//         if ( pDS(*lhs_iter)->_termOffset == pDS(*rhs_iter)->_termOffset ) {
+//             fwPtr d = DocSet_create(0);
+//             pDS(d)->assign(pDS(*lhs_iter)->begin(), pDS(*lhs_iter)->end());
+//             result->addDocSet(d, getTermForDocset(pDS(*lhs_iter)));
+//             lhs_iter++;
+//         }
+//
+//         while ( lhs_iter < end() &&
+//                 pDS(*lhs_iter)->_termOffset < pDS(*rhs_iter)->_termOffset )
+//             lhs_iter++;
+//
+//         while ( rhs_iter < rhs->end() &&
+//                 pDS(*rhs_iter)->_termOffset < pDS(*lhs_iter)->_termOffset )
+//             rhs_iter++;
+//
+//     }
+
 }
 
 fwPtr DocSetList::innerUnion() {

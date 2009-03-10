@@ -88,41 +88,6 @@ fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->intersect(pDS(rhs));
 }
 
-template <class ForwardIterator, class T>
-void combinedCardinalitySearch2(
-        ForwardIterator from, ForwardIterator till,
-        ForwardIterator lower, ForwardIterator upper,
-        OnResult& onresult) {
-    if ( till - from == 0 )
-       return;
-    while ( 1 ) {
-        // Lowerbound pruning
-        lower = lower_bound(lower, upper, *from);
-        if ( lower >= upper )
-            return;
-        from = lower_bound(from, till, *lower);
-        if ( from >= till )
-            return;
-        if ( *from == *lower ) {
-            onresult(*from);
-            from++;
-            lower++;
-        }
-        // Upperbound pruning optimization only, you could remove it without breaking functionality
-        upper = upper_bound(lower, upper, *(till-1));
-        if ( upper <= lower )
-            return;
-        till = upper_bound(from, till, *(upper-1));
-        if ( till <= from )
-            return;
-        if ( *(till-1) == *(upper-1) ) {
-            onresult(*(till-1));
-            till--;
-            upper--;
-        }
-    }
-}
-
 class CardinalityCounter : public OnResult {
     public:
         guint32 c;
@@ -134,7 +99,7 @@ class CardinalityCounter : public OnResult {
 
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
     CardinalityCounter counter;
-    combinedCardinalitySearch2<DocSet::iterator, guint32>
+    intersect_generic<DocSet::iterator>
         (begin(), end(), larger->begin(), larger->end(), counter);
     return counter.c;
 }
@@ -160,15 +125,22 @@ int DocSet::combinedCardinality(DocSet* rhs) {
     return c;
 }
 
+class IntersectingDocSet : public OnResult {
+    private:
+        DocSet* _docset;
+    public:
+        IntersectingDocSet(DocSet* docset) {
+            _docset = docset;
+        }
+    void operator () (guint32 docId) {
+        _docset->push_back(docId);
+    }
+};
+
 fwPtr DocSet::intersect(DocSet* rhs) {
     fwPtr result = DocSet_create();
-    pDS(result)->resize(this->size() > rhs->size() ? size() : rhs->size());
-    push_back(0xFFFFFFFF);
-    rhs->push_back(0xFFFFFFFF);
-    int size = intersectZipper(&this->front(), &rhs->front(), &pDS(result)->front());
-    pop_back();
-    rhs->pop_back();
-    pDS(result)->resize(size);
+    IntersectingDocSet onresult(pDS(result));
+    intersect_generic<DocSet::iterator>(begin(), end(), rhs->begin(), rhs->end(), onresult);
     return result;
 }
 

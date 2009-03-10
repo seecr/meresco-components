@@ -30,6 +30,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iterator>
 #include "facetindex.h"
 #include "docset.h"
 #include "integerlist.h"
@@ -46,10 +47,9 @@ typedef struct {
 
 typedef std::vector<cardinality_t> CardinalityList;
 typedef std::vector<fwPtr> TermList;
+typedef std::iterator<std::random_access_iterator_tag, guint32> Guint32Iterator;
 
-class DocSetIterator : protected DocSet::iterator {
-
-};
+class DocSetIterator;
 
 class DocSetList : public std::vector<fwPtr> {
     private:
@@ -66,13 +66,39 @@ class DocSetList : public std::vector<fwPtr> {
         fwPtr                forTerm(char* term);
         void                 removeDoc(guint32 doc);
         char*                getTermForDocset(DocSet *docset);
+        char*                getTermForId(guint32 termId);
         bool                 cmpTerm(fwPtr lhs, fwPtr rhs);
         void                 sortOnTerm(void);
         void                 sortOnTermId(void);
         void                 docId2terms_add(guint32 docid, fwPtr docset);
         void                 nodecount(void);
         DocSetIterator       begin_docId(void);
+        DocSetIterator       end_docId(void);
 };
+
+
+class DocSetIterator : public  Guint32Iterator {
+    private:
+        DocSetList::iterator _iter;
+    public:
+        DocSetIterator() {};
+        DocSetIterator(DocSetList::iterator iter) : _iter(iter) {};
+        DocSetIterator(const DocSetIterator& cp) : _iter(cp._iter) {};
+
+        void operator++() { _iter++; };
+        guint32 operator-(DocSetIterator& rhs) { return _iter - rhs._iter; };
+        DocSetIterator operator-(const guint32& rhs) {return DocSetIterator(_iter - rhs); };
+        bool operator>=(DocSetIterator& rhs) { return _iter >= rhs._iter; };
+        bool operator<=(DocSetIterator& rhs) { return _iter <= rhs._iter; };
+        void operator++(int n) { _iter.operator++(n); };
+        void operator--(int n) { _iter.operator--(n); };
+        void operator+=(int n) { _iter.operator+=(n); };
+
+        guint32 operator*() { return pDS(*_iter)->_termOffset; };
+};
+
+
+
 
 /**************** C-interface for DocSetList ****************************/
 extern "C" {

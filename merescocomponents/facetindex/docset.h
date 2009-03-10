@@ -43,12 +43,6 @@ class OnResult {
         virtual void operator () (guint32 docId) = 0;
 };
 
-template <class ForwardIterator, class T>
-void combinedCardinalitySearch2(
-        ForwardIterator from, ForwardIterator till,
-        ForwardIterator lower, ForwardIterator upper,
-        OnResult& onresult);
-
 class DocSet : public std::vector<doc_t> {
     public:
         guint32 _termOffset;
@@ -88,6 +82,39 @@ extern "C" {
     void    DocSet_delete                    (fwPtr docset);
 }
 
+template <class ForwardIterator>
+void intersect_generic(
+        ForwardIterator lhs_from, ForwardIterator lhs_till,
+        ForwardIterator rhs_from, ForwardIterator rhs_till,
+        OnResult& onresult) {
+    if ( lhs_till - lhs_from == 0 )
+       return;
+    while ( 1 ) {
+        // Lowerbound pruning
+        rhs_from = lower_bound(rhs_from, rhs_till, *lhs_from);
+        if ( rhs_from >= rhs_till )
+            return;
+        lhs_from = lower_bound(lhs_from, lhs_till, *rhs_from);
+        if ( lhs_from >= lhs_till )
+            return;
+        if ( *lhs_from == *rhs_from ) {
+            onresult(*lhs_from);
+            lhs_from++;
+            rhs_from++;
+        }
+        // Upperbound pruning optimization only, you could remove it without breaking functionality
+        rhs_till = upper_bound(rhs_from, rhs_till, *(lhs_till-1));
+        if ( rhs_till <= rhs_from )
+            return;
+        lhs_till = upper_bound(lhs_from, lhs_till, *(rhs_till-1));
+        if ( lhs_till <= lhs_from )
+            return;
+        if ( *(lhs_till-1) == *(rhs_till-1) ) {
+            onresult(*(lhs_till-1));
+            lhs_till--;
+            rhs_till--;
+        }
+    }
+}
 
 #endif
-
