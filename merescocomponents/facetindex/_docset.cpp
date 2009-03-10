@@ -63,6 +63,11 @@ fwPtr DocSet_forTesting(int size) {
 fwPtr DocSet_fromTermDocs(PyJObject* termDocs, int freq,  IntegerList* mapping) {
     return DocSet::fromTermDocs(termDocs->jobject, freq,  mapping);
 }
+
+int DocSet_contains(fwPtr docSet, guint32 docId) {
+    return pDS(docSet)->contains(docId);
+}
+
 void DocSet_add(fwPtr docset, guint32 doc) {
     pDS(docset)->push_back(doc);
 }
@@ -96,6 +101,12 @@ class CardinalityCounter : public OnResult {
             c++;
         }
 };
+
+// ### C++ below ###
+
+int DocSet::contains(guint32 docId) {
+    return binary_search(begin(), end(), docId);
+}
 
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
     CardinalityCounter counter;

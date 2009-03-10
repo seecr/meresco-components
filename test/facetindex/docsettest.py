@@ -155,3 +155,11 @@ class DocSetTest(LuceneTestCase):
         assertSearchCardinality([], [])
         assertSearchCardinality([1,4], [2,4])       #tricky one, failed after deployment
         assertSearchCardinality([1,4,5], [1,4,6])   #idem
+    
+    def testContainsDocId(self):
+        d = DocSet([0, 4])
+        self.assertTrue(0 in d)
+        self.assertFalse(1 in d)
+        self.assertFalse(3 in d)
+        self.assertTrue(4 in d)
+        self.assertFalse(5 in d)

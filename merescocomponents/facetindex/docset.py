@@ -44,6 +44,10 @@ DocSet_create = libFacetIndex.DocSet_create
 DocSet_create.argtypes = [c_int]
 DocSet_create.restype = DOCSET
 
+DocSet_contains = libFacetIndex.DocSet_contains
+DocSet_contains.argtypes = [DOCSET, c_uint32]
+DocSet_contains.restype = c_int
+
 DocSet_add = libFacetIndex.DocSet_add
 DocSet_add.argtypes = [DOCSET, c_uint32]
 DocSet_add.restype = None
@@ -124,6 +128,9 @@ class DocSet(object):
     def __iter__(self):
         for i in xrange(len(self)):
             yield DocSet_get(self, i)
+
+    def __contains__(self, value):
+        return DocSet_contains(self, value)
 
     def __eq__(self, rhs):
         return list(iter(self)) == list(iter(rhs))

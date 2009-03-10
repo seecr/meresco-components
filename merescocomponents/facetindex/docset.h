@@ -49,6 +49,7 @@ class DocSet : public std::vector<doc_t> {
         DocSet(size_t n): std::vector<doc_t>(n, 0) {}
     public:
         DocSet(): _termOffset(0xFFFFFFFF) {};
+        int     contains                 (guint32 docId);
         int     combinedCardinality      (DocSet* rhs);
         int     combinedCardinalitySearch(DocSet* longer);
         fwPtr   intersect                (DocSet* rhs);
@@ -70,6 +71,7 @@ inline DocSet* pDS(fwPtr ds) {
 extern "C" {
     fwPtr   DocSet_create                    (int size);
     fwPtr   DocSet_forTesting                (int size);
+    int     DocSet_contains                  (fwPtr docSet, guint32 docId);
     void    DocSet_add                       (fwPtr docset, guint32 doc);
     void    DocSet_remove                    (fwPtr docset, guint32 doc);
     guint32 DocSet_get                       (fwPtr docset, int i);
