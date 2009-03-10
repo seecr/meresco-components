@@ -88,6 +88,10 @@ DocSetList_termIntersect = libFacetIndex.DocSetList_termIntersect
 DocSetList_termIntersect.argtypes = [DOCSETLIST, DOCSETLIST]
 DocSetList_termIntersect.restype = DOCSETLIST
 
+DocSetList_innerUnion = libFacetIndex.DocSetList_innerUnion
+DocSetList_innerUnion.argtypes = [DOCSETLIST]
+DocSetList_innerUnion.restype = DOCSET
+
 DocSetList_getTermForDocset = libFacetIndex.DocSetList_getTermForDocset
 DocSetList_getTermForDocset.argtypes = [DOCSETLIST, DOCSET]
 DocSetList_getTermForDocset.restype = c_char_p
@@ -194,6 +198,9 @@ class DocSetList(object):
         cobj = DocSetList_termIntersect(self, docsetList)
         return DocSetList(cobj, own=True)
 
+    def innerUnion(self):
+        return DocSet(cobj=DocSetList_innerUnion(self), own=True)
+    
     def _TEST_getRawCardinalities(self, docset):
         class cardinality_t_RAW(Structure):
             _fields_ = [('term',        POINTER(None)),

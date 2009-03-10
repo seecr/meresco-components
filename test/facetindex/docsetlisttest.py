@@ -547,3 +547,12 @@ class DocSetListTest(LuceneTestCase):
         docSetList.sortOnTermId()
         for i in range(3):
             self.assertEquals(DocSet([i]), docSetList[i])
+
+    def testInnerUnion(self):
+        docSetList = DocSetList()
+        docSetList.add(DocSet([0]), 'term0')
+        docSetList.add(DocSet([2]), 'term1')
+        result = docSetList.innerUnion()
+        self.assertEquals(DocSet([0,2]), result)
+
+        

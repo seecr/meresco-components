@@ -211,6 +211,11 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     return result;
 }
 
+fwPtr DocSetList::innerUnion() {
+    fwPtr result = DocSet_create(0);
+    return result;
+}
+
 class DummyDocSet : public DocSet {
     public:
         DummyDocSet(size_t size) : DocSet(size) { }
@@ -337,6 +342,10 @@ DocSetList* DocSetList_intersect(DocSetList* list, fwPtr ds) {
 
 DocSetList* DocSetList_termIntersect(DocSetList* self, DocSetList* rhs) {
     return self->termIntersect(rhs);
+}
+
+fwPtr DocSetList_innerUnion(DocSetList* self) {
+    return self->innerUnion();
 }
 
 CardinalityList* DocSetList_jaccards(DocSetList* list, fwPtr ds, int minimum, int maximum, int totaldocs, int algorithm) {
