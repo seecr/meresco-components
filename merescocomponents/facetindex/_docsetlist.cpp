@@ -220,25 +220,6 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     intersect_generic<DocSetIterator>(from, till, rhs_from, rhs_till, onresult);
 
     return result;
-
-//     while ( lhs_iter < end() && rhs_iter < rhs->end()) {
-//         if ( pDS(*lhs_iter)->_termOffset == pDS(*rhs_iter)->_termOffset ) {
-//             fwPtr d = DocSet_create(0);
-//             pDS(d)->assign(pDS(*lhs_iter)->begin(), pDS(*lhs_iter)->end());
-//             result->addDocSet(d, getTermForDocset(pDS(*lhs_iter)));
-//             lhs_iter++;
-//         }
-//
-//         while ( lhs_iter < end() &&
-//                 pDS(*lhs_iter)->_termOffset < pDS(*rhs_iter)->_termOffset )
-//             lhs_iter++;
-//
-//         while ( rhs_iter < rhs->end() &&
-//                 pDS(*rhs_iter)->_termOffset < pDS(*lhs_iter)->_termOffset )
-//             rhs_iter++;
-//
-//     }
-
 }
 
 fwPtr DocSetList::innerUnion() {
@@ -254,7 +235,7 @@ fwPtr DocSetList::innerUnion() {
         }
     }
     fwPtr resultDocSet = DocSet_create(0);
-    for ( int i = 0; i < result.size(); i++ ) {
+    for ( unsigned int i = 0; i < result.size(); i++ ) {
         if ( result[i] ) {
             pDS(resultDocSet)->push_back(i);
         }

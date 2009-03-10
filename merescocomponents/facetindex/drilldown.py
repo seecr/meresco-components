@@ -125,3 +125,6 @@ class Drilldown(object):
 
     def queueLength(self):
         return len(self._commandQueue)
+
+    def intersect(self, fieldname, docset):
+        return self._docsetlists[fieldname].intersect(docset)

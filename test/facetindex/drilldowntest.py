@@ -305,3 +305,15 @@ class DrilldownTest(CQ2TestCase):
         drilldownDocIds = [x[0] for x in list(drilldown3._docsetlists['field_0'])]
 
         self.assertEquals([0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88], drilldownDocIds)
+
+    def testIntersect(self):
+        drilldown = Drilldown(['field_0', 'field_1'])
+        drilldown.addDocument(0, {'field_0': ['this is term_0'], 'field_1': ['inquery']})
+        drilldown.addDocument(1, {'field_0': ['this is term_1'], 'field_1': ['inquery']})
+        drilldown.addDocument(2, {'field_0': ['this is term_1'], 'field_1': ['inquery']})
+        drilldown.addDocument(3, {'field_0': ['this is term_2'], 'field_1': ['cannotbefound']})
+        drilldown.commit()
+        dsl0 = drilldown.intersect('field_0', DocSet([0,1,2,3]))
+        self.assertEquals([[0], [1,2], [3]], list(dsl0))
+        dsl1 = drilldown.intersect('field_1', DocSet([0,1,2,3]))
+        self.assertEquals([[0,2,1],[3]], list(dsl1))
