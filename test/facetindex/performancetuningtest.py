@@ -134,7 +134,6 @@ class PerformanceTuningTest(LuceneTestCase):
             t0 = time()
             disp.combinedCardinality(all)
             tdisp2 += time()-t0
-        print todd, tall, tdisp1, tdisp2
         self.assertTiming(0.020, todd,   0.200)
         self.assertTiming(0.020, tall,   0.100)
         self.assertTiming(0.002, tdisp1, 0.005) # zipper/upper_bound optimization 1

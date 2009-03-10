@@ -43,8 +43,10 @@ extern "C" {
 
 
 DocSetList::~DocSetList() {
-    for ( unsigned int i = 0; i < size(); i++) {
-       DocSet_delete(at(i));
+    if (! _shadow ) {
+        for ( unsigned int i = 0; i < size(); i++) {
+           DocSet_delete(at(i));
+        }
     }
 }
 
@@ -177,7 +179,7 @@ bool cmpCardinality(fwPtr lhs, fwPtr rhs) {
 }
 
 DocSetList* DocSetList::intersect(DocSet* docset) {
-    DocSetList* results = new DocSetList();
+    DocSetList* results = new DocSetList(false);
     results->reserve(size() + 1);
     for( unsigned int i=0; i < size() ; i++ ) {
         fwPtr intersection = pDS(at(i))->intersect(docset);
@@ -197,9 +199,7 @@ class TermCollector : public OnResult {
     public:
         TermCollector(DocSetList* parent, DocSetList* result) : _parent( parent ), _result (result) {};
         void operator () (guint32 termId) {
-            printf("Adding %d\n", termId);
             char* term = _parent->getTermForId(termId);
-            printf("Adding %s\n", term);
             // TODO create a more shallow copy by using termId only
             _result->addDocSet(_parent->forTerm(term), term);
         }
@@ -209,7 +209,7 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     // ensure sorted on termID
     sortOnTermId();
     rhs->sortOnTermId();
-    DocSetList* result = new DocSetList();
+    DocSetList* result = new DocSetList(true);
 
     DocSetIterator from = begin_docId();
     DocSetIterator till = end_docId();
@@ -333,7 +333,7 @@ void CardinalityList_free(CardinalityList* vector) {
 /////////////// C Interface to DocSetList ////////////////
 
 DocSetList* DocSetList_create() {
-    return new DocSetList();
+    return new DocSetList(false);
 }
 
 void DocSetList_add(DocSetList* list, fwPtr docset, char* term) {

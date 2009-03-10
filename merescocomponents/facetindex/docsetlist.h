@@ -53,9 +53,11 @@ class DocSetIterator;
 
 class DocSetList : public std::vector<fwPtr> {
     private:
+        guint32              _shadow;
         std::map<guint32, TermList> docId2TermList;
         TrieDict             dictionary;
     public:
+        DocSetList(int shadow): _shadow(shadow) {};
         ~DocSetList();
         void                 addDocSet(fwPtr docset, char *term);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
