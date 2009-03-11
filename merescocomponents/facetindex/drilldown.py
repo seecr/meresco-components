@@ -103,7 +103,7 @@ class Drilldown(object):
         self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000
 
-    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=[]):
+    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:
             drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)
                 for fieldname in self._actualDrilldownFieldnames]
