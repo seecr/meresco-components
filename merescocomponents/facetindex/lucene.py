@@ -31,6 +31,7 @@ from os.path import isdir, isfile, join
 from os import makedirs
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, Field, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
 from time import time
+from itertools import ifilter, islice
 
 from document import IDFIELD
 from merescocore.framework import Observable
@@ -92,28 +93,18 @@ class LuceneIndex(Observable):
     def docsetFromQuery(self, pyLuceneQuery):
         return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
 
-    def _filterHits(self, hits, start, stop, filter):
-        results = 0
-        for i in range(len(hits)):
-            if self._lucene2docId[hits.id(i)] in filter:
-                results += 1
-                if results > stop:
-                    return
-                if results > start :
-                    yield hits[i].get(IDFIELD)
-
-
-    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, filter=None):
+    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, docfilter=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
         if sortField:
             hits = self._searcher.search(pyLuceneQuery, sortField)
         else:
             hits = self._searcher.search(pyLuceneQuery)
-        if filter == None:
-            return len(hits), [hits[i].get(IDFIELD) for i in range(start,min(len(hits),stop))]
-        result = list(self._filterHits(hits, start, stop, filter))
-        return len(result), result
-
+        nrOfResults = len(hits)
+        if docfilter:
+            hits = (hit for hit in hits if self._lucene2docId[hit.getId()] in docfilter)
+            nrOfResults = len(docfilter)
+        results = islice(hits, start, stop)
+        return nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]
 
     def _luceneIdForIdentifier(self, identifier):
         hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)))

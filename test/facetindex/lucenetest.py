@@ -315,11 +315,13 @@ class LuceneTest(CQ2TestCase):
             addDoc(n)
         self._luceneIndex.commit()
         filter = [3, 4, 5, 9, 11, 12, 13]
-        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), filter=filter)
+        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), docfilter=filter)
         self.assertEquals([str(i) for i in filter], hits)
-        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), 2, 5, filter=filter)
+        self.assertEquals(7, total)
+        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), 2, 5, docfilter=filter)
         self.assertEquals(5-2, len(hits))
         self.assertEquals([str(i) for i in filter][2:5], hits)
+        self.assertEquals(7, total)
 
     def testFailureRollsBack(self):
         self.addDocument('1', field1='ape')
