@@ -100,7 +100,7 @@ class LuceneIndex(Observable):
         else:
             hits = self._searcher.search(pyLuceneQuery)
         nrOfResults = len(hits)
-        if docfilter:
+        if docfilter != None:
             hits = [hit for hit in hits if self._lucene2docId[hit.getId()] in docfilter]
             nrOfResults = len(hits)
         results = islice(hits, start, stop)

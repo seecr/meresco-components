@@ -317,6 +317,10 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
         filter = [3, 4, 5, 9, 11, 12, 13, 25]
 
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=[])
+        self.assertEquals([], hits)
+        self.assertEquals(0, total)
+
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=filter)
         self.assertEquals([str(i) for i in filter if i < 20], hits)
         self.assertEquals(7, total)
