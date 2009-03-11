@@ -307,20 +307,23 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(['3', '4', '5', '6'], hits)
 
     def testFilter(self):
-        def addDoc(n):
+        for n in range(30):
             doc = Document(str(n))
             doc.addIndexedField('field', str(n))
+            if n < 20:
+                doc.addIndexedField('findable', 'true')
             self._luceneIndex.addDocument(doc)
-        for n in range(20):
-            addDoc(n)
+        
         self._luceneIndex.commit()
-        filter = [3, 4, 5, 9, 11, 12, 13]
-        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), docfilter=filter)
-        self.assertEquals([str(i) for i in filter], hits)
+        filter = [3, 4, 5, 9, 11, 12, 13, 25]
+
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=filter)
+        self.assertEquals([str(i) for i in filter if i < 20], hits)
         self.assertEquals(7, total)
-        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), 2, 5, docfilter=filter)
+        
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), 2, 5, docfilter=filter)
         self.assertEquals(5-2, len(hits))
-        self.assertEquals([str(i) for i in filter][2:5], hits)
+        self.assertEquals([str(i) for i in filter if i < 20][2:5], hits)
         self.assertEquals(7, total)
 
     def testFailureRollsBack(self):
