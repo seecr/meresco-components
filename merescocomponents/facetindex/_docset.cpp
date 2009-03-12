@@ -90,7 +90,7 @@ int DocSet_combinedCardinalitySearch(fwPtr docset, fwPtr rhs) {
 }
 
 fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
-    return pDS(docset)->intersect(pDS(rhs));
+    return pDS(docset)->intersect(rhs);
 }
 
 class CardinalityCounter : public OnResult {
@@ -138,20 +138,24 @@ int DocSet::combinedCardinality(DocSet* rhs) {
 
 class IntersectingDocSet : public OnResult {
     private:
-        DocSet* _docset;
+        fwPtr _docset;
     public:
-        IntersectingDocSet(DocSet* docset) {
+        IntersectingDocSet(fwPtr docset) {
             _docset = docset;
         }
     void operator () (guint32 docId) {
-        _docset->push_back(docId);
+        pDS(_docset)->push_back(docId);
     }
 };
 
-fwPtr DocSet::intersect(DocSet* rhs) {
+fwPtr DocSet::intersect(fwPtr rhs) {
+    DocSet::iterator a = begin();
+    DocSet::iterator b = end();
+    DocSet::iterator c = pDS(rhs)->begin();
+    DocSet::iterator d = pDS(rhs)->end();
     fwPtr result = DocSet_create();
-    IntersectingDocSet onresult(pDS(result));
-    intersect_generic<DocSet::iterator>(begin(), end(), rhs->begin(), rhs->end(), onresult);
+    IntersectingDocSet onresult(result);
+    intersect_generic<DocSet::iterator>(a, b, c, d, onresult);
     return result;
 }
 

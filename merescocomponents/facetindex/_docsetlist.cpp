@@ -178,7 +178,7 @@ bool cmpCardinality(fwPtr lhs, fwPtr rhs) {
     return pDS(lhs)->size() > pDS(rhs)->size();
 }
 
-DocSetList* DocSetList::intersect(DocSet* docset) {
+DocSetList* DocSetList::intersect(fwPtr docset) {
     DocSetList* results = new DocSetList(false);
     results->reserve(size() + 1);
     for( unsigned int i=0; i < size() ; i++ ) {
@@ -363,8 +363,7 @@ CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr ds, gu
 }
 
 DocSetList* DocSetList_intersect(DocSetList* list, fwPtr ds) {
-    DocSet* docset = pDS(ds);
-    return list->intersect(docset);
+    return list->intersect(ds);
 }
 
 DocSetList* DocSetList_termIntersect(DocSetList* self, DocSetList* rhs) {
