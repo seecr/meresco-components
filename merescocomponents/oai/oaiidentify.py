@@ -65,10 +65,11 @@ The response may include multiple instances of the following optional elements:
     * description : an extensible mechanism for communities to describe their repositories. For example, the description container could be used to include collection-level metadata in the response to the Identify request. Implementation Guidelines are available to give directions with this respect. Each description container must be accompanied by the URL of an XML schema describing the structure of the description container.
 
     """
-    def __init__(self, repositoryName = "The Repository Name", adminEmail = 'not available'):
+    def __init__(self, repositoryName = "The Repository Name", adminEmail = 'not available', repositoryIdentifier="www.example.org"):
         OaiVerb.__init__(self, ['Identify'], {})
         self._repositoryName = repositoryName
         self._adminEmail = adminEmail
+        self._repositoryIdentifier = repositoryIdentifier
 
     def identify(self, webRequest):
         self.startProcessing(webRequest)
@@ -78,7 +79,8 @@ The response may include multiple instances of the following optional elements:
             'repositoryName': escapeXml(self._repositoryName),
             'baseURL': escapeXml(self.getRequestUrl(webRequest)),
             'adminEmails': ''.join([ADMIN_EMAIL % escapeXml(email) for email in [self._adminEmail]]),
-            'deletedRecord': 'persistent'
+            'deletedRecord': 'persistent',
+            'repositoryIdentifier': escapeXml(self._repositoryIdentifier)
         }
         values.update(hardcoded_values)
         webRequest.write(IDENTIFY % values)
@@ -102,4 +104,15 @@ IDENTIFY = """<repositoryName>%(repositoryName)s</repositoryName>
 <earliestDatestamp>%(earliestDatestamp)s</earliestDatestamp>
 <deletedRecord>%(deletedRecord)s</deletedRecord>
 <granularity>%(granularity)s</granularity>
+<description>
+  <oai-identifier xmlns="http://www.openarchives.org/OAI/2.0/oai-identifier" 
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+      xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai-identifier
+      http://www.openarchives.org/OAI/2.0/oai-identifier.xsd">
+    <scheme>oai</scheme>
+    <repositoryIdentifier>%(repositoryIdentifier)s</repositoryIdentifier>
+    <delimiter>:</delimiter>
+    <sampleIdentifier>oai:%(repositoryIdentifier)s:5324</sampleIdentifier>
+  </oai-identifier>
+</description>
 """

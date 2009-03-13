@@ -71,9 +71,11 @@ class OaiTestCase(CQ2TestCase):
         tree = parse(StringIO(aXmlString))
         schema.validate(tree)
         if schema.error_log:
+            for nr, line in enumerate(aXmlString.split('\n')):
+                print nr+1, line
             self.fail(schema.error_log.last_error)
 
-schemaLocation = join(abspath(dirname(xml_genericpath)), 'schemas')
+schemaLocation = join(abspath(dirname(__file__)), 'schemas')
 
 rootSchema = '<?xml version="1.0" encoding="utf-8"?><schema targetNamespace="http://www.meresco.org/XML" \
             xmlns="http://www.w3.org/2001/XMLSchema" \
