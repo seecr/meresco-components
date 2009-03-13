@@ -116,9 +116,9 @@ int DocSet::combinedCardinalitySearch(DocSet* larger) {
 }
 
 
-#define SWITCHPOINT 100 // for random docsset, this is the trippoint
 int DocSet::combinedCardinality(DocSet* rhs) {
-    unsigned int lhsSize = size();
+    return combinedCardinalitySearch(rhs);
+/*    unsigned int lhsSize = size();
     unsigned int rhsSize = rhs->size();
     if ( rhsSize < lhsSize ) { // redirect to shortest list works faster for both zipper and search
         return rhs->combinedCardinality(this);
@@ -133,7 +133,7 @@ int DocSet::combinedCardinality(DocSet* rhs) {
     int c = combinedCardinalityZipper(&(*myLower), &(*rhsLower));
     pop_back();
     rhs->pop_back();
-    return c;
+    return c;*/
 }
 
 class IntersectingDocSet : public OnResult {

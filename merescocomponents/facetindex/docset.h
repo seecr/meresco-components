@@ -84,6 +84,8 @@ extern "C" {
     void    DocSet_delete                    (fwPtr docset);
 }
 
+#define SWITCHPOINT 10 // for random docsset, this is the trippoint
+
 template <class ForwardIterator>
 void intersect_generic(
         ForwardIterator lhs_from, ForwardIterator lhs_till,
@@ -104,7 +106,7 @@ void intersect_generic(
             lhs_from++;
             rhs_from++;
         }
-        // Upperbound pruning optimization only, you could remove it without breaking functionality
+        // Upperbound pruning optimization
         rhs_till = upper_bound(rhs_from, rhs_till, *(lhs_till-1));
         if ( rhs_till <= rhs_from )
             return;
@@ -115,6 +117,26 @@ void intersect_generic(
             onresult(*(lhs_till-1));
             lhs_till--;
             rhs_till--;
+        }
+        // Switch to Zipper, optimization
+        size_t lhs_size = lhs_till - lhs_from;
+        size_t rhs_size = rhs_till - rhs_from;
+        if ( (lhs_size < rhs_size * SWITCHPOINT) && (rhs_size < lhs_size * SWITCHPOINT) ) {
+            ForwardIterator lhs = lhs_from; // Reassign slow iterator to faster one (pointer)
+            ForwardIterator rhs = rhs_from;
+            guint32 old_lhs = *lhs_till; // save old values before poking, jekkerdedekkie!
+            guint32 old_rhs = *rhs_till;
+            *lhs_till = 0xFFFFFFFF; // jekkerdedekkie!
+            *rhs_till = 0xFFFFFFFF;
+            while ( *lhs < 0xFFFFFFFF && *rhs < 0xFFFFFFFF ) {
+                if ( *lhs == *rhs ) onresult(*lhs);
+                while ( *++rhs < *lhs );
+                if ( *lhs == *rhs ) onresult(*rhs);
+                while ( *++lhs < *rhs );
+            }
+            *lhs_till = old_lhs; // restore old values, jekkerdedekkie!
+            *rhs_till = old_rhs;
+            return;
         }
     }
 }

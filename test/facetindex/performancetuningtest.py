@@ -50,6 +50,28 @@ class PerformanceTuningTest(LuceneTestCase):
     def assertTiming(self, t0, t, t1):
         self.assertTrue(t0*T < t < t1*T, t/T)
 
+    def testBeginWithSearchAndSwitchToZipperWhenDensityBecomesHigh(self):
+        docset1 = DocSet(range(    0,20000))
+        docset2 = DocSet(range(10000,30000)) # overlap of 10.000 consecutive numbers: zipper
+        t1 = 0.0
+        for i in range(1000):
+            t0 = time()
+            docset1.combinedCardinality(docset2)
+            t1 += time() - t0
+        print t1
+        self.assertTiming(0.05, t1, 0.20)
+
+    def testBeginWithSearchAndStayWithItWhenDensityStaysLow(self):
+        docset1 = DocSet(sorted(sample(xrange(0      ,2000000), 20000))) # density 1:10
+        docset2 = DocSet(sorted(sample(xrange(1000000,1200000), 20000))) # overlap of 10.000
+        t1 = 0.0
+        for i in range(1000):
+            t0 = time()
+            docset1.combinedCardinality(docset2)
+            t1 += time() - t0
+        print t1
+        self.assertTiming(0.05, t1, 0.20)
+
     def testWithLotsOfData(self):
         words = 'words'
         totalLength = 0
@@ -135,7 +157,7 @@ class PerformanceTuningTest(LuceneTestCase):
             disp.combinedCardinality(all)
             tdisp2 += time()-t0
         self.assertTiming(0.020, todd,   0.200)
-        self.assertTiming(0.020, tall,   0.100)
+        self.assertTiming(0.020, tall,   0.200)
         self.assertTiming(0.002, tdisp1, 0.005) # zipper/upper_bound optimization 1
         self.assertTiming(0.002, tdisp2, 0.005) # zipper/upper_bound optimization 2
 

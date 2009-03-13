@@ -102,7 +102,7 @@ class LuceneIndex(Observable):
         nrOfResults = len(hits)
         if docfilter != None:
             hits = [hit for hit in hits if self._lucene2docId[hit.getId()] in docfilter]
-            nrOfResults = len(hits)
+            nrOfResults = len(docfilter)
         results = islice(hits, start, stop)
         return nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]
 

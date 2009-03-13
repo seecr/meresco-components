@@ -87,7 +87,7 @@ class DocSetIterator : public  Guint32Iterator {
         DocSetIterator(DocSetList::iterator iter) : _iter(iter) {};
         DocSetIterator(const DocSetIterator& cp) : _iter(cp._iter) {};
 
-        void operator++() { _iter++; };
+        DocSetIterator& operator++() { _iter++; return *this; };
         guint32 operator-(DocSetIterator& rhs) { return _iter - rhs._iter; };
         DocSetIterator operator-(const guint32& rhs) {return DocSetIterator(_iter - rhs); };
         bool operator>=(DocSetIterator& rhs) { return _iter >= rhs._iter; };
@@ -96,7 +96,7 @@ class DocSetIterator : public  Guint32Iterator {
         void operator--(int n) { _iter.operator--(n); };
         void operator+=(int n) { _iter.operator+=(n); };
 
-        guint32 operator*() { return pDS(*_iter)->_termOffset; };
+        guint32& operator*() { return pDS(*_iter)->_termOffset; };
 };
 
 
