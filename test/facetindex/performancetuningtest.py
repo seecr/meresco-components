@@ -36,41 +36,39 @@ from merescocomponents.facetindex import DocSetList, DocSet, Trie
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
 
-#pystone loop for ~ 1s:
-# - 1GHz laptop: 30.000
-# - Discover: 70.000
-# - Juicer: 60.000
-# We try to have a T of ~ 1s, as to keep the numbers in the tests meaningful (~seconds)
-from test.pystone import pystones
-T, p = pystones(loops=50000)
-print 'T=%.1fs' % T
-
 class PerformanceTuningTest(LuceneTestCase):
 
-    def assertTiming(self, t0, t, t1):
-        self.assertTrue(t0*T < t < t1*T, t/T)
+    def testRawZipperSpeed(self):
+        ds0 = DocSet.forTesting(10000000) # both continous ranges triggers Zipper
+        ds1 = DocSet.forTesting(10000000)
+        t0 = time()
+        ds0.combinedCardinality(ds1)
+        self.assertTiming(0.02, time() - t0, 0.05)
 
-    def testBeginWithSearchAndSwitchToZipperWhenDensityBecomesHigh(self):
-        docset1 = DocSet(range(    0,20000))
-        docset2 = DocSet(range(10000,30000)) # overlap of 10.000 consecutive numbers: zipper
+    def testStayWithSearch(self):
+        ds0 = DocSet.forTesting(10000000)  # one continous (large)
+        ds1 = DocSet(xrange(0,  10000000,1000)) # much smaller: triggers Search
         t1 = 0.0
-        for i in range(1000):
+        for i in range(100):
             t0 = time()
-            docset1.combinedCardinality(docset2)
+            ds0.combinedCardinality(ds1)
             t1 += time() - t0
-        print t1
-        self.assertTiming(0.05, t1, 0.20)
+        self.assertTiming(0.5, t1, 0.9)
 
-    def testBeginWithSearchAndStayWithItWhenDensityStaysLow(self):
-        docset1 = DocSet(sorted(sample(xrange(0      ,2000000), 20000))) # density 1:10
-        docset2 = DocSet(sorted(sample(xrange(1000000,1200000), 20000))) # overlap of 10.000
-        t1 = 0.0
-        for i in range(1000):
+    def testSwitchFromSearhcToZipperPoint(self):
+        t = {}
+        ds0 = DocSet.forTesting(10000000)  # one continous (large)
+        for interval in [1, 10, 100, 1000, 10000]:
+            ds1 = DocSet(xrange(0,10000000, interval)) # much smaller: triggers Search
             t0 = time()
-            docset1.combinedCardinality(docset2)
-            t1 += time() - t0
-        print t1
-        self.assertTiming(0.05, t1, 0.20)
+            ds0.combinedCardinality(ds1)
+            t[interval] = time() - t0
+        # These values are measured by varying SWITCHPOINT: 200 seems optimal
+        self.assertTiming(0.0100, t[1]    , 0.0500)
+        self.assertTiming(0.0040, t[10]   , 0.0200)
+        self.assertTiming(0.0100, t[100]  , 0.0500)
+        self.assertTiming(0.0060, t[1000] , 0.0300)
+        self.assertTiming(0.0004, t[10000], 0.0020)
 
     def testWithLotsOfData(self):
         words = 'words'
@@ -113,20 +111,6 @@ class PerformanceTuningTest(LuceneTestCase):
         print 'Time for', i, 'getValue:', t_getvalue, '(', 10**6*t_getvalue/i, 'us)'
         trie.nodecount()
 
-    def testRelativeSpeed(self):
-        docset1 = DocSet.forTesting(100000)
-        docset2 = DocSet.forTesting(100000)
-        t1, t2 = 0.0, 0.0
-        for i in range(100):
-            t0 = time()
-            docset1.combinedCardinality(docset2)
-            t1 += time() - t0
-            t0 = time()
-            docset2.combinedCardinality(docset1)
-            t2 += time() - t0
-        self.assertTiming(0.04, t1, 0.20)
-        self.assertTiming(0.04, t2, 0.20)
-
     def testReadLuceneDocsSpeed(self):
         self.createSimpleIndexWithEmptyDocuments(1000)
         t = 0.0
@@ -160,56 +144,6 @@ class PerformanceTuningTest(LuceneTestCase):
         self.assertTiming(0.020, tall,   0.200)
         self.assertTiming(0.002, tdisp1, 0.005) # zipper/upper_bound optimization 1
         self.assertTiming(0.002, tdisp2, 0.005) # zipper/upper_bound optimization 2
-
-    def testIncrementalSearch(self):
-        all1 = DocSet.forTesting(1000000)
-        all2 = DocSet(range(500000-10,500000+10))
-        small = DocSet(range(500000-10,500000+10))
-        t1, t2 = 0, 0
-        for i in range(1000):
-            t0 = time()
-            small.combinedCardinality(all1)
-            t1 += time() - t0
-            t0 = time()
-            small.combinedCardinality(all2)
-            t2 += time() - t0
-        self.assertTrue( 0.4 < abs(t1/t2) < 2.0, t1/t2 )
-
-    def testSwitchPoint(self):
-        # This test is used to tune the selection of intersection algoritms in _docset.cpp
-        # For |N| ~ |M|, zipper is the fastest.
-        # For |N| >> |M|, incremental search is the fastest
-        # SWITCHPOINT = |N| / |M|
-        # Run this test for various values of SWITCHPOINT, adjusting SWITCHPOINT here *and*
-        # in _docset.cpp.  Look for a minimum.
-        nrOfDocs = 20000
-        SWITCHPOINT = 100 # 2008/09/18, seems good, EJG
-        M = DocSetList()
-        for i in xrange(100):
-            M.add(DocSet.forTesting(nrOfDocs), 'someTerm')
-        N1 = DocSet.forTesting(nrOfDocs/SWITCHPOINT)
-        N2 = DocSet(xrange(nrOfDocs-nrOfDocs/SWITCHPOINT, nrOfDocs))
-        N3 = DocSet(sorted(sample(xrange(nrOfDocs), nrOfDocs/SWITCHPOINT)))
-        tn1, tn2, tn3 = 0.0, 0.0, 0.0
-        for i in range(10):
-            for i in xrange(100):
-                t0 = time()
-                M.termCardinalities(N1).next()
-                tn1 += time()-t0
-            for i in xrange(100):
-                t0 = time()
-                M.termCardinalities(N2).next()
-                tn2 += time()-t0
-            for i in xrange(100):
-                t0 = time()
-                M.termCardinalities(N3).next() # random, more realistic?
-                tn3 += time()-t0
-        tn1avg = tn1/10
-        tn2avg = tn2/10
-        tn3avg = tn3/10
-        #print '%d: %.2f, %.2f, %.2f' % (SWITCHPOINT, tn1avg, tn2avg, tn3avg)
-        self.assertTiming(0.01, tn1avg, 0.20)
-        self.assertTiming(0.01, tn2avg, 0.20)
 
     def XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXtestMemoryLeaks(self):
         from gc import collect
