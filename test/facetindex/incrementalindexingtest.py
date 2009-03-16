@@ -28,7 +28,7 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase
-from merescocomponents.facetindex import LuceneIndex, Drilldown, Document
+from merescocomponents.facetindex import LuceneIndex, Drilldown, Document, DocSet
 from PyLucene import MatchAllDocsQuery
 
 class IncrementalIndexingTest(CQ2TestCase):
@@ -140,18 +140,21 @@ class IncrementalIndexingTest(CQ2TestCase):
         for i in range(200):
             self.addAndCommit(str(randint(1,10)))
 
-    def testDoNotDelegatePrivateDelete(self):
-        self.addDocument('1', field0='term0') # internally: add
-        self.index.commit()
-        self.addDocument('1', field0='term0') # internally: delete, add
-        self.index.commit()
-        # now drilldown only contains his own delete/add sequence twice
-        self.assertEquals(['_delete', '_add', '_delete', '_add'],
-            [command.methodName() for command in self.drilldown._commandQueue])
-
     def testDeleteOfDocumentInQueueFindsTheRightDocument(self):
         self.addDocument('1', field0='term0') # docId 0
         self.addDocument('2', field0='term0') # dodId 1
         self.index.delete('2')                # looks for doc '2' in queue => delete 1
         self.index.commit()
         self.assertEquals('_delete(docId=1)', str(self.drilldown._commandQueue[-1]))
+
+    def testAddDocumentTwiceButWithDifferentData(self):
+        self.addDocument('1', field0='term0') # docId 0
+        self.index.commit()
+        self.drilldown.commit()
+        self.addDocument('1', field0='othervalue') # dodId 1 (Should delete docId 0)
+        self.index.commit()
+        self.drilldown.commit()
+        fieldname, results = self.drilldown.drilldown(DocSet([0L, 1L]), [('field0', 0, False)]).next()
+        self.assertEquals('field0', fieldname)
+        self.assertEquals([('othervalue', 1)], list(results))
+        

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -180,7 +179,7 @@ class DocSetList(object):
     def termCardinalities(self, docset, maxResults=maxint, sorted=False):
         if sorted:
             self.sortOnCardinality()
-        elif self._sorted == None:
+        elif self._sorted == None or self._sorted == SORTEDONTERM:
             self.sortOnTerm()
         p = DocSetList_combinedCardinalities(self, docset, maxResults, sorted)
         try:

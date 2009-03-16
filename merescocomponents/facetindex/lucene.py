@@ -147,7 +147,9 @@ class LuceneIndex(Observable):
     def addDocument(self, luceneDocument=None):
         try:
             luceneDocument.validate()
-            self._luceneDelete(luceneDocument.identifier)
+            oldDocId = self._luceneDelete(luceneDocument.identifier)
+            if oldDocId != None:
+                self.do.deleteDocument(docId=oldDocId)
             docId = self._tracker.next()
             luceneDocument.docId = docId
             #luceneDocument._document.add(Field('docId', str(docId), Field.Store.YES, Field.Index.UN_TOKENIZED))
