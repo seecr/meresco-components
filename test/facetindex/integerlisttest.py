@@ -235,8 +235,8 @@ class IntegerListTest(CQ2TestCase):
         t2 = time()
         tsave = t1 - t0
         tload = t2 - t1
-        self.assertTrue(0.01 < tsave < 0.05, tsave)
-        self.assertTrue(0.10 < tload < 0.50, tload)
+        self.assertTiming(0.004, tsave, 0.020)
+        self.assertTiming(0.10, tload, 0.50)
 
     def testExtendTo(self):
         def check(expected):
@@ -247,12 +247,12 @@ class IntegerListTest(CQ2TestCase):
         l1 = IntegerList()
         l1.extendTo(self.tempdir + '/list.bin')
         check([])
-        
+
         l1 = IntegerList()
         l1.append(94)
         l1.append(34)
         l1.append(81)
-        
+
         l1.extendTo(self.tempdir + '/list.bin')
         check([94, 34, 81])
 
