@@ -30,7 +30,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from os.path import isfile, join
-from time import time, mktime
+from time import time, mktime, strptime
 
 from merescocomponents.oai import OaiJazz
 from merescocomponents.oai.oaijazz import _flattenSetHierarchy
@@ -44,7 +44,7 @@ class OaiJazzTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.jazz = OaiJazz(self.tempdir)
-        self.stampNumber = 1215313443000000
+        self.stampNumber = int(mktime((2008, 07, 06, 05, 04, 03, 0, 0, 1)))*1000000 2008-07-06T05:04:03Z
         def stamp():
             result = self.stampNumber
             self.stampNumber += 1
