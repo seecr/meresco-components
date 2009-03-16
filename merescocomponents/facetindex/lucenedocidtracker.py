@@ -186,8 +186,6 @@ class LuceneDocIdTracker(object):
 
         for i, segment in enumerate(self._segmentInfo):
             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
-            klaas = IntegerList()
-            klaas.extendFrom(join(self._directory, str(i) + '.docids'))
             
             for deleted in segment.deletedLuceneIds():
                 self._docIds[deleted] = -1
