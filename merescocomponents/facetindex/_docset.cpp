@@ -93,60 +93,32 @@ fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->intersect(rhs);
 }
 
-class CardinalityCounter : public OnResult {
-    public:
-        guint32 c;
-        CardinalityCounter() : c(0) {};
-        void operator () (guint32 docId) {
-            c++;
-        }
-};
-
 // ### C++ below ###
 
 int DocSet::contains(guint32 docId) {
     return binary_search(begin(), end(), docId);
 }
 
+class CardinalityCounter {
+    public:
+        int count;
+        CardinalityCounter() : count( 0 ) {};
+        CardinalityCounter& operator++ (int i) { return *this; }
+        CardinalityCounter& operator* () { return *this; }
+        CardinalityCounter& operator= (guint32 termId) { count++; return *this; }
+};
+
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
     CardinalityCounter counter;
-    intersect_generic<DocSet::iterator>
+    intersect_generic<DocSet::iterator, CardinalityCounter>
         (begin(), end(), larger->begin(), larger->end(), counter);
-    return counter.c;
+    return counter.count;
 }
 
 
 int DocSet::combinedCardinality(DocSet* rhs) {
     return combinedCardinalitySearch(rhs);
-/*    unsigned int lhsSize = size();
-    unsigned int rhsSize = rhs->size();
-    if ( rhsSize < lhsSize ) { // redirect to shortest list works faster for both zipper and search
-        return rhs->combinedCardinality(this);
-    }
-    if ( rhsSize > lhsSize * SWITCHPOINT ) {
-        return combinedCardinalitySearch(rhs);
-    }
-    push_back(0xFFFFFFFF);
-    rhs->push_back(0xFFFFFFFF);
-    std::vector<guint32>::iterator rhsLower = lower_bound(rhs->begin(), rhs->end(), at(0));
-    std::vector<guint32>::iterator myLower  = lower_bound(begin(), end(), rhs->at(0));
-    int c = combinedCardinalityZipper(&(*myLower), &(*rhsLower));
-    pop_back();
-    rhs->pop_back();
-    return c;*/
 }
-
-class IntersectingDocSet : public OnResult {
-    private:
-        fwPtr _docset;
-    public:
-        IntersectingDocSet(fwPtr docset) {
-            _docset = docset;
-        }
-    void operator () (guint32 docId) {
-        pDS(_docset)->push_back(docId);
-    }
-};
 
 fwPtr DocSet::intersect(fwPtr rhs) {
     DocSet::iterator a = begin();
@@ -154,8 +126,11 @@ fwPtr DocSet::intersect(fwPtr rhs) {
     DocSet::iterator c = pDS(rhs)->begin();
     DocSet::iterator d = pDS(rhs)->end();
     fwPtr result = DocSet_create();
-    IntersectingDocSet onresult(result);
-    intersect_generic<DocSet::iterator>(a, b, c, d, onresult);
+    pDS(result)->resize(std::min(size(), pDS(rhs)->size()));
+    guint32* result_feeder = &(pDS(result)->front());
+    guint32* start = result_feeder;
+    intersect_generic<DocSet::iterator, guint32*>(a, b, c, d, result_feeder);
+    pDS(result)->resize(result_feeder - start);
     return result;
 }
 

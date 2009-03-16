@@ -192,16 +192,18 @@ DocSetList* DocSetList::intersect(fwPtr docset) {
     return results;
 }
 
-class TermCollector : public OnResult {
+class TermCollector {
     private:
         DocSetList* _parent;
         DocSetList* _result;
     public:
         TermCollector(DocSetList* parent, DocSetList* result) : _parent( parent ), _result (result) {};
-        void operator () (guint32 termId) {
+        TermCollector& operator++ (int i) { return *this; }
+        TermCollector& operator* () { return *this; }
+        TermCollector& operator= (guint32 termId) {
             char* term = _parent->getTermForId(termId);
-            // TODO create a more shallow copy by using termId only
             _result->addDocSet(_parent->forTerm(term), term);
+            return *this;
         }
 };
 
@@ -217,7 +219,7 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     DocSetIterator rhs_till = rhs->end_docId();
 
     TermCollector onresult(this, result);
-    intersect_generic<DocSetIterator>(from, till, rhs_from, rhs_till, onresult);
+    intersect_generic<DocSetIterator, TermCollector>(from, till, rhs_from, rhs_till, onresult);
 
     return result;
 }

@@ -118,7 +118,7 @@ class PerformanceTuningTest(LuceneTestCase):
             t0 = time()
             ds = DocSet.fromQuery(self.searcher, self.matchAllDocsQuery)
             t += time() - t0
-        self.assertTrue(0.05*T < t < 0.2*T, t)  # in ~milliseconds!
+        self.assertTiming(0.05, t, 0.2)  # in ~milliseconds!
         self.assertEquals(range(1000), list(iter(ds)))
 
     def testVariousCornerCases(self):
