@@ -26,6 +26,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 from merescocore.framework import Transparant,  Observable
 from merescocomponents.facetindex import document
 from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
@@ -47,6 +48,9 @@ class NGramQuery(Observable):
         return self.any.executeQuery(self.ngramQuery(query), start=0, stop=samples)
 
     def ngramQuery(self, word, N=2):
+        """Construct a query for the given word using a word-distance of N
+        (default: 2)
+        """
         query = BooleanQuery()
         for ngram in ngrams(word, N):
             query.add(BooleanClause(TermQuery(Term(self._fieldName, ngram)), BooleanClause.Occur.SHOULD))
@@ -54,12 +58,21 @@ class NGramQuery(Observable):
 
 class _Suggestion(Observable):
     def __init__(self, samples, threshold, maxResults):
+        """Create a Suggestion object providing the boundaries used by the
+        subclasses.
+        """
         Observable.__init__(self)
         self._samples = samples
         self._maxResults = maxResults
         self._threshold = threshold
 
     def _suggestionsFor(self, word, sortkey):
+        """Query the given word and (re)sort the result using the
+        subclass-specific algorithm.
+        The  initial result of the query is limited to the predefined number
+        of samples. These results are inputted into the subclass-specific
+        algorithm and the result is limited to a predefined maximum.
+        """
         total, candidates = self.any.executeQuery(word, self._samples)
         results = sorted(candidates, key=sortkey)
         inclusive = results and results[0] == word
@@ -70,17 +83,35 @@ class _Suggestion(Observable):
 
 class LevenshteinSuggester(_Suggestion):
     def suggestionsFor(self, word):
+        """Return suggestions for the given word using the absolute Levenshtein
+        distance of two strings.
+
+        If the ratio between the given word and found term is less or equal to
+        the predefined threshold, the term is added to the result.
+
+        (see http://en.wikipedia.org/wiki/Levenshtein_distance for details).
+        """
         word = unicode(word)
         inclusive, result = self._suggestionsFor(word, lambda term: distance(unicode(term), word))
         return inclusive, [term for term in result if distance(unicode(term), word) <= self._threshold]
 
 class RatioSuggester(_Suggestion):
     def suggestionsFor(self, word):
+        """Return suggestions for the given word by computing the similarity
+        of two strings.
+
+        If the ratio between the given word and found term exceeds the
+        predefined threshold, the term is added to the result.
+
+        (see http://en.wikipedia.org/wiki/Levenshtein_distance for details).
+        """
         word = unicode(word)
         inclusive, result = self._suggestionsFor(word, lambda term: 1-ratio(unicode(term), word))
         return inclusive, [term for term in result if ratio(unicode(term), word) > self._threshold]
 
 class NGramFieldlet(Transparant):
+    """Fieldlet used in Meresco DNA to build/fill an NGram index used for
+    suggestions."""
     def __init__(self, n, fieldName):
         Transparant.__init__(self)
         self._fieldName = fieldName
