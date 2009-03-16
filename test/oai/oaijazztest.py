@@ -44,7 +44,7 @@ class OaiJazzTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.jazz = OaiJazz(self.tempdir)
-        self.stampNumber = int(mktime((2008, 07, 06, 05, 04, 03, 0, 0, 1)))*1000000 2008-07-06T05:04:03Z
+        self.stampNumber = int(mktime((2008, 07, 06, 05, 04, 03, 0, 0, 1)))*1000000
         def stamp():
             result = self.stampNumber
             self.stampNumber += 1
