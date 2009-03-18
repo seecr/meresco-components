@@ -217,6 +217,8 @@ class RecordId(str):
         return str.__new__(self, identifier)
     def __init__(self, identifier, stamp):
         self.stamp = stamp
+    def __getslice__(self, *args, **kwargs):
+        return RecordId(str.__getslice__(self, *args, **kwargs), self.stamp)
 
 def _writeLines(filename, lines):
     with open(filename + '.tmp', 'w') as f:

@@ -33,7 +33,7 @@ from os.path import isfile, join
 from time import time, mktime, strptime
 
 from merescocomponents.oai import OaiJazz
-from merescocomponents.oai.oaijazz import _flattenSetHierarchy
+from merescocomponents.oai.oaijazz import _flattenSetHierarchy, RecordId
 from StringIO import StringIO
 from lxml.etree import parse
 from merescocore.framework import Observable, be, Transparant
@@ -171,3 +171,11 @@ class OaiJazzTest(CQ2TestCase):
         mf = list(server.any.getAllMetadataFormats())
         self.assertEquals(2, len(mf))
         self.assertEquals(set(['one', 'two']), set(prefix for prefix, schema, namespace in mf))
+
+    def testRecordId(self):
+        r = RecordId('identifier', 12345)
+        self.assertEquals(12345, r.stamp)
+        self.assertEquals('identifier', r)
+        r2 = r[6:]
+        self.assertEquals('fier', r2)
+        self.assertEquals(12345, r2.stamp)

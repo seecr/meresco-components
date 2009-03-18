@@ -75,7 +75,7 @@ from oai.oaigetrecordtest import OaiGetRecordTest
 from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
 from oai.oailistsetstest import OaiListSetsTest
 from oai.oailisttest import OaiListTest
-from oai.oaipmhtest import OaiPmhTest
+from oai.oaipmhtest import OaiPmhTest, OaiPmhWithIdentifierTest
 from oai.oaitooltest import OaiToolTest
 from oai.oaiprovenancetest import OaiProvenanceTest
 from oai.resumptiontokentest import ResumptionTokenTest
@@ -85,6 +85,7 @@ from oai.oaijazztest import OaiJazzTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
 from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
 from oai.berkeleydicttest import BerkeleyDictTest
+
 
 if __name__ == '__main__':
     unittest.main()

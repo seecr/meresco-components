@@ -34,15 +34,16 @@ from oaigetrecord import OaiGetRecord
 from oailistmetadataformats import OaiListMetadataFormats
 from oailistsets import OaiListSets
 from oaisink import OaiSink
+from oaiidentifierrename import OaiIdentifierRename
 
 class OaiPmh(object):
-    def __init__(self, repositoryName, adminEmail):
-        outside = Transparant()
+    def __init__(self, repositoryName, adminEmail, repositoryIdentifier=None):
+        outside = Transparant() if repositoryIdentifier == None else OaiIdentifierRename(repositoryIdentifier)
         self.addObserver = outside.addObserver
         self.addStrand = outside.addStrand
         self._internalObserverTree = be(
             (Observable(),
-                (OaiIdentify(repositoryName=repositoryName, adminEmail=adminEmail), ),
+                (OaiIdentify(repositoryName=repositoryName, adminEmail=adminEmail, repositoryIdentifier=repositoryIdentifier), ),
                 (OaiList(),
                     (outside,)
                 ),

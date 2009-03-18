@@ -30,7 +30,6 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from merescocore.framework import Observable, be
-from cStringIO import StringIO
 
 from merescocomponents.oai import OaiPmh
 from oaitestcase import OaiTestCase
@@ -41,13 +40,7 @@ from StringIO import StringIO
 def xpath(node, path):
     return '\n'.join(node.xpath(path, namespaces={'oai':"http://www.openarchives.org/OAI/2.0/"}))
 
-class OaiPmhTest(OaiTestCase):
-
-    def getSubject(self):
-        oaipmh = OaiPmh(repositoryName='The Repository Name', adminEmail='admin@email.extension')
-        self.observer = CallTrace('Observers')
-        oaipmh.addObserver(self.observer)
-        return oaipmh
+class _OaiPmhTest(OaiTestCase):
 
     def testIdentify(self):
         self.request.args = {'verb': ['Identify']}
@@ -66,12 +59,13 @@ class OaiPmhTest(OaiTestCase):
         self.assertEquals('persistent', xpath(response, '/oai:OAI-PMH/oai:Identify/oai:deletedRecord/text()'))
 
     def testGetRecordUsesObservers(self):
-        self.request.args = {'verb':['GetRecord'], 'metadataPrefix': ['oai_dc'], 'identifier': ['oai:ident']}
+        self.request.args = {'verb':['GetRecord'], 'metadataPrefix': ['oai_dc'], 'identifier': [self.prefix + 'ident']}
         self.observer.returnValues['getAllPrefixes'] = ['oai_dc']
         self.observer.returnValues['isAvailable'] = (True, True)
         self.observer.returnValues['getDatestamp'] = '2008-11-14T15:43:00Z'
         self.observer.ignoredAttributes.append('provenance')
         def write(sink, identifier, partName):
+            self.assertEquals('ident', identifier)
             sink.write('<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dc="http://purl.org/dc/elements/1.1/" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"/>')
         self.observer.write = write
 
@@ -80,7 +74,11 @@ class OaiPmhTest(OaiTestCase):
         result = self.stream.getvalue()
         self.assertValidString(result)
         self.assertEquals(['isDeleted', 'getAllPrefixes', 'isAvailable', 'isDeleted', 'getDatestamp', 'getSets', 'unknown'], [m.name for m in self.observer.calledMethods])
-        
+        self.assertEquals('ident', self.observer.calledMethods[0].args[0]) #isDeleted
+        self.assertEquals('ident', self.observer.calledMethods[2].args[0]) #isAvailable
+        self.assertEquals('ident', self.observer.calledMethods[4].args[0]) #getDatestamp
+        self.assertEquals('ident', self.observer.calledMethods[5].args[0]) #getSets
+
     def assertBadArgument(self, arguments, additionalMessage = '', errorCode = "badArgument"):
         self.request.args = arguments
 
@@ -159,3 +157,56 @@ class OaiPmhTest(OaiTestCase):
             )
         ))
         self.assertTrue(observable, 'The above code failed.')
+
+    def testListRecords(self):
+        self.request.args = {'verb':['ListRecords'], 'metadataPrefix': ['oai_dc']}
+
+        self.observer.returnValues['getAllPrefixes'] = ['oai_dc']
+        self.observer.returnValues['oaiSelect'] = iter(['ident0', 'ident1'])
+        self.observer.returnValues['isDeleted'] = False
+        self.observer.returnValues['getDatestamp'] = '2008-11-14T15:43:00Z'
+        self.observer.returnValues['getSets'] = iter(['set0'])
+        
+        self.observer.ignoredAttributes.append('provenance')
+        def write(sink, identifier, partName):
+            self.assertEquals('ident', identifier[:5])
+            sink.write('<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dc="http://purl.org/dc/elements/1.1/" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"/>')
+        self.observer.write = write
+
+        self.observable.do.handleRequest(self.request)
+        
+        result = self.stream.getvalue()
+        self.assertValidString(result)
+        self.assertEquals(['getAllPrefixes', 'oaiSelect', 'isDeleted', 'getDatestamp', 'getSets', 'unknown', 'isDeleted', 'getDatestamp', 'getSets', 'unknown'], [m.name for m in self.observer.calledMethods])
+        self.assertEquals('ident0', self.observer.calledMethods[2].args[0]) #isDeleted
+        self.assertEquals('ident0', self.observer.calledMethods[3].args[0]) #getDatestamp
+        self.assertEquals('ident0', self.observer.calledMethods[4].args[0]) #getSets
+        self.assertEquals('ident1', self.observer.calledMethods[6].args[0]) #isDeleted
+        self.assertEquals('ident1', self.observer.calledMethods[7].args[0]) #getDatestamp
+        self.assertEquals('ident1', self.observer.calledMethods[8].args[0]) #getSets
+
+class OaiPmhTest(_OaiPmhTest):
+    def getSubject(self):
+        oaipmh = OaiPmh(repositoryName='The Repository Name', adminEmail='admin@email.extension')
+        self.observer = CallTrace('Observers')
+        oaipmh.addObserver(self.observer)
+        return oaipmh
+
+    def setUp(self):
+        _OaiPmhTest.setUp(self)
+        self.prefix = ''
+
+class OaiPmhWithIdentifierTest(_OaiPmhTest):
+
+    def getSubject(self):
+        oaipmh = OaiPmh(repositoryName='The Repository Name', adminEmail='admin@email.extension',
+        repositoryIdentifier='www.example.org')
+        self.observer = CallTrace('Observers')
+        oaipmh.addObserver(self.observer)
+        return oaipmh
+
+    def setUp(self):
+        _OaiPmhTest.setUp(self)
+        self.prefix = 'oai:www.example.org:'
+
+    
