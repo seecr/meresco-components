@@ -49,8 +49,8 @@ class OaiListSetsTest(OaiTestCase):
         self.assertEqualsWS(self.OAIPMH % """
 <request verb="ListSets">http://server:9000/path/to/oai</request>
  <ListSets>
-   <set><setSpec>some:name:id_0</setSpec></set>
-   <set><setSpec>some:name:id_1</setSpec></set>
+   <set><setSpec>some:name:id_0</setSpec><setName>set some:name:id_0</setName></set>
+   <set><setSpec>some:name:id_1</setSpec><setName>set some:name:id_1</setName></set>
  </ListSets>""", self.stream.getvalue())
         self.assertFalse('<resumptionToken' in self.stream.getvalue())
 
