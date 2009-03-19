@@ -188,7 +188,7 @@ fwPtr DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* map
 * on the C/Java int[], instead of using a slow Python list of integer objects.
 ****************************************************************************/
 
-#define TERMDOCS_READ_BUFF_SIZE 32
+#define TERMDOCS_READ_BUFF_SIZE 100000
 JIntArray* documents = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 JIntArray* ignored = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 

@@ -123,7 +123,6 @@ extern "C" {
     void             DocSetList_sortOnTerm           (DocSetList* list);
     void             DocSetList_sortOnTermId         (DocSetList* list);
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
-    void             DocSetList_appendFromTermEnum   (DocSetList* list, PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
     void             DocSetList_printMemory          (DocSetList* list);
     char*            DocSetList_getTermForDocset     (DocSetList* list, fwPtr docset);
     void             DocSetList_docId2terms_add      (DocSetList* list, guint32 docid, fwPtr docset);

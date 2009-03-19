@@ -31,7 +31,6 @@
 from PyLucene import MatchAllDocsQuery, IndexSearcher, IndexWriter, IndexReader, StandardAnalyzer, Document, Term, Field
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import DocSet
-from os.path import join, isdir
 
 class LuceneTestCase(CQ2TestCase):
 
@@ -57,20 +56,16 @@ class LuceneTestCase(CQ2TestCase):
         self.searcher = IndexSearcher(self.tempdir)
         self.reader = IndexReader.open(self.tempdir)
 
-    def createBigIndex(self, size, valuemax=1000, log=False, keepas=''):
-        def create(directory):
-            from random import randint
-            index = IndexWriter(directory, StandardAnalyzer(), True)
-            for i in xrange(size):
-                if log and i % 1000 == 0: print i
-                doc = Document()
-                for i in xrange(10):
-                    doc.add(Field('field%d' % i, 't€rm'+str(randint(0,valuemax)),
-                        Field.Store.NO, Field.Index.UN_TOKENIZED))
-                index.addDocument(doc)
-            index.close()
-        directory = keepas if keepas else self.tempdir
-        if not isdir(directory):
-            create(directory)
-        self.searcher = IndexSearcher(directory)
-        self.reader = IndexReader.open(directory)
+    def createBigIndex(self, size, valuemax=1000, log=False):
+        from random import randint
+        index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        for i in xrange(size):
+            if log and i % 1000 == 0: print i
+            doc = Document()
+            for i in xrange(10):
+                doc.add(Field('field%d' % i, 't€rm'+str(randint(0,valuemax)),
+                    Field.Store.NO, Field.Index.UN_TOKENIZED))
+            index.addDocument(doc)
+        index.close()
+        self.searcher = IndexSearcher(self.tempdir)
+        self.reader = IndexReader.open(self.tempdir)

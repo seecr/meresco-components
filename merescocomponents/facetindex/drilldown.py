@@ -44,27 +44,21 @@ class NoFacetIndexException(Exception):
 
 class Drilldown(object):
 
-    def __init__(self, fieldDefinitions=None, transactionName=None):
-        self._fieldDefinitions = {}
+    def __init__(self, staticDrilldownFieldnames=None, transactionName=None):
+        self._staticDrilldownFieldnames = staticDrilldownFieldnames
+        self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
         self._docsetlists = {}
-        for item in fieldDefinitions or []:
-            #if type(item) == tuple:
-                #raise Exception("JJ/KvS not done yet")
-            fieldname, fields = (item, [item]) if type(item) == str else item
-            self._fieldDefinitions[fieldname] = fields
-            self._docsetlists[fieldname] = DocSetList()
-
-        self._actualFieldDefinitions = self._fieldDefinitions
-
+        if self._staticDrilldownFieldnames:
+            self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
         self._commandQueue = []
         self._transactionName = transactionName
 
     def _add(self, docId, docDict):
-        for virtualName, actualNames in self._actualFieldDefinitions.items():
-            terms = set()
-            for actualName in actualNames:
-                terms.union(set(docDict.get(actualName, [])))
-            self._docsetlists[virtualName].addDocument(docId, terms)
+        fieldnames = (fieldname
+            for fieldname in docDict.keys()
+                if fieldname in self._actualDrilldownFieldnames)
+        for fieldname in fieldnames:
+            self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
 
     def addDocument(self, docId, docDict):
         self.deleteDocument(docId)
@@ -98,28 +92,24 @@ class Drilldown(object):
 
         self._totaldocs = indexReader.numDocs()
         termDocs = indexReader.termDocs()
-        fieldDefinitions = self._fieldDefinitions
-        if not fieldDefinitions:
-            fieldDefinitions = dict([(fieldname, [fieldname])
+        fieldNames = self._staticDrilldownFieldnames
+        if not fieldNames:
+            fieldNames = [fieldname
                 for fieldname in indexReader.getFieldNames(IndexReader.FieldOption.ALL)
-                    if not fieldname.startswith('__')])
-        for virtualName, actualNames in fieldDefinitions.items():
-            if not virtualName in self._docsetlists:
-                self._docsetlists[virtualName] = DocSetList()
-
-            for actualName in actualNames:
-                termEnum = indexReader.terms(Term(actualName, ''))
-                self._docsetlists[virtualName].appendFromTermEnum(termEnum, termDocs, docIdMapping)
-        self._actualFieldDefinitions = fieldDefinitions
+                    if not fieldname.startswith('__')]
+        for fieldname in fieldNames:
+            termEnum = indexReader.terms(Term(fieldname,''))
+            self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
+        self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:
             drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)
-                for fieldname in self._actualFieldDefinitions]
+                for fieldname in self._actualDrilldownFieldnames]
         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
-            if fieldname not in self._actualFieldDefinitions:
-                raise NoFacetIndexException(fieldname, self._actualFieldDefinitions)
+            if fieldname not in self._actualDrilldownFieldnames:
+                raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
             t0 = time()
             try:
                 yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
@@ -130,7 +120,7 @@ class Drilldown(object):
     def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:
             if fieldname not in self._docsetlists:
-                raise NoFacetIndexException(fieldname, self._actualFieldDefinitions)
+                raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
             yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs, algorithm=algorithm)
 
     def queueLength(self):

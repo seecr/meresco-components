@@ -45,7 +45,7 @@ setup(
                 'merescocomponents/facetindex/_stringpool.cpp',
                 ],
         	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
-                extra_link_args = ['/usr/lib/python2.5/site-packages/_PyLucene.so']
+                extra_link_args = ['-L/usr/lib/python2.5/site-packages', '-lPyLucene']
         )
     ],
     version = '%VERSION%',

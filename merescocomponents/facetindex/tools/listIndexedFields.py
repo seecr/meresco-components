@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories

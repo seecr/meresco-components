@@ -32,7 +32,7 @@ from sys import stdout
 from time import time
 from random import random, randint, sample
 
-from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList
+from merescocomponents.facetindex import DocSetList, DocSet, Trie
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
 
@@ -112,15 +112,14 @@ class PerformanceTuningTest(LuceneTestCase):
         trie.nodecount()
 
     def testReadLuceneDocsSpeed(self):
-        mapping = IntegerList(10000)
-        self.createSimpleIndexWithEmptyDocuments(10000)
+        self.createSimpleIndexWithEmptyDocuments(1000)
         t = 0.0
-        for i in range(100):
+        for i in range(1000):
             t0 = time()
-            ds = DocSet.fromQuery(self.searcher, self.matchAllDocsQuery, mapping)
+            ds = DocSet.fromQuery(self.searcher, self.matchAllDocsQuery)
             t += time() - t0
         self.assertTiming(0.05, t, 0.2)  # in ~milliseconds!
-        self.assertEquals(range(10000), list(iter(ds)))
+        self.assertEquals(range(1000), list(iter(ds)))
 
     def testVariousCornerCases(self):
         odd  = DocSet((x for x in xrange(20000) if     x&1))
@@ -146,28 +145,28 @@ class PerformanceTuningTest(LuceneTestCase):
         self.assertTiming(0.002, tdisp1, 0.005) # zipper/upper_bound optimization 1
         self.assertTiming(0.002, tdisp2, 0.005) # zipper/upper_bound optimization 2
 
-    def testNoMemoryLeaksInTermCardinalities(self):
-        self.createBigIndex(9, 2, keepas='testMemoryLeaks') # 10 records, 6 values
+    def XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXtestMemoryLeaks(self):
+        from gc import collect
+        self.createBigIndex(9, 2) # 10 records, 6 values
         termEnum = self.reader.terms(Term('field0',''))
         termDocs = self.reader.termDocs()
         dsl = DocSetList.fromTermEnum(termEnum, termDocs)
-        for i in range(100000):
-            cs = dsl.termCardinalities(DocSet([1,2,3,4,5,6,7,8,9])).next()
-        self.assertNoMemoryLeaks(bandwidth=0.9)
-
-    def testPerformanceOfDocSetListFromTermEnum(self):
-        self.createBigIndex(size=10000, keepas='testIndex0')
-        t = 0.0
-        for n in range(10):
-            termDocs = self.reader.termDocs()
-            for field in self.reader.getFieldNames(IndexReader.FieldOption.ALL):
-                termEnum = self.reader.terms(Term(field,''))
-                t0 = time()
+        print 'repeating fromTermEnum, watch top'
+        for j in range(10):
+            raw_input('start')
+            for i in range(100000):
+                termEnum = self.reader.terms(Term('field0',''))
+                termDocs = self.reader.termDocs()
                 dsl = DocSetList.fromTermEnum(termEnum, termDocs)
-                t += time() - t0
-            n += 1
-            self.assertNoMemoryLeaks()
-        self.assertTiming(0.05, t/n, 0.20)
+            print dsl.printMemory()
+            del dsl, termEnum, termDocs
+            collect()
+            raw_input('done')
+        print 'repeating termCardinalities, watch top'
+        for i in range(1000000):
+            cs = dsl.termCardinalities(DocSet('', [1,2,3,4,5,6,7,8,9]))
+        NA = Wildcard()
+        self.assertEquals([('t€rm0', NA), ('t€rm1', NA), ('t€rm2', NA)], list(cs))
 
     def XXXXtestReadRealyBigIndex(self):
         try:
