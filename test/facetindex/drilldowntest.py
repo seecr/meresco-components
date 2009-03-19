@@ -112,7 +112,8 @@ class DrilldownTest(CQ2TestCase):
             ('0', {'qf': 'inquery', 'field_0': 'term_0', 'field_1': 'term_a'}),
             ('1', {'qf': 'inquery', 'field_0': 'term_1', 'field_1': 'term_a'}),
             ('2', {'qf': 'inquery', 'field_0': 'term_1', 'field_1': 'term_b'}),
-            ('3', {'qf': 'not fnd', 'field_0': 'term_2', 'field_1': 'term_c'})])
+            ('3', {'qf': 'inquery', 'field_0': 'inboth', 'field_1': 'inboth'}),
+            ('4', {'qf': 'not fnd', 'field_0': 'term_2', 'field_1': 'term_c'})])
 
         self.index._writer.flush()
         reader = IndexReader.open(self.tempdir)
@@ -130,18 +131,21 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(1, len(drilldownResult))
         result = dict(drilldownResult)
         self.assertEquals(['virtual_field'], result.keys())
-        self.assertEquals(set([
+        self.assertEquals(sorted([
             ("term_0", 1),
             ("term_1", 2),
             ("term_a", 2),
             ("term_b", 1),
+            ("inboth", 1),
             ]),
-            set(result['virtual_field']))
-        self.assertEquals([("inquery", 3)], list(result['field_1']))
+            sorted(result['virtual_field']))
 
-        self.fail('test met iets dat links en rechts staat toevoegen')
-        self.fail('niet vergeten; add ook testen ')
+        drilldown.addDocument(100, {'field_0': ['new_0']})
+        drilldown.addDocument(101, {'field_1': ['new_1']})
+        drilldown.addDocument(102, {'field_0': ['new_both'], 'field_1': ['new_both'],})
 
+        drilldown.commit()
+        self.assertEquals("/", list(drilldown._docsetlists['virtual_field'].allCardinalities()))
 
     def testSortingOnCardinality(self):
         self.addUntokenized([

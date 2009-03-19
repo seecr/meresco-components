@@ -48,6 +48,8 @@ class Drilldown(object):
         self._fieldDefinitions = {}
         self._docsetlists = {}
         for item in fieldDefinitions or []:
+            #if type(item) == tuple:
+                #raise Exception("JJ/KvS not done yet")
             fieldname, fields = (item, [item]) if type(item) == str else item
             self._fieldDefinitions[fieldname] = fields
             self._docsetlists[fieldname] = DocSetList()
@@ -59,9 +61,9 @@ class Drilldown(object):
 
     def _add(self, docId, docDict):
         for virtualName, actualNames in self._actualFieldDefinitions.items():
-            terms = []
+            terms = set()
             for actualName in actualNames:
-                terms.extend(docDict.get(actualName, []))
+                terms.union(set(docDict.get(actualName, [])))
             self._docsetlists[virtualName].addDocument(docId, terms)
 
     def addDocument(self, docId, docDict):
@@ -98,9 +100,9 @@ class Drilldown(object):
         termDocs = indexReader.termDocs()
         fieldDefinitions = self._fieldDefinitions
         if not fieldDefinitions:
-            fieldDefinitions = [(fieldname, [fieldname])
+            fieldDefinitions = dict([(fieldname, [fieldname])
                 for fieldname in indexReader.getFieldNames(IndexReader.FieldOption.ALL)
-                    if not fieldname.startswith('__')]
+                    if not fieldname.startswith('__')])
         for virtualName, actualNames in fieldDefinitions.items():
             if not virtualName in self._docsetlists:
                 self._docsetlists[virtualName] = DocSetList()

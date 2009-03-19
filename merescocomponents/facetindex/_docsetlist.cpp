@@ -399,7 +399,6 @@ void DocSetList_appendFromTermEnum(DocSetList* list, PyJObject* termEnum, PyJObj
     TermEnum_next next       = (TermEnum_next)    lookupMethod(termEnum->jobject, 7);
     TermEnum_term getTerm    = (TermEnum_term)    lookupMethod(termEnum->jobject, 8);
     TermEnum_docFreq docFreq = (TermEnum_docFreq) lookupMethod(termEnum->jobject, 9);
-    DocSetList* list = DocSetList_create();
     JString* field = NULL;
     JString* previousField = NULL;
     do {

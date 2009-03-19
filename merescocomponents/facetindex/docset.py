@@ -144,7 +144,7 @@ class DocSet(object):
     def add(self, doc):
         l = DocSet_len(self)
         if l > 0 and doc <= DocSet_get(self, l-1):
-            raise Exception('non-increasing docid: %d must be > %d' % (doc, l))
+            raise Exception('non-increasing docid: %d must be > %d' % (doc, DocSet_get(self, l-1)))
         DocSet_add(self._cobj, doc)
 
     def delete(self, doc):
