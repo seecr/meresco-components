@@ -152,7 +152,7 @@ class DocSetList(object):
     @classmethod
     def fromTermEnum(clazz, termEnum, termDocs, integerList=None):
         r = DocSetList_fromTermEnum(py_object(termEnum), py_object(termDocs), integerList.getCObject() if integerList else 0)
-        return clazz(cobj=r)
+        return clazz(cobj=r, own=True)
 
     def __init__(self, cobj=None, own=False):
         if cobj:

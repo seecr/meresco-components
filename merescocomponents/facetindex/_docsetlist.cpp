@@ -416,11 +416,11 @@ void DocSetList_appendFromTermEnum(DocSetList* list, PyJObject* termEnum, PyJObj
         jint freq = docFreq(termEnum->jobject);
 
         fwPtr ds = DocSet::fromTermDocs(termDocs->jobject, freq, mapping);
-        char* tmp = (char*) malloc(90000);
+        static char* tmp = (char*) malloc(90000);
         int w = text->writeUTF8CharsIn((char*)tmp);
         tmp[w] = '\0';
         list->addDocSet(ds, tmp);
-        free(tmp);
+        //free(tmp);
 
     } while ( next(termEnum->jobject) );
 }
