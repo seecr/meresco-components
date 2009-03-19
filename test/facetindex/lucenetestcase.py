@@ -70,7 +70,7 @@ class LuceneTestCase(CQ2TestCase):
                 index.addDocument(doc)
             index.close()
         directory = keepas if keepas else self.tempdir
-        if not isdir(directory):
+        if not IndexReader.indexExists(directory):
             create(directory)
         self.searcher = IndexSearcher(directory)
         self.reader = IndexReader.open(directory)
