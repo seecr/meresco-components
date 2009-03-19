@@ -85,7 +85,6 @@ class DrilldownTest(CQ2TestCase):
             ('3', {'field_0': 'this is term_2', 'field_1': 'cannotbefound'})])
         self.index._writer.flush()
         reader = IndexReader.open(self.tempdir)
-        #convertor = LuceneRawDocSets(reader, ['field_0', 'field_1'])
         drilldown = Drilldown(['field_0', 'field_1'])
         drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
         query = TermQuery(Term("field_1", "inquery"))
@@ -99,6 +98,43 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(['field_0', 'field_1'], result.keys())
         self.assertEquals(set([("this is term_0", 1), ("this is term_1", 2)]), set(result['field_0']))
         self.assertEquals([("inquery", 3)], list(result['field_1']))
+
+    def testDrilldownAcceptsStringsAndTuplesAndTurnsThemIntoTuples(self):
+        drilldown = Drilldown([
+            'field_0',
+            'field_1',
+            ('virtual_field', ['field_0', 'field_1'])
+        ])
+        self.assertEquals({'virtual_field': ['field_0', 'field_1'], 'field_0': ['field_0'], 'field_1': ['field_1']}, drilldown._fieldDefinitions)
+
+    def testDrilldownVirtualFacet(self):
+        self.addUntokenized([
+            ('0', {'field_0': 'this is term_0', 'field_1': 'inquery'}),
+            ('1', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
+            ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
+            ('3', {'field_0': 'this is term_2', 'field_1': 'cannotbefound'})])
+
+        self.index._writer.flush()
+        reader = IndexReader.open(self.tempdir)
+        drilldown = Drilldown([
+            'field_0',
+            'field_1',
+            ('virtual_field', ['field_0', 'field_1'])
+        ])
+
+        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
+        query = TermQuery(Term("field_1", "inquery"))
+        total, queryResults = self.index.executeQuery(query)
+        self.assertEquals(3, total)
+        self.assertEquals(['0', '1', '2'], queryResults)
+        queryDocset = self.index.docsetFromQuery(query)
+        drilldownResult = list(drilldown.drilldown(queryDocset, [('field_0', 0, False), ('field_1', 0, False)]))
+        self.assertEquals(2, len(drilldownResult))
+        result = dict(drilldownResult)
+        self.assertEquals(['field_0', 'field_1'], result.keys())
+        self.assertEquals(set([("this is term_0", 1), ("this is term_1", 2)]), set(result['field_0']))
+        self.assertEquals([("inquery", 3)], list(result['field_1']))
+
 
     def testSortingOnCardinality(self):
         self.addUntokenized([
