@@ -109,10 +109,10 @@ class DrilldownTest(CQ2TestCase):
 
     def testDrilldownVirtualFacet(self):
         self.addUntokenized([
-            ('0', {'field_0': 'this is term_0', 'field_1': 'inquery'}),
-            ('1', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
-            ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
-            ('3', {'field_0': 'this is term_2', 'field_1': 'cannotbefound'})])
+            ('0', {'qf': 'inquery', 'field_0': 'term_0', 'field_1': 'term_a'}),
+            ('1', {'qf': 'inquery', 'field_0': 'term_1', 'field_1': 'term_a'}),
+            ('2', {'qf': 'inquery', 'field_0': 'term_1', 'field_1': 'term_b'}),
+            ('3', {'qf': 'not fnd', 'field_0': 'term_2', 'field_1': 'term_c'})])
 
         self.index._writer.flush()
         reader = IndexReader.open(self.tempdir)
@@ -123,17 +123,24 @@ class DrilldownTest(CQ2TestCase):
         ])
 
         drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
-        query = TermQuery(Term("field_1", "inquery"))
-        total, queryResults = self.index.executeQuery(query)
-        self.assertEquals(3, total)
-        self.assertEquals(['0', '1', '2'], queryResults)
+        query = TermQuery(Term("qf", "inquery"))
+
         queryDocset = self.index.docsetFromQuery(query)
-        drilldownResult = list(drilldown.drilldown(queryDocset, [('field_0', 0, False), ('field_1', 0, False)]))
-        self.assertEquals(2, len(drilldownResult))
+        drilldownResult = list(drilldown.drilldown(queryDocset, [('virtual_field', 0, False)]))
+        self.assertEquals(1, len(drilldownResult))
         result = dict(drilldownResult)
-        self.assertEquals(['field_0', 'field_1'], result.keys())
-        self.assertEquals(set([("this is term_0", 1), ("this is term_1", 2)]), set(result['field_0']))
+        self.assertEquals(['virtual_field'], result.keys())
+        self.assertEquals(set([
+            ("term_0", 1),
+            ("term_1", 2),
+            ("term_a", 2),
+            ("term_b", 1),
+            ]),
+            set(result['virtual_field']))
         self.assertEquals([("inquery", 3)], list(result['field_1']))
+
+        self.fail('test met iets dat links en rechts staat toevoegen')
+        self.fail('niet vergeten; add ook testen ')
 
 
     def testSortingOnCardinality(self):

@@ -58,11 +58,11 @@ class Drilldown(object):
         self._transactionName = transactionName
 
     def _add(self, docId, docDict):
-        fieldnames = (fieldname
-            for fieldname in docDict.keys()
-                if fieldname in self._actualFieldDefinitions)
-        for fieldname in fieldnames:
-            self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
+        for virtualName, actualNames in self._actualFieldDefinitions.items():
+            terms = []
+            for actualName in actualNames:
+                terms.extend(docDict.get(actualName, []))
+            self._docsetlists[virtualName].addDocument(docId, terms)
 
     def addDocument(self, docId, docDict):
         self.deleteDocument(docId)
@@ -96,15 +96,19 @@ class Drilldown(object):
 
         self._totaldocs = indexReader.numDocs()
         termDocs = indexReader.termDocs()
-        fieldNames = self._fieldDefinitions.keys()
-        if not fieldNames:
-            fieldNames = [fieldname
+        fieldDefinitions = self._fieldDefinitions
+        if not fieldDefinitions:
+            fieldDefinitions = [(fieldname, [fieldname])
                 for fieldname in indexReader.getFieldNames(IndexReader.FieldOption.ALL)
                     if not fieldname.startswith('__')]
-        for fieldname in fieldNames:
-            termEnum = indexReader.terms(Term(fieldname, ''))
-            self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
-        self._actualFieldDefinitions = fieldNames
+        for virtualName, actualNames in fieldDefinitions.items():
+            if not virtualName in self._docsetlists:
+                self._docsetlists[virtualName] = DocSetList()
+
+            for actualName in actualNames:
+                termEnum = indexReader.terms(Term(actualName, ''))
+                self._docsetlists[virtualName].appendFromTermEnum(termEnum, termDocs, docIdMapping)
+        self._actualFieldDefinitions = fieldDefinitions
         #print 'indexStarted (ms)', (time()-t0)*1000
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):

@@ -386,6 +386,12 @@ void DocSetList_delete(DocSetList* list) {
 }
 
 DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, IntegerList *mapping) {
+    DocSetList* list = DocSetList_create();
+    DocSetList_appendFromTermEnum(list, termEnum, termDocs, mapping);
+    return list;
+}
+
+void DocSetList_appendFromTermEnum(DocSetList* list, PyJObject* termEnum, PyJObject* termDocs, IntegerList *mapping) {
     TermDocs_seek seek = (TermDocs_seek) lookupIface(termDocs->jobject, &ITermDocs, 2);
     // Call methods on TermEnum via vtable lookup.  TermEnum is not an interface, but
     // multiple subclasses exists (Segment..., Multi...) and might be passed. The methods
@@ -417,8 +423,6 @@ DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, In
         free(tmp);
 
     } while ( next(termEnum->jobject) );
-
-    return list;
 }
 
 void DocSetList_sortOnCardinality(DocSetList* docsetlist) {

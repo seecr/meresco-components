@@ -106,6 +106,10 @@ DocSetList_fromTermEnum = libFacetIndex.DocSetList_fromTermEnum
 DocSetList_fromTermEnum.argtypes = [py_object, py_object, c_int]
 DocSetList_fromTermEnum.restype = DOCSETLIST
 
+DocSetList_appendFromTermEnum = libFacetIndex.DocSetList_appendFromTermEnum
+DocSetList_appendFromTermEnum.argtypes = [DOCSETLIST, py_object, py_object, c_int]
+DocSetList_appendFromTermEnum.restype = None
+
 DocSetList_sortOnCardinality = libFacetIndex.DocSetList_sortOnCardinality
 DocSetList_sortOnCardinality.argtypes = [DOCSETLIST]
 DocSetList_sortOnCardinality.restype = None
@@ -199,7 +203,7 @@ class DocSetList(object):
 
     def innerUnion(self):
         return DocSet(cobj=DocSetList_innerUnion(self), own=True)
-    
+
     def _TEST_getRawCardinalities(self, docset):
         class cardinality_t_RAW(Structure):
             _fields_ = [('term',        POINTER(None)),
@@ -277,6 +281,9 @@ class DocSetList(object):
     def applyDocIdMapping(self, mappingList):
         for docset in self:
             docset.applyDocIdMapping(mappingList)
+
+    def appendFromTermEnum(self, termEnum, termDocs, integerList=None):
+        DocSetList_appendFromTermEnum(self, py_object(termEnum), py_object(termDocs), integerList.getCObject() if integerList else 0)
 
     def printMemory(self):
         DocSetList_printMemory(self)
