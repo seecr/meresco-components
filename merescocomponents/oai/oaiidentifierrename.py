@@ -38,6 +38,9 @@ class OaiIdentifierRename(Observable):
     def write(self, sink, id, partName):
         return self.any.write(sink, self._strip(id), partName)
     
+    def getStream(self, id, partName):
+        return self.any.getStream(self._strip(id), partName)
+    
     def unknown(self, message, *args, **kwargs):
         return self.all.unknown(message, *args, **kwargs)
 

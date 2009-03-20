@@ -37,4 +37,4 @@ class OaiSetSelect(Transparant):
         if not sets:
             sets = []
         sets += self._setsList
-        return self.all.oaiSelect(sets=sets, *args, **kwargs)
+        return self.any.oaiSelect(sets=sets, *args, **kwargs)
