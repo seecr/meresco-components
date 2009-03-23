@@ -203,13 +203,14 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals(13, len(dsl[0]) + len(dsl[1]) + len(dsl[2]))
 
     def testGetTerms(self):
-        self.createBigIndex(9, 2) # 10 records, 6 values
+        self.createBigIndex(99, 2)
         termEnum = self.reader.terms(Term('field0',''))
         termDocs = self.reader.termDocs()
         dsl = DocSetList.fromTermEnum(termEnum, termDocs)
-        cs = dsl.termCardinalities(DocSet([1,2,3,4,5,6,7,8,9]))
+        cs = dsl.termCardinalities(DocSet(range(99)))
         NA = MATCHALL
-        self.assertEquals([('t€rm0', NA), ('t€rm1', NA), ('t€rm2', NA)], list(cs))
+        self.assertEquals(('t€rm0', NA), cs.next())
+        self.assertEquals(('t€rm1', NA), cs.next())
 
     #def testAppendToRow(self):
     def testAppendDocument(self):
