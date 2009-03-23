@@ -96,6 +96,7 @@ class DocSetTest(LuceneTestCase):
         self.assertIntersect([1,2], [1,2,3,4])
         self.assertIntersect([2,3], [1,2,3,4])
         self.assertIntersect([2,3,4], [1,2,3,4])
+        self.assertIntersect([235,254,304,330,349,389,476,515,523,563,578,586,594,602,610,618,626,633,640], [304,371])
 
     def testReadLuceneDocs(self):
         self.createSimpleIndexWithEmptyDocuments(2)
@@ -155,7 +156,8 @@ class DocSetTest(LuceneTestCase):
         assertSearchCardinality([], [])
         assertSearchCardinality([1,4], [2,4])       #tricky one, failed after deployment
         assertSearchCardinality([1,4,5], [1,4,6])   #idem
-    
+        assertSearchCardinality(range(235,640), [304,371])   #idem
+
     def testContainsDocId(self):
         d = DocSet([0, 4])
         self.assertTrue(0 in d)

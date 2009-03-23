@@ -91,7 +91,7 @@ void intersect_generic(
         ForwardIterator lhs_from, ForwardIterator lhs_till,
         ForwardIterator rhs_from, ForwardIterator rhs_till,
         OutputIterator& result) {
-    if ( lhs_till - lhs_from == 0 )
+    if ( lhs_till <= lhs_from || rhs_till <= rhs_from )
        return;
     while ( 1 ) {
         // Lowerbound pruning
@@ -124,19 +124,19 @@ void intersect_generic(
         if ( (lhs_size <= rhs_size * SWITCHPOINT) && (rhs_size <= lhs_size * SWITCHPOINT) ) {
             ForwardIterator lhs = lhs_from; // Reassign slow iterator to faster one (pointer)
             ForwardIterator rhs = rhs_from;
-            guint32 old_lhs = *lhs_till; // save old values before poking, jekkerdedekkie!
-            guint32 old_rhs = *rhs_till;
-            *lhs_till = 0xFFFFFFFF; // jekkerdedekkie!
-            *rhs_till = 0xFFFFFFFF;
-            while ( *lhs < 0xFFFFFFFF && *rhs < 0xFFFFFFFF ) {
-                if ( *lhs == *rhs ) *result++ = *lhs;
-                while ( *++rhs < *lhs );
-                if ( *lhs == *rhs ) *result++ = *rhs;
-                while ( *++lhs < *rhs );
+            while ( 1 ) {
+                while ( rhs < rhs_till && *rhs < *lhs ) rhs++;
+                if ( rhs >= rhs_till )
+                    return;
+                while ( lhs < lhs_till && *lhs < *rhs ) lhs++;
+                if ( lhs >= lhs_till )
+                    return;
+                if ( *lhs == *rhs ) {
+                    *result++ = *lhs;
+                    lhs++;
+                    rhs++;
+                }
             }
-            *lhs_till = old_lhs; // restore old values, jekkerdedekkie!
-            *rhs_till = old_rhs;
-            return;
         }
     }
 }

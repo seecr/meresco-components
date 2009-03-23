@@ -212,15 +212,12 @@ DocSetList* DocSetList::termIntersect(DocSetList* rhs) {
     sortOnTermId();
     rhs->sortOnTermId();
     DocSetList* result = new DocSetList(true);
-
     DocSetIterator from = begin_docId();
     DocSetIterator till = end_docId();
     DocSetIterator rhs_from = rhs->begin_docId();
     DocSetIterator rhs_till = rhs->end_docId();
-
     TermCollector onresult(this, result);
     intersect_generic<DocSetIterator, TermCollector>(from, till, rhs_from, rhs_till, onresult);
-
     return result;
 }
 
