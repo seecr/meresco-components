@@ -33,7 +33,7 @@ from os import makedirs
 
 from merescocore.framework import be, Observable, TransactionScope, ResourceManager, Transparant
 
-from merescocore.components import StorageComponent, FilterField, RenameField, XmlParseLxml, XmlXPath, XmlPrintLxml, Xml2Fields, Venturi, Amara2Lxml, RewritePartname, Rss, RssItem, Lxml2Amara
+from merescocore.components import StorageComponent, FilterField, RenameField, XmlParseLxml, XmlXPath, XmlPrintLxml, Xml2Fields, Venturi, FilterMessages, Amara2Lxml, RewritePartname, Rss, RssItem, Lxml2Amara
 from merescocomponents.facetindex import Drilldown, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
 from merescocomponents.facetindex.tools import unlock
 from merescocore.components.drilldown import SRUDrilldownAdapter, SRUTermDrilldown, DrilldownFieldnames
@@ -77,7 +77,9 @@ def createUploadHelix(indexHelix, storageComponent, oaiJazz):
                         ('header', '/document:document/document:part[@name="header"]/text()')
                     ],
                     namespaceMap={'document': 'http://meresco.com/namespace/harvester/document'}),
-
+                    (FilterMessages(allowed=['delete']),
+                        indexHelix
+                    ),
                     (XmlXPath(['/oai:metadata/oai_dc:dc']),
                         (XmlPrintLxml(),
                             (RewritePartname('oai_dc'),
@@ -112,7 +114,7 @@ def createUploadHelix(indexHelix, storageComponent, oaiJazz):
 def dna(reactor,  host, portNumber, databasePath):
     unlock(join(databasePath, 'index'))
 
-    storageComponent = StorageComponent(join(databasePath, 'storage'))
+    storageComponent = StorageComponent(join(databasePath, 'storage'), partsRemovedOnDelete=['oai_dc'])
     drilldownComponent = Drilldown(drilldownFieldnames, transactionName="batch")
 
     indexHelix = \
