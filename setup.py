@@ -43,6 +43,8 @@ setup(
                 'merescocomponents/facetindex/trie_c.cpp',
                 'merescocomponents/facetindex/_triedict.cpp',
                 'merescocomponents/facetindex/_stringpool.cpp',
+                'merescocomponents/exaples',
+                'merescocomponents/exaples/dna',
                 ],
         	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
                 extra_link_args = ['/usr/lib/python2.5/site-packages/_PyLucene.so']
