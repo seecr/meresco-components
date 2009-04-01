@@ -29,12 +29,14 @@
 #
 ## end license ##
 from sys import stdout
-from time import time
+import os
+from time import time, sleep
 from random import random, randint, sample
 
-from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList
+from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
 from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
+from cq2utils import CallTrace
 
 class PerformanceTuningTest(LuceneTestCase):
 
@@ -191,6 +193,30 @@ class PerformanceTuningTest(LuceneTestCase):
         #print '%.1f seconds, %.2g documents, %d fields, %d terms, %.2g postings,' % (t1-t0, reader.numDocs(), len(fields), terms, postings),
         #print 'on average %s postings per term.' % (postings/terms),
         #stdout.flush()
+
+    def XXXXXXXtestLucene(self):
+
+        ts = []
+        print self.tempdir
+        index = LuceneIndex(self.tempdir)
+        index._tracker = CallTrace()
+        index._tracker.next = xrange(1000000).__iter__().next
+        for x in range(1000):
+            t0 = time()
+            i = 0
+            for y in range(100):
+                doc = Document(str(x * 1000 + y))
+                doc.addIndexedField('term0', 'value0')
+                index.addDocument(doc)
+                i += len(os.listdir(self.tempdir))
+                index.commit()
+
+            t1 = time()
+            ts.append(t1 - t0)
+            print ts[-1], i, ts[-1] / i * 100
+            stdout.flush()
+
+        #print ts
 
 # Some tests on Juicer with EduRep 8/2008:
 # (1st time)
