@@ -168,7 +168,8 @@ class LuceneDocIdTracker(object):
             segment.saveDeleted()
         lastSegmentIndex = len(self._segmentInfo) - 1
         filename = join(self._directory, str(lastSegmentIndex) + '.docids')
-        self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
+        if lastSegmentIndex >= 0:
+            self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
 
     def _load(self):
         if len(self._docIds) != 0:
@@ -186,7 +187,7 @@ class LuceneDocIdTracker(object):
 
         for i, segment in enumerate(self._segmentInfo):
             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
-            
+
             for deleted in segment.deletedLuceneIds():
                 self._docIds[deleted] = -1
 
@@ -209,7 +210,7 @@ class LuceneDocIdTracker(object):
             if luceneId >= segment.offset and luceneId < segment.offset + segment.length:
                 return segment
         raise Exception("Can't find luceneId %s in %s" % (luceneId, self))
-        
+
 
     def close(self):
         self.flush()

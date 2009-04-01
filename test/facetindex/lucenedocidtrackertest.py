@@ -110,6 +110,9 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         should = [docs[docid] for docid in docids]
         self.assertEquals(should, foundDocs)
 
+    def testFlushOnEmptyTracker(self):
+        self.tracker.flush()
+
     def testA(self):
         #[100, 101, -101, 102, 103, -102, 104, -100, 105]
         self.processDocs([100, 101])
@@ -308,6 +311,6 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.flush()
         tracker.deleteLuceneId(1)
-        
+
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
