@@ -32,7 +32,14 @@ from distutils.extension import Extension
 
 setup(
     name = 'merescocomponents',
-    packages = ['merescocomponents', 'merescocomponents.facetindex', 'merescocomponents.facetindex.tools', 'merescocomponents.oai'],
+    packages = [
+	'merescocomponents', 
+        'merescocomponents.facetindex', 
+        'merescocomponents.facetindex.tools', 
+        'merescocomponents.oai',
+        'merescocomponents.examples',
+        'merescocomponents.examples.dna',
+    ],
     ext_modules = [
         Extension("merescocomponents.facetindex._facetindex", [
                 'merescocomponents/facetindex/zipper.c',
@@ -43,8 +50,6 @@ setup(
                 'merescocomponents/facetindex/trie_c.cpp',
                 'merescocomponents/facetindex/_triedict.cpp',
                 'merescocomponents/facetindex/_stringpool.cpp',
-                'merescocomponents/exaples',
-                'merescocomponents/exaples/dna',
                 ],
         	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
                 extra_link_args = ['/usr/lib/python2.5/site-packages/_PyLucene.so']
