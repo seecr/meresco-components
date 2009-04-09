@@ -315,7 +315,7 @@ class LuceneTest(CQ2TestCase):
             self._luceneIndex.addDocument(doc)
         
         self._luceneIndex.commit()
-        filter = [3, 4, 5, 9, 11, 12, 13, 25]
+        filter = [3, 4, 5, 9, 11, 12, 13]
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=[])
         self.assertEquals([], hits)
