@@ -39,7 +39,7 @@ from merescocomponents.facetindex.tools import unlock
 from merescocore.components.drilldown import SRUDrilldownAdapter, SRUTermDrilldown, DrilldownFieldnames
 from merescocore.components.http import PathFilter, ObservableHttpServer
 from merescocore.components.http.webrequestserver import WebRequestServer
-from merescocore.components.sru import Sru, SRURecordUpdate
+from merescocore.components.sru import SruParser, SruHandler, SRURecordUpdate
 from merescocomponents.oai import OaiPmh, OaiJazz, OaiAddRecordWithDefaults
 
 from weightless import Reactor
@@ -130,31 +130,31 @@ def dna(reactor,  host, portNumber, databasePath):
         (Observable(),
             (ObservableHttpServer(reactor, portNumber),
                 (PathFilter("/sru"),
-                    (Sru(host=host, port=portNumber, defaultRecordSchema='oai_dc', defaultRecordPacking='xml'),
-                        (CQL2LuceneQuery(unqualifiedTermFields),
-                            indexHelix
-                        ),
-                        (storageComponent,),
-                        (SRUDrilldownAdapter(),
-                            (SRUTermDrilldown(),
-                                (DrilldownFieldnames(
-                                    lambda field: DRILLDOWN_PREFIX + field,
-                                    lambda field: field[len(DRILLDOWN_PREFIX):]),
-                                        (drilldownComponent,)
-                                ),
-                                (CQL2LuceneQuery(unqualifiedTermFields),
-                                    indexHelix
-                                ),
+                    (SruParser(host=host, port=portNumber, defaultRecordSchema='oai_dc', defaultRecordPacking='xml'),
+                        (SruHandler(),
+                            (CQL2LuceneQuery(unqualifiedTermFields),
+                                indexHelix
+                            ),
+                            (storageComponent,),
+                            (SRUDrilldownAdapter(),
+                                (SRUTermDrilldown(),
+                                    (DrilldownFieldnames(
+                                        lambda field: DRILLDOWN_PREFIX + field,
+                                        lambda field: field[len(DRILLDOWN_PREFIX):]),
+                                            (drilldownComponent,)
+                                    ),
+                                    (CQL2LuceneQuery(unqualifiedTermFields),
+                                        indexHelix
+                                    ),
+                                )
                             )
                         )
                     )
                 ),
                 (PathFilter("/update"),
-                    (WebRequestServer(),
-                        (SRURecordUpdate(),
-                            (Amara2Lxml(),
-                                createUploadHelix(indexHelix, storageComponent, oaiJazz)
-                            )
+                    (SRURecordUpdate(),
+                        (Amara2Lxml(),
+                            createUploadHelix(indexHelix, storageComponent, oaiJazz)
                         )
                     )
                 ),
