@@ -36,8 +36,9 @@ from merescocore.framework import be, Observable, TransactionScope, ResourceMana
 from merescocore.components import StorageComponent, XmlPrintLxml, Xml2Fields, Amara2Lxml
 from merescocore.components.http import PathFilter, ObservableHttpServer
 from merescocore.components.http.webrequestserver import WebRequestServer
-from merescocore.components.lucene import unlock, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
-from merescocore.components.sru import Sru, SRURecordUpdate
+from merescocomponents.facetindex import LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
+from merescocomponents.facetindex.tools import unlock
+from merescocore.components.sru import SruParser, SruHandler, SRURecordUpdate
 
 from weightless import Reactor
 
@@ -59,62 +60,60 @@ def dna(reactor,  host, portNumber, databasePath):
                 # Filter out all requests that start with /sru
                 (PathFilter("/sru"),
                     # Create the SRU component that will respond to queries
-                    (Sru(host=host, port=portNumber),
-                        # Convert the given CQL into the Lucene query language
-                        (CQL2LuceneQuery([]),
-                            # Use the index to query Lucene and return the
-                            # identifiers of the matching documents.
-                            indexHelix
-                        ),
-                        # Retrieve the documents with the given identifiers and
-                        # send them back as the response.
-                        (storageComponent,),
+                    (SruParser(host=host, port=portNumber),
+                        (SruHandler(),
+                            # Convert the given CQL into the Lucene query language
+                            (CQL2LuceneQuery([]),
+                                # Use the index to query Lucene and return the
+                                # identifiers of the matching documents.
+                                indexHelix
+                            ),
+                            # Retrieve the documents with the given identifiers and
+                            # send them back as the response.
+                            (storageComponent,),
+                        )
                     )
                 ),
 
                 # Filter out all requests that start with /update
                 (PathFilter("/update"),
-                    # Translate the HTTP request into the format the
-                    # SRURecordUpdate component understands.
-                    (WebRequestServer(),
-                        # Create the SRURecordUpdate which understands the
-                        # SRUUpdate layer.
-                        (SRURecordUpdate(),
-                            # Convert the Amara based xml object from the
-                            # SRUupdate component into an Lxml based xml object
-                            # for futher processing.
-                            (Amara2Lxml(),
-                                # Convert the Lxml based xml object into plain
-                                # text
-                                (XmlPrintLxml(),
-                                    # Store the data in the storage
-                                    (storageComponent,)
-                                ),
-                                # Start a transaction called batch, which on
-                                # commit will trigger Lucene to index the
-                                # documents created in the "record" transaction.
-                                (TransactionScope('batch'),
-                                    # Start a new transaction in which the given xml
-                                    # will be stored in a indexable format.
-                                    (TransactionScope('record'),
-                                        # Every transaction needs an identifier. The
-                                        # identifier provided by the SRURecordUpdate
-                                        # will be set into the transaction.
-                                        (SetIdentifier(),
-                                            # The given xml will be transformed into
-                                            # Fields. by traversing the xml
-                                            # from root to all leaves. Each pair
-                                            # will then be added to the index.
-                                            (Xml2Fields(),
-                                                # Add all created fields to an
-                                                # collection of fields. Once all
-                                                # fields have been created, commit
-                                                # the transaction.
-                                                (ResourceManager('record', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
-                                                    # Commit the created fields
-                                                    # into the index.
-                                                    indexHelix
-                                                )
+                    # Create the SRURecordUpdate which understands the
+                    # SRUUpdate layer.
+                    (SRURecordUpdate(),
+                        # Convert the Amara based xml object from the
+                        # SRUupdate component into an Lxml based xml object
+                        # for futher processing.
+                        (Amara2Lxml(),
+                            # Convert the Lxml based xml object into plain
+                            # text
+                            (XmlPrintLxml(),
+                                # Store the data in the storage
+                                (storageComponent,)
+                            ),
+                            # Start a transaction called batch, which on
+                            # commit will trigger Lucene to index the
+                            # documents created in the "record" transaction.
+                            (TransactionScope('batch'),
+                                # Start a new transaction in which the given xml
+                                # will be stored in a indexable format.
+                                (TransactionScope('record'),
+                                    # Every transaction needs an identifier. The
+                                    # identifier provided by the SRURecordUpdate
+                                    # will be set into the transaction.
+                                    (SetIdentifier(),
+                                        # The given xml will be transformed into
+                                        # Fields. by traversing the xml
+                                        # from root to all leaves. Each pair
+                                        # will then be added to the index.
+                                        (Xml2Fields(),
+                                            # Add all created fields to an
+                                            # collection of fields. Once all
+                                            # fields have been created, commit
+                                            # the transaction.
+                                            (ResourceManager('record', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
+                                                # Commit the created fields
+                                                # into the index.
+                                                indexHelix
                                             )
                                         )
                                     )

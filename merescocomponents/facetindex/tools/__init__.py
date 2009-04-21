@@ -1,4 +1,3 @@
-from lucenetools import unlock
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -27,3 +26,4 @@ from lucenetools import unlock
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from lucenetools import unlock
