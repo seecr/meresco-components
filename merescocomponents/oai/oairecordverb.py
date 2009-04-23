@@ -31,7 +31,7 @@ from amara.binderytools import bind_string
 from StringIO import StringIO
 
 from oaiverb import OaiVerb
-from merescocore.framework.generatorutils import generatorDecorate
+from merescocore.framework.generatorutils import decorate
 
 class OaiRecordVerb(OaiVerb):
 
@@ -54,7 +54,7 @@ class OaiRecordVerb(OaiVerb):
             webRequest.write('</metadata>')
 
         provenance = self.all.provenance(recordId)
-        for line in generatorDecorate('<about>', provenance, '</about>'):
+        for line in decorate('<about>', provenance, '</about>'):
             webRequest.write(line)
 
         if writeBody:
