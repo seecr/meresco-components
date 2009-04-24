@@ -36,7 +36,7 @@ from merescocore.framework import be, Observable, TransactionScope, ResourceMana
 from merescocore.components import StorageComponent, FilterField, RenameField, XmlParseLxml, XmlXPath, XmlPrintLxml, Xml2Fields, Venturi, FilterMessages, Amara2Lxml, RewritePartname, Rss, RssItem, Lxml2Amara
 from merescocomponents.facetindex import Drilldown, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
 from merescocomponents.facetindex.tools import unlock
-from merescocore.components.drilldown import SRUDrilldownAdapter, SRUTermDrilldown, DrilldownFieldnames
+from merescocore.components.drilldown import SRUTermDrilldown, DrilldownFieldnames
 from merescocore.components.http import PathFilter, ObservableHttpServer
 from merescocore.components.http.webrequestserver import WebRequestServer
 from merescocore.components.sru import SruParser, SruHandler, SRURecordUpdate
@@ -136,17 +136,15 @@ def dna(reactor,  host, portNumber, databasePath):
                                 indexHelix
                             ),
                             (storageComponent,),
-                            (SRUDrilldownAdapter(),
-                                (SRUTermDrilldown(),
-                                    (DrilldownFieldnames(
-                                        lambda field: DRILLDOWN_PREFIX + field,
-                                        lambda field: field[len(DRILLDOWN_PREFIX):]),
-                                            (drilldownComponent,)
-                                    ),
-                                    (CQL2LuceneQuery(unqualifiedTermFields),
-                                        indexHelix
-                                    ),
-                                )
+                            (SRUTermDrilldown(),
+                                (DrilldownFieldnames(
+                                    lambda field: DRILLDOWN_PREFIX + field,
+                                    lambda field: field[len(DRILLDOWN_PREFIX):]),
+                                        (drilldownComponent,)
+                                ),
+                                (CQL2LuceneQuery(unqualifiedTermFields),
+                                    indexHelix
+                                ),
                             )
                         )
                     )
