@@ -90,10 +90,10 @@ class LuceneIndex(Observable):
     def observer_init(self):
         self.do.indexStarted(self._reader, docIdMapping=self._lucene2docId)
 
-    def docsetFromQuery(self, pyLuceneQuery):
+    def docsetFromQuery(self, pyLuceneQuery, **kwargs):
         return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
 
-    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, docfilter=None):
+    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, docfilter=None, **kwargs):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
         if sortField:
             hits = self._searcher.search(pyLuceneQuery, sortField)

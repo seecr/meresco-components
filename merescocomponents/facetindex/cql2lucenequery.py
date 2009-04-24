@@ -41,8 +41,14 @@ class CQL2LuceneQuery(Observable, Logger):
 
     def executeCQL(self, cqlAbstractSyntaxTree, *args, **kwargs):
         ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
-        return self.any.executeQuery(self._cqlComposer.compose(cqlAbstractSyntaxTree), *args, **kwargs)
+        return self.any.executeQuery(
+                pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
+                *args, **kwargs
+            )
 
     def docsetFromQuery(self, cqlAbstractSyntaxTree, *args, **kwargs):
         ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
-        return self.any.docsetFromQuery(self._cqlComposer.compose(cqlAbstractSyntaxTree), *args, **kwargs)
+        return self.any.docsetFromQuery(
+                pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
+                *args, **kwargs
+            )
