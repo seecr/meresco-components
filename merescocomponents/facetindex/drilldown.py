@@ -60,6 +60,12 @@ class Drilldown(object):
         for fieldname in fieldnames:
             self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
 
+        compoundFields = (field for field in self._actualDrilldownFieldnames if type(field) == tuple)
+        for field in compoundFields:
+            for fieldname in field:
+                if fieldname in docDict.keys():
+                    self._docsetlists[field].addDocument(docId, docDict[fieldname])
+
     def addDocument(self, docId, docDict):
         self.deleteDocument(docId)
         self._commandQueue.append(FunctionCommand(self._add, docId=docId, docDict=docDict))
@@ -110,12 +116,7 @@ class Drilldown(object):
         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
             if fieldname not in self._actualDrilldownFieldnames:
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
-            t0 = time()
-            try:
-                yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
-            finally:
-                pass
-                #print 'drilldown (ms)', fieldname, (time()-t0)*1000
+            yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
 
     def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:

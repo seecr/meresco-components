@@ -317,3 +317,17 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([[0], [1,2], [3]], list(dsl0))
         dsl1 = drilldown.intersect('field_1', DocSet([0,1,2,3]))
         self.assertEquals([[0,2,1],[3]], list(dsl1))
+
+    def testMultiFieldDrilldown(self):
+        drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
+        drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+        drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
+        drilldown.commit()
+        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        self.assertEquals(('keyword', 'title'), results[0][0])
+        resultTerms = list(results[0][1])
+        self.assertEquals(set([('math', 1),('mathematics for dummies',1),('economics',1)]), set(resultTerms))
+
+        # test order
+        # test duplicate add
+        # test delete
