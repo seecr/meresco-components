@@ -263,6 +263,19 @@ class DocSetListTest(LuceneTestCase):
         m.add(DocSet([1, 3, 5, 7, 9]), 'x')
         self.assertEquals([1, 3, 5, 7, 9], m[1])
 
+    def testMerge(self):
+        m = DocSetList()
+        m.add(DocSet([0, 2, 4, 6, 8]), 'x')
+        m.add(DocSet([0, 1, 2]), 'y')
+        n = DocSetList()
+        n.add(DocSet([1, 3, 5, 7, 9]), 'x')
+        m.add(DocSet([3, 4, 5]), 'z')
+        o = m.merge(n)
+        self.assertEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], m[0])
+        self.assertEquals([0, 1, 2], m[1])
+        self.assertEquals([3, 4, 5], m[2])
+
+
     def testBugCausesAbort(self):
         m = DocSetList()
         m.add(DocSet([100000000]), 'x')
