@@ -326,8 +326,17 @@ class DrilldownTest(CQ2TestCase):
         results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
         self.assertEquals(('keyword', 'title'), results[0][0])
         resultTerms = list(results[0][1])
-        self.assertEquals(set([('math', 1),('mathematics for dummies',1),('economics',1)]), set(resultTerms))
+        self.assertEquals(set([('math', 1),('mathematics for dummies', 1),('economics', 1)]), set(resultTerms))
 
-        # test order
+        # test order (cardinality)
+        drilldown.addDocument(2, {'keyword': ['economics'], 'description': ['making a fortune of bad loans']})
+        drilldown.addDocument(3, {'keyword': ['economics'], 'title': ['mathematics for dummies']})
+        drilldown.commit()
+        results = list(drilldown.drilldown(DocSet([0,1,2,3]), [(('keyword', 'title'), 0, True)]))
+        resultTerms = list(results[0][1])
+        self.assertEquals([('economics', 3), ('mathematics for dummies', 2), ('math', 1)], resultTerms)
+
+
         # test duplicate add
         # test delete
+        # test (?) / build proper initialization in 'indexStarted', probably based on 'merge' operation on DocSetList
