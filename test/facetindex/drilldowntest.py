@@ -350,6 +350,6 @@ class DrilldownTest(CQ2TestCase):
         reader = IndexReader.open(self.tempdir)
 
         drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
-        field, results = drilldown.drilldown(DocSet(data=[0]), [(('field_0', 'field_1'), 10, False)]).next()
+        field, results = drilldown.drilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)]).next()
         self.assertEquals(('field_0', 'field_1'), field)
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))

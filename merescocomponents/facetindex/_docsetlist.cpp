@@ -104,12 +104,18 @@ void DocSetList::addDocSet(fwPtr docset, char *term) {
 
 
 void DocSetList::merge(DocSetList* anotherList) {
-    for( DocSetList::iterator i = anotherList->begin(); i < anotherList->end(); i++) {
+    for (DocSetList::iterator i = anotherList->begin(); i < anotherList->end(); i++) {
         DocSet* docSet = pDS(*i);
-        fwPtr newDocSet = DocSet_create(docSet->size());
-        pDS(newDocSet)->merge(docSet);
         char *term = anotherList->getTermForDocset(docSet);
-        this->addDocSet(newDocSet, term);
+
+        fwPtr matchingDocSet = this->forTerm(term);
+        if (matchingDocSet.ptr == fwNONE.ptr) {
+            fwPtr newDocSet = DocSet_create(0);
+            pDS(newDocSet)->merge(docSet);
+            this->addDocSet(newDocSet, term);
+        } else {
+            pDS(matchingDocSet)->merge(docSet);
+        }
     }
 }
 

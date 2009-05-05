@@ -107,10 +107,10 @@ class Drilldown(object):
             if type(fieldname) == tuple:
                 self._docsetlists[fieldname] = DocSetList()
                 for field in fieldname:
-                    termEnum = indexReader.terms(Term(field,''))
+                    termEnum = indexReader.terms(Term(field, ''))
                     self._docsetlists[fieldname].merge(DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping))
             else:
-                termEnum = indexReader.terms(Term(fieldname,''))
+                termEnum = indexReader.terms(Term(fieldname, ''))
                 self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
         self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000

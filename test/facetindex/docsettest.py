@@ -166,9 +166,23 @@ class DocSetTest(LuceneTestCase):
         self.assertTrue(4 in d)
         self.assertFalse(5 in d)
 
-    def testMerge(self):
+    def testSimpleMerge(self):
         a = DocSet([])
         b = DocSet([2])
         a.merge(b)
         self.assertEquals(1, len(a))
         self.assertEquals(2, a[0])
+
+    def testMerge(self):
+        a = DocSet([1, 2, 4])
+        b = DocSet([2, 3])
+        a.merge(b)
+        self.assertEquals(4, len(a))
+        self.assertEquals(DocSet([1, 2, 3, 4]), a)
+
+    def testMerge(self):
+        a = DocSet([2, 4])
+        b = DocSet([1, 3])
+        a.merge(b)
+        self.assertEquals(4, len(a))
+        self.assertEquals(DocSet([1, 2, 3, 4]), a)

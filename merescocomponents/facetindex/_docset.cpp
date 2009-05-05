@@ -154,10 +154,15 @@ void DocSet::append(doc_t* docarray, int count) {
 
 
 void DocSet::merge(DocSet* docSet) {
+    DocSet::iterator thisIterator = begin();
     for (DocSet::iterator it = docSet->begin(); it < docSet->end(); it++) {
-        this->push_back(*it);
+        while (thisIterator < end() && *it > *thisIterator) {
+            thisIterator++;
+        }
+        if (thisIterator >= end() || *it != *thisIterator) {
+            thisIterator = insert(thisIterator, *it);
+        }
     }
-
 }
 
 void DocSet::remove(guint32 doc) {

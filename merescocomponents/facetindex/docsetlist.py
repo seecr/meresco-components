@@ -142,7 +142,6 @@ CardinalityList_free = libFacetIndex.CardinalityList_free
 CardinalityList_free.argtypes = [CARDINALITYLIST]
 CardinalityList_free.restype = None
 
-
 SORTEDONTERM = 1
 SORTEDONCARDINALITY = 2
 SORTEDONTERMID = 3
