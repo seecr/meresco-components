@@ -60,6 +60,7 @@ class DocSetList : public std::vector<fwPtr> {
         DocSetList(int shadow): _shadow(shadow) {};
         ~DocSetList();
         void                 addDocSet(fwPtr docset, char *term);
+        void                 merge(DocSetList* anotherlist);
         CardinalityList*     combinedCardinalities(DocSet* docset, guint32 maxResults, int doSort);
         DocSetList*          intersect(fwPtr docset);
         DocSetList*          termIntersect(DocSetList* rhs);
@@ -109,6 +110,7 @@ extern "C" {
     int JACCARD_X2 = 2;
     DocSetList*      DocSetList_create               (void);
     void             DocSetList_add                  (DocSetList* list, fwPtr docset, char* term);
+    void             DocSetList_merge                (DocSetList* list, DocSetList* anotherlist);
     void             DocSetList_removeDoc            (DocSetList* list, guint32 doc);
     int              DocSetList_size                 (DocSetList* list);
     fwPtr            DocSetList_get                  (DocSetList* list, int i);

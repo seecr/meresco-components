@@ -47,13 +47,13 @@ class DocSet : public std::vector<doc_t> {
     public:
         guint32 _termOffset;
         DocSet(size_t n): std::vector<doc_t>(n, 0) {}
-    public:
         DocSet(): _termOffset(0xFFFFFFFF) {};
         int     contains                 (guint32 docId);
         int     combinedCardinality      (DocSet* rhs);
         int     combinedCardinalitySearch(DocSet* longer);
         fwPtr   intersect                (fwPtr rhs);
         void    append                   (doc_t* docarray, int count);
+        void    merge                    (DocSet* docSet);
         void    remove                   (guint32 doc);
         void    map                      (IntegerList* mapping);
         static  fwPtr fromTermDocs       (JObject* termDocs, int freq, IntegerList* mapping);
@@ -72,16 +72,17 @@ extern "C" {
     fwPtr   DocSet_create                    (int size);
     fwPtr   DocSet_forTesting                (int size);
     int     DocSet_contains                  (fwPtr docSet, guint32 docId);
-    void    DocSet_add                       (fwPtr docset, guint32 doc);
-    void    DocSet_remove                    (fwPtr docset, guint32 doc);
-    guint32 DocSet_get                       (fwPtr docset, int i);
-    int     DocSet_len                       (fwPtr docset);
-    int     DocSet_combinedCardinality       (fwPtr docset, fwPtr rhs);
-    int     DocSet_combinedCardinalitySearch (fwPtr docset, fwPtr rhs);
-    fwPtr   DocSet_intersect                 (fwPtr docset, fwPtr rhs);
+    void    DocSet_add                       (fwPtr docSet, guint32 doc);
+    void    DocSet_merge                     (fwPtr docSet, fwPtr anotherDocSet);
+    void    DocSet_remove                    (fwPtr docSet, guint32 doc);
+    guint32 DocSet_get                       (fwPtr docSet, int i);
+    int     DocSet_len                       (fwPtr docSet);
+    int     DocSet_combinedCardinality       (fwPtr docSet, fwPtr rhs);
+    int     DocSet_combinedCardinalitySearch (fwPtr docSet, fwPtr rhs);
+    fwPtr   DocSet_intersect                 (fwPtr docSet, fwPtr rhs);
     fwPtr   DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping);
     fwPtr   DocSet_fromTermDocs              (PyJObject* termDocs, int freq, IntegerList* mapping);
-    void    DocSet_delete                    (fwPtr docset);
+    void    DocSet_delete                    (fwPtr docSet);
 }
 
 #define SWITCHPOINT 200 // for random docsset, this is the trippoint, experimentally

@@ -340,3 +340,16 @@ class DrilldownTest(CQ2TestCase):
         # test duplicate add
         # test delete
         # test (?) / build proper initialization in 'indexStarted', probably based on 'merge' operation on DocSetList
+
+
+    def testIndexStartedWithCompoundField(self):
+        self.addUntokenized([('id0', {'field_0': 'this is term_0'})])
+        self.addUntokenized([('id1', {'field_1': 'this is term_1'})])
+
+        drilldown = Drilldown(['field_0', ('field_0', 'field_1')])
+        reader = IndexReader.open(self.tempdir)
+
+        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
+        field, results = drilldown.drilldown(DocSet(data=[0]), [(('field_0', 'field_1'), 10, False)]).next()
+        self.assertEquals(('field_0', 'field_1'), field)
+        self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))

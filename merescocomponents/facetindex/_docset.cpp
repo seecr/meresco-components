@@ -71,12 +71,19 @@ int DocSet_contains(fwPtr docSet, guint32 docId) {
 void DocSet_add(fwPtr docset, guint32 doc) {
     pDS(docset)->push_back(doc);
 }
+
+void DocSet_merge(fwPtr docSet, fwPtr anotherDocSet) {
+    pDS(docSet)->merge(pDS(anotherDocSet));
+}
+
 void DocSet_remove(fwPtr docset, guint32 doc) {
     pDS(docset)->remove(doc);
 }
+
 guint32 DocSet_get(fwPtr docset, int i) {
     return pDS(docset)->at(i);
 }
+
 int DocSet_len(fwPtr docset) {
     return pDS(docset)->size();
 }
@@ -94,7 +101,6 @@ fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
 }
 
 // ### C++ below ###
-
 int DocSet::contains(guint32 docId) {
     return binary_search(begin(), end(), docId);
 }
@@ -144,6 +150,14 @@ void DocSet::append(doc_t* docarray, int count) {
     // vette hack + 100
     memcpy(hack->end, docarray, count * sizeof(doc_t));
     hack->end += count;
+}
+
+
+void DocSet::merge(DocSet* docSet) {
+    for (DocSet::iterator it = docSet->begin(); it < docSet->end(); it++) {
+        this->push_back(*it);
+    }
+
 }
 
 void DocSet::remove(guint32 doc) {

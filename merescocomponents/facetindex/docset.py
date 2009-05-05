@@ -36,10 +36,6 @@ class DOCSET(Structure):
     _fields_ = [("type", c_int, 2),
                 ("ptr", c_int, 30)]
 
-docsetpointer = POINTER(c_uint32)
-def docsettype(size):
-    return (c_uint32*size)
-
 DocSet_create = libFacetIndex.DocSet_create
 DocSet_create.argtypes = [c_int]
 DocSet_create.restype = DOCSET
@@ -51,6 +47,10 @@ DocSet_contains.restype = c_int
 DocSet_add = libFacetIndex.DocSet_add
 DocSet_add.argtypes = [DOCSET, c_uint32]
 DocSet_add.restype = None
+
+DocSet_merge = libFacetIndex.DocSet_merge
+DocSet_merge.argtypes = [DOCSET, DOCSET]
+DocSet_merge.restype = None
 
 DocSet_remove = libFacetIndex.DocSet_remove
 DocSet_remove.argtypes = [DOCSET, c_uint32]
@@ -146,6 +146,9 @@ class DocSet(object):
         if l > 0 and doc <= DocSet_get(self, l-1):
             raise Exception('non-increasing docid: %d must be > %d' % (doc, l))
         DocSet_add(self._cobj, doc)
+
+    def merge(self, anotherDocSet):
+        DocSet_merge(self, anotherDocSet)
 
     def delete(self, doc):
         DocSet_remove(self, doc)

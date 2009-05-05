@@ -70,6 +70,7 @@ class CompareTermId {
         }
 };
 
+
 void DocSetList::sortOnTerm(void) {
     sort(begin(), end(), CompareTerm(this));
 }
@@ -100,6 +101,18 @@ void DocSetList::addDocSet(fwPtr docset, char *term) {
         this->docId2terms_add(docId, docset);
     }
 }
+
+
+void DocSetList::merge(DocSetList* anotherList) {
+    for( DocSetList::iterator i = anotherList->begin(); i < anotherList->end(); i++) {
+        DocSet* docSet = pDS(*i);
+        fwPtr newDocSet = DocSet_create(docSet->size());
+        pDS(newDocSet)->merge(docSet);
+        char *term = anotherList->getTermForDocset(docSet);
+        this->addDocSet(newDocSet, term);
+    }
+}
+
 
 void DocSetList::docId2terms_add(guint32 docId, fwPtr docset) {
 
@@ -334,6 +347,10 @@ DocSetList* DocSetList_create() {
 
 void DocSetList_add(DocSetList* list, fwPtr docset, char* term) {
     list->addDocSet(docset, term);
+}
+
+void DocSetList_merge(DocSetList* list, DocSetList* anotherlist) {
+    list->merge(anotherlist);
 }
 
 void DocSetList_removeDoc(DocSetList* list, guint32 doc) {

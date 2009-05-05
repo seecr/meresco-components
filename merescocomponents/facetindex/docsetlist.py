@@ -54,6 +54,10 @@ DocSetList_add = libFacetIndex.DocSetList_add
 DocSetList_add.argtypes = [DOCSETLIST, DOCSET, c_char_p]
 DocSetList_add.restype = None
 
+DocSetList_merge = libFacetIndex.DocSetList_merge
+DocSetList_merge.argtypes = [DOCSETLIST, DOCSETLIST]
+DocSetList_merge.restype = None
+
 DocSetList_removeDoc = libFacetIndex.DocSetList_removeDoc
 DocSetList_removeDoc.argtypes = [DOCSETLIST, c_uint32]
 DocSetList_removeDoc.restype = None
@@ -176,6 +180,9 @@ class DocSetList(object):
         DocSetList_add(self, docset, term)
         self._sorted = None
 
+    def merge(self, anotherDocSetList):
+        DocSetList_merge(self, anotherDocSetList)
+
     def termCardinalities(self, docset, maxResults=maxint, sorted=False):
         if sorted:
             self.sortOnCardinality()
@@ -199,7 +206,7 @@ class DocSetList(object):
 
     def innerUnion(self):
         return DocSet(cobj=DocSetList_innerUnion(self), own=True)
-    
+
     def _TEST_getRawCardinalities(self, docset):
         class cardinality_t_RAW(Structure):
             _fields_ = [('term',        POINTER(None)),
