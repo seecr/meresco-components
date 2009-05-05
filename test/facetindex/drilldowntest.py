@@ -339,7 +339,6 @@ class DrilldownTest(CQ2TestCase):
 
         # test duplicate add
         # test delete
-        # test (?) / build proper initialization in 'indexStarted', probably based on 'merge' operation on DocSetList
 
 
     def testIndexStartedWithCompoundField(self):

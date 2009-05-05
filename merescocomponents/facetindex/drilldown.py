@@ -52,6 +52,7 @@ class Drilldown(object):
             self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
         self._commandQueue = []
         self._transactionName = transactionName
+        self._docSetListCache = {}
 
     def _add(self, docId, docDict):
         fieldnames = (fieldname
@@ -97,7 +98,6 @@ class Drilldown(object):
         t0 = time()
 
         self._totaldocs = indexReader.numDocs()
-        termDocs = indexReader.termDocs()
         fieldNames = self._staticDrilldownFieldnames
         if not fieldNames:
             fieldNames = [fieldname
@@ -107,13 +107,21 @@ class Drilldown(object):
             if type(fieldname) == tuple:
                 self._docsetlists[fieldname] = DocSetList()
                 for field in fieldname:
-                    termEnum = indexReader.terms(Term(field, ''))
-                    self._docsetlists[fieldname].merge(DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping))
+                    self._docsetlists[fieldname].merge(self._docSetListFromTermEnumForField(field, indexReader, docIdMapping))
             else:
-                termEnum = indexReader.terms(Term(fieldname, ''))
-                self._docsetlists[fieldname] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
+                self._docsetlists[fieldname] = self._docSetListFromTermEnumForField(fieldname, indexReader, docIdMapping)
+
         self._actualDrilldownFieldnames = fieldNames
+        self._docSetListCache = {}
         #print 'indexStarted (ms)', (time()-t0)*1000
+
+    def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
+        if not field in self._docSetListCache:
+            termDocs = indexReader.termDocs()
+            termEnum = indexReader.terms(Term(field, ''))
+            self._docSetListCache[field] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
+        return self._docSetListCache[field]
+
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:
