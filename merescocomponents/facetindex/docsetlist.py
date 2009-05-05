@@ -242,9 +242,10 @@ class DocSetList(object):
             r = DocSetList_getForTerm(self, term)
             if r.ptr != -1:
                 docset = DocSet(cobj=r)
-                docset.add(docid)
-                DocSetList_docId2terms_add(self, docid, docset)
-                self._sorted = None
+                if not docid in docset:
+                    docset.add(docid)
+                    DocSetList_docId2terms_add(self, docid, docset)
+                    self._sorted = None
             else:
                 docset = DocSet()
                 docset.add(docid)

@@ -326,7 +326,7 @@ class DrilldownTest(CQ2TestCase):
         results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
         self.assertEquals(('keyword', 'title'), results[0][0])
         resultTerms = list(results[0][1])
-        self.assertEquals(set([('math', 1),('mathematics for dummies', 1),('economics', 1)]), set(resultTerms))
+        self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
 
         # test order (cardinality)
         drilldown.addDocument(2, {'keyword': ['economics'], 'description': ['making a fortune of bad loans']})
@@ -336,9 +336,31 @@ class DrilldownTest(CQ2TestCase):
         resultTerms = list(results[0][1])
         self.assertEquals([('economics', 3), ('mathematics for dummies', 2), ('math', 1)], resultTerms)
 
+    def testMultiFieldDrilldownWithRepeatedTerms(self):
+        drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
+        drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+        drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
+        drilldown.addDocument(2, {'keyword': ['economics'], 'title': ['economics']})
+        drilldown.commit()
+        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        resultTerms = list(results[0][1])
+        self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
 
-        # test duplicate add
-        # test delete
+
+    def testMultiFieldDrilldownAfterDelete(self):
+        drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
+        drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+        drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
+        drilldown.commit()
+        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        resultTerms = list(results[0][1])
+        self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
+
+        drilldown.deleteDocument(1)
+        drilldown.commit()
+        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        resultTerms = list(results[0][1])
+        self.assertEquals(set([('math', 1), ('mathematics for dummies', 1)]), set(resultTerms))
 
 
     def testIndexStartedWithCompoundField(self):
