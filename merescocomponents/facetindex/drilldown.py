@@ -113,6 +113,7 @@ class Drilldown(object):
 
         self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000
+        print self.measure()
 
     def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
         termDocs = indexReader.termDocs()
