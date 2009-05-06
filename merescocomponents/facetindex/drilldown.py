@@ -32,6 +32,7 @@ from time import time
 from sys import maxint
 from functioncommand import FunctionCommand
 from callstackscope import callstackscope
+from .triedict import TrieDict
 
 class NoFacetIndexException(Exception):
 
@@ -138,3 +139,14 @@ class Drilldown(object):
 
     def intersect(self, fieldname, docset):
         return self._docsetlists[fieldname].intersect(docset)
+
+    def measure(self):
+        totalBytes = 0
+        terms = 0
+        postings = 0
+        for docsetlist in self._docsetlists.values():
+            totalBytes += docsetlist.measure()
+            terms += len(docsetlist)
+            postings += sum(len(docset) for docset in docsetlist)
+        dictionaries = TrieDict.measureall()
+        return {'dictionaries':dictionaries, 'postings': postings, 'terms': terms, 'fields': len(self._docsetlists), 'totalBytes': totalBytes}

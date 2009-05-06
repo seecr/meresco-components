@@ -48,6 +48,9 @@ class TrieDict {
     public:
         TrieDict(void);
         ~TrieDict(void);
+        int                measure(void) {
+            return sizeof(this); // excluding global termPool and TrieNodes, use TrieNode_measureall()
+        }
         termid             add(char* term, value value);
         value              getValue(char* term);
         char*              getTerm(termid termId);
@@ -56,5 +59,6 @@ class TrieDict {
 extern "C" {
     TrieDict*              TrieDict_create(void);
     void                   TrieDict_delete(TrieDict*);
+    int                    TrieDict_measureall(void);
 }
 #endif

@@ -52,6 +52,10 @@ void DocSet_delete(fwPtr docset) {
     Pool_free(_docsetPool, docset);
 }
 
+int DocSet_measure(fwPtr docset) {
+    return pDS(docset)->measure();
+}
+
 fwPtr DocSet_forTesting(int size) {
     fwPtr ds = DocSet_create();
     DocSet* docset = pDS(ds);

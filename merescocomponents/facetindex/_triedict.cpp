@@ -32,6 +32,10 @@
 
 StringPool globalStringPool;
 
+int TrieDict_measureall(void) {
+    return globalStringPool.measure() + measureall() /* from TrieNode */;
+}
+
 TrieDict::TrieDict(): termPool(&globalStringPool) {
     termIndex = TrieNode_create(fwValueNone);
 }

@@ -47,6 +47,7 @@ typedef struct {
 
 typedef std::vector<cardinality_t> CardinalityList;
 typedef std::vector<fwPtr> TermList;
+typedef std::map<guint32, TermList> DocId2TermListMap;
 typedef std::iterator<std::random_access_iterator_tag, guint32> Guint32Iterator;
 
 class DocSetIterator;
@@ -54,9 +55,23 @@ class DocSetIterator;
 class DocSetList : public std::vector<fwPtr> {
     private:
         guint32              _shadow;
-        std::map<guint32, TermList> docId2TermList;
+        DocId2TermListMap    docId2TermList;
         TrieDict             dictionary;
     public:
+        int measure(void) {
+            const int allocOverhead = 16;
+            int mysize = sizeof(this) + allocOverhead;
+            for ( DocSetList::iterator i = begin(); i < end(); i++ ) {
+                mysize += sizeof(fwPtr) + pDS(*i)->measure();
+            }
+            int mapNodeSize = sizeof(std::_Rb_tree_node_base);
+            int mapSize = mapNodeSize * size() + allocOverhead;
+            for ( DocId2TermListMap::iterator i = docId2TermList.begin(); i != docId2TermList.end(); i++ ) {
+                mapSize += sizeof(guint32) + sizeof(TermList) + (*i).second.size() * sizeof(fwPtr);
+            }
+            int dictSize = dictionary.measure();
+            return mysize + mapSize + dictSize;
+        }
         DocSetList(int shadow): _shadow(shadow) {};
         ~DocSetList();
         void                 addDocSet(fwPtr docset, char *term);
@@ -109,6 +124,7 @@ extern "C" {
     int JACCARD_MI = 1;
     int JACCARD_X2 = 2;
     DocSetList*      DocSetList_create               (void);
+    int              DocSetList_measure              (DocSetList* list);
     void             DocSetList_add                  (DocSetList* list, fwPtr docset, char* term);
     void             DocSetList_merge                (DocSetList* list, DocSetList* anotherlist);
     void             DocSetList_removeDoc            (DocSetList* list, guint32 doc);

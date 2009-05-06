@@ -58,9 +58,9 @@ extern "C" {
     void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive);
     int TrieNode_memory(void);
     void TrieNode_printit(fwPtr self, int indent, StringPool* pool);
-
+    int measureall(void);
     void nodecount(void);
-    int isNone(fwPtr ptr);
+    inline int isNone(fwPtr ptr) { return ptr.ptr == fwNONE.ptr; }
 }
 
 #endif

@@ -464,3 +464,7 @@ char* DocSetList_getTermForDocset(DocSetList *list, fwPtr docset) {
 void DocSetList_docId2terms_add(DocSetList *list, guint32 docId, fwPtr docset) {
     list->docId2terms_add(docId, docset);
 }
+
+int DocSetList_measure(DocSetList* list) {
+    return list->measure();
+}

@@ -654,6 +654,15 @@ void StringNode_printit(fwPtr self, int indent, StringPool* pool) {
 
 /************** fwTrie ******************/
 
+int measureall(void) {
+    int trieMemory = Pool_memory(_trieNodePool);
+    int leafMemory = Pool_memory(_leafNodePool);
+    int stringMemory = Pool_memory(_stringNodePool);
+    int listMemory = Pool_memory(_listNodePool);
+    int listItemMemory = Pool_memory(_listItemPool);
+    int totalMemory = trieMemory+leafMemory+stringMemory+listMemory+listItemMemory;
+    return totalMemory;
+ }
 
 void nodecount() {
     int trieMemory = Pool_memory(_trieNodePool);

@@ -50,6 +50,10 @@ DocSetList_delete = libFacetIndex.DocSetList_delete
 DocSetList_delete.argtypes = [DOCSETLIST]
 DocSetList_delete.restype = None
 
+DocSetList_measure = libFacetIndex.DocSetList_measure
+DocSetList_measure.argtypes = [DOCSETLIST]
+DocSetList_measure.restype = int
+
 DocSetList_add = libFacetIndex.DocSetList_add
 DocSetList_add.argtypes = [DOCSETLIST, DOCSET, c_char_p]
 DocSetList_add.restype = None
@@ -287,3 +291,6 @@ class DocSetList(object):
 
     def printMemory(self):
         DocSetList_printMemory(self)
+
+    def measure(self):
+        return DocSetList_measure(self)

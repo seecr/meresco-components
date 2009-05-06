@@ -111,7 +111,3 @@ int Pool_memory(fwPool self) {
 int Pool_count(fwPool self) {
     return P(self)->_headElement + 1;
 }
-
-inline int isNone(fwPtr ptr) {
-    return ptr.ptr == fwNONE.ptr;
-}

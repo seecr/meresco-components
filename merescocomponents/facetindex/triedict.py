@@ -41,10 +41,17 @@ TrieDict_delete = libFacetIndex.TrieDict_delete
 TrieDict_delete.argtypes = [TRIEDICT]
 TrieDict_delete.restype = None
 
+TrieDict_measureall = libFacetIndex.TrieDict_measureall
+TrieDict_measureall.argtypes = None
+TrieDict_measureall.restype = int
 
 class TrieDict(object):
+
+    @classmethod
+    def measureall(clazz):
+        return TrieDict_measureall()
+
     def __init__(self):
         self._cobj = TrieDict_create()
         self._dealloc = deallocator(TrieDict_delete, self._cobj)
         self._as_parameter_ = self._cobj
-        

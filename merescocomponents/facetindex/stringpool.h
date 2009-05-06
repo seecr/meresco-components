@@ -49,6 +49,9 @@ class StringPool {
         termid             add(char* term);
         //bool               contains(char* term);
         char*              get(termid);
+        int                measure(void) {
+            return sizeof(this) + allterms.length();
+        }
 };
 
 #endif

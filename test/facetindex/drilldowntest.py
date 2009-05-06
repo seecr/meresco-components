@@ -377,3 +377,13 @@ class DrilldownTest(CQ2TestCase):
         field, results = drilldown.drilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)]).next()
         self.assertEquals(('field_0', 'field_1'), field)
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
+
+    def testGetIndexMeasure(self):
+        drilldown = Drilldown(['fld0', 'fld1', 'fld2'])
+        measure = drilldown.measure()
+        self.assertEquals({'dictionaries':1360870,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120}, measure)
+        drilldown.addDocument(0, {'fld0':['t1','t2'],'fld1': ['t1','t3']})
+        drilldown.addDocument(1, {'fld1':['t3','t4'],'fld2': ['t4','t5']})
+        drilldown.commit()
+        measure = drilldown.measure()
+        self.assertEquals({'dictionaries':1360885,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416}, measure)
