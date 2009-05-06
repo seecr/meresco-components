@@ -203,6 +203,9 @@ class DrilldownTest(CQ2TestCase):
         jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 0, 100)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('dogs',100),('mice', 66),('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
 
+        jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 45, 55)], algorithm=JACCARD_ONLY))
+        self.assertEquals([('title', [('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
+
     def testJaccardIndexChecksFields(self):
         drilldown = Drilldown(['title'])
         try:
