@@ -64,8 +64,7 @@ static int x = pool_init();
 extern fwPool _docsetPool;
 
 inline DocSet* pDS(fwPtr ds) {
-    void* p = Pool_get(_docsetPool, ds);
-    return (DocSet*) p;
+    return (DocSet*) Pool_get(_docsetPool, ds);
 }
 
 extern "C" {

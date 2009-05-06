@@ -92,7 +92,7 @@ fwPtr Pool_new(fwPool self) {
         }
         newOne.ptr = P(self)->_headElement++;
     }
-   return newOne;
+    return newOne;
 }
 
 void Pool_free(fwPool self, fwPtr ptr) {

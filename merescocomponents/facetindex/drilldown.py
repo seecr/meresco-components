@@ -116,11 +116,14 @@ class Drilldown(object):
         #print 'indexStarted (ms)', (time()-t0)*1000
 
     def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
-        if not field in self._docSetListCache:
+        #if not field in self._docSetListCache:
+        if True:
             termDocs = indexReader.termDocs()
             termEnum = indexReader.terms(Term(field, ''))
-            self._docSetListCache[field] = DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
-        return self._docSetListCache[field]
+            result =DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
+            return result
+            #self._docSetListCache[field] = result
+        #return self._docSetListCache[field]
 
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):

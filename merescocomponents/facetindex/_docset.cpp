@@ -39,7 +39,7 @@ fwPool _docsetPool = Pool_create(0, sizeof(DocSet), 10000);
 
 fwPtr DocSet_create(int size=0) {
     fwPtr newOne = Pool_new(_docsetPool);
-    void* p = pDS(newOne);
+    DocSet* p = pDS(newOne);
     if ( size > 0 ) {
         new (p) DocSet(size);
     } else {
