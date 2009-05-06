@@ -52,7 +52,6 @@ class Drilldown(object):
             self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
         self._commandQueue = []
         self._transactionName = transactionName
-        self._docSetListCache = {}
 
     def _add(self, docId, docDict):
         fieldnames = (fieldname
@@ -112,19 +111,12 @@ class Drilldown(object):
                 self._docsetlists[fieldname] = self._docSetListFromTermEnumForField(fieldname, indexReader, docIdMapping)
 
         self._actualDrilldownFieldnames = fieldNames
-        self._docSetListCache = {}
         #print 'indexStarted (ms)', (time()-t0)*1000
 
     def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
-        #if not field in self._docSetListCache:
-        if True:
-            termDocs = indexReader.termDocs()
-            termEnum = indexReader.terms(Term(field, ''))
-            result =DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
-            return result
-            #self._docSetListCache[field] = result
-        #return self._docSetListCache[field]
-
+        termDocs = indexReader.termDocs()
+        termEnum = indexReader.terms(Term(field, ''))
+        return DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:
