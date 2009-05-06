@@ -308,8 +308,9 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
                             (N01/N)*log((N*N01)/(N0_*N_1)) +
                             (N10/N)*log((N*N10)/(N1_*N_0)) +
                             (N00/N)*log((N*N00)/(N0_*N_0));
+// printf("term=%s, candidate size=%d, docset size=%d, c=%d, j=%d, MI=%f\n", getTermForDocset(candidate), candidate->size(), docset->size(), c, j, MI);
                 if ( MI < 0.5 ) {
-                    int n = int(MI * 10000.0);
+                    int n = int(MI * 100000.0);
                     char *term = getTermForDocset(candidate);
                     cardinality_t t = { term, n};
                     results->push_back(t);
