@@ -242,14 +242,13 @@ class DocSetList(object):
             CardinalityList_free(p)
 
     def addDocument(self, docid, terms):
-        for term in (term.encode('utf-8') for term in terms):
+        for term in (term.encode('utf-8') for term in set(terms)):
             r = DocSetList_getForTerm(self, term)
             if r.ptr != -1:
                 docset = DocSet(cobj=r)
-                if not docid in docset:
-                    docset.add(docid)
-                    DocSetList_docId2terms_add(self, docid, docset)
-                    self._sorted = None
+                docset.add(docid)
+                DocSetList_docId2terms_add(self, docid, docset)
+                self._sorted = None
             else:
                 docset = DocSet()
                 docset.add(docid)

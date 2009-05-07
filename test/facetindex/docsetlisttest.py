@@ -228,7 +228,7 @@ class DocSetListTest(LuceneTestCase):
             docsetlist.addDocument(2, ['term0', 'term2'])
             self.fail('must raise exception')
         except Exception, e:
-            self.assertTrue("non-increasing" in str(e))
+            self.assertTrue("non-increasing" in str(e), str(e))
 
     def testEmpty(self):
         m = DocSetList()

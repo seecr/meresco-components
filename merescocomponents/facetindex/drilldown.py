@@ -55,8 +55,9 @@ class Drilldown(object):
         self._transactionName = transactionName
 
     def _add(self, docId, docDict):
+        keys = docDict.keys()
         fieldnames = (fieldname
-            for fieldname in docDict.keys()
+            for fieldname in keys
                 if fieldname in self._actualDrilldownFieldnames)
         for fieldname in fieldnames:
             self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
@@ -64,7 +65,7 @@ class Drilldown(object):
         compoundFields = (field for field in self._actualDrilldownFieldnames if type(field) == tuple)
         for field in compoundFields:
             for fieldname in field:
-                if fieldname in docDict.keys():
+                if fieldname in keys:
                     self._docsetlists[field].addDocument(docId, docDict[fieldname])
 
     def addDocument(self, docId, docDict):

@@ -26,6 +26,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from struct import calcsize
 from PyLucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 
 from cq2utils import CQ2TestCase, CallTrace
@@ -119,8 +120,8 @@ class DrilldownTest(CQ2TestCase):
     def testAppendToRow(self):
         docsetlist = DocSetList()
         docsetlist.addDocument(0, ['term0', 'term1'])
-        self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
-        self.assertEquals('term1', docsetlist.termForDocset(docsetlist[1]))
+        self.assertEquals('term1', docsetlist.termForDocset(docsetlist[0]))
+        self.assertEquals('term0', docsetlist.termForDocset(docsetlist[1]))
         self.assertEquals([('term0', 1), ('term1', 1)], list(docsetlist.termCardinalities(DocSet([0, 1]))))
         docsetlist.addDocument(1, ['term0', 'term1'])
         self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
@@ -343,7 +344,7 @@ class DrilldownTest(CQ2TestCase):
         drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
         drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
         drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
-        drilldown.addDocument(2, {'keyword': ['economics'], 'title': ['economics']})
+        drilldown.addDocument(2, {'keyword': ['economics','economics'], 'title': ['ecocs']})
         drilldown.commit()
         results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
         resultTerms = list(results[0][1])
@@ -379,11 +380,20 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
 
     def testGetIndexMeasure(self):
+        machineBits = calcsize('i') * 8
         drilldown = Drilldown(['fld0', 'fld1', 'fld2'])
         measure = drilldown.measure()
-        self.assertEquals({'dictionaries':1360870,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120}, measure)
+        results = {
+            32: {'dictionaries':1361047,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120},
+            64: {'dictionaries':1361047,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120}
+        }
+        self.assertEquals(results[machineBits], measure)
         drilldown.addDocument(0, {'fld0':['t1','t2'],'fld1': ['t1','t3']})
         drilldown.addDocument(1, {'fld1':['t3','t4'],'fld2': ['t4','t5']})
         drilldown.commit()
         measure = drilldown.measure()
-        self.assertEquals({'dictionaries':1360885,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416}, measure)
+        results = {
+            32: {'dictionaries':1361056,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416},
+            64: {'dictionaries':1361056,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416}
+        }
+        self.assertEquals(results[machineBits], measure)
