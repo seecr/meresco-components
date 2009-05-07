@@ -26,12 +26,35 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from ctypes import cdll
+from ctypes import cdll, c_int, c_uint, c_uint32
 from os.path import join, abspath, dirname
 
 import PyLucene # make sure PyLucene/Java is initialized before loading _docset.so
 
 libFacetIndex = cdll.LoadLibrary(join(abspath(dirname(__file__)), '_facetindex.so'))
+
+class MangleException(Exception): pass
+
+def mangle(names, argtypes):
+    """http://www.codesourcery.com/public/cxx-abi/abi.html#mangling"""
+    mangled_name = '_Z'
+    types = {
+        c_uint32:   'j',
+        c_uint:     'j',
+        c_int:      'i',
+        None:       'v',
+    }
+    mangled_name += 'N'
+    for name in names:
+        mangled_name += str(len(name)) + name
+    mangled_name += 'E'
+    for argtype in argtypes:
+        try:
+            builtin_type = types[argtype]
+        except KeyError:
+            raise MangleException('Mangling %s not supported yet.' % argtype)
+        mangled_name += types[argtype]
+    return mangled_name
 
 class c_method(object):
     """ decorator for methods implemented in C
@@ -72,18 +95,28 @@ class c_method(object):
         def helper(this, *args, **kwargs):
             if not hasattr(py_funct, 'c_funct'):
                 clazz = this if type(this) == type else type(this)
-                c_name = clazz.__name__ + '_' + py_funct.func_name
-                c_funct = getattr(self._lib, c_name)
+                try:
+                    c_name = mangle((clazz.__name__, py_funct.func_name), self._argtypes)
+                    c_funct = getattr(self._lib, c_name)
+                except (MangleException, AttributeError):
+                    c_name = clazz.__name__ + '_' + py_funct.func_name
+                    c_funct = getattr(self._lib, c_name)
                 if type(this) == type:
                     c_funct.argtypes = self._argtypes
                 else:
                     c_funct.argtypes = (this.c_type,) + self._argtypes
                 c_funct.restype = self._restype
                 py_funct.c_funct = c_funct
+            if type(this) != type and hasattr(this, 'from_param') and py_funct.func_name != 'from_param':
+                m = type(this).from_param
+                this = m(this._as_parameter_)
             return self._doCall(this, py_funct, py_funct.c_funct, args, kwargs)
+        helper.func_name = py_funct.func_name + '_helper'
         return helper
 
     def _doCall(self, this, py_funct, c_funct, args, kwargs):
+        if type(this) == type:
+            return c_funct(*args, **kwargs)
         return c_funct(this, *args, **kwargs)
 
 

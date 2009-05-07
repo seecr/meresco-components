@@ -37,6 +37,14 @@ extern "C" {
 
 fwPool _docsetPool = Pool_create(0, sizeof(DocSet), 10000);
 
+DocSet* DocSet_create2(void) {
+    return new DocSet();
+}
+
+DocSet* DocSet_from_param(fwPtr docset) {
+    return pDS(docset);
+}
+
 fwPtr DocSet_create(int size=0) {
     fwPtr newOne = Pool_new(_docsetPool);
     DocSet* p = pDS(newOne);

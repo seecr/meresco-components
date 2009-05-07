@@ -72,6 +72,8 @@ inline DocSet* pDS(fwPtr ds) {
 
 extern "C" {
     fwPtr   DocSet_create                    (int size);
+    DocSet* DocSet_create2                   (void);
+    DocSet* DocSet_from_param                (fwPtr docset);
     fwPtr   DocSet_forTesting                (int size);
     int     DocSet_measure                   (fwPtr docSet);
     int     DocSet_contains                  (fwPtr docSet, guint32 docId);
