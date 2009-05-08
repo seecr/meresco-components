@@ -380,12 +380,12 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
 
     def testGetIndexMeasure(self):
-        machineBits = calcsize('i') * 8
+        machineBits = calcsize('P') * 8
         drilldown = Drilldown(['fld0', 'fld1', 'fld2'])
         measure = drilldown.measure()
         results = {
             32: {'dictionaries':1361047,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120},
-            64: {'dictionaries':1361047,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120}
+            64: {'dictionaries':1360874,'postings':0, 'terms':0, 'fields':3, 'totalBytes':144}
         }
         self.assertEquals(results[machineBits], measure)
         drilldown.addDocument(0, {'fld0':['t1','t2'],'fld1': ['t1','t3']})
@@ -394,6 +394,6 @@ class DrilldownTest(CQ2TestCase):
         measure = drilldown.measure()
         results = {
             32: {'dictionaries':1361056,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416},
-            64: {'dictionaries':1361056,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416}
+            64: {'dictionaries':1360889,'postings':8, 'terms':7, 'fields':3, 'totalBytes':628}
         }
         self.assertEquals(results[machineBits], measure)
