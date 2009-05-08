@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.5
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -27,49 +28,103 @@
 #
 ## end license ##
 from sys import argv, stdout
+from PyLucene import IndexReader, Term
+B  = 1
+KB = 1024
+MB = 1024*KB
+GB = 1024*MB
+
+ESTIMATED_OVERHEAD = 2
+ESTIMATED_BYTES_POSTING  = 20 * ESTIMATED_OVERHEAD * B
+ESTIMATED_BYTES_PER_TERM = 40 * ESTIMATED_OVERHEAD * B
+ESTIMATED_RECORD_SIZE    = 12 * KB
+BUFFERS_PERCENTAGE       = 10
+HEADROOM_PERCENTAGE      = 25
 
 if len(argv) < 2:
-    print 'Usage:', argv[0], '<path to index>'
+    print 'Usage:', argv[0], '<path to index>', '[fieldnameprefix]'
     exit(0)
 
 indexPath = argv[1]
+fieldnameprefix = argv[2] if len(argv) > 2 else ''
 
-from PyLucene import IndexReader
+def printLine(caption, value, unit=''):
+    print "%35s : %s %s            " % (caption, value, unit)
 
 reader = IndexReader.open(indexPath)
 numDocs = reader.numDocs()
-print 'Opened', indexPath, 'with', numDocs, 'documents'
-termDocs = reader.termDocs()
-termEnum = reader.terms()
+
+fields = [field for field in reader.getFieldNames(IndexReader.FieldOption.ALL)
+            if field.startswith(fieldnameprefix)]
+
+
+print '=========='*6
+printLine('Number of documents', numDocs)
+printLine('Number of fields', len(fields))
 dfFreq = {}
 stopwords = []
-l, t, f = 0, 0, 0
-while termEnum.next():
-	term = termEnum.term()
-	l += len(term.text())
-	t += 1
-	ft = termEnum.docFreq()
-	dff = 100*ft/numDocs/10 * 10
-	if dff not in dfFreq:
-		dfFreq[dff] = 1
-	else:
-		dfFreq[dff] += 1
-	if ft > numDocs*0.9:
-		stopwords.append((term.text(), ft))
-	f += ft
-	if t % 10000 == 0: print 'Analyzing terms:', t, '\r',
-	stdout.flush()
-atl = float(l)/t
-adf = float(f)/t
-print 'Terms:', t, 'Average term lenght:', atl, 'Average doc freq:', adf
-termDictSize = t * atl*16
-matrixSize = t * adf*64
-x64 = (termDictSize + matrixSize) /8 /1024 /1024 /1024
-print 'With postings of 64 bits, an index would require', x64, 'GB.'
-print 'TermDict:', termDictSize/8/1024/1024/1024, 'Matrix:', matrixSize/8/1024/1024/1024
-print 'TF distributie'
-for r in sorted(dfFreq.keys()):
-	print 'from', r,'% :',dfFreq[r]
-print 'Stopwords:', len(stopwords), 'save', sum(f for sw, f in stopwords)*64/8/1024/1024, 'MB'
-for s, f in stopwords:
-	print s, 100*f/numDocs, '%'
+totalTermLen, totalTermCount, postings = 0, 0, 0
+
+
+for field in fields:
+    termEnum = reader.terms(Term(field, ''))
+    stdout.flush()
+    while True:
+        if termEnum.term().field() != field:
+            break
+        docFreq = termEnum.docFreq()
+        term = termEnum.term()
+        totalTermLen += len(term.text())
+        totalTermCount += 1
+        docFreq = termEnum.docFreq()
+        postings += docFreq
+        dff = 100*docFreq/numDocs/10 * 10
+        if dff not in dfFreq:
+            dfFreq[dff] = 1
+        else:
+            dfFreq[dff] += 1
+        if docFreq > numDocs*0.9:
+            stopwords.append((term.text(), docFreq))
+        if totalTermCount % 10000 == 0:
+            print field, totalTermCount, '                               \r',
+            stdout.flush()
+        if not termEnum.next():
+            break
+
+averageTermLen = totalTermLen/totalTermCount
+averageDocFreq = postings/totalTermCount
+
+printLine('Number of Terms', totalTermCount)
+printLine('Average term length', averageTermLen, 'characters')
+printLine('Number of postings', postings/10**6, 'miljoen')
+printLine('Average doc freq', averageDocFreq, 'doc/term')
+
+indexSize = postings * ESTIMATED_BYTES_POSTING
+dictionarySize = totalTermCount * ESTIMATED_BYTES_PER_TERM
+totalFacetIndexSize = indexSize+dictionarySize
+printLine('Estimated size of index', indexSize/MB, 'MB')
+printLine('Estimated size of dictionary', dictionarySize/MB, 'MB')
+printLine('Estimated total size', totalFacetIndexSize/MB, 'MB')
+
+roomForLucene = totalFacetIndexSize # equals FacetIndex
+cacheAndBuffers = BUFFERS_PERCENTAGE * numDocs * ESTIMATED_RECORD_SIZE / 100
+minimumMemory = totalFacetIndexSize + roomForLucene + cacheAndBuffers
+printLine('Suggested room for Lucene', (indexSize+dictionarySize)/MB, 'MB')
+printLine('Suggested for caching and buffers', cacheAndBuffers/MB, 'MB')
+printLine('Suggested minimum memory', minimumMemory/MB, 'MB')
+
+suggestedHeadRoom = HEADROOM_PERCENTAGE * minimumMemory / 100
+suggestedPhysicalRAMinGB = (minimumMemory + suggestedHeadRoom)/GB
+printLine('Suggested head room', suggestedHeadRoom/MB, 'MB')
+printLine('Suggested physical RAM', suggestedPhysicalRAMinGB, 'GB')
+print '=========='*6
+
+if reader.isOptimized():
+    print 'TF distributie'
+    for r in sorted(dfFreq.keys()):
+        print 'from', r,'% :',dfFreq[r]
+    print 'Stopwords:', len(stopwords), 'save', sum(f for sw, f in stopwords)*64/8/MB, 'MB'
+    for s, f in stopwords:
+        print s, 100*f/numDocs, '%'
+else:
+    print "Optimize index for term frequency distribution and stopwords."
