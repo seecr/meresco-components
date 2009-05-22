@@ -30,9 +30,7 @@
 from os.path import isdir, isfile, join
 from os import makedirs
 
-from merescolucene import Term
-
-from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Field, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
+from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Field, Term, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
 from time import time
 from itertools import ifilter, islice
 
