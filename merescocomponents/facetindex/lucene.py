@@ -164,6 +164,8 @@ class LuceneIndex(Observable):
             self.tx.join(self)
 
     def commit(self):
+        if len(self._commandQueue) == 0:
+            return
         for command in self._commandQueue:
             command.execute()
         self._commandQueue = []

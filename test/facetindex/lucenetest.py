@@ -313,7 +313,7 @@ class LuceneTest(CQ2TestCase):
             if n < 20:
                 doc.addIndexedField('findable', 'true')
             self._luceneIndex.addDocument(doc)
-        
+
         self._luceneIndex.commit()
         filter = [3, 4, 5, 9, 11, 12, 13]
 
@@ -324,7 +324,7 @@ class LuceneTest(CQ2TestCase):
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=filter)
         self.assertEquals([str(i) for i in filter if i < 20], hits)
         self.assertEquals(7, total)
-        
+
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), 2, 5, docfilter=filter)
         self.assertEquals(5-2, len(hits))
         self.assertEquals([str(i) for i in filter if i < 20][2:5], hits)
@@ -400,3 +400,11 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
         result = self._luceneIndex.docsetFromQuery(MatchAllDocsQuery())
         self.assertEquals([0,2], list(result))
+
+    def testCommitWithoutAddDocumentDoesNotReindex(self):
+        reopenIndexCalled = []
+        def reopenIndex():
+            reopenIndexCalled.append(True)
+        self._luceneIndex._reopenIndex = reopenIndex
+        self._luceneIndex.commit()
+        self.assertEquals([], reopenIndexCalled)
