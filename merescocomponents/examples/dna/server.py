@@ -45,11 +45,7 @@ from merescocomponents.oai import OaiPmh, OaiJazz, OaiAddRecordWithDefaults
 from weightless import Reactor
 
 DRILLDOWN_PREFIX = 'drilldown.'
-
-drilldownFieldnames = [
-    'drilldown.dc.subject',
-]
-
+drilldownFieldnames = ['drilldown.dc.subject']
 unqualifiedTermFields = [('dc', 1.0)]
 
 def createUploadHelix(indexHelix, storageComponent, oaiJazz):
