@@ -153,7 +153,7 @@ class NGramTest(CQ2TestCase):
         ngramQuery.addObserver(ngramindex)
         total, hits = ngramQuery.executeQuery('term0', 1234)
         self.assertEquals(['term0', 'term1'], list(hits))
-        self.assertEquals('ngrams:te ngrams:er ngrams:rm ngrams:m0', str(ngramindex.calledMethods[0].arguments[0]))
+        self.assertEquals('ngrams:te ngrams:er ngrams:rm ngrams:m0', str(ngramindex.calledMethods[0].args[0]))
         ngramindex.returnValues['executeQuery'] = (2, ['term2', 'term9'])
         total, hits = ngramQuery.executeQuery('term0',87655)
         self.assertEquals(['term2', 'term9'], list(hits))
@@ -164,7 +164,7 @@ class NGramTest(CQ2TestCase):
         ngramQuery.addObserver(ngramindex)
         total, hits = ngramQuery.executeQuery('term0',9876)
         self.assertEquals(['term0', 'term1'], list(hits))
-        self.assertEquals('some_fieldname:te some_fieldname:er some_fieldname:rm some_fieldname:m0', str(ngramindex.calledMethods[0].arguments[0]))
+        self.assertEquals('some_fieldname:te some_fieldname:er some_fieldname:rm some_fieldname:m0', str(ngramindex.calledMethods[0].args[0]))
         ngramindex.returnValues['executeQuery'] = (2,['term2', 'term9'])
 
     def assertSuggestions(self, expected, term, suggester):

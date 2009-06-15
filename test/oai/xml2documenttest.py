@@ -117,4 +117,4 @@ class Xml2DocumentTest(CQ2TestCase):
 
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals("addDocument", observer.calledMethods[0].name)
-        self.assertEquals(Document, observer.calledMethods[0].arguments[0].__class__)
+        self.assertEquals(Document, observer.calledMethods[0].args[0].__class__)

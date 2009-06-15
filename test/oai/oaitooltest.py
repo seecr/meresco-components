@@ -48,7 +48,7 @@ class OaiToolTest(CQ2TestCase):
         
         writeCall = request.calledMethods[-1]
         self.assertEquals('write', writeCall.name)
-        self.assertEquals('<request identifier="with a &quot;">http://localhost:8000/oai</request>', writeCall.arguments[0])
+        self.assertEquals('<request identifier="with a &quot;">http://localhost:8000/oai</request>', writeCall.args[0])
         
     def testISO8601(self):
         """http://www.w3.org/TR/NOTE-datetime
