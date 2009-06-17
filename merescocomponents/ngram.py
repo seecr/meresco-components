@@ -123,7 +123,7 @@ class NGramFieldlet(Transparant):
             if count > 0:
                 continue
 
-            self.tx.locals['id'] = word
+            self.ctx.tx.locals['id'] = word
             ngrams = ' '.join(self._ngram(word))
             self.do.addField(self._fieldName, ngrams)
             #for ngram in self._ngram(word):

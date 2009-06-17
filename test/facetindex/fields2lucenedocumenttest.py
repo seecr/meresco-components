@@ -39,7 +39,7 @@ class Fields2LuceneDocumentTest(TestCase):
         self.observert = CallTrace('Observert', ignoredAttributes=['_observers'])
         class Splitter(Transparant):
             def addFields(this, tupleList, identifier='fixedId'):
-                this.tx.locals['id'] = identifier
+                this.ctx.tx.locals['id'] = identifier
                 for item in tupleList:
                     this.any.addField(*item)
 

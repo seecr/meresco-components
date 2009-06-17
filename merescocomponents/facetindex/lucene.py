@@ -160,8 +160,8 @@ class LuceneIndex(Observable):
             raise
 
     def begin(self):
-        if self.tx.name == self._transactionName:
-            self.tx.join(self)
+        if self.ctx.tx.name == self._transactionName:
+            self.ctx.tx.join(self)
 
     def commit(self):
         if len(self._commandQueue) == 0:

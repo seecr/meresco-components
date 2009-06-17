@@ -140,7 +140,7 @@ class NGramTest(CQ2TestCase):
         txlocals = {}
         class Observert(Observable):
             def addField(self, *args):
-                txlocals.update(self.tx.locals)
+                txlocals.update(self.ctx.tx.locals)
             def executeQuery(*args, **kwargs):
                 return 0, []
         x = createNGramHelix(Observert())

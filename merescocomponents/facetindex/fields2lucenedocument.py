@@ -43,7 +43,7 @@ class Fields2LuceneDocumentTx(object):
     def commit(self):
         if not self.fields.keys():
             return
-        document = Document(self.resourceManager.tx.locals['id'])
+        document = Document(self.resourceManager.ctx.tx.locals['id'])
         for name, values in self.fields.items():
             for value in values:
                 document.addIndexedField(name, value, not name in self._untokenized)
