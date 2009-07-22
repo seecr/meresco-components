@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -33,6 +34,7 @@ from sys import maxint
 from functioncommand import FunctionCommand
 from callstackscope import callstackscope
 from .triedict import TrieDict
+from collections import defaultdict
 
 class NoFacetIndexException(Exception):
 
@@ -63,10 +65,14 @@ class Drilldown(object):
             self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
 
         compoundFields = (field for field in self._actualDrilldownFieldnames if type(field) == tuple)
+        values = defaultdict(set)
         for field in compoundFields:
             for fieldname in field:
                 if fieldname in keys:
-                    self._docsetlists[field].addDocument(docId, docDict[fieldname])
+                    for i in docDict[fieldname]:
+                        values[field].add(i)
+        for field, value in values.items():
+            self._docsetlists[field].addDocument(docId, value)
 
     def addDocument(self, docId, docDict):
         self.deleteDocument(docId)

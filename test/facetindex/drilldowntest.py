@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -120,8 +121,8 @@ class DrilldownTest(CQ2TestCase):
     def testAppendToRow(self):
         docsetlist = DocSetList()
         docsetlist.addDocument(0, ['term0', 'term1'])
-        self.assertEquals('term1', docsetlist.termForDocset(docsetlist[0]))
-        self.assertEquals('term0', docsetlist.termForDocset(docsetlist[1]))
+        self.assertEquals('term1', docsetlist.termForDocset(docsetlist[1]))
+        self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
         self.assertEquals([('term0', 1), ('term1', 1)], list(docsetlist.termCardinalities(DocSet([0, 1]))))
         docsetlist.addDocument(1, ['term0', 'term1'])
         self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
@@ -366,7 +367,6 @@ class DrilldownTest(CQ2TestCase):
         resultTerms = list(results[0][1])
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1)]), set(resultTerms))
 
-
     def testIndexStartedWithCompoundField(self):
         self.addUntokenized([('id0', {'field_0': 'this is term_0'})])
         self.addUntokenized([('id1', {'field_1': 'this is term_1'})])
@@ -378,6 +378,10 @@ class DrilldownTest(CQ2TestCase):
         field, results = drilldown.drilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)]).next()
         self.assertEquals(('field_0', 'field_1'), field)
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
+
+    def testCompoundFieldWithSameTermInDifferentFields(self):
+        drilldown = Drilldown([('field_0', 'field_1')])
+        drilldown._add(0, {'field_0': ['value'], 'field_1': ['value']}) # had a bug causing: "non-increasing docid" error
 
     def testGetIndexMeasure(self):
         machineBits = calcsize('P') * 8

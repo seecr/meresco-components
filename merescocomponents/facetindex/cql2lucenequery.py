@@ -29,7 +29,7 @@
 
 from merescocore.framework import Observable
 
-from meresco.components.statistics import Logger
+from merescocore.components.statistics import Logger
 from cqlparsetreetolucenequery import LuceneQueryComposer
 from clausecollector import ClauseCollector
 
