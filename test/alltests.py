@@ -87,6 +87,8 @@ from oai.oaiaddrecordtest import OaiAddRecordTest
 from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
 from oai.berkeleydicttest import BerkeleyDictTest
 
+from web.googlelikeparsetest import GoogleLikeParseTest
+
 
 if __name__ == '__main__':
     unittest.main()

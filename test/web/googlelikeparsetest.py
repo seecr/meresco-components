@@ -29,9 +29,9 @@
 ## end license ##
 from unittest import TestCase
 
-from meresco.framework import Observable
+from merescocore.framework import Observable
 
-from hbokennisbank.googlelikeparse import unGoogleQuery, isGoogleLikeQuery, isGoogleLikePlusMinusQuery, isGoogleLikeBooleanQuery, _joinFieldAndTerm
+from merescocomponents.web.googlelikeparse import unGoogleQuery, isGoogleLikeQuery, isGoogleLikePlusMinusQuery, isGoogleLikeBooleanQuery, _joinFieldAndTerm
 
 class GoogleLikeParseTest(TestCase):
 
