@@ -27,33 +27,43 @@
 #
 ## end license ##
 from unittest import TestCase
+from cq2utils import CallTrace
 from cqlparser import parseString
 from merescocomponents.facetindex import CQL2LuceneQuery
 
-class DummyIndex(object):
-    def executeQuery(*args, **kwargs):
-        pass
-
 class Cql2LuceneQueryTest(TestCase):
-    def testLoggingCQL(self):
-        convertor = CQL2LuceneQuery({})
-        convertor.addObserver(DummyIndex())
-        def logShunt(**dict):
-            self.dict = dict
-        convertor.log = logShunt
-        convertor.executeCQL(parseString("term"))
-        self.assertEquals({'clause': 'term'}, self.dict)
-        convertor.executeCQL(parseString("field=term"))
-        self.assertEquals({'clause': 'field = term'}, self.dict)
-        convertor.executeCQL(parseString("field =/boost=1.1 term"))
-        self.assertEquals({'clause': 'field =/boost=1.1 term'}, self.dict)
-        convertor.executeCQL(parseString("field exact term"))
-        self.assertEquals({'clause': 'field exact term'}, self.dict)
-        convertor.executeCQL(parseString("term1 AND term2"))
-        self.assertEquals({'clause': 'term1'}, self.dict)
-        convertor.executeCQL(parseString("(term)"))
-        self.assertEquals({'clause': 'term'}, self.dict)
-        convertor.executeCQL(parseString('field exact "term with spaces"'))
-        self.assertEquals({'clause': 'field exact "term with spaces"'}, self.dict)
+    def setUp(self):
+        self.convertor = CQL2LuceneQuery({})
+        self.convertor.addObserver(CallTrace('Query responder'))
+        self.loggedClauses = []
+        def logShunt(clause, **kwargs):
+            self.loggedClauses.append(clause)
+        self.convertor.log = logShunt
 
+    def assertLog(self, expectedClauses, query):
+        self.loggedClauses = []
+        self.convertor.executeCQL(parseString(query))
+        self.assertEquals(expectedClauses, self.loggedClauses)
+
+    def testOneTerm(self):
+        self.assertLog(['term'], 'term')
+
+    def testIndexRelationTerm(self):
+        self.assertLog(['field = term'], 'field=term')
+
+    def testIndexRelationBoostTerm(self):
+        self.assertLog(['field =/boost=1.1 term'], "field =/boost=1.1 term")
+
+    def testIndexExactTerm(self):
+        self.assertLog(['field exact term'], 'field exact term')
+        self.assertLog(['field exact "term with spaces"'], 'field exact "term with spaces"')
+
+    def testTermAndTerm(self):
+        self.assertLog(['term1', 'term2'], 'term1 AND term2')
+        self.assertLog(['term1', 'term2', 'term3'], 'term1 AND term2 OR term3')
+        self.assertLog(['term1', 'term2', 'term3'], 'term1 AND (term2 OR term3)')
+        self.assertLog(['term1', 'term2', 'term3'], 'term1 OR term2 AND term3')
+
+    def testBraces(self):
+        self.assertLog(['term'], '(term)')
 

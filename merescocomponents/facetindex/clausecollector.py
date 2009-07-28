@@ -34,13 +34,12 @@ class ClauseCollector(CqlVisitor):
         CqlVisitor.__init__(self, astTree)
         self._logger = logger
 
-    def visitSCOPED_CLAUSE(self, node):
-        result = CqlVisitor.visitSCOPED_CLAUSE(self, node)[0]
-        if len(result) == 1:
+    def visitSEARCH_CLAUSE(self, node):
+        firstChild = node.children()[0].name()
+        result = CqlVisitor.visitSEARCH_CLAUSE(self, node)
+        if firstChild == 'SEARCH_TERM':
             self._logger(clause = result[0].lower())
-        else:
-            if result[0] == "(":
-                return result[1]
+        elif firstChild == 'INDEX':
             self._logger(clause = "%s %s %s" % (result[0][0], result[1], quot(result[2].lower())))
         return result
 

@@ -41,10 +41,7 @@ class CqlTermVisitor(CqlVisitor) :
         results = CqlVisitor.visitSEARCH_CLAUSE(self, node)
         if len(results) == 1:
             return results[0]
-        if len(results) == 3: #either "(" cqlQuery ")" or index relation searchTerm
-            ((left,), middle, right) = results
-            if left == "(":
-                return middle
+        #else: index relation searchTerm
         return []
 
     def visitCQL_QUERY(self, node):

@@ -57,7 +57,7 @@ class PerformanceTuningTest(LuceneTestCase):
             t1 += time() - t0
         self.assertTiming(0.5, t1, 0.9)
 
-    def testSwitchFromSearhcToZipperPoint(self):
+    def testSwitchFromSearchToZipperPoint(self):
         t = {}
         ds0 = DocSet.forTesting(10000000)  # one continous (large)
         for interval in [1, 10, 100, 1000, 10000]:

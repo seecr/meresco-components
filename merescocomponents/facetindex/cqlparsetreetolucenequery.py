@@ -77,8 +77,13 @@ class CqlAst2LuceneVisitor(CqlVisitor):
         return query
 
     def visitSEARCH_CLAUSE(self, node):
+        # possible children:
+        # CQL_QUERY
+        # SEARCH_TERM
+        # INDEX, RELATION, SEARCH_TERM
+        firstChild = node.children()[0].name()
         results = CqlVisitor.visitSEARCH_CLAUSE(self, node)
-        if len(results) == 1:
+        if firstChild == 'SEARCH_TERM':
             (unqualifiedRhs,) = results
             if len(self._unqualifiedTermFields) == 1:
                 fieldname, boost = self._unqualifiedTermFields[0]
@@ -91,13 +96,8 @@ class CqlAst2LuceneVisitor(CqlVisitor):
                     subQuery.setBoost(boost)
                     query.add(subQuery, BooleanClause.Occur.SHOULD)
             return query
-        if len(results) == 3: #either "(" cqlQuery ")" or index relation searchTerm
-            ((left,), middle, right) = results
-            if left == "(":
-                return middle[0]
-
-            relation, boost = middle
-
+        elif firstChild == 'INDEX':
+            ((left,), (relation, boost), right) = results
             if relation in ['==', 'exact']:
                 query = TermQuery(Term(left, right))
             elif relation == '=':
@@ -106,6 +106,9 @@ class CqlAst2LuceneVisitor(CqlVisitor):
                 raise UnsupportedCQL("Only =, == and exact are supported for the field '%s'" % left)
 
             query.setBoost(boost)
+            return query
+        else:
+            ((query,),) = results
             return query
 
     def visitRELATION(self, node):
