@@ -29,57 +29,68 @@
 ## end license ##
 
 import re
-UNQUOTED_STRING = r'(?P<unquoted>[\+|\-]?[^"\s]+)'
-QUOTED_STRING = r'(?P<plusminus>[\+|\-]?)(?P<quot>\")(?P<quoted>.+?)((?<!\\)(?P=quot))'
-QUOTED_LABEL_STRING = r'(?P<quotedLabel>\S+=(?P<quot1>\")(?P<quoted1>.+?)((?<!\\)(?P=quot1)))'
+UNQUOTED_STRING = r'(?P<unquoted>[\+\-]?[^"\s]+)'
+QUOTED_STRING = r'(?P<quotedString>[\+\-]?(?P<quot>\")(?P<quoted>.+?)((?<!\\)(?P=quot)))'
+QUOTED_LABEL_STRING = r'(?P<labelString>[\+\-]?(?P<label>[^"\s]+)=(?P<quot1>\")(?P<quoted1>.+?)((?<!\\)(?P=quot1)))'
 STRINGS = [QUOTED_LABEL_STRING ,QUOTED_STRING, UNQUOTED_STRING]
 
 SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 
-def unGoogleQuery(aString, antiUnaryClause=""):
-    if isGoogleLikePlusMinusQuery(aString):
-        return _unGooglePlusMinusQuery(aString, antiUnaryClause)
-    elif isGoogleLikeBooleanQuery(aString):
-        return _unGoogleBooleanQuery(aString, antiUnaryClause)
-    return aString
+from cqlparser import parseString, CQLParseException
 
+DEFAULT, PLUSMINUS, BOOLEAN = range(3)
 
-def isGoogleLikeQuery(aString):
-    return isGoogleLikeBooleanQuery(aString) or isGoogleLikePlusMinusQuery(aString)
+class WebQuery(object):
+    
+    def __init__(self, aString, antiUnaryClause=""):
+        plusminus = _feelsLikePlusMinusQuery(aString)
+        boolean = _feelsLikeBooleanQuery(aString)
+        self._needsHelp = boolean and plusminus
+        if plusminus and not boolean:
+            self._kind = PLUSMINUS
+            self.ast = parseString(_plusminus2Cql(aString, antiUnaryClause))
+        elif boolean and not plusminus:
+            try:
+                self._kind = BOOLEAN
+                self.ast = parseString(_boolean2Cql(aString, antiUnaryClause))
+            except CQLParseException:
+                self._needsHelp = True
+                self._kind = DEFAULT
+                self.ast = parseString(_default2Cql(aString))              
+        else:
+            self._kind = DEFAULT
+            self.ast = parseString(_default2Cql(aString))
 
-def isGoogleLikePlusMinusQuery(aString):
-    googleLike = False
-    for part in aString.lower().split():
-        if part in ['and', 'or', 'not']:
-            googleLike = False
-            break
-        elif part[0] == '(' or part[-1] == ')':
-            googleLike = False
-            break
-        elif part[0] in ['-', '+']:
-            googleLike = True
-    return googleLike
+    def addFilter(self, field, term):
+        #pruts, pruts
+        pass
 
-def isGoogleLikeBooleanQuery(aString):
-    googleLike = False
-    for part in aString.lower().split():
+    def isBooleanQuery(self):
+        return self._kind == BOOLEAN
+
+    def isPlusMinusQuery(self):
+        return self._kind == PLUSMINUS
+
+    def isDefaultQuery(self):
+        return self._kind == DEFAULT
+
+    def needsBooleanHelp(self):
+        return self._needsHelp
+        
+
+def _feelsLikePlusMinusQuery(aString):
+    for part in (_valueFromGroupdict(m.groupdict()).lower() for m in SPLITTED_STRINGS.finditer(aString)):
         if part[0] in ['-', '+']:
-            googleLike = False
-            break
-        elif part in ['and', 'or', 'not']:
-            googleLike = True
-    return googleLike
+            return True
+    return False
 
-def buildQuery(queryString, drilldownArguments):
-    cqlQuery = queryString
-
-    drilldownCqlString = _joinFieldAndTerm(drilldownArguments)
-    if cqlQuery and drilldownCqlString:
-        cqlQuery = '(%s) AND %s' % (cqlQuery, drilldownCqlString)
-    elif cqlQuery == '' and drilldownCqlString:
-        cqlQuery = drilldownCqlString
-
-    return cqlQuery
+def _feelsLikeBooleanQuery(aString):
+    for part in (_valueFromGroupdict(m.groupdict()).lower() for m in SPLITTED_STRINGS.finditer(aString)):
+        if part in ['and', 'or', 'not']:
+            return True
+        elif part[0] == '(' or part[-1] == ')':
+            return True
+    return False
 
 def _joinFieldAndTerm(fieldAndTermList):
     results = []
@@ -92,7 +103,7 @@ def _joinFieldAndTerm(fieldAndTermList):
 
     return ' AND '.join('(%s)' % result for result in results)
 
-def _unGooglePlusMinusQuery(aString, antiUnaryClause):
+def _plusminus2Cql(aString, antiUnaryClause):
     newParts = []
     for match in SPLITTED_STRINGS.finditer(aString):
         part = _valueFromGroupdict(match.groupdict())
@@ -102,14 +113,14 @@ def _unGooglePlusMinusQuery(aString, antiUnaryClause):
             notStatement = 'NOT ' + part[1:]
 
             if len(newParts) == 0:
-                newParts.append('(' + antiUnaryClause + " " + notStatement + ')')
+                newParts.append(antiUnaryClause + " " + notStatement)
             else:
-                newParts[-1] = '(' + newParts[-1] + ' ' + notStatement + ')'
+                newParts[-1] = newParts[-1] + ' ' + notStatement
         else:
             newParts.append(part)
     return ' AND '.join(newParts)
 
-def _unGoogleBooleanQuery(aString, antiUnaryClause):
+def _boolean2Cql(aString, antiUnaryClause):
     aString = aString.replace('(', ' ( ').replace(')', ' ) ')
     newParts = []
     for match in SPLITTED_STRINGS.finditer(aString):
@@ -123,14 +134,14 @@ def _unGoogleBooleanQuery(aString, antiUnaryClause):
         newParts.append(part)
     return ' '.join(newParts)
 
+def _default2Cql(aString, antiUnaryClause="ignored"):
+    return ' AND '.join(quot(part) for part in aString.split())
+
+def quot(aString):
+    if aString[-1] == '"' == aString[0]:
+        return aString
+    return '"%s"' % aString
 
 def _valueFromGroupdict(groupdict):
-    if groupdict['unquoted'] != None:
-        return groupdict['unquoted']
-    if groupdict['quoted'] != None:
-        plusminus = ''
-        if groupdict['plusminus']:
-            plusminus = groupdict['plusminus']
-        return '%s"%s"' % (plusminus, groupdict['quoted'])
-    raise ValueError('Nothing found')
+    return groupdict['unquoted'] or groupdict['quotedString'] or groupdict['labelString']
 
