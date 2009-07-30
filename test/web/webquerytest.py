@@ -36,22 +36,22 @@ from cqlparser import parseString as parseCql
 class WebQueryTest(TestCase):
 
     def testQuery(self):
-        wq = WebQuery('cats', antiUnaryClause='antiunary')
+        wq = WebQuery('cats', antiUnaryClause='antiunary exact true')
         self.assertFalse(wq.isBooleanQuery())
         self.assertFalse(wq.isPlusMinusQuery())
         self.assertTrue(wq.isDefaultQuery())
         self.assertFalse(wq.needsBooleanHelp())
         self.assertEquals(parseCql('cats'), wq.ast)
-        
+
     def testPlusMinusQuery(self):
         self.assertPlusMinusQuery('cats', '+cats')
-        self.assertPlusMinusQuery('antiunary NOT cats', '-cats')
+        self.assertPlusMinusQuery('antiunary exact true NOT cats', '-cats')
         self.assertPlusMinusQuery('cats AND dogs', '+cats dogs')
         self.assertPlusMinusQuery('cats NOT dogs', '+cats -dogs')
         self.assertPlusMinusQuery('cats AND dogs', '+cats +dogs')
-        self.assertPlusMinusQuery('antiunary NOT cats AND dogs', '-cats dogs')
-        self.assertPlusMinusQuery('antiunary NOT cats NOT dogs', '-cats -dogs')
-        self.assertPlusMinusQuery('antiunary NOT cats AND dogs', '-cats +dogs')
+        self.assertPlusMinusQuery('antiunary exact true NOT cats AND dogs', '-cats dogs')
+        self.assertPlusMinusQuery('antiunary exact true NOT cats NOT dogs', '-cats -dogs')
+        self.assertPlusMinusQuery('antiunary exact true NOT cats AND dogs', '-cats +dogs')
         self.assertPlusMinusQuery('"cats dogs"', '+"cats dogs"')
         self.assertPlusMinusQuery('"cats dogs" NOT "mice bats"', '+"cats dogs" -"mice bats"')
         self.assertPlusMinusQuery('"cats dogs" NOT label=value', '+"cats dogs" -label=value')
@@ -59,11 +59,12 @@ class WebQueryTest(TestCase):
 
     def testDefaultQuery(self):
         self.assertDefaultQuery('cats')
-        self.assertDefaultQuery('"-cats"')
+        self.assertDefaultQuery('"-cats"', asString='-cats')
         self.assertDefaultQuery('cats AND dogs', 'cats dogs')
         self.assertDefaultQuery('cats AND OR AND dogs AND -fish', 'cats OR dogs -fish', needsBooleanHelp=True)
-        self.assertDefaultQuery('"-cats" AND "AND" AND "dogs"', '-cats AND dogs', needsBooleanHelp=True)
+        self.assertDefaultQuery('"-cats" AND "AND" AND "dogs"', '-cats AND dogs', needsBooleanHelp=True, asString='-cats AND AND AND dogs')
         self.assertDefaultQuery('cheese AND "("', 'cheese (', needsBooleanHelp=True)
+        self.assertDefaultQuery('antiunary exact true', '')
 
     def testBooleanQuery(self):
         self.assertBooleanQuery('cats AND dogs')
@@ -72,9 +73,9 @@ class WebQueryTest(TestCase):
         self.assertBooleanQuery('cats AND label=value')
         self.assertBooleanQuery('cats AND label="value with spaces"')
         self.assertBooleanQuery('cats NOT (label=value OR label="other value")')
-        self.assertBooleanQuery('antiunary NOT cats AND dogs', 'NOT cats AND dogs')
-        self.assertBooleanQuery('antiunary NOT ( cats AND dogs )', 'NOT (cats AND dogs)')
-        self.assertBooleanQuery('cheese OR ( antiunary NOT mice )', 'cheese OR (NOT mice)')
+        self.assertBooleanQuery('antiunary exact true NOT cats AND dogs', 'NOT cats AND dogs')
+        self.assertBooleanQuery('antiunary exact true NOT (cats AND dogs)', 'NOT (cats AND dogs)')
+        self.assertBooleanQuery('cheese OR (antiunary exact true NOT mice)', 'cheese OR (NOT mice)')
         self.assertBooleanQuery('"cat treat" AND "dog biscuit"', '"cat treat" and "dog biscuit"')
 
     def testFeelsLikePlusMinusQuery(self):
@@ -95,7 +96,7 @@ class WebQueryTest(TestCase):
         self.assertFalse(_feelsLikePlusMinusQuery('"cat +cheese"'))
         self.assertFalse(_feelsLikePlusMinusQuery('label="cat +cheese"'))
         self.assertTrue(_feelsLikePlusMinusQuery('-label="cat +cheese"'))
-        
+
     def testFeelsLikeBooleanQuery(self):
         self.assertTrue(_feelsLikeBooleanQuery('-cats AND dogs'))
         self.assertTrue(_feelsLikeBooleanQuery('"-cats" AND dogs'))
@@ -117,21 +118,23 @@ class WebQueryTest(TestCase):
         self.assertFalse(_feelsLikeBooleanQuery('-label="cat +cheese"'))
 
 
-    def _assertQuery(self, expected, input, boolean=False, plusminus=False, default=False, needsBooleanHelp=False):
+    def _assertQuery(self, expected, input, boolean=False, plusminus=False, default=False, needsBooleanHelp=False, asString=None):
         input = expected if input == None else input
-        wq = WebQuery(input, antiUnaryClause='antiunary')
+        asString = expected if asString == None else asString
+        wq = WebQuery(input, antiUnaryClause='antiunary exact true')
         self.assertEquals((boolean, plusminus, default, needsBooleanHelp), (wq.isBooleanQuery(), wq.isPlusMinusQuery(), wq.isDefaultQuery(), wq.needsBooleanHelp()))
         self.assertEquals(parseCql(expected), wq.ast)
+        self.assertEquals(asString, wq.asString())
         self.assertEquals(input, wq.original)
-        
-    def assertDefaultQuery(self, expected, input=None, needsBooleanHelp = False):
-        self._assertQuery(expected, input, default=True, needsBooleanHelp=needsBooleanHelp)
 
-    def assertPlusMinusQuery(self, expected, input):
-        self._assertQuery(expected, input, plusminus=True)
+    def assertDefaultQuery(self, expected, input=None, needsBooleanHelp = False, asString=None):
+        self._assertQuery(expected, input, default=True, needsBooleanHelp=needsBooleanHelp, asString=asString)
 
-    def assertBooleanQuery(self, expected, input=None):
-        self._assertQuery(expected, input, boolean=True)
+    def assertPlusMinusQuery(self, expected, input, asString=None):
+        self._assertQuery(expected, input, plusminus=True, asString=asString)
+
+    def assertBooleanQuery(self, expected, input=None, asString=None):
+        self._assertQuery(expected, input, boolean=True, asString=asString)
 
     def testReportedProblemWithGoogleLikeQuery(self):
         self.assertDefaultQuery('fiscal AND OR AND "(market" AND "municipalities)"', 'fiscal OR (market municipalities)', needsBooleanHelp=True)
@@ -143,6 +146,11 @@ class WebQueryTest(TestCase):
         wq = WebQuery('fiets')
         wq.addFilter('field', 'value')
         self.assertCql(parseCql('field exact value AND (fiets)'), wq.ast)
+
+    def testTermFilter(self):
+        wq = WebQuery('fiets')
+        wq.addTermFilter("water")
+        self.assertCql(parseCql('water AND (fiets)'), wq.ast)
 
     def testFilterWithSpaces(self):
         wq = WebQuery('fiets')

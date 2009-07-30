@@ -36,13 +36,13 @@ STRINGS = [QUOTED_LABEL_STRING ,QUOTED_STRING, UNQUOTED_STRING]
 
 SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 
-from cqlparser import parseString, CQLParseException
+from cqlparser import parseString, CQLParseException, cql2string
 from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, SEARCH_TERM, TERM, BOOLEAN, INDEX, RELATION, COMPARITOR
 
 DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = range(3)
 
 class WebQuery(object):
-    
+
     def __init__(self, aString, antiUnaryClause=""):
         self.original = aString
         plusminus = _feelsLikePlusMinusQuery(aString)
@@ -58,23 +58,32 @@ class WebQuery(object):
             except CQLParseException:
                 self._needsHelp = True
                 self._kind = DEFAULT_KIND
-                self.ast = parseString(_default2Cql(aString))              
+                self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
         else:
             self._kind = DEFAULT_KIND
-            self.ast = parseString(_default2Cql(aString))
+            self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
         self.originalAst = self.ast
         self.filters = []
 
+    def addTermFilter(self, term):
+        self._addFilter(SEARCH_CLAUSE(
+            SEARCH_TERM(
+                TERM(term)
+            )
+        ))
+
     def addFilter(self, field, term):
-        filterQuery = SEARCH_CLAUSE(
+        self._addFilter(SEARCH_CLAUSE(
             INDEX(TERM(field)),
             RELATION(COMPARITOR('exact')),
             SEARCH_TERM(TERM(term))
-        )
+        ))
+
+    def _addFilter(self, filterQuery):
         self.filters.append(filterQuery)
 
         newAst = [self.filters[-1]]
-        
+
         for f in reversed(self.filters[:-1]):
             if len(newAst) != 1:
                 newAst = [SCOPED_CLAUSE(*newAst)]
@@ -92,6 +101,9 @@ class WebQuery(object):
             )
         )
 
+    def asString(self):
+        return cql2string(self.ast)
+
     def isBooleanQuery(self):
         return self._kind == BOOLEAN_KIND
 
@@ -103,7 +115,7 @@ class WebQuery(object):
 
     def needsBooleanHelp(self):
         return self._needsHelp
-        
+
 
 def _feelsLikePlusMinusQuery(aString):
     for part in (_valueFromGroupdict(m.groupdict()).lower() for m in SPLITTED_STRINGS.finditer(aString)):
@@ -162,6 +174,8 @@ def _boolean2Cql(aString, antiUnaryClause):
     return ' '.join(newParts)
 
 def _default2Cql(aString, antiUnaryClause="ignored"):
+    if aString.strip() == '':
+        return antiUnaryClause
     return ' AND '.join(quot(part) for part in aString.split())
 
 def quot(aString):
