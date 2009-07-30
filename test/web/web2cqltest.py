@@ -122,6 +122,7 @@ class Web2CqlTest(TestCase):
         wq = WebQuery(input, antiUnaryClause='antiunary')
         self.assertEquals((boolean, plusminus, default, needsBooleanHelp), (wq.isBooleanQuery(), wq.isPlusMinusQuery(), wq.isDefaultQuery(), wq.needsBooleanHelp()))
         self.assertEquals(parseCql(expected), wq.ast)
+        self.assertEquals(input, wq.original)
         
     def assertDefaultQuery(self, expected, input=None, needsBooleanHelp = False):
         self._assertQuery(expected, input, default=True, needsBooleanHelp=needsBooleanHelp)
@@ -137,3 +138,30 @@ class Web2CqlTest(TestCase):
         self.assertBooleanQuery('fiscal OR (market AND municipalities)')
         self.assertBooleanQuery('fiscal OR (market OR municipalities)')
         self.assertBooleanQuery('fiscal OR (market NOT municipalities)')
+
+    def testFilter(self):
+        wq = WebQuery('fiets')
+        wq.addFilter('field', 'value')
+        self.assertCql(parseCql('field exact value AND (fiets)'), wq.ast)
+
+    def testFilterWithSpaces(self):
+        wq = WebQuery('fiets')
+        wq.addFilter('field', 'value with spaces')
+        self.assertEquals(parseCql('field exact "value with spaces" AND (fiets)'), wq.ast)
+
+    def testFilterFilter(self):
+        wq = WebQuery('fiets')
+        wq.addFilter('field1', 'value1')
+        wq.addFilter('field2', 'value2')
+        self.assertCql(parseCql('field1 exact value1 AND field2 exact value2 AND (fiets)'), wq.ast)
+
+    def testFilterX4(self):
+        wq = WebQuery('fiets')
+        wq.addFilter('field1', 'value1')
+        wq.addFilter('field2', 'value2')
+        wq.addFilter('field3', 'value3')
+        wq.addFilter('field4', 'value4')
+        self.assertCql(parseCql('field1 exact value1 AND field2 exact value2 AND field3 exact value3 AND field4 exact value4 AND (fiets)'), wq.ast)
+
+    def assertCql(self, expected, input):
+        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

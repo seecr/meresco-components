@@ -37,42 +37,69 @@ STRINGS = [QUOTED_LABEL_STRING ,QUOTED_STRING, UNQUOTED_STRING]
 SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 
 from cqlparser import parseString, CQLParseException
+from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, SEARCH_TERM, TERM, BOOLEAN, INDEX, RELATION, COMPARITOR
 
-DEFAULT, PLUSMINUS, BOOLEAN = range(3)
+DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = range(3)
 
 class WebQuery(object):
     
     def __init__(self, aString, antiUnaryClause=""):
+        self.original = aString
         plusminus = _feelsLikePlusMinusQuery(aString)
         boolean = _feelsLikeBooleanQuery(aString)
         self._needsHelp = boolean and plusminus
         if plusminus and not boolean:
-            self._kind = PLUSMINUS
+            self._kind = PLUSMINUS_KIND
             self.ast = parseString(_plusminus2Cql(aString, antiUnaryClause))
         elif boolean and not plusminus:
             try:
-                self._kind = BOOLEAN
+                self._kind = BOOLEAN_KIND
                 self.ast = parseString(_boolean2Cql(aString, antiUnaryClause))
             except CQLParseException:
                 self._needsHelp = True
-                self._kind = DEFAULT
+                self._kind = DEFAULT_KIND
                 self.ast = parseString(_default2Cql(aString))              
         else:
-            self._kind = DEFAULT
+            self._kind = DEFAULT_KIND
             self.ast = parseString(_default2Cql(aString))
+        self.originalAst = self.ast
+        self.filters = []
 
     def addFilter(self, field, term):
-        #pruts, pruts
-        pass
+        filterQuery = SEARCH_CLAUSE(
+            INDEX(TERM(field)),
+            RELATION(COMPARITOR('exact')),
+            SEARCH_TERM(TERM(term))
+        )
+        self.filters.append(filterQuery)
+
+        newAst = [self.filters[-1]]
+        
+        for f in reversed(self.filters[:-1]):
+            if len(newAst) != 1:
+                newAst = [SCOPED_CLAUSE(*newAst)]
+            newAst.insert(0,BOOLEAN('and'))
+            newAst.insert(0,f)
+        if len(newAst) != 1:
+            newAst = [SCOPED_CLAUSE(*newAst)]
+        self.ast = CQL_QUERY(
+            SCOPED_CLAUSE(
+                newAst[0],
+                BOOLEAN('and'),
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(self.originalAst)
+                )
+            )
+        )
 
     def isBooleanQuery(self):
-        return self._kind == BOOLEAN
+        return self._kind == BOOLEAN_KIND
 
     def isPlusMinusQuery(self):
-        return self._kind == PLUSMINUS
+        return self._kind == PLUSMINUS_KIND
 
     def isDefaultQuery(self):
-        return self._kind == DEFAULT
+        return self._kind == DEFAULT_KIND
 
     def needsBooleanHelp(self):
         return self._needsHelp
