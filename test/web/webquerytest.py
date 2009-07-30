@@ -30,10 +30,10 @@
 from unittest import TestCase
 
 from merescocomponents.web import WebQuery
-from merescocomponents.web.web2cql import _feelsLikePlusMinusQuery, _feelsLikeBooleanQuery
+from merescocomponents.web.webquery import _feelsLikePlusMinusQuery, _feelsLikeBooleanQuery
 from cqlparser import parseString as parseCql
 
-class Web2CqlTest(TestCase):
+class WebQueryTest(TestCase):
 
     def testQuery(self):
         wq = WebQuery('cats', antiUnaryClause='antiunary')
