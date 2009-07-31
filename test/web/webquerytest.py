@@ -65,6 +65,7 @@ class WebQueryTest(TestCase):
         self.assertDefaultQuery('"-cats" AND "AND" AND "dogs"', '-cats AND dogs', needsBooleanHelp=True, asString='-cats AND AND AND dogs')
         self.assertDefaultQuery('cheese AND "("', 'cheese (', needsBooleanHelp=True)
         self.assertDefaultQuery('antiunary exact true', '')
+        self.assertDefaultQuery('label=value')
 
     def testBooleanQuery(self):
         self.assertBooleanQuery('cats AND dogs')
@@ -170,6 +171,32 @@ class WebQueryTest(TestCase):
         wq.addFilter('field3', 'value3')
         wq.addFilter('field4', 'value4')
         self.assertCql(parseCql('field1 exact value1 AND field2 exact value2 AND field3 exact value3 AND field4 exact value4 AND (fiets)'), wq.ast)
+
+    def testReplaceTerm(self):
+        wq = WebQuery('fiets')
+        newWq = wq.replaceTerm('fiets', 'bike')
+        self.assertEquals('fiets', wq.original)
+        self.assertEquals('bike', newWq.original)
+
+    def testReplaceTermOnLabelQuery(self):
+        wq = WebQuery('transport=fiets')
+        newWq = wq.replaceTerm('fiets', 'bike')
+        self.assertEquals('transport=bike', newWq.original)
+
+    def testReplaceTerms(self):
+        wq = WebQuery('fiets kaart')
+        newWq = wq.replaceTerm('fiets', 'bike')
+        self.assertEquals('fiets kaart', wq.original)
+        self.assertEquals('bike AND kaart', newWq.original)
+
+    def testReplaceTermsWithFilters(self):
+        wq = WebQuery('fiets kaart')
+        wq.addFilter('label', 'value')
+        newWq = wq.replaceTerm('fiets', 'bike')
+        self.assertEquals('fiets kaart', wq.original)
+        self.assertEquals('bike AND kaart', newWq.original)
+        self.assertCql(parseCql('label exact value AND (bike AND kaart)'), newWq.ast)
+        
 
     def assertCql(self, expected, input):
         self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

@@ -36,7 +36,7 @@ STRINGS = [QUOTED_LABEL_STRING ,QUOTED_STRING, UNQUOTED_STRING]
 
 SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 
-from cqlparser import parseString, CQLParseException, cql2string
+from cqlparser import parseString, CQLParseException, cql2string, CqlIdentityVisitor
 from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, SEARCH_TERM, TERM, BOOLEAN, INDEX, RELATION, COMPARITOR
 
 DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = range(3)
@@ -58,12 +58,12 @@ class WebQuery(object):
             except CQLParseException:
                 self._needsHelp = True
                 self._kind = DEFAULT_KIND
-                self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
+                self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
         else:
             self._kind = DEFAULT_KIND
             self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
         self.originalAst = self.ast
-        self.filters = []
+        self._filters = []
 
     def addTermFilter(self, term):
         self._addFilter(SEARCH_CLAUSE(
@@ -80,11 +80,11 @@ class WebQuery(object):
         ))
 
     def _addFilter(self, filterQuery):
-        self.filters.append(filterQuery)
+        self._filters.append(filterQuery)
 
-        newAst = [self.filters[-1]]
+        newAst = [self._filters[-1]]
 
-        for f in reversed(self.filters[:-1]):
+        for f in reversed(self._filters[:-1]):
             if len(newAst) != 1:
                 newAst = [SCOPED_CLAUSE(*newAst)]
             newAst.insert(0,BOOLEAN('and'))
@@ -101,6 +101,13 @@ class WebQuery(object):
             )
         )
 
+    def replaceTerm(self, oldTerm, newTerm):
+        newAst = CqlReplaceTerm(self.originalAst, oldTerm, newTerm).visit()
+        result = WebQuery(cql2string(newAst))
+        for f in self._filters:
+            result._addFilter(f)
+        return result
+
     def asString(self):
         return cql2string(self.ast)
 
@@ -115,6 +122,17 @@ class WebQuery(object):
 
     def needsBooleanHelp(self):
         return self._needsHelp
+
+class CqlReplaceTerm(CqlIdentityVisitor):
+    def __init__(self, ast, oldTerm, newTerm):
+        CqlIdentityVisitor.__init__(self, ast)
+        self._oldTerm = oldTerm
+        self._newTerm = newTerm
+
+    def visitTERM(self, node):
+        if node.children()[0] == self._oldTerm:
+            return node.__class__(self._newTerm)
+        return CqlIdentityVisitor.visitTERM(self, node)
 
 
 def _feelsLikePlusMinusQuery(aString):
@@ -173,10 +191,15 @@ def _boolean2Cql(aString, antiUnaryClause):
         newParts.append(part)
     return ' '.join(newParts)
 
-def _default2Cql(aString, antiUnaryClause="ignored"):
+def _default2CqlWithQuotes(aString, antiUnaryClause="ignored"):
     if aString.strip() == '':
         return antiUnaryClause
     return ' AND '.join(quot(part) for part in aString.split())
+
+def _default2Cql(aString, antiUnaryClause="ignored"):
+    if aString.strip() == '':
+        return antiUnaryClause
+    return ' AND '.join(part for part in aString.split())
 
 def quot(aString):
     if aString[-1] == '"' == aString[0]:
