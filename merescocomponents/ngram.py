@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -32,6 +33,7 @@ from merescocomponents.facetindex import document
 from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
 from Levenshtein import distance, ratio
 from itertools import islice
+from math import log
 
 def ngrams(word, N=2):
     word = unicode(word)
@@ -119,13 +121,18 @@ class NGramFieldlet(Transparant):
 
     def addField(self, name, value):
         for word in unicode(value).split():
-            count, ids = self.any.executeQuery(TermQuery(Term(document.IDFIELD, word)))
+            count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), 'appears')
+            appears = 1
             if count > 0:
-                continue
-
+                appears += int(fields[0])
+                boost = log(appears)/10
+            else:
+                boost = 10**-6
+            self.any.changeBoost(boost)
             self.ctx.tx.locals['id'] = word
             ngrams = ' '.join(self._ngram(word))
             self.do.addField(self._fieldName, ngrams)
+            self.do.addField(name='appears', value=str(appears), store=True)
             #for ngram in self._ngram(word):
                 #self.do.addField(self._fieldName, ngram)
 

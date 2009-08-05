@@ -33,7 +33,7 @@ from merescocore.framework import Observable, TransactionScope, ResourceManager,
 from merescocore.components import Xml2Fields
 
 from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx
-from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, LevenshteinSuggester, RatioSuggester
+from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, LevenshteinSuggester, RatioSuggester, _Suggestion
 
 from Levenshtein import distance, ratio
 from lxml.etree import parse
@@ -122,27 +122,33 @@ class NGramTest(CQ2TestCase):
         self.assertEquals(set(['bo', 'oo', 'om']), set(ngrams('boom', N=2)))
 
     def testNGramFieldLet(self):
-        observert = CallTrace('Observert', returnValues={'executeQuery': (0, [])})
+        observert = CallTrace('Observert', returnValues={'executeQueryWithField': (0, [])})
         ngramFieldlet = createNGramHelix(observert)
         ngramFieldlet.do.addField('field0', 'term0')
-        self.assertEquals(3, len(observert.calledMethods))
+        self.assertEquals(5, len(observert.calledMethods))
         self.assertEquals("begin()", str(observert.calledMethods[0]))
-        self.assertEquals('addField', observert.calledMethods[2].name)
-        self.assertEquals(('ngrams', 'te er rm m0'), observert.calledMethods[2].args)
+        self.assertEquals('changeBoost', observert.calledMethods[2].name)
+        self.assertEquals('addField', observert.calledMethods[3].name)
+        self.assertEquals(('ngrams', 'te er rm m0'), observert.calledMethods[3].args)
 
     def testNGramFieldLetQueriesForWord(self):
-        observert = CallTrace('Observert', returnValues={'executeQuery': (1, [])})
+        observert = CallTrace('Observert', returnValues={'executeQueryWithField': (1, ['1'])})
         ngramFieldlet = createNGramHelix(observert)
         ngramFieldlet.do.addField('field0', 'term0')
-        self.assertEquals('[begin(), executeQuery(<class __id__>)]', str(observert.calledMethods))
+        self.assertEquals("[begin(), executeQueryWithField(<class __id__>, 'appears'), "
+            "changeBoost(0.069314718056), addField('ngrams', 'te er rm m0'), "
+            "addField(value='2', store=<class True>, name='appears')]",
+            str(observert.calledMethods))
 
     def testWordisIDinTransactionScope(self):
         txlocals = {}
         class Observert(Observable):
-            def addField(self, *args):
+            def addField(self, *args, **kwargs):
                 txlocals.update(self.ctx.tx.locals)
-            def executeQuery(*args, **kwargs):
+            def executeQueryWithField(*args, **kwargs):
                 return 0, []
+            def changeBoost(*args):
+                pass
         x = createNGramHelix(Observert())
         x.do.addField('field0', 'term0')
         self.assertEquals({'id': u'term0'}, txlocals)
@@ -203,6 +209,60 @@ class NGramTest(CQ2TestCase):
         self.assertSuggestions(['Punch', 'puca', 'puce', 'puck'], 'punch', LevenshteinSuggester(50, 5, 4))
         self.assertSuggestions(['Punch', 'capuche', 'Mapuche', 'Pampuch'], 'punch', RatioSuggester(50, 0.5, 4))
 
+
+
+    def testUseMostFrequentlyAppearingWord(self):
+        class NoOpSuggester(_Suggestion):
+            def __init__(self):
+                super(NoOpSuggester, self).__init__(50, 0, 50)
+            def suggestionsFor(self, word):
+                return self._suggestionsFor(word, lambda term: 1)
+
+        words = ['apartamentos', 'apartments', 'appartments', 'apartment', 'appartamento', 'appartamenti', 'appartements']
+        freqs = [     2,             1024,          16,           256,          4,             1,             64      ]
+        index = LuceneIndex(self.tempdir, transactionName='ngram')
+        dna = \
+            (Observable(),
+                (TransactionScope('ngram'),
+                    (NGramFieldlet(2, 'ngrams'),
+                        (index,),
+                        (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
+                            (index,)
+                        )
+                    )
+                ),
+                (NGramQuery(2, 'ngrams'),
+                    (index,)
+                )
+            )
+        ngramFieldlet = be(dna)
+        for word, freq in zip(words, freqs):
+            for i in range(freq):
+                ngramFieldlet.do.addField('field0', word)
+        self.assertEquals(7, index.docCount())
+        ngq = NGramQuery(2, 'ngrams')
+        ngq.addObserver(index)
+        suggester = NoOpSuggester()
+        suggester.addObserver(ngq)
+        self.assertTrue(all('ap' in word for word in words))
+        inclusive, suggs = suggester.suggestionsFor('ap')
+        self.assertEquals(['apartments', 'apartment', 'appartements', 'appartments', 'appartamento', 'apartamentos', 'appartamenti'], suggs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def XXXXXXXXtestIntegrationWords(self):
         def addWord(index, word):
             d = Document()
@@ -242,6 +302,17 @@ class NGramTest(CQ2TestCase):
                 print '    Score:', ', '.join('%s (%.1f)' % (sugg[0], sugg[1]) for sugg in suggestions[:5])
                 print '    Leven (n=%d):'%N, ', '.join('%s (%.1f)' % (sugg[0], sugg[2]) for sugg in levenSuggs if sugg[2] < 5)
                 print '    Ratio (n=%d):'%N, ', '.join('%s (%.1f)' % (sugg[0], sugg[3]) for sugg in ratioSuggs if sugg[3] > 0.65)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
