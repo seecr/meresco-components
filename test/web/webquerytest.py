@@ -199,6 +199,16 @@ class WebQueryTest(TestCase):
         self.assertEquals('bike AND kaart', newWq.original)
         self.assertCql(parseCql('label exact value AND (bike AND kaart)'), newWq.ast)
 
+    def testHasFilters(self):
+        wq = WebQuery('fiets kaart')
+        self.assertFalse(wq.hasFilters())
+        wq.addFilter('label', 'value')
+        self.assertTrue(wq.hasFilters())
+
+        wq = WebQuery('fiets kaart')
+        self.assertFalse(wq.hasFilters())
+        wq.addTermFilter("water")
+        self.assertTrue(wq.hasFilters())
 
     def assertCql(self, expected, input):
         self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

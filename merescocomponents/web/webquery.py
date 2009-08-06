@@ -123,6 +123,9 @@ class WebQuery(object):
     def needsBooleanHelp(self):
         return self._needsHelp
 
+    def hasFilters(self):
+        return len(self._filters) > 0
+
 class CqlReplaceTerm(CqlIdentityVisitor):
     def __init__(self, ast, oldTerm, newTerm):
         CqlIdentityVisitor.__init__(self, ast)
