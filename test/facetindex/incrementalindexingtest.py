@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -29,7 +30,7 @@
 
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import LuceneIndex, Drilldown, Document, DocSet
-from PyLucene import MatchAllDocsQuery
+from merescocomponents.facetindex.merescolucene import MatchAllDocsQuery
 
 class IncrementalIndexingTest(CQ2TestCase):
 
@@ -100,7 +101,7 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.assertEquals(2, self.drilldown.queueLength()) # delete, add
         self.assertEquals([
             '_delete(docId=0)',
-            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
+            "_add(docDict={'field0': ['term0'], '__id__': ['1']}, docId=0)",
             ], list(repr(command) for command in self.drilldown._commandQueue))
 
     def testAddDocumentAndThenDeleteIt(self):
@@ -113,7 +114,7 @@ class IncrementalIndexingTest(CQ2TestCase):
         #self.assertEquals(2, self.drilldown.queueLength()) # add, delete
         self.assertEquals([
             '_delete(docId=0)',
-            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
+            "_add(docDict={'field0': ['term0'], '__id__': ['1']}, docId=0)",
             '_delete(docId=0)'], list(repr(command) for command in self.drilldown._commandQueue))
 
     def testDeleteDocumentAndThenAddIt(self):
@@ -157,4 +158,3 @@ class IncrementalIndexingTest(CQ2TestCase):
         fieldname, results = self.drilldown.drilldown(DocSet([0L, 1L]), [('field0', 0, False)]).next()
         self.assertEquals('field0', fieldname)
         self.assertEquals([('othervalue', 1)], list(results))
-        

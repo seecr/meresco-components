@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -30,7 +31,8 @@
 
 from cq2utils.cq2testcase import CQ2TestCase
 from cq2utils.calltrace import CallTrace
-
+from java.lang.reflect import Array
+from java.lang import Object
 from merescocomponents.oai.xml2document import Xml2Document, TEDDY_NS
 from merescocomponents.facetindex import Document, IDFIELD
 from amara import binderytools
@@ -49,7 +51,7 @@ class Xml2DocumentTest(CQ2TestCase):
     def testIndexField(self):
         document = self.converter._create('id', binderytools.bind_string('<fields><tag>value</tag></fields>').fields)
         luceneDoc = document._document
-        field = luceneDoc.getFields('fields.tag')[0]
+        field = Array.get(luceneDoc.getFields('fields.tag') % Object, 0)
         self.assertEquals('value', field.stringValue())
         self.assertEquals('fields.tag', field.name())
         self.assertEquals(True, field.isTokenized())
@@ -57,7 +59,7 @@ class Xml2DocumentTest(CQ2TestCase):
     def testIndexTokenizedField(self):
         document = self.converter._create('id', binderytools.bind_string('<fields xmlns:teddy="%s">\n<tag teddy:tokenize="false">value</tag></fields>' % TEDDY_NS).fields)
         luceneDoc = document._document
-        field = luceneDoc.getFields('fields.tag')[0]
+        field = Array.get(luceneDoc.getFields('fields.tag') % Object, 0)
         self.assertEquals('value', field.stringValue())
         self.assertEquals('fields.tag', field.name())
         self.assertEquals(False, field.isTokenized())
@@ -72,11 +74,11 @@ class Xml2DocumentTest(CQ2TestCase):
         </lom>
     </document>""" % TEDDY_NS).document)
         luceneDoc = document._document
-        field = luceneDoc.getFields('document.tag')[0]
+        field = Array.get(luceneDoc.getFields('document.tag') % Object, 0)
         self.assertEquals('value', field.stringValue())
         self.assertEquals('document.tag', field.name())
         self.assertEquals(False, field.isTokenized())
-        field = luceneDoc.getFields('document.lom.general.title')[0]
+        field = Array.get(luceneDoc.getFields('document.lom.general.title') % Object, 0)
         self.assertEquals('The title', field.stringValue())
         self.assertEquals('document.lom.general.title', field.name())
         self.assertEquals(True, field.isTokenized())
@@ -91,11 +93,12 @@ class Xml2DocumentTest(CQ2TestCase):
         luceneDoc = document._document
         fields = luceneDoc.getFields('title')
         self.assertTrue(fields != None)
-        field = fields[0]
+        field = Array.get(fields % Object, 0)
         self.assertEquals('The title', field.stringValue())
         self.assertEquals('title', field.name())
         self.assertEquals(True, field.isTokenized())
-        field = luceneDoc.getFields('general.identifier')[0]
+        fields = luceneDoc.getFields('general.identifier')
+        field = Array.get(fields % Object, 0)
         self.assertEquals('ID', field.stringValue())
         self.assertEquals('general.identifier', field.name())
         self.assertEquals(True, field.isTokenized())

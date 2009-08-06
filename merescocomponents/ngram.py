@@ -30,10 +30,13 @@
 
 from merescocore.framework import Transparant,  Observable
 from merescocomponents.facetindex import document
-from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
+from merescocomponents.facetindex.merescolucene import BooleanQuery, BooleanClause, TermQuery, Term, Query
 from Levenshtein import distance, ratio
 from itertools import islice
 from math import log
+
+BooleanClause_Occur_SHOULD = BooleanClause.Occur.SHOULD
+
 
 def ngrams(word, N=2):
     word = unicode(word)
@@ -55,7 +58,7 @@ class NGramQuery(Observable):
         """
         query = BooleanQuery()
         for ngram in ngrams(word, N):
-            query.add(BooleanClause(TermQuery(Term(self._fieldName, ngram)), BooleanClause.Occur.SHOULD))
+            query.add(BooleanClause(TermQuery(Term(self._fieldName, ngram)) % Query, BooleanClause_Occur_SHOULD))
         return query
 
 class _Suggestion(Observable):

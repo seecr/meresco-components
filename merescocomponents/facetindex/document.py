@@ -28,7 +28,8 @@
 #
 ## end license ##
 
-import PyLucene
+from merescolucene import Document as LuceneDocument, Field, Fieldable, iterJ, asFloat
+
 
 IDFIELD = '__id__'
 
@@ -43,12 +44,12 @@ class Document(object):
         if not self._isValidFieldValue(anId):
             raise DocumentException("Invalid ID: '%s'" % anId)
 
-        self._document = PyLucene.Document()
-        self._document.add(PyLucene.Field(IDFIELD, anId, PyLucene.Field.Store.YES, PyLucene.Field.Index.UN_TOKENIZED))
+        self._document = LuceneDocument()
+        self._document.add(Field(IDFIELD, anId, Field.Store.YES, Field.Index.UN_TOKENIZED) % Fieldable)
         self._fields = [IDFIELD]
 
     def setBoost(self, boost):
-        self._document.setBoost(boost)
+        self._document.setBoost(asFloat(boost))
 
     def _isValidFieldValue(self, anObject):
         return isinstance(anObject, basestring) and anObject.strip()
@@ -66,11 +67,15 @@ class Document(object):
         if not self._isValidFieldValue(aValue):
             return
 
-        self._addIndexedField(aKey, aValue, tokenize, store and PyLucene.Field.Store.YES or PyLucene.Field.Store.NO)
+        self._addIndexedField(aKey, aValue, tokenize, store and Field.Store.YES or Field.Store.NO)
         self._fields.append(aKey)
 
-    def _addIndexedField(self, aKey, aValue, tokenize = True, store=PyLucene.Field.Store.NO):
-        self._document.add(PyLucene.Field(aKey, aValue, store, tokenize and PyLucene.Field.Index.TOKENIZED or PyLucene.Field.Index.UN_TOKENIZED))
+    def _addIndexedField(self, aKey, aValue, tokenize = True, store=Field.Store.NO):
+        self._document.add(Field(aKey,
+								 aValue, 
+                                 store,
+                                 tokenize and Field.Index.TOKENIZED or Field.Index.UN_TOKENIZED
+							) % Fieldable)
 
     def addToIndexWith(self, anIndexWriter):
         anIndexWriter.addDocument(self._document)
@@ -81,7 +86,7 @@ class Document(object):
 
     def asDict(self):
         dictionary = {}
-        for field in self._document.getFields():
+        for field in iterJ(self._document.getFields()):
             key = field.name()
             if not key in dictionary:
                 dictionary[key] = []

@@ -32,6 +32,7 @@ from sys import maxint
 from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
 from libfacetindex import libFacetIndex
 from docset import DocSet, DOCSET
+from merescolucene import IndexReader
 from integerlist import IntegerList
 from cq2utils import deallocator
 
@@ -110,9 +111,9 @@ JACCARD_MI = c_int.in_dll(libFacetIndex, "JACCARD_MI")
 JACCARD_X2 = c_int.in_dll(libFacetIndex, "JACCARD_X2")
 JACCARD_ONLY = c_int.in_dll(libFacetIndex, "JACCARD_ONLY")
 
-DocSetList_fromTermEnum = libFacetIndex.DocSetList_fromTermEnum
-DocSetList_fromTermEnum.argtypes = [py_object, py_object, c_int]
-DocSetList_fromTermEnum.restype = DOCSETLIST
+DocSetList_forField = libFacetIndex.DocSetList_forField
+DocSetList_forField.argtypes = [IndexReader, c_char_p, POINTER(None)]
+DocSetList_forField.restype = DOCSETLIST
 
 DocSetList_sortOnCardinality = libFacetIndex.DocSetList_sortOnCardinality
 DocSetList_sortOnCardinality.argtypes = [DOCSETLIST]
@@ -153,8 +154,8 @@ SORTEDONTERMID = 3
 class DocSetList(object):
 
     @classmethod
-    def fromTermEnum(clazz, termEnum, termDocs, integerList=None):
-        r = DocSetList_fromTermEnum(py_object(termEnum), py_object(termDocs), integerList.getCObject() if integerList else 0)
+    def forField(clazz, reader, fieldname, mapping=None):
+        r = DocSetList_forField(reader, fieldname, mapping.getCObject() if mapping else 0)
         return clazz(cobj=r, own=True)
 
     def __init__(self, cobj=None, own=False):
@@ -242,7 +243,7 @@ class DocSetList(object):
             CardinalityList_free(p)
 
     def addDocument(self, docid, terms):
-        for term in (term.encode('utf-8') for term in terms):
+        for term in (term.encode('utf-8') for term in set(terms)):
             r = DocSetList_getForTerm(self, term)
             if r.ptr != -1:
                 docset = DocSet(cobj=r)

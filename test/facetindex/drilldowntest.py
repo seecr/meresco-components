@@ -28,7 +28,7 @@
 #
 ## end license ##
 from struct import calcsize
-from PyLucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
+from merescocomponents.facetindex.merescolucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 
 from cq2utils import CQ2TestCase, CallTrace
 

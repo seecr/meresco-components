@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -26,15 +27,19 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from PyLucene import TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, LowerCaseFilter, StandardFilter, StandardTokenizer, PrefixQuery
+from merescolucene import Query, TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, PrefixQuery, MerescoStandardAnalyzer, asFloat
+from java.io import StringReader, Reader as ioReader
 from cqlparser import CqlVisitor, UnsupportedCQL
-from StringIO import StringIO
 from re import compile
+
+from ctypes import cdll
+cdll.LoadLibrary("liblucene-core.so.2")
 
 def _analyzeToken(token):
     result = []
-    reader = StringIO(unicode(token))
-    tokenStream = LowerCaseFilter(StandardFilter(StandardTokenizer(reader)))
+    reader = StringReader(unicode(token))
+    stda = MerescoStandardAnalyzer()
+    tokenStream = stda.tokenStream("dummy field name", reader % ioReader)
     token = tokenStream.next()
     while token:
         result.append(token.termText())
@@ -72,8 +77,8 @@ class CqlAst2LuceneVisitor(CqlVisitor):
         rhsDict = lhsDict.copy()
         rhsDict["NOT"] = BooleanClause.Occur.MUST_NOT
         query = BooleanQuery()
-        query.add(lhs, lhsDict[operator])
-        query.add(rhs, rhsDict[operator])
+        query.add(lhs % Query, lhsDict[operator])
+        query.add(rhs % Query, rhsDict[operator])
         return query
 
     def visitSEARCH_CLAUSE(self, node):
@@ -88,13 +93,13 @@ class CqlAst2LuceneVisitor(CqlVisitor):
             if len(self._unqualifiedTermFields) == 1:
                 fieldname, boost = self._unqualifiedTermFields[0]
                 query = _termOrPhraseQuery(fieldname, unqualifiedRhs)
-                query.setBoost(boost)
+                query.setBoost(asFloat(boost))
             else:
                 query = BooleanQuery()
                 for fieldname, boost in self._unqualifiedTermFields:
                     subQuery = _termOrPhraseQuery(fieldname, unqualifiedRhs)
-                    subQuery.setBoost(boost)
-                    query.add(subQuery, BooleanClause.Occur.SHOULD)
+                    subQuery.setBoost(asFloat(boost))
+                    query.add(subQuery % Query, BooleanClause.Occur.SHOULD)
             return query
         elif firstChild == 'INDEX':
             ((left,), (relation, boost), right) = results
@@ -105,7 +110,7 @@ class CqlAst2LuceneVisitor(CqlVisitor):
             else:
                 raise UnsupportedCQL("Only =, == and exact are supported for the field '%s'" % left)
 
-            query.setBoost(boost)
+            query.setBoost(asFloat(boost))
             return query
         else:
             ((query,),) = results

@@ -26,9 +26,20 @@
  *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * end license */
-#include "pyjava.h"
+
+#include "assert.h"
+
+#include "org/apache/lucene/search/MatchAllDocsQuery.h"
+#include "org/apache/lucene/search/HitCollector.h"
+#include "org/apache/lucene/index/TermEnum.h"
+#include "org/apache/lucene/index/TermDocs.h"
+#include "org/apache/lucene/index/Term.h"
+#include "java/lang/Throwable.h"
 #include "docset.h"
 #include <algorithm>
+
+using namespace org::apache;
+
 
 extern "C" {
     #include "zipper.h"
@@ -72,8 +83,9 @@ fwPtr DocSet_forTesting(int size) {
         docset->push_back(i);
     return ds;
 }
-fwPtr DocSet_fromTermDocs(PyJObject* termDocs, int freq,  IntegerList* mapping) {
-    return DocSet::fromTermDocs(termDocs->jobject, freq,  mapping);
+
+fwPtr DocSet_forTerm(lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping) {
+    return DocSet::forTerm(reader, fieldname, term, mapping);
 }
 
 int DocSet_contains(fwPtr docSet, guint32 docId) {
@@ -192,23 +204,35 @@ void DocSet::remove(guint32 doc) {
 * intended to be used with Python ctypes.
 ****************************************************************************/
 
-class HitCollector : public JHitCollector {
+class DocSetHitCollector {
+    private:
+        DocSet* docset;
     public:
-        fwPtr docset;
-        HitCollector() : docset( DocSet_create() ) {}
-        virtual void aka_collect(register jint doc, register jfloat score) { // collect
-            pDS(docset)->push_back(doc);
+        DocSetHitCollector(DocSet* docset) {
+            this->docset = docset;
         }
+        // This uses the Java/CNI ABI to perform callbacks. Collect is in slot 9.
+        virtual void vtable_slot1() {}
+        virtual void vtable_slot2() {}
+        virtual void vtable_slot3() {}
+        virtual void vtable_slot4() {}
+        virtual void vtable_slot5() {}
+        virtual void vtable_slot6() {}
+        virtual void vtable_slot7() {}
+        virtual void vtable_slot8() {}
+        virtual void aka_collect(jint luceneId, jfloat score) {
+            this->docset->push_back(luceneId);
+        }
+        virtual ~DocSetHitCollector() {}
 };
 
-fwPtr DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping) {
-    HitCollector* resultCollector = new HitCollector();
-    // Direct call of public void search(Query query, HitCollector results),
-    // since there happens to be only one implementation which is not overridden
-    // by any of MultiSearcher, IndexSearcher, ParallelSearche etc. Luckily!
-    Searcher_search(psearcher->jobject, pquery->jobject, resultCollector);
-    pDS(resultCollector->docset)->map(mapping);
-    return resultCollector->docset;
+extern "C"
+fwPtr DocSet_fromQuery(lucene::search::Searcher* searcher, lucene::search::Query* query, IntegerList* mapping) {
+    fwPtr docset = DocSet_create();
+    DocSetHitCollector resultCollector(pDS(docset));
+    searcher->search(query, (lucene::search::HitCollector*) &resultCollector);
+    pDS(docset)->map(mapping);
+    return docset;
 }
 
 
@@ -220,33 +244,27 @@ fwPtr DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* map
 ****************************************************************************/
 
 #define TERMDOCS_READ_BUFF_SIZE 32
-JIntArray* documents = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
-JIntArray* ignored = _Jv_NewIntArray(TERMDOCS_READ_BUFF_SIZE);
 
-fwPtr DocSet::fromTermDocs(JObject* termDocs, int freq, IntegerList* mapping) {
-    // Call read() via Interface, because different implementations might be MultiTermDocs,
-    // SegmentTermDocs, and the like.  Lookup only once instead of at every call. The
-    // read() method is the 6th in the interface. Counting starts at 1.
-    TermDocs_read read = (TermDocs_read) lookupIface(termDocs, &ITermDocs, 6);
+fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping) {
+    jintArray documents = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
+    jintArray ignored = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
     fwPtr docset = DocSet_create();
     DocSet* docs = pDS(docset);
+    lucene::index::TermEnum *termEnum = reader->terms(
+        new lucene::index::Term(JvNewStringUTF(fieldname), JvNewStringUTF(term)));
+    int freq = termEnum->docFreq();
     docs->reserve(freq); // <<== this really speeds up: from 3.1/3.2 => 2.6/2.7 seconds.
-    jint count = read(termDocs, documents, ignored);
-    docs->append((doc_t*)documents->data, count);
+    lucene::index::TermDocs *termDocs = reader->termDocs();
+    termDocs->seek(termEnum);
+    int count = 0;
+    count = termDocs->read(documents, ignored);
+    docs->append((doc_t*) elements(documents), count);
     // read does not read all segments, we must check ourselves
-    while ( count < freq ) {
-        jint additional = read(termDocs, documents, ignored);
-        if ( !additional )
-            /* public final void deleteDocument(int docNum)
-	         *
-       	     * Deletes the document numbered docNum. Once a document is deleted it will not appear
-             * in TermDocs or TermPostitions enumerations. Attempts to read its field with the
-             * document(int) method will result in an error. The presence of this document may still
-             * be reflected in the docFreq(org.apache.lucene.index.Term) statistic, though this will
-             * be corrected eventually as the index is further modified.
-             */
+    while (count < freq) {
+        int additional = termDocs->read(documents, ignored);
+        if (!additional)
             break;
-        docs->append((doc_t*)documents->data, additional);
+        docs->append((doc_t*) elements(documents), additional);
         count += additional;
     }
     docs->map(mapping);

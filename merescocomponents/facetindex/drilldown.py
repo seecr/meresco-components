@@ -28,13 +28,16 @@
 #
 ## end license ##
 from .docsetlist import DocSetList, JACCARD_MI
-from PyLucene import Term, IndexReader # hmm, maybe we don't want this dependency?
+from merescolucene import Term, IndexReader, iterJ  # hmm, maybe we don't want this dependency?
 from time import time
 from sys import maxint
 from functioncommand import FunctionCommand
 from callstackscope import callstackscope
 from .triedict import TrieDict
 from collections import defaultdict
+
+IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
+
 
 class NoFacetIndexException(Exception):
 
@@ -108,7 +111,7 @@ class Drilldown(object):
         fieldNames = self._staticDrilldownFieldnames
         if not fieldNames:
             fieldNames = [fieldname
-                for fieldname in indexReader.getFieldNames(IndexReader.FieldOption.ALL)
+                for fieldname in iterJ(indexReader.getFieldNames(IndexReader_FieldOption_ALL))
                     if not fieldname.startswith('__')]
         for fieldname in fieldNames:
             if type(fieldname) == tuple:
@@ -123,9 +126,7 @@ class Drilldown(object):
         #print self.measure()
 
     def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
-        termDocs = indexReader.termDocs()
-        termEnum = indexReader.terms(Term(field, ''))
-        return DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
+        return DocSetList.forField(indexReader, field, docIdMapping)
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:

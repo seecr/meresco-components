@@ -33,6 +33,8 @@ from libfacetindex import libFacetIndex
 from integerlist import INTEGERLIST
 from cq2utils import deallocator
 
+from merescolucene import Query, Searcher, IndexSearcher, IndexReader
+
 class DOCSET(Structure):
     _fields_ = [("type", c_int, 2),
                 ("ptr", c_int, 30)]
@@ -78,12 +80,12 @@ DocSet_intersect.argtypes = [DOCSET, DOCSET]
 DocSet_intersect.restype = DOCSET
 
 DocSet_fromQuery = libFacetIndex.DocSet_fromQuery
-DocSet_fromQuery.argtypes = [py_object, py_object, POINTER(None)]
+DocSet_fromQuery.argtypes = [Searcher, Query, POINTER(None)]
 DocSet_fromQuery.restype = DOCSET
 
-DocSet_fromTermDocs = libFacetIndex.DocSet_fromTermDocs
-DocSet_fromTermDocs.argtypes = [py_object, c_int, POINTER(None)]
-DocSet_fromTermDocs.restype = DOCSET
+DocSet_forTerm = libFacetIndex.DocSet_forTerm
+DocSet_forTerm.argtypes = [IndexReader, c_char_p, c_char_p, POINTER(None)]
+DocSet_forTerm.restype = DOCSET
 
 DocSet_forTesting = libFacetIndex.DocSet_forTesting
 DocSet_forTesting.argtypes = [c_int]
@@ -98,12 +100,12 @@ class DocSet(object):
 
     @classmethod
     def fromQuery(clazz, searcher, query, mapping=None):
-        r = DocSet_fromQuery(py_object(searcher), py_object(query), mapping)
+        r = DocSet_fromQuery(searcher, query, mapping)
         return clazz(cobj=r, own=True)
 
     @classmethod
-    def fromTermDocs(clazz, termdocs, freq, mapping=None):
-        r = DocSet_fromTermDocs(py_object(termdocs), freq, mapping)
+    def forTerm(clazz, reader, fieldname, term, mapping=None):
+        r = DocSet_forTerm(reader, fieldname, term, mapping)
         return clazz(cobj=r, own=True)
 
     @classmethod

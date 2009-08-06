@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -27,9 +28,10 @@
 #
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
-from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader
-from random import randint
 from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
+from merescocomponents.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
+                                                       IndexSearcher, TermQuery, MatchAllDocsQuery, Term, iterJ
+from random import randint
 from glob import glob
 from time import time
 from cq2utils.profileit import profile
@@ -84,7 +86,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.tracker.flush()
         self.writer.flush()
         hits = IndexSearcher(self.tempdir).search(TermQuery(Term('__id__', str(doc))))
-        luceneId = int(list(hits)[0].getId())
+        luceneId = hits.id(0)
         self.tracker.deleteLuceneId(luceneId)
         self.writer.deleteDocuments(Term('__id__', str(doc)))
 
@@ -100,8 +102,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.tracker.flush()
         searcher = IndexSearcher(self.tempdir)
         hits = searcher.search(MatchAllDocsQuery())
-        foundIds = [hit.getId() for hit in hits]
-        foundDocs = [int(hit.get('__id__')) for hit in hits]
+        foundIds = [hit.getId() for hit in iterJ(hits)]
+        foundDocs = [int(hit.get('__id__')) for hit in iterJ(hits)]
         return foundIds, foundDocs
 
     def assertMap(self, sequence, luceneIds, foundDocs):
@@ -223,8 +225,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.processDocs([100, 101, 102])
         tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
         hits = IndexSearcher(self.tempdir).search(MatchAllDocsQuery())
-        self.assertEquals(2, len(hits))
-        self.assertEquals(len(hits), tracker._segmentInfo[0].length)
+        self.assertEquals(2, hits.length())
+        self.assertEquals(hits.length(), tracker._segmentInfo[0].length)
         self.assertEquals(0, len(tracker._ramSegmentsInfo))
 
         # let both tracker and writer flush 102 to disk
@@ -232,8 +234,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.tracker.close()
         tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
         hits = IndexSearcher(self.tempdir).search(MatchAllDocsQuery())
-        self.assertEquals(3, len(hits))
-        self.assertEquals(len(hits), tracker._segmentInfo[0].length)
+        self.assertEquals(3, hits.length())
+        self.assertEquals(hits.length(), tracker._segmentInfo[0].length)
         self.assertEquals(0, len(tracker._ramSegmentsInfo))
 
     def testFailLoadWhenDataAlreadyInList(self):

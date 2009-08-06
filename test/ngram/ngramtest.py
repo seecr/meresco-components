@@ -38,8 +38,14 @@ from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, Levenshte
 from Levenshtein import distance, ratio
 from lxml.etree import parse
 from StringIO import StringIO
-from PyLucene import BooleanQuery, BooleanClause, IndexReader, IndexWriter, IndexSearcher, TermQuery, Term, Field, StandardAnalyzer, Document
+from merescocomponents.facetindex.merescolucene import BooleanQuery, BooleanClause, IndexReader, IndexWriter, IndexSearcher, TermQuery, Term, Field, StandardAnalyzer, Document, Query, Analyzer, Fieldable
 
+
+BooleanClause_Occur_SHOULD = BooleanClause.Occur.SHOULD
+Field_Store_YES = Field.Store.YES
+Field_Store_NO = Field.Store.NO
+#Field_Index_ANALYZED = Field.Index.ANALYZED  # Lucene 2.2/2.4 compatibility
+Field_Index_ANALYZED = Field.Index.TOKENIZED
 
 PUCH_WORDS = ['capuche', 'capuches', 'Capuchin', 'capuchins', 'Mapuche', 'Pampuch', 'puchera', 'pucherite', 'capuched', 'capuchin', 'puchero', 'PUC', 'Kampuchea', 'kampuchea', 'Puchanahua', 'sepuchral', 'puca', 'puce', 'puces', 'Puck', 'puck', 'pucka', 'pucks', 'Pupuluca', 'Puccini', 'puccini', 'puccoon', 'puceron', 'Pucida', 'pucker', 'puckish', 'puckle', 'SPUCDL', 'Chuch', 'Punch', 'punch', 'cappuccino', 'capucine', 'catapuce', 'catepuce', 'depucel', 'leucopus', 'mucopus', 'praepuce', 'prepuce', 'prepuces', 'Puccinia', 'puccinoid', 'puccoons', 'pucelage', 'pucellas', 'pucelle', 'puckball', 'puckered', 'puckerel', 'puckerer', 'puckering', 'puckers', 'puckery', 'Puckett', 'puckfist', 'puckfoist', 'puckishly', 'pucklike', 'puckling', 'puckrel', 'pucksey', 'puckster', 'sapucaia', 'unpucker', 'Vespucci', 'vespucci', 'Chucho', 'aneuch', 'aucht', 'bauch', 'bouch', 'Bruch', 'Buch', 'Buchan', 'buch', 'cauch', 'Chuck', 'chuck', 'couch', 'Cuchan', 'duchan', 'duchy', 'Eucha', 'Fauch', 'fuchi', 'Fuchs', 'heuch', 'hucho', 'Jauch', 'kauch', 'leuch', 'louch', 'Lucho', 'Manouch', 'mouch', 'much', 'nauch', 'nonsuch', 'nouche', 'nucha', 'ouch', 'pouch', 'Rauch', 'ruche', 'sauch', 'snouch', 'such', 'teuch', 'touch', 'touch-', 'touche', 'touchy', 'tuchis', 'tuchit', 'Uchean', 'Uchee', 'Uchish', 'vouch', 'wauch']
 
@@ -59,7 +65,7 @@ class NGramTest(CQ2TestCase):
         def ngramQuery(word, N=2):
             query = BooleanQuery()
             for ngram in ngrams(word, N):
-                query.add(BooleanClause(TermQuery(Term('ngrams', ngram)), BooleanClause.Occur.SHOULD))
+                query.add(BooleanClause(TermQuery(Term('ngrams', ngram)) % Query, BooleanClause_Occur_SHOULD))
             return query
 
         index = LuceneIndex(self.tempdir)
@@ -91,30 +97,30 @@ class NGramTest(CQ2TestCase):
     def testCreateIndex(self):
         def addWord(index, word):
             d = Document()
-            d.add(Field('term', word, Field.Store.YES, Field.Index.TOKENIZED))
-            d.add(Field('ngrams', ' '.join(ngrams(word)), Field.Store.NO, Field.Index.TOKENIZED))
+            d.add(Field('term', word, Field_Store_YES, Field_Index_ANALYZED) % Fieldable)
+            d.add(Field('ngrams', ' '.join(ngrams(word)), Field_Store_NO, Field_Index_ANALYZED) % Fieldable)
             index.addDocument(d)
-        index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        index = IndexWriter(self.tempdir, StandardAnalyzer() % Analyzer, True)
         addWord(index, 'appelboom')
         index.flush()
         searcher = IndexSearcher(self.tempdir)
-        hits = searcher.search(TermQuery(Term('ngrams', 'ap')))
-        self.assertEquals('appelboom', hits[0].get('term'))
+        hits = searcher.search(TermQuery(Term('ngrams', 'ap')) % Query)
+        self.assertEquals('appelboom', hits.doc(0).get('term'))
 
     def testCreateIndexWithFunkyCharacters(self):
         def addWord(index, word):
             d = Document()
-            d.add(Field('term', word, Field.Store.YES, Field.Index.TOKENIZED))
-            d.add(Field('ngrams', ' '.join(ngrams(word)), Field.Store.NO, Field.Index.TOKENIZED))
+            d.add(Field('term', word, Field_Store_YES, Field_Index_ANALYZED) % Fieldable)
+            d.add(Field('ngrams', ' '.join(ngrams(word)), Field_Store_NO, Field_Index_ANALYZED) % Fieldable)
             index.addDocument(d)
-        index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        index = IndexWriter(self.tempdir, StandardAnalyzer() % Analyzer, True)
         addWord(index,'Škvarla')
         addWord(index,'Mockovčiaková')
         addWord(index,'Jiří')
         index.flush()
         searcher = IndexSearcher(self.tempdir)
-        hits = searcher.search(TermQuery(Term('ngrams', 'ar')))
-        self.assertEquals('Škvarla', hits[0].get('term'))
+        hits = searcher.search(TermQuery(Term('ngrams', 'ar')) % Query)
+        self.assertEquals('Škvarla', hits.doc(0).get('term'))
 
 
     def testNgram(self):
@@ -266,8 +272,8 @@ class NGramTest(CQ2TestCase):
     def XXXXXXXXtestIntegrationWords(self):
         def addWord(index, word):
             d = Document()
-            d.add(Field('term', word, Field.Store.YES, Field.Index.TOKENIZED))
-            d.add(Field('ngrams', ' '.join(ngrams(word)), Field.Store.NO, Field.Index.TOKENIZED))
+            d.add(Field('term', word, Field_Store_YES, Field_Index_ANALYZED))
+            d.add(Field('ngrams', ' '.join(ngrams(word)), Field_Store_NO, Field_Index_ANALYZED))
             index.addDocument(d)
         index = IndexWriter('index', StandardAnalyzer(), True)
         f = open('/usr/share/dict/words')
@@ -282,7 +288,7 @@ class NGramTest(CQ2TestCase):
         def ngramQuery(word, N=2):
             query = BooleanQuery()
             for ngram in ngrams(word, N):
-                query.add(BooleanClause(TermQuery(Term('ngrams', ngram)), BooleanClause.Occur.SHOULD))
+                query.add(BooleanClause(TermQuery(Term('ngrams', ngram)), BooleanClause_Occur_SHOULD))
             return query
 
         for word in ['Alabama', 'alhambra', 'albuqurqi', 'matematics', 'restauration', 'abridgement', 'entousiast', 'puch', 'grnt', 'carot', 'from', 'sema', 'bord', 'enrgie', 'energie', 'enery', 'energy' ]:
@@ -322,8 +328,8 @@ class NGramTest(CQ2TestCase):
     def XXXXtestIntegrationLiveWords(self):
         def addWord(index, word):
             d = Document()
-            d.add(Field('term', word, Field.Store.YES, Field.Index.TOKENIZED))
-            d.add(Field('ngrams', ' '.join(ngrams(word)), Field.Store.NO, Field.Index.TOKENIZED))
+            d.add(Field('term', word, Field_Store_YES, Field_Index_ANALYZED))
+            d.add(Field('ngrams', ' '.join(ngrams(word)), Field_Store_NO, Field_Index_ANALYZED))
             index.addDocument(d)
         index = IndexWriter('index2', StandardAnalyzer(), True)
         f = open('/home/meresco/words.txt')
@@ -338,7 +344,7 @@ class NGramTest(CQ2TestCase):
         def ngramQuery(word, N=2):
             query = BooleanQuery()
             for ngram in ngrams(word, N):
-                query.add(BooleanClause(TermQuery(Term('ngrams', ngram)), BooleanClause.Occur.SHOULD))
+                query.add(BooleanClause(TermQuery(Term('ngrams', ngram)), BooleanClause_Occur_SHOULD))
             return query
 
         for word in ['Nederland', 'Rafael', 'config', 'susceptibility' ]:

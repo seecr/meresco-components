@@ -32,7 +32,6 @@ from merescocomponents.facetindex import DocSetList, DocSet
 from merescocomponents.facetindex.docsetlist import JACCARD_ONLY
 from merescocomponents.facetindex.triedict import TrieDict
 from lucenetestcase import LuceneTestCase
-from PyLucene import Term, IndexReader
 from cq2utils import MATCHALL
 
 #Facts about Lucene:
@@ -183,29 +182,21 @@ class DocSetListTest(LuceneTestCase):
 
     def testReadTermsFrom_SEGMENT_reader(self):
         self.createBigIndex(10, 1) # 10 records, two values 0 and 1
-        termDocs = self.reader.termDocs()
-        fields = self.reader.getFieldNames(IndexReader.FieldOption.ALL)
-        termEnum = self.reader.terms(Term(fields[0],''))
-        dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+        dsl = DocSetList.forField(self.reader, 'field0')
         #for docset in dsl: print docset
         self.assertEquals(2, len(dsl)) # two different values/terms
         self.assertEquals(10, len(dsl[0]) + len(dsl[1]))
 
     def testReadTermsFrom_MULTI_reader(self):
         self.createBigIndex(13, 2) # 13 records, three values 0, 1 and 2
-        termDocs = self.reader.termDocs()
-        fields = self.reader.getFieldNames(IndexReader.FieldOption.ALL)
-        termEnum = self.reader.terms(Term(fields[0],''))
-        dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+        dsl = DocSetList.forField(self.reader, 'field0')
         #for docset in dsl: print docset
         self.assertEquals(3, len(dsl)) # three different values/terms
         self.assertEquals(13, len(dsl[0]) + len(dsl[1]) + len(dsl[2]))
 
-    def testGetTerms(self):
+    def testForField(self):
         self.createBigIndex(99, 2)
-        termEnum = self.reader.terms(Term('field0',''))
-        termDocs = self.reader.termDocs()
-        dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+        dsl = DocSetList.forField(self.reader, 'field0')
         cs = dsl.termCardinalities(DocSet(range(99)))
         NA = MATCHALL
         self.assertEquals(('t€rm0', NA), cs.next())

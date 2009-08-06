@@ -38,12 +38,11 @@ from shutil import rmtree
 
 from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex
-
 from merescocomponents.facetindex import CQL2LuceneQuery
+from merescocomponents.facetindex.merescolucene import Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery
 
 from cqlparser import parseString
 
-from PyLucene import Document as PyDocument, Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery, JavaError
 from weightless import Reactor
 
 class LuceneTest(CQ2TestCase):
@@ -65,9 +64,11 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
+        self.assertEquals(1, self._luceneIndex._writer.numDocs())
+        self.assertEquals(1, self._luceneIndex.docCount())
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
-        self.assertEquals(len(hits), 1)
+        self.assertEquals(1, len(hits))
         self.assertEquals(['0123456789'], list(hits))
 
     def testAddToIndexWithDuplicateField(self):
@@ -248,7 +249,7 @@ class LuceneTest(CQ2TestCase):
 
         reopen()
 
-    def testAnalyser(self):
+    def testAnalyzer(self):
         myDocument = Document('id0')
         myDocument.addIndexedField('field', 'a')
         myDocument.addIndexedField('field', 'vAlUe')
@@ -256,7 +257,8 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'a')))
-        self.assertEquals(len(hits), 1)
+        self.assertEquals(1, total)
+        self.assertEquals(1, len(hits))
         self.assertEquals(['id0'], list(hits))
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'value')))
@@ -348,14 +350,14 @@ class LuceneTest(CQ2TestCase):
         self.addDocument('2', field1='nut')
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals(1, len(self._luceneIndex._commandQueue))
-        self.assertEquals("addDocument(docDict={u'field1': [u'nut'], u'__id__': [u'2']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals("addDocument(docDict={'field1': ['nut'], '__id__': ['2']}, docId=0)", str(observer.calledMethods[0]))
 
     def testPassOnDeleteDocument(self):
         observer = CallTrace('observer')
         self._luceneIndex.addObserver(observer)
         self.addDocument('identifier', field0='term0') # 0
         self._luceneIndex.delete('identifier')
-        self.assertEquals("addDocument(docDict={u'field0': [u'term0'], u'__id__': [u'identifier']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals("addDocument(docDict={'field0': ['term0'], '__id__': ['identifier']}, docId=0)", str(observer.calledMethods[0]))
         self.assertEquals('deleteDocument(docId=0)', str(observer.calledMethods[1]))
 
     def testDocIdTrackerIntegration(self):
@@ -409,27 +411,3 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex._reopenIndex = reopenIndex
         self._luceneIndex.commit()
         self.assertEquals([], reopenIndexCalled)
-
-    def testExecuteQueryWithField(self):
-        d = Document('1')
-        d.addIndexedField('field', 'termc', store=True)
-        self._luceneIndex.addDocument(d)
-        d = Document('2')
-        d.addIndexedField('field', 'terma', store=True)
-        self._luceneIndex.addDocument(d)
-        d = Document('3')
-        d.addIndexedField('field', 'termb', store=True)
-        self._luceneIndex.addDocument(d)
-        self._luceneIndex.commit()
-        count, fields = self._luceneIndex.executeQueryWithField(MatchAllDocsQuery(), fieldname='field')
-        self.assertEquals(3, count)
-        self.assertEquals(['termc', 'terma', 'termb'], fields)
-        count, fields = self._luceneIndex.executeQueryWithField(MatchAllDocsQuery(), fieldname='field', start=1, stop=2)
-        self.assertEquals(3, count)
-        self.assertEquals(['terma'], fields)
-        count, fields = self._luceneIndex.executeQueryWithField(MatchAllDocsQuery(), fieldname='field', sortBy='field')
-        self.assertEquals(3, count)
-        self.assertEquals(['terma', 'termb', 'termc'], fields)
-        count, fields = self._luceneIndex.executeQueryWithField(MatchAllDocsQuery(), fieldname='field', sortBy='field', sortDescending=True)
-        self.assertEquals(3, count)
-        self.assertEquals(['termc', 'termb', 'terma'], fields)

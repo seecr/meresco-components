@@ -26,7 +26,6 @@
  *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * end license */
-#include <Python.h>
 #include <vector>
 #include <map>
 #include <string>
@@ -35,9 +34,13 @@
 #include "docset.h"
 #include "integerlist.h"
 #include "triedict.h"
+#include <org/apache/lucene/index/IndexReader.h>
+
+using namespace org::apache;
 
 #ifndef __docsetlist_h__
 #define __docsetlist_h__
+
 
 /**************** C++ implementation of DocSetList****************************/
 typedef struct {
@@ -140,7 +143,7 @@ extern "C" {
     void             DocSetList_sortOnCardinality    (DocSetList* list);
     void             DocSetList_sortOnTerm           (DocSetList* list);
     void             DocSetList_sortOnTermId         (DocSetList* list);
-    DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
+    DocSetList*      DocSetList_forField             (lucene::index::IndexReader* indexReader, char* fieldname, IntegerList*);
     void             DocSetList_printMemory          (DocSetList* list);
     char*            DocSetList_getTermForDocset     (DocSetList* list, fwPtr docset);
     void             DocSetList_docId2terms_add      (DocSetList* list, guint32 docid, fwPtr docset);

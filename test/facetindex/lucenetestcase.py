@@ -28,7 +28,10 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from PyLucene import MatchAllDocsQuery, IndexSearcher, IndexWriter, IndexReader, StandardAnalyzer, Document, Term, Field
+
+from merescocomponents.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer
+from merescocomponents.facetindex.merescolucene import MatchAllDocsQuery
+
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import DocSet
 from os.path import join, isdir
@@ -40,37 +43,44 @@ class LuceneTestCase(CQ2TestCase):
         self.matchAllDocsQuery = MatchAllDocsQuery()
 
     def createSimpleIndexWithEmptyDocuments(self, size):
-        index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        index = IndexWriter(self.tempdir, merescoStandardAnalyzer, True)
         for i in xrange(size):
             index.addDocument(Document())
         index.close()
-        self.searcher = IndexSearcher(self.tempdir)
         self.reader = IndexReader.open(self.tempdir)
+        self.searcher = IndexSearcher(self.reader % IndexReader)
+
+    def addToIndexWithFixedFieldAndValueDoc(self, field, value, size):
+        index = IndexWriter(self.tempdir, merescoStandardAnalyzer, False)
+        self._addDocuments(index, field, value, size)
 
     def createIndexWithFixedFieldAndValueDoc(self, field, value, size):
-        index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        index = IndexWriter(self.tempdir, merescoStandardAnalyzer, True)
+        self._addDocuments(index, field, value, size)
+
+    def _addDocuments(self, index, field, value, size):
         doc = Document()
-        doc.add(Field('field','value', Field.Store.NO, Field.Index.UN_TOKENIZED))
+        doc.add(Field(field, value, Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
         for i in xrange(size):
             index.addDocument(doc)
         index.close()
-        self.searcher = IndexSearcher(self.tempdir)
         self.reader = IndexReader.open(self.tempdir)
+        self.searcher = IndexSearcher(self.reader % IndexReader)
 
     def createBigIndex(self, size, valuemax=1000, log=False, keepas=''):
         def create(directory):
             from random import randint
-            index = IndexWriter(directory, StandardAnalyzer(), True)
+            index = IndexWriter(directory, merescoStandardAnalyzer, True)
             for i in xrange(size):
                 if log and i % 1000 == 0: print i
                 doc = Document()
                 for i in xrange(10):
-                    doc.add(Field('field%d' % i, 't€rm'+str(randint(0,valuemax)),
-                        Field.Store.NO, Field.Index.UN_TOKENIZED))
+                    doc.add(Field('field%d' % i, 't€rm'+str(randint(0, valuemax)),
+                                  Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
                 index.addDocument(doc)
             index.close()
         directory = keepas if keepas else self.tempdir
         if not IndexReader.indexExists(directory):
             create(directory)
-        self.searcher = IndexSearcher(directory)
         self.reader = IndexReader.open(directory)
+        self.searcher = IndexSearcher(self.reader % IndexReader)

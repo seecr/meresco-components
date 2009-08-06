@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -29,6 +30,7 @@
 from merescocomponents.facetindex import DocSet
 from lucenetestcase import LuceneTestCase
 from merescocomponents.facetindex.docset import DocSet_combinedCardinalitySearch
+from merescocomponents.facetindex.merescolucene import Term
 
 class DocSetTest(LuceneTestCase):
 
@@ -50,7 +52,7 @@ class DocSetTest(LuceneTestCase):
     def testIndexable(self):
         self.assertEquals(2, DocSet([1,2])[1])
 
-    def XXXtestCombinedCardinality(self):
+    def testCombinedCardinality(self):
         self.assertEquals(1, DocSet([1,2]).combinedCardinality(DocSet([2,3])))
 
     def testDeleteDoc(self):
@@ -101,42 +103,25 @@ class DocSetTest(LuceneTestCase):
     def testReadLuceneDocs(self):
         self.createSimpleIndexWithEmptyDocuments(2)
         ds = DocSet.fromQuery(self.searcher, self.matchAllDocsQuery)
-        self.assertEquals(0, ds[0])
-        self.assertEquals(1, ds[1])
         self.assertEquals([0,1], list(iter(ds)))
 
     def testReadFrom_SEGMENT_TermDocs(self):
-        from PyLucene import Term
         self.createIndexWithFixedFieldAndValueDoc('field', 'value', 10)
-        termEnum = self.reader.terms(Term('field',''))
-        freq = termEnum.docFreq() # very fast, one attr lookup
-        termDocs = self.reader.termDocs()
-        termDocs.seek(termEnum)
-        self.assertTrue('SegmentTermDocs' in str(termDocs))
-        docs = DocSet.fromTermDocs(termDocs, freq)
+        docs = DocSet.forTerm(self.reader, 'field', 'value')
         self.assertEquals(range(10), list(iter(docs)))
 
     def testReadFrom_MULTI_TermDocs(self):
-        from PyLucene import Term
         self.createIndexWithFixedFieldAndValueDoc('field', 'value', 11)
-        termEnum = self.reader.terms(Term('field',''))
-        freq = termEnum.docFreq() # very fast, one attr lookup
-        termDocs = self.reader.termDocs()
-        termDocs.seek(termEnum)
-        self.assertTrue('MultiTermDocs' in str(termDocs))
-        docs = DocSet.fromTermDocs(termDocs, freq)
+        docs = DocSet.forTerm(self.reader, 'field', 'value')
         self.assertEquals(range(11), list(iter(docs)))
 
     def testReadFrom_MULTI_TermDocsWithMoreDocs(self):
-        from PyLucene import Term
-        self.createIndexWithFixedFieldAndValueDoc('field', 'value', 19)
-        termEnum = self.reader.terms(Term('field',''))
-        freq = termEnum.docFreq() # very fast, one attr lookup
-        termDocs = self.reader.termDocs()
-        termDocs.seek(termEnum)
-        self.assertTrue('MultiTermDocs' in str(termDocs))
-        docs = DocSet.fromTermDocs(termDocs, freq)
+        self.createIndexWithFixedFieldAndValueDoc('field', 'term0', 19)
+        self.addToIndexWithFixedFieldAndValueDoc('field', 'term1', 12)
+        docs = DocSet.forTerm(self.reader, 'field', 'term0')
         self.assertEquals(range(19), list(iter(docs)))
+        docs = DocSet.forTerm(self.reader, 'field', 'term1')
+        self.assertEquals(range(19,31), list(iter(docs)))
 
     def testSearchAlgorithm(self):
         def assertSearchCardinality(lhList, rhList):

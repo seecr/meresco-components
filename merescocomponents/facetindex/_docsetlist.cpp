@@ -26,10 +26,17 @@
  *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * end license */
-#include "pyjava.h"
+
+#include <gcj/cni.h>
+#include "org/apache/lucene/index/TermEnum.h"
+#include "org/apache/lucene/index/Term.h"
+
 #include "docsetlist.h"
 #include "docset.h"
 #include "integerlist.h"
+
+#include <assert.h>
+
 
 extern "C" {
     #include "zipper.h"
@@ -38,6 +45,9 @@ extern "C" {
 #include <math.h>
 #include <vector>
 #include <algorithm>
+
+using namespace org::apache;
+
 
 /**************** C++ implementation of DocSetList****************************/
 
@@ -368,11 +378,10 @@ int DocSetList_size(DocSetList* list) {
 }
 
 fwPtr DocSetList_get(DocSetList* list, int i) {
-    try {
-        return list->at(i);
-    } catch (std::exception&) {
+    if (i < 0 || i >= list->size()) {
         return fwNONE;
     }
+    return list->at(i);
 }
 
 fwPtr DocSetList_getForTerm(DocSetList* list, char* term) {
@@ -405,39 +414,38 @@ void DocSetList_delete(DocSetList* list) {
     delete list;
 }
 
-DocSetList* DocSetList_fromTermEnum(PyJObject* termEnum, PyJObject* termDocs, IntegerList *mapping) {
-    TermDocs_seek seek = (TermDocs_seek) lookupIface(termDocs->jobject, &ITermDocs, 2);
-    // Call methods on TermEnum via vtable lookup.  TermEnum is not an interface, but
-    // multiple subclasses exists (Segment..., Multi...) and might be passed. The methods
-    // are on offsets 7, 8 and 9. Start counting at Object::finalize() and add 2.
-    TermEnum_next next       = (TermEnum_next)    lookupMethod(termEnum->jobject, 7);
-    TermEnum_term getTerm    = (TermEnum_term)    lookupMethod(termEnum->jobject, 8);
-    TermEnum_docFreq docFreq = (TermEnum_docFreq) lookupMethod(termEnum->jobject, 9);
+DocSetList* DocSetList_forField(lucene::index::IndexReader* reader, char* fieldname, IntegerList *mapping) {
+    //printf("DocSetList_forField 1\n");
     DocSetList* list = DocSetList_create();
-    JString* field = NULL;
-    JString* previousField = NULL;
+    jstring field = NULL;
+    lucene::index::TermEnum* termEnum =
+        reader->terms(new lucene::index::Term(JvNewStringUTF(fieldname), JvNewStringUTF("")));
+    //("DocSetList_forField 2\n");
     do {
-        JObject* term = getTerm(termEnum->jobject);
-        if ( !term )
-            break;
-        previousField = field;
-        field = Term_field(term);
-        if ( previousField && previousField != field ) {
+        lucene::index::Term* term = termEnum->term();
+        if (!term) {
             break;
         }
-        seek(termDocs->jobject, termEnum->jobject);
-        JString* text = Term_text(term);
-        jint freq = docFreq(termEnum->jobject);
+        if (!field) {
+            field = term->field();
+        }
+        else if (term->field() != field) {
+            break;
+        }
+        //("DocSetList_forField 3\n");
 
-        fwPtr ds = DocSet::fromTermDocs(termDocs->jobject, freq, mapping);
-        static char* tmp = (char*) malloc(90000);
-        int w = text->writeUTF8CharsIn((char*)tmp);
-        tmp[w] = '\0';
-        list->addDocSet(ds, tmp);
-        //free(tmp);
+        jstring termText = term->text();
 
-    } while ( next(termEnum->jobject) );
+        char cTermText[2000];
+        int w = JvGetStringUTFRegion(termText, 0, termText->length(), cTermText);
+        cTermText[w] = '\0';
 
+        //("DocSetList_forField 4\n");
+        fwPtr ds = DocSet::forTerm(reader, fieldname, cTermText, mapping);
+        list->addDocSet(ds, cTermText);
+        //("DocSetList_forField 5\n");
+    } while (termEnum->next());
+    //("DocSetList_forField 6\n");
     return list;
 }
 

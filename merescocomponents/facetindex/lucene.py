@@ -30,7 +30,10 @@
 
 from os.path import isdir, isfile, join
 from os import makedirs
-from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, Field, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
+
+from merescolucene import IndexReader, IndexWriter, IndexSearcher, Term, Field, TermQuery, Sort, merescoStandardAnalyzer, Query, iterJ
+from java.lang import Object, String
+
 from time import time
 from itertools import ifilter, islice
 
@@ -40,6 +43,8 @@ from merescocore.framework import Observable
 from docset import DocSet
 from functioncommand import FunctionCommand
 from lucenedocidtracker import LuceneDocIdTracker
+
+IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 
 class LuceneException(Exception):
     pass
@@ -61,9 +66,9 @@ class LuceneIndex(Observable):
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
 
-        self._writer = IndexWriter(
-            self._directoryName,
-            IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
+        self._writer = IndexWriter(self._directoryName,
+                                   merescoStandardAnalyzer,
+                                   not IndexReader.indexExists(self._directoryName))
         self._reopenIndex()
 
         optimized = self.isOptimized()
@@ -85,8 +90,8 @@ class LuceneIndex(Observable):
         self._reader = IndexReader.open(self._directoryName)
         if self._searcher:
             self._searcher.close()
-        self._searcher = IndexSearcher(self._reader)
-        self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
+        self._searcher = IndexSearcher(self._reader % IndexReader)
+        self._existingFieldNames = self._reader.getFieldNames(IndexReader_FieldOption_ALL)
 
     def observer_init(self):
         self.do.indexStarted(self._reader, docIdMapping=self._lucene2docId)
@@ -97,28 +102,32 @@ class LuceneIndex(Observable):
     def _executeQuery(self, pyLuceneQuery, sortBy=None, sortDescending=None):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
         if sortField:
-            hits = self._searcher.search(pyLuceneQuery, sortField)
+            hits = self._searcher.search(pyLuceneQuery % Query, sortField)
         else:
-            hits = self._searcher.search(pyLuceneQuery)
+            hits = self._searcher.search(pyLuceneQuery % Query)
         return hits
 
     def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, docfilter=None, **kwargs):
         hits = self._executeQuery(pyLuceneQuery, sortBy, sortDescending)
-        nrOfResults = len(hits)
+        nrOfResults = hits.length()
+        hits = iterJ(hits)
         if docfilter != None:
             hits = (hit for hit in hits if self._lucene2docId[hit.getId()] in docfilter)
             nrOfResults = len(docfilter)
         results = islice(hits, start, stop)
         return nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]
 
+
     def executeQueryWithField(self, pyLuceneQuery, fieldname, start=0, stop=10, sortBy=None, sortDescending=None):
         hits = self._executeQuery(pyLuceneQuery, sortBy=sortBy, sortDescending=sortDescending)
+        nrOfResults = hits.length()
+        hits = iterJ(hits)
         results = islice(hits, start, stop)
-        return len(hits), [hit.getDocument().get(fieldname) for hit in results]
+        return nrOfResults, [hit.getDocument().get(fieldname) for hit in results]
 
     def _luceneIdForIdentifier(self, identifier):
-        hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)))
-        if len(hits) == 1:
+        hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)) % Query)
+        if hits.length() == 1:
             return hits.id(0)
         return None
 
@@ -162,7 +171,6 @@ class LuceneIndex(Observable):
                 self.do.deleteDocument(docId=oldDocId)
             docId = self._tracker.next()
             luceneDocument.docId = docId
-            #luceneDocument._document.add(Field('docId', str(docId), Field.Store.YES, Field.Index.UN_TOKENIZED))
             self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
         except:
@@ -190,7 +198,7 @@ class LuceneIndex(Observable):
         return self._reader.numDocs()
 
     def _getPyLuceneSort(self, sortBy, sortDescending):
-        if sortBy and sortBy in self._existingFieldNames:
+        if sortBy and self._existingFieldNames.contains(String(sortBy) % Object):
             return Sort(sortBy, bool(sortDescending))
         return None
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -41,4 +42,5 @@ from integerlist import IntegerList
 from trie import Trie
 from cql2lucenequery import CQL2LuceneQuery
 from fields2lucenedocument import Fields2LuceneDocumentTx
+import merescolucene
 

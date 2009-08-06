@@ -31,6 +31,13 @@
 #include "facetindex.h"
 #include "integerlist.h"
 
+#include <gcj/cni.h>
+#include "org/apache/lucene/search/Query.h"
+#include "org/apache/lucene/search/IndexSearcher.h"
+#include "org/apache/lucene/index/IndexReader.h"
+
+using namespace org::apache;
+
 extern "C" {
     #include "fwpool.h"
 }
@@ -41,6 +48,7 @@ extern "C" {
 class OnResult {
     public:
         virtual void operator () (guint32 docId) = 0;
+        virtual ~OnResult() {};
 };
 
 class DocSet : public std::vector<doc_t> {
@@ -59,7 +67,7 @@ class DocSet : public std::vector<doc_t> {
         void    merge                    (DocSet* docSet);
         void    remove                   (guint32 doc);
         void    map                      (IntegerList* mapping);
-        static  fwPtr fromTermDocs       (JObject* termDocs, int freq, IntegerList* mapping);
+        static  fwPtr forTerm            (lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping);
         void    setTermOffset            (guint32 offset);
 };
 
@@ -85,10 +93,12 @@ extern "C" {
     int     DocSet_combinedCardinality       (fwPtr docSet, fwPtr rhs);
     int     DocSet_combinedCardinalitySearch (fwPtr docSet, fwPtr rhs);
     fwPtr   DocSet_intersect                 (fwPtr docSet, fwPtr rhs);
-    fwPtr   DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping);
-    fwPtr   DocSet_fromTermDocs              (PyJObject* termDocs, int freq, IntegerList* mapping);
+    fwPtr   DocSet_fromQuery                 (lucene::search::Searcher* searcher, lucene::search::Query* query, IntegerList* mapping);
+    fwPtr   DocSet_forTerm                   (lucene::index::IndexReader*, char* fieldname, char* term, IntegerList* mapping);
     void    DocSet_delete                    (fwPtr docSet);
 }
+
+
 
 #define SWITCHPOINT 200 // for random docsset, this is the trippoint, experimentally
 
