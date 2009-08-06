@@ -59,6 +59,7 @@ class WebQueryTest(TestCase):
 
     def testDefaultQuery(self):
         self.assertDefaultQuery('cats')
+        self.assertDefaultQuery('"cats dogs mice"')
         self.assertDefaultQuery('"-cats"', asString='-cats')
         self.assertDefaultQuery('cats AND dogs', 'cats dogs')
         self.assertDefaultQuery('cats AND OR AND dogs AND -fish', 'cats OR dogs -fish', needsBooleanHelp=True)
@@ -66,6 +67,7 @@ class WebQueryTest(TestCase):
         self.assertDefaultQuery('cheese AND "("', 'cheese (', needsBooleanHelp=True)
         self.assertDefaultQuery('antiunary exact true', '')
         self.assertDefaultQuery('label=value')
+        self.assertDefaultQuery('label="value value"')
 
     def testBooleanQuery(self):
         self.assertBooleanQuery('cats AND dogs')
@@ -196,7 +198,7 @@ class WebQueryTest(TestCase):
         self.assertEquals('fiets kaart', wq.original)
         self.assertEquals('bike AND kaart', newWq.original)
         self.assertCql(parseCql('label exact value AND (bike AND kaart)'), newWq.ast)
-        
+
 
     def assertCql(self, expected, input):
         self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

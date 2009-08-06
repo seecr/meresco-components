@@ -194,12 +194,12 @@ def _boolean2Cql(aString, antiUnaryClause):
 def _default2CqlWithQuotes(aString, antiUnaryClause="ignored"):
     if aString.strip() == '':
         return antiUnaryClause
-    return ' AND '.join(quot(part) for part in aString.split())
+    return ' AND '.join(quot(_valueFromGroupdict(match.groupdict())) for match in SPLITTED_STRINGS.finditer(aString))
 
 def _default2Cql(aString, antiUnaryClause="ignored"):
     if aString.strip() == '':
         return antiUnaryClause
-    return ' AND '.join(part for part in aString.split())
+    return ' AND '.join(_valueFromGroupdict(match.groupdict()) for match in SPLITTED_STRINGS.finditer(aString))
 
 def quot(aString):
     if aString[-1] == '"' == aString[0]:
