@@ -34,8 +34,8 @@ from time import time, sleep
 from random import random, randint, sample
 
 from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
+from merescocomponents.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
 from lucenetestcase import LuceneTestCase
-from PyLucene import Term, IndexReader
 from cq2utils import CallTrace
 
 class PerformanceTuningTest(LuceneTestCase):
@@ -150,24 +150,19 @@ class PerformanceTuningTest(LuceneTestCase):
 
     def testNoMemoryLeaksInTermCardinalities(self):
         self.createBigIndex(9, 2, keepas='testMemoryLeaks') # 10 records, 6 values
-        termEnum = self.reader.terms(Term('field0',''))
-        termDocs = self.reader.termDocs()
-        dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+        dsl = DocSetList.forField(self.reader, 'field0')
         for i in range(100000):
             cs = dsl.termCardinalities(DocSet([1,2,3,4,5,6,7,8,9])).next()
         self.assertNoMemoryLeaks(bandwidth=0.9)
 
-    def testPerformanceOfDocSetListFromTermEnum(self):
+    def testPerformanceOfDocSetListForField(self):
         self.createBigIndex(size=10000, keepas='testIndex0')
         t = 0.0
         for n in range(10):
-            termDocs = self.reader.termDocs()
-            for field in self.reader.getFieldNames(IndexReader.FieldOption.ALL):
-                termEnum = self.reader.terms(Term(field,''))
+            for field in iterJ(self.reader.getFieldNames(IndexReader.FieldOption.ALL)):
                 t0 = time()
-                dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+                dsl = DocSetList.forField(self.reader, field)
                 t += time() - t0
-            n += 1
             self.assertNoMemoryLeaks()
         self.assertTiming(0.05, t/n, 0.20)
 
@@ -177,15 +172,13 @@ class PerformanceTuningTest(LuceneTestCase):
         except:
             return
         fields = reader.getFieldNames(IndexReader.FieldOption.ALL)
-        termDocs = reader.termDocs()
         terms, postings = 0, 0
         t0 = time()
         dsls = []
         for field in fields:
             #print field,
             stdout.flush()
-            termEnum = reader.terms(Term(field,''))
-            dsl = DocSetList.fromTermEnum(termEnum, termDocs)
+            dsl = DocSetList.forField(self.reader, field)
             dsls.append(dsl)
             terms += len(dsl)
         t1 = time()

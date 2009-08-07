@@ -121,8 +121,7 @@ class DrilldownTest(CQ2TestCase):
     def testAppendToRow(self):
         docsetlist = DocSetList()
         docsetlist.addDocument(0, ['term0', 'term1'])
-        self.assertEquals('term1', docsetlist.termForDocset(docsetlist[1]))
-        self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
+        self.assertEquals(set(['term0', 'term1']), set(docsetlist.termForDocset(docsetlist[i]) for i in range(2)))
         self.assertEquals([('term0', 1), ('term1', 1)], list(docsetlist.termCardinalities(DocSet([0, 1]))))
         docsetlist.addDocument(1, ['term0', 'term1'])
         self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
