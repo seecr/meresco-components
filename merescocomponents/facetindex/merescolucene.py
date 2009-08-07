@@ -40,7 +40,7 @@ import MerescoStandardAnalyzer
 from ctypes import cdll, c_void_p
 
 from org.apache.lucene.document import Fieldable, Field, Document as _Document
-from org.apache.lucene.index import Term, IndexReader, IndexWriter as _IndexWriter
+from org.apache.lucene.index import Term, IndexReader, IndexWriter as _IndexWriter, TermEnum
 from org.apache.lucene.analysis import Analyzer
 from org.apache.lucene.store import Directory, FSDirectory
 from org.apache.lucene.analysis.standard import StandardAnalyzer

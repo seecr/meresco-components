@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -27,11 +28,11 @@
 #
 ## end license ##
 
-from PyLucene import FSDirectory, IndexReader
+from merescocomponents.facetindex.merescolucene import FSDirectory, IndexReader, Directory
 
 def unlock(path):
     """
     Unlock the directory specified by path.
     This is a manual operation, when locking somehow has gone wrong.
     """
-    IndexReader.unlock(FSDirectory.getDirectory(path, False))
+    IndexReader.unlock(FSDirectory.getDirectory(path, False) % Directory)

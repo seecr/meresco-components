@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -28,7 +29,8 @@
 #
 ## end license ##
 
-from PyLucene import IndexReader, Term
+
+from merescocomponents.facetindex.merescolucene import IndexReader, Term, iterJ, TermEnum
 from sys import argv
 from os.path import basename
 
@@ -36,12 +38,12 @@ def findFields(reader):
     return reader.getFieldNames(IndexReader.FieldOption.ALL)
 
 def printFields(fields):
-    for field in sorted(fields):
+    for field in sorted(iterJ(fields)):
         print field
 
 def listTerms(reader, fields, fieldName=''):
     termDocs = reader.termDocs()
-    for field in sorted(fields):
+    for field in sorted(iterJ(fields)):
         if field != fieldName:
             continue
 
@@ -50,7 +52,7 @@ def listTerms(reader, fields, fieldName=''):
         while True:
             if termEnum.term().field() != field:
                 break
-            termDocs.seek(termEnum)
+            termDocs.seek(termEnum % TermEnum)
             docIds = []
             while termDocs.next():
                 docIds.append(termDocs.doc())

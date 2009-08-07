@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -42,7 +43,7 @@ from unittest import main
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import Drilldown, LuceneIndex, Document
 from merescocore.framework import Observable, be, TransactionScope
-from PyLucene import MatchAllDocsQuery
+from merescocomponents.facetindex.merescolucene import MatchAllDocsQuery
 
 class IntegrationTest(CQ2TestCase):
     def testOne(self):
