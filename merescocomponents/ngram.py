@@ -124,7 +124,7 @@ class NGramFieldlet(Transparant):
             count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), 'appears')
             appears = 1
             if count > 0:
-                appears += int(fields[0])
+                appears += int(fields[0]) if fields[0] else 0
                 boost = log(appears)/10
             else:
                 boost = 10**-6

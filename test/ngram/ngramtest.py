@@ -173,17 +173,6 @@ class NGramTest(CQ2TestCase):
         self.assertEquals('some_fieldname:te some_fieldname:er some_fieldname:rm some_fieldname:m0', str(ngramindex.calledMethods[0].args[0]))
         ngramindex.returnValues['executeQuery'] = (2,['term2', 'term9'])
 
-    def assertSuggestions(self, expected, term, suggester):
-        ngramindex = CallTrace('ngramindex')
-        def executeQuery(query, start, stop, *args):
-            return (len(PUCH_WORDS), PUCH_WORDS[:stop])
-        ngramindex.executeQuery = executeQuery
-        ngramQuery = NGramQuery(2, 'ngrams')
-        ngramQuery.addObserver(ngramindex)
-        suggester.addObserver(ngramQuery)
-        inclusive, results = suggester.suggestionsFor(term)
-        self.assertEquals(expected, list(results))
-
     def testLevenshtein(self):
         self.assertSuggestions(['puca', 'puce', 'puck', 'punch', 'puces'], 'puch', LevenshteinSuggester(50, 3, 5))
 
@@ -208,8 +197,6 @@ class NGramTest(CQ2TestCase):
     def testDoNotSuggestSameWord(self):
         self.assertSuggestions(['Punch', 'puca', 'puce', 'puck'], 'punch', LevenshteinSuggester(50, 5, 4))
         self.assertSuggestions(['Punch', 'capuche', 'Mapuche', 'Pampuch'], 'punch', RatioSuggester(50, 0.5, 4))
-
-
 
     def testUseMostFrequentlyAppearingWord(self):
         class NoOpSuggester(_Suggestion):
@@ -248,17 +235,23 @@ class NGramTest(CQ2TestCase):
         inclusive, suggs = suggester.suggestionsFor('ap')
         self.assertEquals(['apartments', 'apartment', 'appartements', 'appartments', 'appartamento', 'apartamentos', 'appartamenti'], suggs)
 
+    def testNoAppearsPresent(self):
+        observert = CallTrace('Observert', returnValues={'executeQueryWithField': (1, [None])})
+        ngramFieldlet = createNGramHelix(observert)
+        ngramFieldlet.do.addField('field0', 'term0')
 
 
 
-
-
-
-
-
-
-
-
+    def assertSuggestions(self, expected, term, suggester):
+        ngramindex = CallTrace('ngramindex')
+        def executeQuery(query, start, stop, *args):
+            return (len(PUCH_WORDS), PUCH_WORDS[:stop])
+        ngramindex.executeQuery = executeQuery
+        ngramQuery = NGramQuery(2, 'ngrams')
+        ngramQuery.addObserver(ngramindex)
+        suggester.addObserver(ngramQuery)
+        inclusive, results = suggester.suggestionsFor(term)
+        self.assertEquals(expected, list(results))
 
 
 
@@ -302,22 +295,6 @@ class NGramTest(CQ2TestCase):
                 print '    Score:', ', '.join('%s (%.1f)' % (sugg[0], sugg[1]) for sugg in suggestions[:5])
                 print '    Leven (n=%d):'%N, ', '.join('%s (%.1f)' % (sugg[0], sugg[2]) for sugg in levenSuggs if sugg[2] < 5)
                 print '    Ratio (n=%d):'%N, ', '.join('%s (%.1f)' % (sugg[0], sugg[3]) for sugg in ratioSuggs if sugg[3] > 0.65)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def XXXXtestIntegrationLiveWords(self):
         def addWord(index, word):
