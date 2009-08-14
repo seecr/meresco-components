@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -89,7 +90,7 @@ class IntegerList(object):
             self._cobj = cobj
         else:
             self._cobj = IntegerList_create(size)
-        self._deallocator = deallocator(IntegerList_delete, cobj)
+        self._deallocator = deallocator(IntegerList_delete, self._cobj)
         self._as_parameter_ = self._cobj
 
     def __len__(self):
