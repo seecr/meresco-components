@@ -111,7 +111,7 @@ JACCARD_X2 = c_int.in_dll(libFacetIndex, "JACCARD_X2")
 JACCARD_ONLY = c_int.in_dll(libFacetIndex, "JACCARD_ONLY")
 
 DocSetList_fromTermEnum = libFacetIndex.DocSetList_fromTermEnum
-DocSetList_fromTermEnum.argtypes = [py_object, py_object, c_int]
+DocSetList_fromTermEnum.argtypes = [py_object, py_object, POINTER(None)]
 DocSetList_fromTermEnum.restype = DOCSETLIST
 
 DocSetList_sortOnCardinality = libFacetIndex.DocSetList_sortOnCardinality
