@@ -157,18 +157,18 @@ class NGramTest(CQ2TestCase):
         ngramindex = CallTrace('ngramindex', returnValues = {'executeQuery': (2, ['term0', 'term1'])})
         ngramQuery = NGramQuery(2, 'ngrams')
         ngramQuery.addObserver(ngramindex)
-        total, hits = ngramQuery.executeQuery('term0', 1234)
+        total, hits = ngramQuery.executeNGramQuery('term0', 1234)
         self.assertEquals(['term0', 'term1'], list(hits))
         self.assertEquals('ngrams:te ngrams:er ngrams:rm ngrams:m0', str(ngramindex.calledMethods[0].args[0]))
         ngramindex.returnValues['executeQuery'] = (2, ['term2', 'term9'])
-        total, hits = ngramQuery.executeQuery('term0',87655)
+        total, hits = ngramQuery.executeNGramQuery('term0',87655)
         self.assertEquals(['term2', 'term9'], list(hits))
 
     def testNgramQueryFieldname(self):
         ngramindex = CallTrace('ngramindex', returnValues = {'executeQuery': (2, ['term0', 'term1'])})
         ngramQuery = NGramQuery(2, 'some_fieldname')
         ngramQuery.addObserver(ngramindex)
-        total, hits = ngramQuery.executeQuery('term0',9876)
+        total, hits = ngramQuery.executeNGramQuery('term0',9876)
         self.assertEquals(['term0', 'term1'], list(hits))
         self.assertEquals('some_fieldname:te some_fieldname:er some_fieldname:rm some_fieldname:m0', str(ngramindex.calledMethods[0].args[0]))
         ngramindex.returnValues['executeQuery'] = (2,['term2', 'term9'])
@@ -235,12 +235,48 @@ class NGramTest(CQ2TestCase):
         inclusive, suggs = suggester.suggestionsFor('ap')
         self.assertEquals(['apartments', 'apartment', 'appartements', 'appartments', 'appartamento', 'apartamentos', 'appartamenti'], suggs)
 
+    def testNGramForSpecificField(self):
+        class NoOpSuggester(_Suggestion):
+            def __init__(self):
+                super(NoOpSuggester, self).__init__(50, 0, 50)
+            def suggestionsFor(self, word, fieldname=None):
+                return self._suggestionsFor(word, lambda term: 1, fieldname=fieldname)
+
+        index = LuceneIndex(self.tempdir, transactionName='ngram')
+        ngramFieldlet = be( \
+            (Observable(),
+                (TransactionScope('ngram'),
+                    (NGramFieldlet(2, 'ngrams', fieldNames=['field0', 'field1']),
+                        (index,),
+                        (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
+                            (index,)
+                        )
+                    )
+                ),
+            )
+        )
+
+        for field, word in [('field0', 'apparaat'), ('field1', 'parade')]:
+            for i in range(10):
+                ngramFieldlet.do.addField(field, word)
+        self.assertEquals(2, index.docCount())
+
+
+        ngq = NGramQuery(2, 'ngrams', fieldNames=['field0', 'field1'])
+        ngq.addObserver(index)
+        suggester = NoOpSuggester()
+        suggester.addObserver(ngq)
+        inclusive, suggs = suggester.suggestionsFor('ar')
+        self.assertEquals([u'parade', u'apparaat'], suggs)
+        inclusive, suggs = suggester.suggestionsFor('ar', fieldname='field0')
+        self.assertEquals([u'apparaat'], suggs)
+
+
+
     def testNoAppearsPresent(self):
         observert = CallTrace('Observert', returnValues={'executeQueryWithField': (1, [None])})
         ngramFieldlet = createNGramHelix(observert)
         ngramFieldlet.do.addField('field0', 'term0')
-
-
 
     def assertSuggestions(self, expected, term, suggester):
         ngramindex = CallTrace('ngramindex')

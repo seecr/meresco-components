@@ -35,6 +35,11 @@ from Levenshtein import distance, ratio
 from itertools import islice
 from math import log
 
+APPEARS_FIELD = 'appears'
+
+def ngramFieldname(name):
+    return 'ngram_%s' % name
+
 def ngrams(word, N=2):
     word = unicode(word)
     for n in range(2, N+1):
@@ -42,20 +47,25 @@ def ngrams(word, N=2):
             yield word[i:i+n]
 
 class NGramQuery(Observable):
-    def __init__(self, n, fieldName):
+    def __init__(self, n, fieldName, fieldNames=None):
         Observable.__init__(self)
         self._fieldName = fieldName
+        self._fieldNames = fieldNames if fieldNames != None else []
 
-    def executeQuery(self, query, samples):
-        return self.any.executeQuery(self.ngramQuery(query), start=0, stop=samples)
+    def executeNGramQuery(self, query, samples, fieldname=None):
+        return self.any.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=samples)
 
-    def ngramQuery(self, word, N=2):
+    def ngramQuery(self, word, N=2, fieldname=None):
         """Construct a query for the given word using a word-distance of N
         (default: 2)
         """
+
         query = BooleanQuery()
+        queryFieldname = self._fieldName
+        if fieldname and fieldname in self._fieldNames:
+            queryFieldname = ngramFieldname(fieldname)
         for ngram in ngrams(word, N):
-            query.add(BooleanClause(TermQuery(Term(self._fieldName, ngram)), BooleanClause.Occur.SHOULD))
+            query.add(BooleanClause(TermQuery(Term(queryFieldname, ngram)), BooleanClause.Occur.SHOULD))
         return query
 
 class _Suggestion(Observable):
@@ -68,14 +78,16 @@ class _Suggestion(Observable):
         self._maxResults = maxResults
         self._threshold = threshold
 
-    def _suggestionsFor(self, word, sortkey):
+    def _suggestionsFor(self, word, sortkey, fieldname=None):
         """Query the given word and (re)sort the result using the
         subclass-specific algorithm.
         The  initial result of the query is limited to the predefined number
         of samples. These results are inputted into the subclass-specific
         algorithm and the result is limited to a predefined maximum.
         """
-        total, candidates = self.any.executeQuery(word, self._samples)
+
+        total, candidates = self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
+
         results = sorted(candidates, key=sortkey)
         inclusive = results and results[0] == word
         if inclusive:
@@ -114,14 +126,15 @@ class RatioSuggester(_Suggestion):
 class NGramFieldlet(Transparant):
     """Fieldlet used in Meresco DNA to build/fill an NGram index used for
     suggestions."""
-    def __init__(self, n, fieldName):
+    def __init__(self, n, fieldName, fieldNames=None):
         Transparant.__init__(self)
         self._fieldName = fieldName
+        self._fieldNames = fieldNames
         self._ngram = lambda word:ngrams(word, n)
 
     def addField(self, name, value):
         for word in unicode(value).split():
-            count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), 'appears')
+            count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), APPEARS_FIELD)
             appears = 1
             if count > 0:
                 appears += int(fields[0]) if fields[0] else 0
@@ -132,7 +145,9 @@ class NGramFieldlet(Transparant):
             self.ctx.tx.locals['id'] = word
             ngrams = ' '.join(self._ngram(word))
             self.do.addField(self._fieldName, ngrams)
-            self.do.addField(name='appears', value=str(appears), store=True)
+            self.do.addField(name=APPEARS_FIELD, value=str(appears), store=True)
+            if self._fieldNames and name in self._fieldNames:
+                self.do.addField(name=ngramFieldname(name) , value=ngrams)
             #for ngram in self._ngram(word):
                 #self.do.addField(self._fieldName, ngram)
 
