@@ -96,7 +96,7 @@ class _Suggestion(Observable):
             return (inclusive, results[:self._maxResults])
 
 class LevenshteinSuggester(_Suggestion):
-    def suggestionsFor(self, word):
+    def suggestionsFor(self, word, fieldname=None):
         """Return suggestions for the given word using the absolute Levenshtein
         distance of two strings.
 
@@ -106,11 +106,11 @@ class LevenshteinSuggester(_Suggestion):
         (see http://en.wikipedia.org/wiki/Levenshtein_distance for details).
         """
         word = unicode(word)
-        inclusive, result = self._suggestionsFor(word, lambda term: distance(unicode(term), word))
+        inclusive, result = self._suggestionsFor(word, lambda term: distance(unicode(term), word), fieldname=fieldname)
         return inclusive, [term for term in result if distance(unicode(term), word) <= self._threshold]
 
 class RatioSuggester(_Suggestion):
-    def suggestionsFor(self, word):
+    def suggestionsFor(self, word, fieldname=None):
         """Return suggestions for the given word by computing the similarity
         of two strings.
 
@@ -120,7 +120,7 @@ class RatioSuggester(_Suggestion):
         (see http://en.wikipedia.org/wiki/Levenshtein_distance for details).
         """
         word = unicode(word)
-        inclusive, result = self._suggestionsFor(word, lambda term: 1-ratio(unicode(term), word))
+        inclusive, result = self._suggestionsFor(word, lambda term: 1-ratio(unicode(term), word), fieldname=fieldname)
         return inclusive, [term for term in result if ratio(unicode(term), word) > self._threshold]
 
 class NGramFieldlet(Transparant):
