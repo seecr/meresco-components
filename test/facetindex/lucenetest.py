@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- encoding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -239,16 +238,85 @@ class LuceneTest(CQ2TestCase):
             doc = Document("theIdIsTheSame")
             doc.addIndexedField('value', value)
             self._luceneIndex.addDocument(doc)
-
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
         add('1')
         self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
+
         add('2')
         add('3')
         self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'addDocument'], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1,2], [m.kwargs['docId'] for m in observer.calledMethods])
+
+    def testAddingAndDeletingInSameBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        add('1')
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+
+        
+        add('2')
+        delete()
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(0, total)
+
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument'], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1], [m.kwargs['docId'] for m in observer.calledMethods])
+
+    def testAddingAddingAndDeletingInSameBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        add('1')
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+
+        add('2')
+        add('3')
+        delete()
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(0, total)
+
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'addDocument', 'deleteDocument'], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1,2,2], [m.kwargs['docId'] for m in observer.calledMethods])
+
+    def testAddingDeletingAddingInSameBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        add('1')
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+
+        add('2')
+        delete()
+        add('3')
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(1, total)
+
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'deleteDocument', 'addDocument',], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1,1,2], [m.kwargs['docId'] for m in observer.calledMethods])
+
 
     def testMultipleAddsWithoutReopenIsEvenDifferent(self):
         reopen = self._luceneIndex._reopenIndex

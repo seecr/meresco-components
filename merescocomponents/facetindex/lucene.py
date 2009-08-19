@@ -128,23 +128,27 @@ class LuceneIndex(Observable):
     def _delete(self, identifier):
         self._writer.deleteDocuments(Term(IDFIELD, identifier))
 
-    def _add(self, document):
+    def _add(self, identifier, document):
         document.addToIndexWith(self._writer)
 
+    def _docIdFromLastCommandFor(self, identifier):
+        try:
+            return (command for command in reversed(self._commandQueue) if command._kwargs['identifier'] == identifier and command.methodName() == '_add').next()._kwargs['document'].docId
+        except StopIteration:
+            return None
+        
     def _luceneDelete(self, identifier):
         docId = None
         luceneId = self._luceneIdForIdentifier(identifier)
         if luceneId == None:  # not in index, perhaps it is in the queue?
-            for command in self._commandQueue:
-                if 'document' in command._kwargs:
-                    if command._kwargs['document'].identifier == identifier:
-                        docId = command._kwargs['document'].docId
-                        break
+            docId = self._docIdFromLastCommandFor(identifier)
         else:  # in index, so delete it first
             # it might already have been delete by a previous delete()
             if not self._tracker.isDeleted(luceneId):
                 docId = self._tracker.map([luceneId]).next()
                 self._tracker.deleteLuceneId(luceneId)
+            else: # already Deleted, perhaps, there is an add in the Q?
+                docId = self._docIdFromLastCommandFor(identifier)
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
         return docId
@@ -160,21 +164,9 @@ class LuceneIndex(Observable):
             oldDocId = self._luceneDelete(luceneDocument.identifier)
             if oldDocId != None:
                 self.do.deleteDocument(docId=oldDocId)
-
-            # The document addition might already be in the Q.
-            addCommands = [command for command in self._commandQueue \
-                if command.methodName() == '_add' and \
-                    command._kwargs['document'].identifier == luceneDocument.identifier]
-            if addCommands:
-                assert len(addCommands) == 1
-                command = addCommands[0]
-                previousDocument = command._kwargs['document']
-                docId = luceneDocument.docId = previousDocument.docId
-                command._kwargs['document'] = luceneDocument
-            else:
-                docId = self._tracker.next()
-                luceneDocument.docId = docId
-                self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
+            docId = self._tracker.next()
+            luceneDocument.docId = docId
+            self._commandQueue.append(FunctionCommand(self._add, identifier=luceneDocument.identifier, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
         except:
             self._commandQueue = []
