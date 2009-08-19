@@ -1,2 +1,3 @@
 python-meresco-core2.22
-python-jtool
+python-jtool (= 0.2)
+liblucene-core2 (= 2.2.0)
