@@ -31,6 +31,7 @@ from cq2utils import CQ2TestCase, CallTrace
 
 from merescocore.framework import Observable, TransactionScope, ResourceManager, be
 from merescocore.components import Xml2Fields
+from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 
 from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx
 from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, LevenshteinSuggester, RatioSuggester, _Suggestion
@@ -38,7 +39,7 @@ from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, Levenshte
 from Levenshtein import distance, ratio
 from lxml.etree import parse
 from StringIO import StringIO
-from PyLucene import BooleanQuery, BooleanClause, IndexReader, IndexWriter, IndexSearcher, TermQuery, Term, Field, StandardAnalyzer, Document
+from PyLucene import BooleanQuery, BooleanClause, IndexReader, IndexWriter, IndexSearcher, TermQuery, Term, Field, StandardAnalyzer, Document, MatchAllDocsQuery
 
 
 PUCH_WORDS = ['capuche', 'capuches', 'Capuchin', 'capuchins', 'Mapuche', 'Pampuch', 'puchera', 'pucherite', 'capuched', 'capuchin', 'puchero', 'PUC', 'Kampuchea', 'kampuchea', 'Puchanahua', 'sepuchral', 'puca', 'puce', 'puces', 'Puck', 'puck', 'pucka', 'pucks', 'Pupuluca', 'Puccini', 'puccini', 'puccoon', 'puceron', 'Pucida', 'pucker', 'puckish', 'puckle', 'SPUCDL', 'Chuch', 'Punch', 'punch', 'cappuccino', 'capucine', 'catapuce', 'catepuce', 'depucel', 'leucopus', 'mucopus', 'praepuce', 'prepuce', 'prepuces', 'Puccinia', 'puccinoid', 'puccoons', 'pucelage', 'pucellas', 'pucelle', 'puckball', 'puckered', 'puckerel', 'puckerer', 'puckering', 'puckers', 'puckery', 'Puckett', 'puckfist', 'puckfoist', 'puckishly', 'pucklike', 'puckling', 'puckrel', 'pucksey', 'puckster', 'sapucaia', 'unpucker', 'Vespucci', 'vespucci', 'Chucho', 'aneuch', 'aucht', 'bauch', 'bouch', 'Bruch', 'Buch', 'Buchan', 'buch', 'cauch', 'Chuck', 'chuck', 'couch', 'Cuchan', 'duchan', 'duchy', 'Eucha', 'Fauch', 'fuchi', 'Fuchs', 'heuch', 'hucho', 'Jauch', 'kauch', 'leuch', 'louch', 'Lucho', 'Manouch', 'mouch', 'much', 'nauch', 'nonsuch', 'nouche', 'nucha', 'ouch', 'pouch', 'Rauch', 'ruche', 'sauch', 'snouch', 'such', 'teuch', 'touch', 'touch-', 'touche', 'touchy', 'tuchis', 'tuchit', 'Uchean', 'Uchee', 'Uchish', 'vouch', 'wauch']
@@ -270,6 +271,78 @@ class NGramTest(CQ2TestCase):
         self.assertEquals([u'parade', u'apparaat'], suggs)
         inclusive, suggs = suggester.suggestionsFor('ar', fieldname='field0')
         self.assertEquals([u'apparaat'], suggs)
+
+    def testBadgerBadgerBadger(self):
+        class NoOpSuggester(_Suggestion):
+            def __init__(self):
+                super(NoOpSuggester, self).__init__(50, 0, 50)
+            def suggestionsFor(self, word, fieldname=None):
+                return self._suggestionsFor(word, lambda term: 1, fieldname=fieldname)
+
+        index = LuceneIndex(self.tempdir, transactionName='batch')
+        class IntoTheFields(Observable):
+            def addValueList(self, values):
+                #print 'ValueList'
+                for field, word in values:
+                    #if 'pipeline' in word:
+                        self.do.addField(field, word)
+                print 'AAP', '\n'.join(str(c) for c in index._commandQueue)
+
+        dna = be((Observable(),
+            (TransactionScope('batch'),
+                (IntoTheFields(),
+                        (TokenizeFieldlet(),
+                    (TransactionScope('ngram'),
+                            (NGramFieldlet(2, 'ngrams', fieldNames=['field0', 'field1']),
+                                (index,),
+                                (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
+                                    (index,)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ))
+
+
+        values = [
+            [('field0', 'pipeline'),
+            ],
+            [('field0', 'pipeline'),
+            ('field0', 'pipeline'),
+            ],
+        ]
+        for i, valuelist in enumerate(values):
+            dna.do.addValueList(valuelist)
+        from merescocomponents.facetindex.tools.listIndexedFields import listTerms
+
+        termDocs = index._reader.termDocs()
+        termEnum = index._reader.terms(Term('__id__', ''))
+        termCount = {}
+        while True:
+            if termEnum.term().field() != '__id__':
+                break
+            termDocs.seek(termEnum)
+            docIds = []
+            while termDocs.next():
+                docIds.append(termDocs.doc())
+            termCount[termEnum.term().text()] = len(docIds)
+            if not termEnum.next():
+                break
+
+        self.assertEquals([], [(term,count) for term, count in termCount.items() if count >= 2])
+
+
+
+        #ngq = NGramQuery(2, 'ngrams', fieldNames=['field0'])
+        #ngq.addObserver(index)
+        #suggester = NoOpSuggester()
+        #suggester.addObserver(ngq)
+        #inclusive, suggs = suggester.suggestionsFor('ar')
+        #self.assertEquals([u'parade', u'apparaat'], suggs)
+        #inclusive, suggs = suggester.suggestionsFor('ar', fieldname='field0')
+        #self.assertEquals([u'apparaat'], suggs)
 
 
 

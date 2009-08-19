@@ -160,10 +160,21 @@ class LuceneIndex(Observable):
             oldDocId = self._luceneDelete(luceneDocument.identifier)
             if oldDocId != None:
                 self.do.deleteDocument(docId=oldDocId)
-            docId = self._tracker.next()
-            luceneDocument.docId = docId
-            #luceneDocument._document.add(Field('docId', str(docId), Field.Store.YES, Field.Index.UN_TOKENIZED))
-            self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
+
+            # The document addition might already be in the Q.
+            addCommands = [command for command in self._commandQueue \
+                if command.methodName() == '_add' and \
+                    command._kwargs['document'].identifier == luceneDocument.identifier]
+            if addCommands:
+                assert len(addCommands) == 1
+                command = addCommands[0]
+                previousDocument = command._kwargs['document']
+                docId = luceneDocument.docId = previousDocument.docId
+                command._kwargs['document'] = luceneDocument
+            else:
+                docId = self._tracker.next()
+                luceneDocument.docId = docId
+                self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
         except:
             self._commandQueue = []

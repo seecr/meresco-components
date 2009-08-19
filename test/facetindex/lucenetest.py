@@ -234,6 +234,22 @@ class LuceneTest(CQ2TestCase):
             add("a" + str(i))
             reopen()
 
+    def testAddingSameIdentifierInOneBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+
+        add('1')
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(1, total)
+        add('2')
+        add('3')
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(1, total)
+
     def testMultipleAddsWithoutReopenIsEvenDifferent(self):
         reopen = self._luceneIndex._reopenIndex
         self._luceneIndex._reopenIndex = lambda: None
