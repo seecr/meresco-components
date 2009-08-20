@@ -1,1 +1,2 @@
 python-meresco-core2.22
+python-lucene (>=2.0.0)
