@@ -2,3 +2,5 @@ python-dev
 libglib2.0-dev
 g++
 gcc
+gcj (= 4.1.1-20.CQ2)
+

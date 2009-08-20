@@ -106,13 +106,13 @@ class gcj_build_ext(build_ext):
         return "%s/%s.o" % (output_dir, os.path.splitext(source)[0])
 
     def compileJava(self, sources, output_dir):
-        for s in sources:
-            oFile = self.oFileForJava(s, output_dir)
+        for sourceFile in sources:
+            oFile = self.oFileForJava(sourceFile, output_dir)
             try:
                 os.makedirs(os.path.dirname(oFile))
             except OSError:
                 pass
-            cl = "CLASSPATH=%s gcj-4.1 -fPIC -c %s -o %s" % (CLASSPATH, s, oFile)
+            cl = "CLASSPATH=%s gcj-4.1 -fPIC -c %s -o %s" % (CLASSPATH, sourceFile, oFile)
             log.info(cl)
             rv = os.system(cl)
             if rv != 0:
