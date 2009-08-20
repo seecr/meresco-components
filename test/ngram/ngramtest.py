@@ -34,7 +34,8 @@ from merescocore.components import Xml2Fields
 from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 
 from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx
-from merescocomponents.ngram import NGramFieldlet, NGramQuery, ngrams, LevenshteinSuggester, RatioSuggester, _Suggestion
+from merescocomponents.ngram.ngram import ngrams, _Suggestion
+from merescocomponents.ngram import NGramFieldlet, NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
 
 from Levenshtein import distance, ratio
 from lxml.etree import parse
@@ -286,20 +287,13 @@ class NGramTest(CQ2TestCase):
                 for field, word in values:
                     #if 'pipeline' in word:
                         self.do.addField(field, word)
-                print 'AAP', '\n'.join(str(c) for c in index._commandQueue)
+                #print 'AAP', '\n'.join(str(c) for c in index._commandQueue)
 
         dna = be((Observable(),
             (TransactionScope('batch'),
                 (IntoTheFields(),
-                        (TokenizeFieldlet(),
-                    (TransactionScope('ngram'),
-                            (NGramFieldlet(2, 'ngrams', fieldNames=['field0', 'field1']),
-                                (index,),
-                                (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
-                                    (index,)
-                                )
-                            )
-                        )
+                    (NGramIndex(['field0', 'field1']),
+                        (index,),
                     )
                 )
             )
@@ -310,7 +304,7 @@ class NGramTest(CQ2TestCase):
             [('field0', 'pipeline'),
             ],
             [('field0', 'pipeline'),
-            ('field0', 'pipeline'),
+            ('field1', 'pipeline'),
             ],
         ]
         for i, valuelist in enumerate(values):
