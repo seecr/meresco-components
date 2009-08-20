@@ -133,21 +133,19 @@ class NGramFieldlet(Transparant):
         self._ngram = lambda word:ngrams(word, n)
 
     def addField(self, name, value):
-        for word in unicode(value).split():
-            count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), APPEARS_FIELD)
-            appears = 1
-            if count > 0:
-                appears += int(fields[0]) if fields[0] else 0
-                boost = log(appears)/10
-            else:
-                boost = 10**-6
-            self.any.changeBoost(boost)
-            self.ctx.tx.locals['id'] = word
-            ngrams = ' '.join(self._ngram(word))
-            self.do.addField(self._fieldName, ngrams)
-            self.do.addField(name=APPEARS_FIELD, value=str(appears), store=True)
-            if self._fieldNames and name in self._fieldNames:
-                self.do.addField(name=ngramFieldname(name) , value=ngrams)
-            #for ngram in self._ngram(word):
-                #self.do.addField(self._fieldName, ngram)
+        word = value
+        count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), APPEARS_FIELD)
+        appears = 1
+        if count > 0:
+            appears += int(fields[0]) if fields[0] else 0
+            boost = log(appears)/10
+        else:
+            boost = 10**-6
+        self.any.changeBoost(boost)
+        self.ctx.tx.locals['id'] = word
+        ngrams = ' '.join(self._ngram(word))
+        self.do.addField(self._fieldName, ngrams)
+        self.do.addField(name=APPEARS_FIELD, value=str(appears), store=True)
+        if self._fieldNames and name in self._fieldNames:
+            self.do.addField(name=ngramFieldname(name) , value=ngrams)
 
