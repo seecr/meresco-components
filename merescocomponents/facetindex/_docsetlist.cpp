@@ -289,6 +289,8 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
         DocSet_delete(dummyMin);
     }
 
+    const double LOG2 = log(2.0);
+
     while ( lower < upper ) {
         DocSet* candidate = pDS(*lower++);
         int c = candidate->combinedCardinality(docset);
@@ -314,10 +316,10 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
                 double N_1 = N01 + N11;   // ==> candidate->size()
                 double N0_ = N01 + N00;
                 double N_0 = N10 + N00;
-                double MI = (N11/N)*log((N*N11)/(N1_*N_1)) +
-                            (N01/N)*log((N*N01)/(N0_*N_1)) +
-                            (N10/N)*log((N*N10)/(N1_*N_0)) +
-                            (N00/N)*log((N*N00)/(N0_*N_0));
+                double MI = (N11/N)*log((N*N11)/(N1_*N_1))/LOG2 +
+                            (N01/N)*log((N*N01)/(N0_*N_1))/LOG2 +
+                            (N10/N)*log((N*N10)/(N1_*N_0))/LOG2 +
+                            (N00/N)*log((N*N00)/(N0_*N_0))/LOG2;
 // printf("term=%s, candidate size=%d, docset size=%d, c=%d, j=%d, MI=%f\n", getTermForDocset(candidate), candidate->size(), docset->size(), c, j, MI);
                 if ( MI < 0.5 ) {
                     int n = int(MI * 100000.0);
