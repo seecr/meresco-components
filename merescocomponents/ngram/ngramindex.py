@@ -4,7 +4,7 @@ from merescocore.framework import Observable, Transparant, TransactionScope, be,
 from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 from merescocomponents.facetindex import Fields2LuceneDocumentTx
 
-from ngram import NGramFieldlet
+from ngramfieldlet import NGramFieldlet
 
 class NGramIndex(Observable):
     def __init__(self, fieldNames):

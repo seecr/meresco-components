@@ -34,7 +34,8 @@ from merescocore.components import Xml2Fields
 from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 
 from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx
-from merescocomponents.ngram.ngram import ngrams, _Suggestion
+from merescocomponents.ngram.ngram import ngrams
+from merescocomponents.ngram.suggester import _Suggestion
 from merescocomponents.ngram import NGramFieldlet, NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
 
 from Levenshtein import distance, ratio

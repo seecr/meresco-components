@@ -1,3 +1,5 @@
 
-from ngram import NGramFieldlet, NGramQuery, RatioSuggester, LevenshteinSuggester
+from ngramfieldlet import NGramFieldlet
+from ngramquery import NGramQuery
+from suggester import RatioSuggester, LevenshteinSuggester
 from ngramindex import NGramIndex

@@ -28,8 +28,41 @@
 #
 ## end license ##
 
-def ngrams(word, N=2):
-    word = unicode(word)
-    for n in range(2, N+1):
-        for i in range(len(word)-n+1):
-            yield word[i:i+n]
+from merescocore.framework import Transparant
+from merescocomponents.facetindex import document
+from PyLucene import TermQuery, Term
+from math import log
+
+from ngram import ngrams
+
+APPEARS_FIELD = 'appears'
+
+def ngramFieldname(name):
+    return 'ngram_%s' % name
+
+class NGramFieldlet(Transparant):
+    """Fieldlet used in Meresco DNA to build/fill an NGram index used for
+    suggestions."""
+    def __init__(self, n, fieldName, fieldNames=None):
+        Transparant.__init__(self)
+        self._fieldName = fieldName
+        self._fieldNames = fieldNames
+        self._ngram = lambda word:ngrams(word, n)
+
+    def addField(self, name, value):
+        word = value
+        count, fields = self.any.executeQueryWithField(TermQuery(Term(document.IDFIELD, word)), APPEARS_FIELD)
+        appears = 1
+        if count > 0:
+            appears += int(fields[0]) if fields[0] else 0
+            boost = log(appears)/10
+        else:
+            boost = 10**-6
+        self.any.changeBoost(boost)
+        self.ctx.tx.locals['id'] = word
+        ngrams = ' '.join(self._ngram(word))
+        self.do.addField(self._fieldName, ngrams)
+        self.do.addField(name=APPEARS_FIELD, value=str(appears), store=True)
+        if self._fieldNames and name in self._fieldNames:
+            self.do.addField(name=ngramFieldname(name) , value=ngrams)
+

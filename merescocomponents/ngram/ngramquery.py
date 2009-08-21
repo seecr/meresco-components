@@ -28,8 +28,30 @@
 #
 ## end license ##
 
-def ngrams(word, N=2):
-    word = unicode(word)
-    for n in range(2, N+1):
-        for i in range(len(word)-n+1):
-            yield word[i:i+n]
+from merescocore.framework import Observable
+from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
+
+from ngram import ngrams
+from ngramfieldlet import ngramFieldname
+
+class NGramQuery(Observable):
+    def __init__(self, n, fieldName, fieldNames=None):
+        Observable.__init__(self)
+        self._fieldName = fieldName
+        self._fieldNames = fieldNames if fieldNames != None else []
+
+    def executeNGramQuery(self, query, samples, fieldname=None):
+        return self.any.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=samples)
+
+    def ngramQuery(self, word, N=2, fieldname=None):
+        """Construct a query for the given word using a word-distance of N
+        (default: 2)
+        """
+
+        query = BooleanQuery()
+        queryFieldname = self._fieldName
+        if fieldname and fieldname in self._fieldNames:
+            queryFieldname = ngramFieldname(fieldname)
+        for ngram in ngrams(word, N):
+            query.add(BooleanClause(TermQuery(Term(queryFieldname, ngram)), BooleanClause.Occur.SHOULD))
+        return query
