@@ -28,6 +28,12 @@
 #
 ## end license ##
 
+NGRAMS_FIELD = 'ngrams'
+NAME_FIELD = 'field'
+NAME_TEMPLATE = 'ngrams$%s'
+IDENTIFIER_TEMPLATE = '%s$%s'
+
+
 def ngrams(word, N=2):
     word = unicode(word)
     for n in range(2, N+1):

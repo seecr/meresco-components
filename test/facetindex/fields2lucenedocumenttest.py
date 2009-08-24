@@ -99,30 +99,3 @@ class Fields2LuceneDocumentTest(TestCase):
         self.body.do.addFields([('a', 'TermOne'), ('a', 'TermTwo'), ('b', '3')], 'theIdentifier')
         doc = self.observert.calledMethods[1].args[0]
         self.assertEquals('theIdentifier', doc.identifier)
-
-    def testChangeBoost(self):
-        resourceManager = CallTrace('resourceManager')
-        resourceManager.ctx = resourceManager
-        resourceManager.ctx.tx = resourceManager
-        resourceManager.ctx.tx.locals = {'id': '99'}
-        resourceManager.do = resourceManager
-
-        f2ldoc = Fields2LuceneDocumentTx(resourceManager, untokenized=[])
-        f2ldoc.addField('field', 'term')
-        f2ldoc.changeBoost(0.876)
-        f2ldoc.commit()
-        doc = resourceManager.calledMethods[0].args[0]._document
-        self.assertAlmostEquals(0.876, doc.getBoost())
-
-    def testPassKwargsInCasuStoreIsTrue(self):
-        resourceManager = CallTrace('resourceManager')
-        resourceManager.ctx = resourceManager
-        resourceManager.ctx.tx = resourceManager
-        resourceManager.ctx.tx.locals = {'id': '99'}
-        resourceManager.do = resourceManager
-
-        f2ldoc = Fields2LuceneDocumentTx(resourceManager, untokenized=[])
-        f2ldoc.addField('field', 'term', store=True)
-        f2ldoc.commit()
-        doc = resourceManager.calledMethods[0].args[0]._document
-        self.assertTrue(doc.getField('field').isStored())

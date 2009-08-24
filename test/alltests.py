@@ -36,9 +36,7 @@ import test
 from glob import glob
 for path in glob('../deps.d/*'):
     sys.path.insert(0, path)
-
-if os.environ.get('PYTHONPATH', '') == '':
-    sys.path.insert(0, "..")
+sys.path.insert(0,'..')
 
 import unittest
 
@@ -65,6 +63,8 @@ from facetindex.incrementalindexingtest import IncrementalIndexingTest
 from facetindex.integerlisttest import IntegerListTest
 
 from ngram.ngramtest import NGramTest
+from ngram.ngramquerytest import NGramQueryTest
+from ngram.ngramindextest import NGramIndexTest
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
 

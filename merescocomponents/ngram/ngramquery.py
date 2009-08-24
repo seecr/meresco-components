@@ -30,28 +30,33 @@
 
 from merescocore.framework import Observable
 from PyLucene import BooleanQuery, BooleanClause, TermQuery, Term
-
-from ngram import ngrams
-from ngramfieldlet import ngramFieldname
+from itertools import islice
+from ngram import ngrams, NGRAMS_FIELD, NAME_FIELD, NAME_TEMPLATE
 
 class NGramQuery(Observable):
-    def __init__(self, n, fieldName, fieldNames=None):
+    def __init__(self, N=2, fieldnames=None, samples=50, sortOnDocsetList=False):
         Observable.__init__(self)
-        self._fieldName = fieldName
-        self._fieldNames = fieldNames if fieldNames != None else []
+        self._fieldnames = fieldnames if fieldnames != None else []
+        self._N = N
+        self._samples = samples
 
-    def executeNGramQuery(self, query, samples, fieldname=None):
-        return self.any.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=samples)
+    def executeNGramQuery(self, query, maxResults, fieldname=None):
+        total, recordIds =  self.any.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=self._samples)
+        return islice((word.rsplit('$', 1)[0] for word in recordIds), maxResults)
 
-    def ngramQuery(self, word, N=2, fieldname=None):
-        """Construct a query for the given word using a word-distance of N
-        (default: 2)
-        """
-
+    def ngramQuery(self, word, fieldname=None):
+        """Construct a query for the given word using a word-distance of self._N"""
+        combinedquery = BooleanQuery()
+        combinedquery.add(BooleanClause(
+            TermQuery(
+                Term(
+                    NAME_FIELD,
+                    NAME_TEMPLATE % (fieldname if fieldname in self._fieldnames else '')
+                )
+            ),
+            BooleanClause.Occur.MUST))
         query = BooleanQuery()
-        queryFieldname = self._fieldName
-        if fieldname and fieldname in self._fieldNames:
-            queryFieldname = ngramFieldname(fieldname)
-        for ngram in ngrams(word, N):
-            query.add(BooleanClause(TermQuery(Term(queryFieldname, ngram)), BooleanClause.Occur.SHOULD))
-        return query
+        combinedquery.add(query, BooleanClause.Occur.MUST)
+        for ngram in ngrams(word, self._N):
+            query.add(BooleanClause(TermQuery(Term(NGRAMS_FIELD, ngram)), BooleanClause.Occur.SHOULD))
+        return combinedquery

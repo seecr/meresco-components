@@ -49,7 +49,7 @@ class _Suggestion(Observable):
         algorithm and the result is limited to a predefined maximum.
         """
 
-        total, candidates = self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
+        candidates = self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
 
         results = sorted(candidates, key=sortkey)
         inclusive = results and results[0] == word

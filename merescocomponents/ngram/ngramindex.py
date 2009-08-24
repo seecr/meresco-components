@@ -1,31 +1,41 @@
 # -*- coding: utf-8 -*-
 
-from merescocore.framework import Observable, Transparant, TransactionScope, be, ResourceManager
-from merescocore.components.tokenizefieldlet import TokenizeFieldlet
-from merescocomponents.facetindex import Fields2LuceneDocumentTx
+from merescocore.framework import Observable
+from merescocomponents.facetindex import Document
+from ngram import ngrams, NGRAMS_FIELD, NAME_FIELD, IDENTIFIER_TEMPLATE, NAME_TEMPLATE
 
-from ngramfieldlet import NGramFieldlet
+from string import punctuation
+
+def tokenize(value):
+    for word in unicode(value).split():
+        word = word.strip(punctuation)
+        if len(word) > 1:
+            yield word.lower()
 
 class NGramIndex(Observable):
-    def __init__(self, fieldNames):
+    def __init__(self, transactionName, fieldnames=None):
         Observable.__init__(self)
-        outside = Transparant()
-        self.addObserver = outside.addObserver
-        self.addStrand = outside.addStrand
-        self._observers = outside._observers
-        self._internalObserverTree = be(
-            (TokenizeFieldlet(),
-                (TransactionScope('ngram'),
-                    (NGramFieldlet(2, 'ngrams', fieldNames=fieldNames),
-                        (outside,),
-                        (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
-                            (outside,)
-                        )
-                    )
-                )
-            )
-        )
+        self._fieldnames = set(fieldnames) if fieldnames else set()
+        self._transactionName = transactionName
+        self._N = 2
+
+    def begin(self):
+        if self.ctx.tx.name == self._transactionName:
+            self.ctx.tx.join(self)
+            self._values = set()
 
     def addField(self, name, value):
-        self._internalObserverTree.do.addField(name=name, value=value)
-    
+        for word in tokenize(value):
+            self._values.add(IDENTIFIER_TEMPLATE % (word,''))
+            if name in self._fieldnames:
+                self._values.add(IDENTIFIER_TEMPLATE % (word, name))
+
+    def commit(self):
+        for value in self._values:
+            word, name = value.rsplit('$', 1)
+            doc = Document(value)
+            doc.addIndexedField(NGRAMS_FIELD, ' '.join(ngrams(word, self._N)))
+            doc.addIndexedField(NAME_FIELD, NAME_TEMPLATE % name, tokenize=False)
+            self.do.addDocument(doc)
+        
+        

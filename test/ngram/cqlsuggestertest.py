@@ -37,8 +37,8 @@ from merescocomponents.ngram import LevenshteinSuggester
 class MockNGramQuery(object):
     def __init__(self, results):
         self._results = results
-    def executeNGramQuery(self, query, samples, fieldname=None):
-        return len(self._results), self._results
+    def executeNGramQuery(self, query, maxResults, fieldname=None):
+        return self._results[:maxResults]
 
 class CqlSuggesterTest(TestCase):
 
@@ -55,7 +55,7 @@ class CqlSuggesterTest(TestCase):
 
     def testTwoWordsWithRealSuggester(self) :
         ngramQuery = MockNGramQuery(['wordy', 'wordx'])
-        self.assertEquals((2, ['wordy', 'wordx']), ngramQuery.executeNGramQuery('nonsense', 99))
+        self.assertEquals(['wordy', 'wordx'], ngramQuery.executeNGramQuery('nonsense', 99))
         suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
         suggester.addObserver(ngramQuery)
         self.assertEquals((False, ['wordy', 'wordx']), suggester.suggestionsFor('wordz'))
