@@ -34,15 +34,22 @@ from itertools import islice
 from ngram import ngrams, NGRAMS_FIELD, NAME_FIELD, NAME_TEMPLATE
 
 class NGramQuery(Observable):
-    def __init__(self, N=2, fieldnames=None, samples=50, sortOnDocsetList=False):
+    def __init__(self, N=2, fieldnames=None, samples=50, fieldForSorting=None):
         Observable.__init__(self)
         self._fieldnames = fieldnames if fieldnames != None else []
         self._N = N
         self._samples = samples
+        self._fieldForSorting = fieldForSorting
 
     def executeNGramQuery(self, query, maxResults, fieldname=None):
         total, recordIds =  self.any.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=self._samples)
-        return islice((word.rsplit('$', 1)[0] for word in recordIds), maxResults)
+        sortedRecordIds = recordIds
+        if self._fieldForSorting and maxResults < total and maxResults < self._samples:
+            sortedRecordIds = sorted(recordIds, key=self._wordCardinality, reverse=True)
+        return islice((word.rsplit('$', 1)[0] for word in sortedRecordIds), maxResults)
+
+    def _wordCardinality(self, word):
+        return self.any.docsetlist(self._fieldForSorting).cardinality(word)
 
     def ngramQuery(self, word, fieldname=None):
         """Construct a query for the given word using a word-distance of self._N"""

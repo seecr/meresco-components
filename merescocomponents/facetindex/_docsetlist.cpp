@@ -143,6 +143,14 @@ fwPtr DocSetList::forTerm(char* term) {
     return docset;
 }
 
+int DocSetList::cardinalityForTerm(char* term) {
+    guint32 docsetptr = dictionary.getValue(term);
+    if ( docsetptr == 0xFFFFFFFF )
+        return 0;
+    fwPtr docset = {0, docsetptr};
+    return DocSet_len(docset);
+}
+
 
 bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
     return lhs.cardinality > rhs.cardinality;
@@ -388,6 +396,10 @@ fwPtr DocSetList_get(DocSetList* list, int i) {
 
 fwPtr DocSetList_getForTerm(DocSetList* list, char* term) {
     return list->forTerm(term);
+}
+
+int DocSetList_cardinalityForTerm(DocSetList* list, char* term) {
+    return list->cardinalityForTerm(term);
 }
 
 CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr ds, guint32 maxResults, int doSort) {

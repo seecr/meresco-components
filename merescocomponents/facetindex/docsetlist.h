@@ -82,6 +82,7 @@ class DocSetList : public std::vector<fwPtr> {
         fwPtr                innerUnion();
         CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm, int maxTermFreqPercentage);
         fwPtr                forTerm(char* term);
+        int                  cardinalityForTerm(char* term);
         void                 removeDoc(guint32 doc);
         char*                getTermForDocset(DocSet *docset);
         char*                getTermForId(guint32 termId);
@@ -131,6 +132,7 @@ extern "C" {
     int              DocSetList_size                 (DocSetList* list);
     fwPtr            DocSetList_get                  (DocSetList* list, int i);
     fwPtr            DocSetList_getForTerm           (DocSetList* list, char* term);
+    int              DocSetList_cardinalityForTerm   (DocSetList* list, char* term);
     CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr docset, guint32 maxResults, int doSort);
     DocSetList*      DocSetList_intersect            (DocSetList* list, fwPtr docset);
     DocSetList*      DocSetList_termIntersect        (DocSetList* self, DocSetList* rhs);

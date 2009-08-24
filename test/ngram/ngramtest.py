@@ -33,7 +33,7 @@ from merescocore.framework import Observable, TransactionScope, ResourceManager,
 from merescocore.components import Xml2Fields
 from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 
-from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx
+from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx, Document, Drilldown
 from merescocomponents.ngram.ngram import ngrams
 from merescocomponents.ngram.suggester import _Suggestion
 from merescocomponents.ngram import NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
@@ -41,31 +41,41 @@ from merescocomponents.ngram import NGramQuery, LevenshteinSuggester, RatioSugge
 from Levenshtein import distance, ratio
 from lxml.etree import parse
 from StringIO import StringIO
-from PyLucene import BooleanQuery, BooleanClause, IndexReader, IndexWriter, IndexSearcher, TermQuery, Term, Field, StandardAnalyzer, Document, MatchAllDocsQuery
 
+from os.path import join
 
 PUCH_WORDS = ['capuche', 'capuches', 'Capuchin', 'capuchins', 'Mapuche', 'Pampuch', 'puchera', 'pucherite', 'capuched', 'capuchin', 'puchero', 'PUC', 'Kampuchea', 'kampuchea', 'Puchanahua', 'sepuchral', 'puca', 'puce', 'puces', 'Puck', 'puck', 'pucka', 'pucks', 'Pupuluca', 'Puccini', 'puccini', 'puccoon', 'puceron', 'Pucida', 'pucker', 'puckish', 'puckle', 'SPUCDL', 'Chuch', 'Punch', 'punch', 'cappuccino', 'capucine', 'catapuce', 'catepuce', 'depucel', 'leucopus', 'mucopus', 'praepuce', 'prepuce', 'prepuces', 'Puccinia', 'puccinoid', 'puccoons', 'pucelage', 'pucellas', 'pucelle', 'puckball', 'puckered', 'puckerel', 'puckerer', 'puckering', 'puckers', 'puckery', 'Puckett', 'puckfist', 'puckfoist', 'puckishly', 'pucklike', 'puckling', 'puckrel', 'pucksey', 'puckster', 'sapucaia', 'unpucker', 'Vespucci', 'vespucci', 'Chucho', 'aneuch', 'aucht', 'bauch', 'bouch', 'Bruch', 'Buch', 'Buchan', 'buch', 'cauch', 'Chuck', 'chuck', 'couch', 'Cuchan', 'duchan', 'duchy', 'Eucha', 'Fauch', 'fuchi', 'Fuchs', 'heuch', 'hucho', 'Jauch', 'kauch', 'leuch', 'louch', 'Lucho', 'Manouch', 'mouch', 'much', 'nauch', 'nonsuch', 'nouche', 'nucha', 'ouch', 'pouch', 'Rauch', 'ruche', 'sauch', 'snouch', 'such', 'teuch', 'touch', 'touch-', 'touche', 'touchy', 'tuchis', 'tuchit', 'Uchean', 'Uchee', 'Uchish', 'vouch', 'wauch']
 
 
 class NGramTest(CQ2TestCase):
     def setUp(self):
+        global identifierNr
+        identifierNr = 0
         class IntoTheFields(Observable):
-            def addValues(self, values):
-                for field, word in values:
-                    self.do.addField(field, word)
+            def addDict(self, aDictionary):
+                self.ctx.tx.locals['id'] = aDictionary['identifier']
+                for k,v in aDictionary.items():
+                    self.do.addField(k, v)
         class NoOpSuggester(_Suggestion):
             def __init__(self):
                 super(NoOpSuggester, self).__init__(25, 0, 25)
             def suggestionsFor(self, word, fieldname=None):
                 return self._suggestionsFor(word, lambda term: 1, fieldname=fieldname)
         CQ2TestCase.setUp(self)
-        index = LuceneIndex(self.tempdir, transactionName='batch')
+        ngramIndex = LuceneIndex(join(self.tempdir,'ngrams'), transactionName='batch')
+        documentIndex = LuceneIndex(join(self.tempdir, 'document'), transactionName='batch')
+        allfieldsDrilldown = Drilldown(['allfields'], transactionName='batch')
         self.indexingDna = be((Observable(),
             (TransactionScope('batch'),
-                (IntoTheFields(),
-                    (TransactionScope('record'),
+                (TransactionScope('record'),
+                    (IntoTheFields(),
                         (NGramIndex(transactionName='record', fieldnames=['field0', 'field1']),
-                            (index,)
+                            (ngramIndex,)
+                        ),
+                        (ResourceManager('record', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
+                            (documentIndex,
+                                (allfieldsDrilldown,)
+                            )
                         )
                     )
                 )
@@ -73,14 +83,26 @@ class NGramTest(CQ2TestCase):
         ))
         suggesterDna = be((Observable(),
             (NoOpSuggester(),
-                (NGramQuery(2, fieldnames=['field0', 'field1']),
-                    (index,)
+                (NGramQuery(2, fieldnames=['field0', 'field1'], fieldForSorting='allfields'),
+                    (ngramIndex,
+                        (allfieldsDrilldown,)
+                    )
                 )
             )
         ))
         self.suggestionsFor = lambda word, fieldname=None: suggesterDna.any.suggestionsFor(word, fieldname=fieldname)
 
-        self.addWord = lambda word, fieldname='field': self.indexingDna.do.addValues([(fieldname, word)])
+        def addWord(word, fieldname='field'):
+            global identifierNr
+            identifierNr += 1
+            document = {
+                'identifier': 'id%s'%identifierNr,
+                'allfields': word
+            }
+            document[fieldname] = word
+            self.indexingDna.do.addDict(document)
+
+        self.addWord = addWord
     
         
 
@@ -129,6 +151,40 @@ class NGramTest(CQ2TestCase):
     def testDoNotSuggestSameWord(self):
         self.assertSuggestions(['Punch', 'puca', 'puce', 'puck'], 'punch', LevenshteinSuggester(50, 5, 4), ngramQuerySamples=50)
         self.assertSuggestions(['Punch', 'capuche', 'Mapuche', 'Pampuch'], 'punch', RatioSuggester(50, 0.5, 4), ngramQuerySamples=50)
+
+
+    def xxtestUseMostFrequentlyAppearingWord2(self):
+        testdata = [
+            ('apartamentos', 2),
+            ('apartments', 1024),
+            ('appartments', 16),
+            ('apartment', 256),
+            ('appartamento', 4),
+            ('appartamenti', 1),
+            ('appartements', 64)]
+
+        #self.addWord('aap')
+        #self.addWord('noot')
+        #self.addWord('mies')
+        #self.addWord('vis')
+        #self.addWord('vuur')
+        #self.addWord('boom')
+        #self.addWord('roos')
+        #self.addWord('aap')
+        #self.addWord('noot')
+        #self.addWord('mies')
+        #self.addWord('vis')
+        #self.addWord('vuur')
+        #self.addWord('boom')
+        #self.addWord('roos')
+        
+
+        for word, count in testdata:
+            for i in range(count):
+                print word, count, i
+                self.addWord(word)
+        
+
 
     def testUseMostFrequentlyAppearingWord(self):
         self.fail('TODO: first make new reality work, then fix this test.')

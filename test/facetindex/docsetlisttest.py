@@ -237,6 +237,12 @@ class DocSetListTest(LuceneTestCase):
         c = list(m.allCardinalities())
         self.assertEquals([], list(c))
 
+    def testCardinality(self):
+        dsl = DocSetList()
+        dsl.add(DocSet([1,2,3]), 'term')
+        self.assertEquals(3, dsl.cardinality('term'))
+        self.assertEquals(0, dsl.cardinality('term1'))
+
     def testEmptyDoc(self):
         m = DocSetList()
         n = m.add(DocSet([]), 'a')

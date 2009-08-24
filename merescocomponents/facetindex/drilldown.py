@@ -127,6 +127,9 @@ class Drilldown(object):
         termEnum = indexReader.terms(Term(field, ''))
         return DocSetList.fromTermEnum(termEnum, termDocs, docIdMapping)
 
+    def docsetlist(self, field):
+        return self._docsetlists[field]
+
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:
             drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)

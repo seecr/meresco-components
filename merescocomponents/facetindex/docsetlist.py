@@ -83,6 +83,10 @@ DocSetList_getForTerm = libFacetIndex.DocSetList_getForTerm
 DocSetList_getForTerm.argtypes = [DOCSETLIST, c_char_p]
 DocSetList_getForTerm.restype = DOCSET
 
+DocSetList_cardinalityForTerm = libFacetIndex.DocSetList_cardinalityForTerm
+DocSetList_cardinalityForTerm.argtypes = [DOCSETLIST, c_char_p]
+DocSetList_cardinalityForTerm.restype = int
+
 DocSetList_combinedCardinalities = libFacetIndex.DocSetList_combinedCardinalities
 DocSetList_combinedCardinalities.argtypes = [DOCSETLIST, DOCSET, c_uint32, c_int]
 DocSetList_combinedCardinalities.restype = CARDINALITYLIST
@@ -198,6 +202,9 @@ class DocSetList(object):
                 yield (c.contents.term, c.contents.cardinality)
         finally:
             CardinalityList_free(p)
+
+    def cardinality(self, term):
+        return DocSetList_cardinalityForTerm(self, term)
 
     def intersect(self, docset):
         cobj = DocSetList_intersect(self, docset)
