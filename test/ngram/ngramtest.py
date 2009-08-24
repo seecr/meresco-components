@@ -102,6 +102,7 @@ class NGramTest(CQ2TestCase):
     def testNgram(self):
         self.assertEquals(set(['bo', 'oo', 'om', 'boo', 'oom', 'boom']), set(ngrams('boom', N=4)))
         self.assertEquals(set(['bo', 'oo', 'om']), set(ngrams('boom', N=2)))
+        self.assertEquals(set([u'šk','kv','va','ar','rl','la']), set(ngrams('škvarla', N=2)))
 
 
     def testLevenshtein(self):
