@@ -57,6 +57,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.writer = IndexWriter(self.tempdir, StandardAnalyzer(), True)
         self.setMergeFactor(2)
         #self.writer.setInfoStream(System.out)
+        self.identifier2docId = {}
 
     def setMergeFactor(self, mergeFactor):
         self.writer.setMergeFactor(mergeFactor)
@@ -75,16 +76,16 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(1, self.writer.docCount())
 
     def addDoc(self, identifier):
-        self.tracker.next()
+        self.identifier2docId[identifier] = self.tracker.next()
         doc = Document()
         doc.add(Field('__id__', str(identifier), Field.Store.YES, Field.Index.UN_TOKENIZED))
         self.writer.addDocument(doc)
 
-    def deleteDoc(self, doc):
-        hits = IndexSearcher(self.tempdir).search(TermQuery(Term('__id__', str(doc))))
-        luceneId = int(list(hits)[0].getId())
+    def deleteDoc(self, identifier):
+        docId = self.identifier2docId[identifier]
+        luceneId = self.tracker.mapDocId(docId)
         self.tracker.deleteLuceneId(luceneId)
-        self.writer.deleteDocuments(Term('__id__', str(doc)))
+        self.writer.deleteDocuments(Term('__id__', str(identifier)))
 
     def flush(self):
         self.tracker.flush()
@@ -93,7 +94,6 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
     def processDocs(self, docs):
         for doc in docs:
             if doc < 0:
-                self.flush()
                 self.deleteDoc(-doc)
             else:
                 self.addDoc(doc)
@@ -105,7 +105,6 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         foundIds = [hit.getId() for hit in hits]
         foundDocs = [int(hit.get('__id__')) for hit in hits]
         trackerDocIds = self.tracker._docIds
-        print (foundIds, foundDocs, trackerDocIds)
         return foundIds, foundDocs
 
     def assertMap(self, sequence, luceneIds, foundDocs):
@@ -127,8 +126,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(([0,1], [100,102]), self.findAll())
         self.assertEquals([0,2], list(self.tracker.map([0,1])))
         self.processDocs([103, -102, 104, -100, 105])
-        self.assertEquals(([2,3,4], [103,104,105]), self.findAll())
-        self.assertEquals([3,4,5], list(self.tracker.map([2,3,4])))
+        self.assertEquals(([1,2,3], [103,104,105]), self.findAll())
+        self.assertEquals([3,4,5], list(self.tracker.map([1,2,3])))
 
     def testB(self):
         s = [100, 101, -101, 102, 103, 104, -104, 105, 106, 107, 108, -106, 109]
@@ -302,6 +301,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.flush()
         tracker.deleteLuceneId(1)
+        tracker.flush()
 
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
@@ -315,6 +315,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.flush()
         tracker.deleteLuceneId(1)
+        tracker.flush()
 
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
@@ -334,3 +335,10 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.flush()
         self.assertEquals(([0,1],[200,100]), self.findAll())
 
+    def testNrOfDocs(self):
+        self.assertEquals(0, self.tracker.nrOfDocs())
+        self.tracker.next()
+        self.tracker.next()
+        self.assertEquals(2, self.tracker.nrOfDocs())
+        self.tracker.deleteLuceneId(0)
+        self.assertEquals(1, self.tracker.nrOfDocs())

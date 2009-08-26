@@ -165,11 +165,25 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(1, len(hits))
 
     def testAddDeleteWithoutCommitInBetween(self):
-        self.addDocument('1', title='een titel')
+        drilldown = CallTrace('drilldown')
+        self._luceneIndex.addObserver(drilldown)
+        self.addDocument('1', exists='true')
         self._luceneIndex.delete('1')
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('exists', 'true')))
         self.assertEquals(0, len(hits))
+        #self.assertEquals(0, self._luceneIndex._tracker.nrOfDocs())
+        for i in range(100):
+            self.addDocument('%s' % (i+1), exists='true')
+        self._luceneIndex.commit()
+        self.assertEquals('addDocument', drilldown.calledMethods[-1].name)
+        self.assertEquals(['100'], drilldown.calledMethods[-1].kwargs['docDict']['__id__'])
+        self.assertEquals(100, drilldown.calledMethods[-1].kwargs['docId'])
+
+        hits = self._luceneIndex._searcher.search(TermQuery(Term('__id__', '100')))
+        self.assertEquals(1, len(hits))
+        self.assertEquals(100, self._luceneIndex._lucene2docId[hits.id(0)])
+        
 
     def testIndexReaderResourceManagementKeepsIndexOpenAndClosesItWhenAllRefsAreGone(self):
         myDocument = Document('0123456789')
@@ -493,3 +507,4 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex._reopenIndex = reopenIndex
         self._luceneIndex.commit()
         self.assertEquals([], reopenIndexCalled)
+

@@ -30,6 +30,7 @@ from itertools import takewhile, dropwhile
 from os.path import join, isfile
 
 from integerlist import IntegerList
+from bisect import bisect_left
 
 class SegmentInfo(object):
     def __init__(self, length, offset):
@@ -114,6 +115,12 @@ class LuceneDocIdTracker(object):
     def mapLuceneId(self, luceneId):
         return self._docIds[luceneId]
 
+    def mapDocId(self, docId):
+        luceneId = bisect_left(self._docIds, docId)
+        assert self._docIds[luceneId] == docId
+        return luceneId
+        
+
     def _flushRamSegments(self):
         if len(self._ramSegmentsInfo) > 0:
             self._merge(self._ramSegmentsInfo, self._ramSegmentsInfo[0].offset, 0, self._mergeFactor)
@@ -143,7 +150,7 @@ class LuceneDocIdTracker(object):
         docId = self._docIds[luceneId]
         self._docIds[luceneId] = -1
         self._segmentForLuceneId(luceneId).deleteLuceneId(luceneId)
-        self.flush()#self._maybeFlushRamSegments()
+        self._maybeFlushRamSegments()
         return docId
 
     def isDeleted(self, luceneId):
@@ -217,3 +224,6 @@ class LuceneDocIdTracker(object):
 
     def close(self):
         self.flush()
+
+    def nrOfDocs(self):
+        return len([docId for docId in self._docIds if docId != -1])

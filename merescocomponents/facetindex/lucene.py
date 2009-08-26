@@ -133,10 +133,13 @@ class LuceneIndex(Observable):
         luceneId = self._luceneIdForIdentifier(identifier)
         if luceneId == None:  # not in index, perhaps it is in the queue?
             docId = self._docIdFromLastCommandFor(identifier)
+            if docId != None:
+                luceneId = self._tracker.mapDocId(docId)
+                self._tracker.deleteLuceneId(luceneId)
         else:  # in index, so delete it first
             # it might already have been delete by a previous delete()
             if not self._tracker.isDeleted(luceneId):
-                docId = self._tracker.map([luceneId]).next()
+                docId = self._tracker.mapLuceneId(luceneId)
                 self._tracker.deleteLuceneId(luceneId)
             else: # already Deleted, perhaps, there is an add in the Q?
                 docId = self._docIdFromLastCommandFor(identifier)
