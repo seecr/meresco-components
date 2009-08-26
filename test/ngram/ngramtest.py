@@ -29,7 +29,7 @@
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocore.framework import Observable, TransactionScope, ResourceManager, be
+from merescocore.framework import Observable, TransactionScope, ResourceManager, be, Transaction
 from merescocore.components import Xml2Fields
 from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 
@@ -152,8 +152,8 @@ class NGramTest(CQ2TestCase):
         self.assertSuggestions(['Punch', 'puca', 'puce', 'puck'], 'punch', LevenshteinSuggester(50, 5, 4), ngramQuerySamples=50)
         self.assertSuggestions(['Punch', 'capuche', 'Mapuche', 'Pampuch'], 'punch', RatioSuggester(50, 0.5, 4), ngramQuerySamples=50)
 
-
-    def xxtestUseMostFrequentlyAppearingWord2(self):
+    def testUseMostFrequentlyAppearingWordOLD(self):
+        self.fail('TODO: first make new reality work, then fix this test.')
         testdata = [
             ('apartamentos', 2),
             ('apartments', 1024),
@@ -162,32 +162,6 @@ class NGramTest(CQ2TestCase):
             ('appartamento', 4),
             ('appartamenti', 1),
             ('appartements', 64)]
-
-        #self.addWord('aap')
-        #self.addWord('noot')
-        #self.addWord('mies')
-        #self.addWord('vis')
-        #self.addWord('vuur')
-        #self.addWord('boom')
-        #self.addWord('roos')
-        #self.addWord('aap')
-        #self.addWord('noot')
-        #self.addWord('mies')
-        #self.addWord('vis')
-        #self.addWord('vuur')
-        #self.addWord('boom')
-        #self.addWord('roos')
-        
-
-        for word, count in testdata:
-            for i in range(count):
-                print word, count, i
-                self.addWord(word)
-        
-
-
-    def testUseMostFrequentlyAppearingWord(self):
-        self.fail('TODO: first make new reality work, then fix this test.')
         class NoOpSuggester(_Suggestion):
             def __init__(self):
                 super(NoOpSuggester, self).__init__(50, 0, 50)

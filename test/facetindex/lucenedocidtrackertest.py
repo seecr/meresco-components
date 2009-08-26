@@ -81,27 +81,31 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.writer.addDocument(doc)
 
     def deleteDoc(self, doc):
-        self.tracker.flush()
-        self.writer.flush()
         hits = IndexSearcher(self.tempdir).search(TermQuery(Term('__id__', str(doc))))
         luceneId = int(list(hits)[0].getId())
         self.tracker.deleteLuceneId(luceneId)
         self.writer.deleteDocuments(Term('__id__', str(doc)))
 
+    def flush(self):
+        self.tracker.flush()
+        self.writer.flush()
+
     def processDocs(self, docs):
         for doc in docs:
             if doc < 0:
+                self.flush()
                 self.deleteDoc(-doc)
             else:
                 self.addDoc(doc)
 
     def findAll(self):
-        self.writer.flush()
-        self.tracker.flush()
+        self.flush()
         searcher = IndexSearcher(self.tempdir)
         hits = searcher.search(MatchAllDocsQuery())
         foundIds = [hit.getId() for hit in hits]
         foundDocs = [int(hit.get('__id__')) for hit in hits]
+        trackerDocIds = self.tracker._docIds
+        print (foundIds, foundDocs, trackerDocIds)
         return foundIds, foundDocs
 
     def assertMap(self, sequence, luceneIds, foundDocs):
@@ -314,3 +318,19 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
 
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
+
+    def testNoFlushAfterDelete(self):
+        self.setMergeFactor(3)
+        self.addDoc(100)
+        self.flush()
+        self.assertEquals(([0],[100]), self.findAll())
+        self.addDoc(200)
+        self.deleteDoc(100)
+        self.addDoc(100)
+        self.flush()
+        self.assertEquals(([1,2],[200,100]), self.findAll())
+        self.deleteDoc(100)
+        self.addDoc(100)
+        self.flush()
+        self.assertEquals(([0,1],[200,100]), self.findAll())
+

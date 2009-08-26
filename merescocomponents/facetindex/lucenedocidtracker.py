@@ -97,12 +97,15 @@ class LuceneDocIdTracker(object):
         self._segmentInfo.append(SegmentInfo(maxDoc, 0))
         self._save()
 
+    def _maybeFlushRamSegments(self):
+        if len(self._ramSegmentsInfo) >= self._mergeFactor:
+            self._flushRamSegments()
+
     def next(self):
         self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds)))
         self._docIds.append(self._nextDocId)
         self._nextDocId += 1
-        if len(self._ramSegmentsInfo) >= self._mergeFactor:
-            self._flushRamSegments()
+        self._maybeFlushRamSegments()
         return self._nextDocId - 1
 
     def getMap(self):
@@ -140,7 +143,7 @@ class LuceneDocIdTracker(object):
         docId = self._docIds[luceneId]
         self._docIds[luceneId] = -1
         self._segmentForLuceneId(luceneId).deleteLuceneId(luceneId)
-        self._flushRamSegments()
+        self.flush()#self._maybeFlushRamSegments()
         return docId
 
     def isDeleted(self, luceneId):
