@@ -49,7 +49,7 @@ class NGramQuery(Observable):
         return islice((word.rsplit('$', 1)[0] for word in sortedRecordIds), maxResults)
 
     def _wordCardinality(self, word):
-        return self.any.docsetlist(self._fieldForSorting).cardinality(word)
+        return self.any.docsetlist(self._fieldForSorting).cardinality(word.rsplit('$', 1)[0])
 
     def ngramQuery(self, word, fieldname=None):
         """Construct a query for the given word using a word-distance of self._N"""

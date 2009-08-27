@@ -83,10 +83,9 @@ class NGramTest(CQ2TestCase):
         ))
         suggesterDna = be((Observable(),
             (NoOpSuggester(),
-                (NGramQuery(2, fieldnames=['field0', 'field1'], fieldForSorting='allfields'),
-                    (ngramIndex,
-                        (allfieldsDrilldown,)
-                    )
+                (NGramQuery(2, samples=50, fieldnames=['field0', 'field1'], fieldForSorting='allfields'),
+                    (ngramIndex,),
+                    (allfieldsDrilldown,)
                 )
             )
         ))
@@ -152,51 +151,34 @@ class NGramTest(CQ2TestCase):
         self.assertSuggestions(['Punch', 'puca', 'puce', 'puck'], 'punch', LevenshteinSuggester(50, 5, 4), ngramQuerySamples=50)
         self.assertSuggestions(['Punch', 'capuche', 'Mapuche', 'Pampuch'], 'punch', RatioSuggester(50, 0.5, 4), ngramQuerySamples=50)
 
-    def testUseMostFrequentlyAppearingWordOLD(self):
-        self.fail('TODO: first make new reality work, then fix this test.')
-        testdata = [
-            ('apartamentos', 2),
-            ('apartments', 1024),
-            ('appartments', 16),
-            ('apartment', 256),
-            ('appartamento', 4),
-            ('appartamenti', 1),
-            ('appartements', 64)]
-        class NoOpSuggester(_Suggestion):
-            def __init__(self):
-                super(NoOpSuggester, self).__init__(50, 0, 50)
-            def suggestionsFor(self, word):
-                return self._suggestionsFor(word, lambda term: 1)
 
-        words = ['apartamentos', 'apartments', 'appartments', 'apartment', 'appartamento', 'appartamenti', 'appartements']
-        freqs = [     2,             1024,          16,           256,          4,             1,             64      ]
-        index = LuceneIndex(self.tempdir, transactionName='ngram')
-        dna = \
-            (Observable(),
-                (TransactionScope('ngram'),
-                    (NGramFieldlet(2, 'ngrams'),
-                        (index,),
-                        (ResourceManager('ngram', lambda resourceManager: Fields2LuceneDocumentTx(resourceManager, untokenized=[])),
-                            (index,)
-                        )
-                    )
-                ),
-                (NGramQuery(2, 'ngrams'),
-                    (index,)
-                )
-            )
-        ngramFieldlet = be(dna)
-        for word, freq in zip(words, freqs):
-            for i in range(freq):
-                ngramFieldlet.do.addField('field0', word)
-        self.assertEquals(7, index.docCount())
-        ngq = NGramQuery(2, 'ngrams')
-        ngq.addObserver(index)
-        suggester = NoOpSuggester()
-        suggester.addObserver(ngq)
-        self.assertTrue(all('ap' in word for word in words))
-        inclusive, suggs = suggester.suggestionsFor('ap')
-        self.assertEquals(['apartments', 'apartment', 'appartements', 'appartments', 'appartamento', 'apartamentos', 'appartamenti'], suggs)
+    def testUseMostFrequentlyAppearingWord(self):
+        puch_words_with_c = [p for p in PUCH_WORDS if p.lower().startswith('c')]
+        for word in PUCH_WORDS:
+            self.addWord(word)
+        for word in puch_words_with_c:
+            self.addWord(word)
+            self.addWord(word)
+
+        inclusive, suggestions = self.suggestionsFor('puch')
+        firstletters = ''.join(word[0] for word in suggestions)
+        self.assertEquals('ccccc', firstletters[:5])
+        self.assertFalse('c' in firstletters[5:], firstletters)
+
+    def testUseMostFrequentlyAppearingWordForFields(self):
+        puch_words_with_p = [p for p in PUCH_WORDS if p.lower().startswith('p')]
+        puch_words_with_p_without_puc = [p for p in PUCH_WORDS if p.lower().startswith('p') and not p.lower().startswith('puc')]
+        for word in puch_words_with_p:
+            self.addWord(word)
+            self.addWord(word, 'field0')
+        for word in puch_words_with_p_without_puc:
+            self.addWord(word)
+            self.addWord(word, 'field0')
+        inclusive, suggestions = self.suggestionsFor('puch', fieldname='field0')
+        threeletterwords = [word[:3] for word in suggestions]
+        self.assertTrue('puc' not in threeletterwords[:5])
+        self.assertEquals(['puc']*20, threeletterwords[5:])
+
 
     def testNGramForSpecificField(self):
         for i in range(3):

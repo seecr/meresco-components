@@ -39,13 +39,12 @@ class NGramQueryTest(CQ2TestCase):
         ngramQuery = NGramQuery(2, samples=50, fieldForSorting='fieldForSorting')
         ngramQuery.addObserver(drilldown)
         drilldown.returnValues['docsetlist'] = docsetlist
-        drilldown.returnValues['executeQuery'] = (100, ['term%s' % i for i in range(50)])
-        cardinalities = {
-            'term0': 10,
-            'term10': 2,
-            'term20': 20
-        }
-        docsetlist.methods['cardinality'] = lambda term: cardinalities.get(term, 1)
+        drilldown.returnValues['executeQuery'] = (100, ['term%s$' % i for i in range(50)])
+        cardinalities = dict(('term%s' % i, 1) for i in range(100))
+        cardinalities['term0'] = 10
+        cardinalities['term10'] = 2
+        cardinalities['term20'] = 20
+        docsetlist.methods['cardinality'] = lambda term: cardinalities.get(term, 0)
 
         suggestions = ngramQuery.executeNGramQuery('term', maxResults=5)
 
