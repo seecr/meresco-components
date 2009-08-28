@@ -61,7 +61,11 @@ class WebQuery(object):
                 self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
         else:
             self._kind = DEFAULT_KIND
-            self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
+            try:
+                self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
+            except CQLParseException:
+                self._needsHelp = True
+                self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
         self.originalAst = self.ast
         self._filters = []
 

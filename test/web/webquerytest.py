@@ -68,6 +68,8 @@ class WebQueryTest(TestCase):
         self.assertDefaultQuery('antiunary exact true', '')
         self.assertDefaultQuery('label=value')
         self.assertDefaultQuery('label="value value"')
+        self.assertDefaultQuery('water AND "+(rain" AND "-snow)"', 'water +(rain -snow)', needsBooleanHelp=True)
+        self.assertDefaultQuery('water AND "+(rain" AND or AND "snow)"', 'water +(rain or snow)', needsBooleanHelp=True)
 
     def testBooleanQuery(self):
         self.assertBooleanQuery('cats AND dogs')
@@ -99,6 +101,7 @@ class WebQueryTest(TestCase):
         self.assertFalse(_feelsLikePlusMinusQuery('"cat +cheese"'))
         self.assertFalse(_feelsLikePlusMinusQuery('label="cat +cheese"'))
         self.assertTrue(_feelsLikePlusMinusQuery('-label="cat +cheese"'))
+        self.assertTrue(_feelsLikePlusMinusQuery('water +(rain or snow)'))
 
     def testFeelsLikeBooleanQuery(self):
         self.assertTrue(_feelsLikeBooleanQuery('-cats AND dogs'))
@@ -119,6 +122,8 @@ class WebQueryTest(TestCase):
         self.assertFalse(_feelsLikeBooleanQuery('"cat +cheese"'))
         self.assertFalse(_feelsLikeBooleanQuery('label="cat +cheese"'))
         self.assertFalse(_feelsLikeBooleanQuery('-label="cat +cheese"'))
+        self.assertTrue(_feelsLikeBooleanQuery('water +(rain or snow)'))
+
 
 
     def _assertQuery(self, expected, input, boolean=False, plusminus=False, default=False, needsBooleanHelp=False, asString=None):
