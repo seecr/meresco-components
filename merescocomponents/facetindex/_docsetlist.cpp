@@ -208,7 +208,7 @@ DocSetList* DocSetList::intersect(fwPtr docset) {
     DocSetList* results = new DocSetList(false);
     results->reserve(size() + 1);
     for( unsigned int i=0; i < size() ; i++ ) {
-        fwPtr intersection = pDS(at(i))->intersect(docset);
+        fwPtr intersection = DocSet_intersect(at(i), docset);
         if ( ! pDS(intersection)->size() ) {
             DocSet_delete(intersection);
         } else {

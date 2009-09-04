@@ -54,7 +54,6 @@ class DocSet : public std::vector<doc_t> {
         int     contains                 (guint32 docId);
         int     combinedCardinality      (DocSet* rhs);
         int     combinedCardinalitySearch(DocSet* longer);
-        fwPtr   intersect                (fwPtr rhs);
         void    append                   (doc_t* docarray, int count);
         void    merge                    (DocSet* docSet);
         void    remove                   (guint32 doc);
