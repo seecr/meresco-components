@@ -118,3 +118,10 @@ class DocumentTest(unittest.TestCase):
         luceneDoc = indexwriter.calledMethods[0].args[0]
         self.assertTrue(luceneDoc.getField('field0').isStored())
         self.assertFalse(luceneDoc.getField('field1').isStored())
+
+    def testLongStringValueInDocumentAsDict(self):
+        d = Document('identifier')
+        value = 'a' * 4096 * 2
+        d.addIndexedField('key', value)
+        self.assertEquals(value, d.asDict()['key'])  # previously caused buffer overrun... (manifested itself by hanging/termination)
+
