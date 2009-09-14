@@ -123,5 +123,5 @@ class DocumentTest(unittest.TestCase):
         d = Document('identifier')
         value = 'a' * 4096 * 2
         d.addIndexedField('key', value)
-        self.assertEquals(value, d.asDict()['key'])  # previously caused buffer overrun... (manifested itself by hanging/termination)
+        self.assertEquals([value], d.asDict()['key'])  # previously caused buffer overrun... (manifested itself by hanging/termination)
 
