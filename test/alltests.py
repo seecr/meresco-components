@@ -89,6 +89,7 @@ from oai.berkeleydicttest import BerkeleyDictTest
 
 from web.webquerytest import WebQueryTest
 
+from facetindex.luceneandtrackertest import LuceneAndTrackerTest
 
 if __name__ == '__main__':
     unittest.main()
