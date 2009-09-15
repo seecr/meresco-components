@@ -51,7 +51,7 @@ class NGramTest(CQ2TestCase):
     def setUp(self):
         global identifierNr
         identifierNr = 0
-        class IntoTheFields(Observable):
+        class DictToFields(Observable):
             def addDict(self, aDictionary):
                 self.ctx.tx.locals['id'] = aDictionary['identifier']
                 for k,v in aDictionary.items():
@@ -68,7 +68,7 @@ class NGramTest(CQ2TestCase):
         self.indexingDna = be((Observable(),
             (TransactionScope('batch'),
                 (TransactionScope('record'),
-                    (IntoTheFields(),
+                    (DictToFields(),
                         (NGramIndex(transactionName='record', fieldnames=['field0', 'field1']),
                             (ngramIndex,)
                         ),
