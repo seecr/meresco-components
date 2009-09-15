@@ -38,8 +38,8 @@ class _Suggestion(Observable):
         """
         Observable.__init__(self)
         self._samples = samples
-        self._maxResults = maxResults
         self._threshold = threshold
+        self._maxResults = maxResults
 
     def _suggestionsFor(self, word, sortkey, fieldname=None):
         """Query the given word and (re)sort the result using the

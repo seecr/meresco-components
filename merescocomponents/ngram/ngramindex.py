@@ -13,11 +13,11 @@ def tokenize(value):
             yield word.lower()
 
 class NGramIndex(Observable):
-    def __init__(self, transactionName, fieldnames=None):
+    def __init__(self, transactionName, N=2, fieldnames=None):
         Observable.__init__(self)
         self._fieldnames = set(fieldnames) if fieldnames else set()
         self._transactionName = transactionName
-        self._N = 2
+        self._N = N
 
     def begin(self):
         if self.ctx.tx.name == self._transactionName:
