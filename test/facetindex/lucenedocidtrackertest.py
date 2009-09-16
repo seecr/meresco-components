@@ -27,7 +27,7 @@
 #
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
-from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader
+from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader, System
 from random import randint
 from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
 from glob import glob
@@ -343,35 +343,22 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.tracker.deleteLuceneId(0)
         self.assertEquals(1, self.tracker.nrOfDocs())
 
-    def testDocIdMismatch(self):
-        self.setMergeFactor(10)
-        self.processDocs(range(51))
-        self.flush()
-        self.processDocs(range(100,124))
-        searcher = IndexSearcher(self.tempdir)
-        def deleteDoc(identifier):
-            hits = searcher.search(TermQuery(Term('__id__', str(identifier))))      
-            luceneIds = [hit.getId() for hit in hits]
-            self.assertEquals(1, len(luceneIds))
-            docId = self.tracker.mapLuceneId(luceneIds[0])
-            self.assertEquals(docId, luceneIds[0])
-            self.assertEquals(docId, identifier)
-            self.tracker.deleteLuceneId(luceneIds[0])
-        # Now delete/add existing identifiers
-        for i in range(17):
-            deleteDoc(i)
-            self.addDoc(i)
-    
     def testDocIdMismatchTrackerOnly(self):
-        self.setMergeFactor(10)
-        for i in range(51):
-            self.tracker.next()
-        self.tracker.flush()
-        for i in range(24):
-            self.tracker.next()
-        for i in range(17):
-            docId = self.tracker.mapLuceneId(i)
-            self.assertEquals(docId, i)
-            self.tracker.deleteLuceneId(i)
-            self.tracker.next()
-        
+        t = self.tracker
+        t.next()  # 0
+        t.next()  # 1
+        t.flush()
+        t.next()  # 2
+        t.deleteLuceneId(0)
+        t.next()
+        self.assertEquals(1, t.mapLuceneId(1))
+
+    def testDocIdMismatch(self):
+        self.writer.setInfoStream(System.out)
+        self.addDoc(0)
+        self.addDoc(1)
+        self.flush()
+        self.addDoc(100)
+        self.deleteDoc(0)
+        self.addDoc(0)
+        self.assertEquals(1, self.tracker.mapLuceneId(1))
