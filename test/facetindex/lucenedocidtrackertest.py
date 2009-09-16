@@ -361,3 +361,17 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         for i in range(17):
             deleteDoc(i)
             self.addDoc(i)
+    
+    def testDocIdMismatchTrackerOnly(self):
+        self.setMergeFactor(10)
+        for i in range(51):
+            self.tracker.next()
+        self.tracker.flush()
+        for i in range(24):
+            self.tracker.next()
+        for i in range(17):
+            docId = self.tracker.mapLuceneId(i)
+            self.assertEquals(docId, i)
+            self.tracker.deleteLuceneId(i)
+            self.tracker.next()
+        
