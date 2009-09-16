@@ -342,3 +342,22 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(2, self.tracker.nrOfDocs())
         self.tracker.deleteLuceneId(0)
         self.assertEquals(1, self.tracker.nrOfDocs())
+
+    def testDocIdMismatch(self):
+        self.setMergeFactor(10)
+        self.processDocs(range(51))
+        self.flush()
+        self.processDocs(range(100,124))
+        searcher = IndexSearcher(self.tempdir)
+        def deleteDoc(identifier):
+            hits = searcher.search(TermQuery(Term('__id__', str(identifier))))      
+            luceneIds = [hit.getId() for hit in hits]
+            self.assertEquals(1, len(luceneIds))
+            docId = self.tracker.mapLuceneId(luceneIds[0])
+            self.assertEquals(docId, luceneIds[0])
+            self.assertEquals(docId, identifier)
+            self.tracker.deleteLuceneId(luceneIds[0])
+        # Now delete/add existing identifiers
+        for i in range(17):
+            deleteDoc(i)
+            self.addDoc(i)
