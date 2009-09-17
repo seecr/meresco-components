@@ -72,8 +72,8 @@ class LuceneIndex(Observable):
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
         maxDoc = self.docCount() if optimized else 0
-        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
-        self._lucene2docId = self._tracker.getMap()
+        self._currentTracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
+        self._lucene2docId = self._currentTracker.getMap()
 
     def getDocIdMapping(self):
         return self._lucene2docId
@@ -130,19 +130,29 @@ class LuceneIndex(Observable):
         
     def _luceneDelete(self, identifier):
         docId = None
-        luceneId = self._luceneIdForIdentifier(identifier)
-        if luceneId == None:  # not in index, perhaps it is in the queue?
+        prevTxLuceneId = self._luceneIdForIdentifier(identifier)
+        if prevTxLuceneId == None:  # not in index, perhaps it is in the queue?
             docId = self._docIdFromLastCommandFor(identifier)
             if docId != None:
-                luceneId = self._tracker.mapDocId(docId)
-                self._tracker.deleteLuceneId(luceneId)
+                curTxLuceneId = self._currentTracker.mapDocId(docId)
+                self._currentTracker.deleteLuceneId(curTxLuceneId)
         else:  # in index, so delete it first
             # it might already have been delete by a previous delete()
-            if not self._tracker.isDeleted(luceneId):
-                docId = self._tracker.mapLuceneId(luceneId)
-                self._tracker.deleteLuceneId(luceneId)
-            else: # already Deleted, perhaps, there is an add in the Q?
+
+            docId = self._lucene2docId[prevTxLuceneId]
+            alreadyDeleted = self._currentTracker.deleteDocId(docId)
+            if alreadyDeleted:
+                # already Deleted, perhaps, there is an add in the Q?
                 docId = self._docIdFromLastCommandFor(identifier)
+                # should this be deleted in the tracker???
+
+            #if not self._currentTracker.isDeleted(prevTxLuceneId):
+            #    docId = self._currentTracker.mapLuceneId(prevTxLuceneId)
+            #    self._currentTracker.deleteLuceneId(prevTxLuceneId)
+
+            #else: 
+            #    docId = self._docIdFromLastCommandFor(identifier)
+
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
         return docId
@@ -158,7 +168,7 @@ class LuceneIndex(Observable):
             oldDocId = self._luceneDelete(luceneDocument.identifier)
             if oldDocId != None:
                 self.do.deleteDocument(docId=oldDocId)
-            docId = self._tracker.next()
+            docId = self._currentTracker.next()
             luceneDocument.docId = docId
             self._commandQueue.append(FunctionCommand(self._add, identifier=luceneDocument.identifier, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
@@ -177,8 +187,8 @@ class LuceneIndex(Observable):
             command.execute()
         self._commandQueue = []
         self._reopenIndex()
-        self._tracker.flush()
-        self._lucene2docId = self._tracker.getMap()
+        self._currentTracker.flush()
+        self._lucene2docId = self._currentTracker.getMap()
 
     def rollback(self):
         pass
