@@ -127,15 +127,6 @@ class LuceneDocIdTracker(object):
     def getMap(self):
         return self._docIds.copy()
 
-    def mapLuceneId(self, luceneId):
-        return self._docIds[luceneId]
-
-    def mapDocId(self, docId):
-        luceneId = trackerBisect(self._docIds, docId)
-        assert self._docIds[luceneId] == docId
-        return luceneId
-        
-
     def _flushRamSegments(self):
         if len(self._ramSegmentsInfo) > 0:
             self._merge(self._ramSegmentsInfo, self._ramSegmentsInfo[0].offset, 0, self._mergeFactor)
@@ -164,23 +155,11 @@ class LuceneDocIdTracker(object):
         if position == len(self._docIds):
             return True
         if self._docIds[position]== docId:
-            self.deleteLuceneId(position)
+            self._docIds[position] = -1
+            self._segmentForLuceneId(position).deleteLuceneId(position)
+            #self._maybeFlushRamSegments()
             return False
         return True
-
-    def deleteLuceneId(self, luceneId):
-        assert self._docIds[luceneId] != -1, (self._docIds, luceneId)
-        docId = self._docIds[luceneId]
-        self._docIds[luceneId] = -1
-        self._segmentForLuceneId(luceneId).deleteLuceneId(luceneId)
-        #self._maybeFlushRamSegments()
-        return docId
-
-    def isDeleted(self, luceneId):
-        return self._docIds[luceneId] == -1
-
-    def map(self, luceneIds):
-        return (self._docIds[luceneId] for luceneId in luceneIds)
 
     def flush(self):
         self._flushRamSegments()

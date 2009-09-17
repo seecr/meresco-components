@@ -134,8 +134,7 @@ class LuceneIndex(Observable):
         if prevTxLuceneId == None:  # not in index, perhaps it is in the queue?
             docId = self._docIdFromLastCommandFor(identifier)
             if docId != None:
-                curTxLuceneId = self._currentTracker.mapDocId(docId)
-                self._currentTracker.deleteLuceneId(curTxLuceneId)
+                self._currentTracker.deleteDocId(docId)
         else:  # in index, so delete it first
             # it might already have been delete by a previous delete()
 
@@ -145,13 +144,6 @@ class LuceneIndex(Observable):
                 # already Deleted, perhaps, there is an add in the Q?
                 docId = self._docIdFromLastCommandFor(identifier)
                 # should this be deleted in the tracker???
-
-            #if not self._currentTracker.isDeleted(prevTxLuceneId):
-            #    docId = self._currentTracker.mapLuceneId(prevTxLuceneId)
-            #    self._currentTracker.deleteLuceneId(prevTxLuceneId)
-
-            #else: 
-            #    docId = self._docIdFromLastCommandFor(identifier)
 
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
