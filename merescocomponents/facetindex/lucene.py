@@ -143,7 +143,8 @@ class LuceneIndex(Observable):
             if alreadyDeleted:
                 # already Deleted, perhaps, there is an add in the Q?
                 docId = self._docIdFromLastCommandFor(identifier)
-                # should this be deleted in the tracker???
+                #if docId != None:
+                #    self._currentTracker.deleteDocId(docId)
 
         if docId != None:
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))

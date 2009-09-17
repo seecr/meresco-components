@@ -327,7 +327,8 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
-
+        #print self._luceneIndex._currentTracker._docIds
+        self.assertEquals(total, self._luceneIndex._currentTracker.nrOfDocs())
         self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'deleteDocument', 'addDocument',], [m.name for m in observer.calledMethods])
         self.assertEquals([0,1,1,1,2], [m.kwargs['docId'] for m in observer.calledMethods])
 
