@@ -73,6 +73,21 @@ class SegmentInfo(object):
 class LuceneDocIdTrackerException(Exception):
     pass
 
+def trackerBisect(a, x, lo=0, hi=None):
+    """This bisect is based on bisect_left from the bisect module.
+    This implementation will take into account that elements in a
+    can be -1 and all other elements are sorted and >= 0"""
+    if hi is None:
+        hi = len(a)
+    while lo < hi:
+        mid = midKeep = (lo+hi)//2
+        while a[mid] == -1 and mid > lo:
+            mid -= 1
+        if a[mid] == -1: lo = midKeep+1
+        elif a[mid] < x: lo = mid+1
+        else: hi = mid
+    return lo
+
 class LuceneDocIdTracker(object):
     """
         This class tracks docids for Lucene version 2.2.0
@@ -116,7 +131,7 @@ class LuceneDocIdTracker(object):
         return self._docIds[luceneId]
 
     def mapDocId(self, docId):
-        luceneId = bisect_left(self._docIds, docId)
+        luceneId = trackerBisect(self._docIds, docId)
         assert self._docIds[luceneId] == docId
         return luceneId
         
@@ -145,10 +160,12 @@ class LuceneDocIdTracker(object):
         if newSegmentLength > upper:
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
     def deleteDocId(self, docId):
-        for position, value in enumerate(self._docIds):
-            if value == docId:
-                self.deleteLuceneId(position)
-                return False
+        position = trackerBisect(self._docIds, docId)
+        if position == len(self._docIds):
+            return True
+        if self._docIds[position]== docId:
+            self.deleteLuceneId(position)
+            return False
         return True
 
     def deleteLuceneId(self, luceneId):

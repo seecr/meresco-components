@@ -29,7 +29,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from PyLucene import IndexWriter, IndexSearcher, StandardAnalyzer, Document, Field, Term, MatchAllDocsQuery, TermQuery, RAMDirectory, QueryFilter, IndexReader, System
 from random import randint
-from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
+from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
 from glob import glob
 from time import time
 from cq2utils.profileit import profile
@@ -409,4 +409,19 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
 
     def testDeleteNonExistingDocId(self):
         alreadyDeleted = self.tracker.deleteDocId(4)
+    
+    def testMapDocId(self):
+        for i in range(10):
+            self.tracker.next()
+        self.tracker.deleteDocId(5)
+        self.assertEquals(1, self.tracker.mapDocId(1))
 
+    def testTrackerBisect(self):
+        self.assertEquals(1, trackerBisect([0,1,2,3], 1))
+        self.assertEquals(2, trackerBisect([-1,-1,2,3], 2))
+        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 3))
+        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 2))
+        self.assertEquals(0, trackerBisect([0,-1,-1,-1], 0))
+        self.assertEquals(0, trackerBisect([3,-1,-1,-1], 3))
+        self.assertEquals(1, trackerBisect([-1], 42))
+        self.assertEquals(0, trackerBisect([], 42))
