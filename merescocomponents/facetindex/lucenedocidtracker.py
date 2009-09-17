@@ -144,13 +144,19 @@ class LuceneDocIdTracker(object):
         segments.append(si)
         if newSegmentLength > upper:
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
+    def deleteDocId(self, docId):
+        for position, value in enumerate(self._docIds):
+            if value == docId:
+                self.deleteLuceneId(position)
+                return False
+        return True
 
     def deleteLuceneId(self, luceneId):
         assert self._docIds[luceneId] != -1, (self._docIds, luceneId)
         docId = self._docIds[luceneId]
         self._docIds[luceneId] = -1
         self._segmentForLuceneId(luceneId).deleteLuceneId(luceneId)
-        self._maybeFlushRamSegments()
+        #self._maybeFlushRamSegments()
         return docId
 
     def isDeleted(self, luceneId):
