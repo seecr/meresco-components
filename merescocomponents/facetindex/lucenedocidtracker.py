@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -140,7 +141,7 @@ class LuceneDocIdTracker(object):
         worthySegments = list(takewhile(lambda si: si.length <= upper,
             dropwhile(lambda si: not lower < si.length <= upper , reversedSegments)))
         nrOfWorthySegments = len(worthySegments)
-        if nrOfWorthySegments == self._mergeFactor:
+        if nrOfWorthySegments >= self._mergeFactor:
             self._merge(segments, worthySegments[-1].offset, lower, upper)
 
     def _merge(self, segments, newOffset, lower, upper):
@@ -150,16 +151,13 @@ class LuceneDocIdTracker(object):
         segments.append(si)
         if newSegmentLength > upper:
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
+
     def deleteDocId(self, docId):
         position = trackerBisect(self._docIds, docId)
-        if position == len(self._docIds):
-            return True
-        if self._docIds[position]== docId:
+        if position < len(self._docIds) and self._docIds[position] == docId:
             self._docIds[position] = -1
             self._segmentForLuceneId(position).deleteLuceneId(position)
             #self._maybeFlushRamSegments()
-            return False
-        return True
 
     def flush(self):
         self._flushRamSegments()
@@ -181,7 +179,9 @@ class LuceneDocIdTracker(object):
         lastSegmentIndex = len(self._segmentInfo) - 1
         filename = join(self._directory, str(lastSegmentIndex) + '.docids')
         if lastSegmentIndex >= 0:
-            self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
+            lastSegmentInfo = self._segmentInfo[lastSegmentIndex]
+            if lastSegmentInfo.length > 0:
+                self._docIds.save(filename, lastSegmentInfo.offset)
 
     def _load(self):
         if len(self._docIds) != 0:
