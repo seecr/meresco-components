@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -87,8 +88,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.writer.deleteDocuments(Term('__id__', str(identifier)))
 
     def flush(self):
-        self.tracker.flush()
         self.writer.flush()
+        self.tracker.flush()
 
     def processDocs(self, docs):
         for doc in docs:
@@ -358,7 +359,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         t.flush()
         t.deleteDocId(id2)
         self.assertEquals([id1,-1], t.getMap())
-    
+
     def testDeleteDocIdWithImplicitFlush(self):
         t = self.tracker
         id0 = t.next()
@@ -369,17 +370,9 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         t.deleteDocId(id2)
         self.assertEquals([-1, id1,-1], t.getMap())
 
-    def testAlreadyDeleted(self):
-        id0 = self.tracker.next()
-        self.tracker.flush()
-        alreadyDeleted = self.tracker.deleteDocId(id0)
-        self.assertFalse(alreadyDeleted)
-        alreadyDeleted = self.tracker.deleteDocId(id0)
-        self.assertTrue(alreadyDeleted)
+    def testDeleteNonExistingDocIdHarmless(self):
+        self.tracker.deleteDocId(4)
 
-    def testDeleteNonExistingDocId(self):
-        alreadyDeleted = self.tracker.deleteDocId(4)
-    
     def testTrackerBisect(self):
         self.assertEquals(1, trackerBisect([0,1,2,3], 1))
         self.assertEquals(2, trackerBisect([-1,-1,2,3], 2))
@@ -389,3 +382,14 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(0, trackerBisect([3,-1,-1,-1], 3))
         self.assertEquals(1, trackerBisect([-1], 42))
         self.assertEquals(0, trackerBisect([], 42))
+
+    def testDeleteAddDelete(self):
+        self.addDoc(100)
+        self.flush()
+        self.deleteDoc(100)
+        self.addDoc(200)
+        self.deleteDoc(200)
+        self.flush()
+        self.addDoc(300)
+        self.assertEquals(([0],[300]),self.findAll())
+        self.assertEquals(2, self.tracker.getMap()[0])
