@@ -122,31 +122,20 @@ class LuceneIndex(Observable):
     def _add(self, identifier, document):
         document.addToIndexWith(self._writer)
 
-    def _docIdFromLastCommandFor(self, identifier):
+    def _docIdFromLastAddCommandFor(self, identifier):
         try:
             return (command for command in reversed(self._commandQueue) if command._kwargs['identifier'] == identifier and command.methodName() == '_add').next()._kwargs['document'].docId
         except StopIteration:
             return None
-        
+
     def _luceneDelete(self, identifier):
-        docId = None
-        prevTxLuceneId = self._luceneIdForIdentifier(identifier)
-        if prevTxLuceneId == None:  # not in index, perhaps it is in the queue?
-            docId = self._docIdFromLastCommandFor(identifier)
-            if docId != None:
-                self._currentTracker.deleteDocId(docId)
-        else:  # in index, so delete it first
-            # it might already have been delete by a previous delete()
-
-            docId = self._lucene2docId[prevTxLuceneId]
-            alreadyDeleted = self._currentTracker.deleteDocId(docId)
-            if alreadyDeleted:
-                # already Deleted, perhaps, there is an add in the Q?
-                docId = self._docIdFromLastCommandFor(identifier)
-                #if docId != None:
-                #    self._currentTracker.deleteDocId(docId)
-
+        docId = self._docIdFromLastAddCommandFor(identifier)
+        if docId is None:
+            prevTxLuceneId = self._luceneIdForIdentifier(identifier)
+            if prevTxLuceneId != None:
+                docId = self._lucene2docId[prevTxLuceneId]
         if docId != None:
+            self._currentTracker.deleteDocId(docId)
             self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
         return docId
 
