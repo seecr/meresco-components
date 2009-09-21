@@ -311,27 +311,25 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals([0,1,1,2,2], [m.kwargs['docId'] for m in observer.calledMethods])
 
     def testAddingDeletingAddingInSameBatch(self):
-        def add(value):
+        def addSameDoc():
             doc = Document("theIdIsTheSame")
-            doc.addIndexedField('value', value)
+            doc.addIndexedField('value', 'value')
             self._luceneIndex.addDocument(doc)
-        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        deleteSameDoc = lambda : self._luceneIndex.delete('theIdIsTheSame')
         observer = CallTrace('observer')
-        add('1')
+        addSameDoc()
         self._luceneIndex.commit()
         self._luceneIndex.addObserver(observer)
-
-        add('2')
-        delete()
-        add('3')
+        addSameDoc()
+        deleteSameDoc()
+        addSameDoc()
         self._luceneIndex.commit()
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
-        #print self._luceneIndex._currentTracker._docIds
         self.assertEquals(total, self._luceneIndex._currentTracker.nrOfDocs())
-        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'deleteDocument', 'addDocument',], [m.name for m in observer.calledMethods])
-        self.assertEquals([0,1,1,1,2], [m.kwargs['docId'] for m in observer.calledMethods])
-
+        methodNames = [m.name for m in observer.calledMethods]
+        docIds = [m.kwargs['docId'] for m in observer.calledMethods]
+        self.assertEquals((['deleteDocument','addDocument','deleteDocument','addDocument',],[0,1,1,2]), (methodNames, docIds))
 
     def testMultipleAddsWithoutReopenIsEvenDifferent(self):
         reopen = self._luceneIndex._reopenIndex

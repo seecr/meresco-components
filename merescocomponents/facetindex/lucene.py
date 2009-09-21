@@ -135,21 +135,18 @@ class LuceneIndex(Observable):
             if prevTxLuceneId != None:
                 docId = self._lucene2docId[prevTxLuceneId]
         if docId != None:
-            self._currentTracker.deleteDocId(docId)
-            self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
-        return docId
+            deleted = self._currentTracker.deleteDocId(docId)
+            if deleted:
+                self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
+                self.do.deleteDocument(docId=docId)
 
     def delete(self, identifier):
-        docId = self._luceneDelete(identifier)
-        if docId != None:
-            self.do.deleteDocument(docId=docId)
+        self._luceneDelete(identifier)
 
     def addDocument(self, luceneDocument=None):
         try:
             luceneDocument.validate()
-            oldDocId = self._luceneDelete(luceneDocument.identifier)
-            if oldDocId != None:
-                self.do.deleteDocument(docId=oldDocId)
+            self._luceneDelete(luceneDocument.identifier)
             docId = self._currentTracker.next()
             luceneDocument.docId = docId
             self._commandQueue.append(FunctionCommand(self._add, identifier=luceneDocument.identifier, document=luceneDocument))

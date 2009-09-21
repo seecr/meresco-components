@@ -158,6 +158,8 @@ class LuceneDocIdTracker(object):
             self._docIds[position] = -1
             self._segmentForLuceneId(position).deleteLuceneId(position)
             #self._maybeFlushRamSegments()
+            return True
+        return False
 
     def flush(self):
         self._flushRamSegments()

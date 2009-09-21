@@ -117,13 +117,13 @@ class IncrementalIndexingTest(CQ2TestCase):
             '_delete(docId=0)'], list(repr(command) for command in self.drilldown._commandQueue))
 
     def testDeleteDocumentAndThenAddIt(self):
-        self.addDocument('1', field0='term0')
+        self.addDocument('1', field0='term0')  # add docId=0
         self.index.commit()
         self.drilldown.commit()
         self.assertEquals(0, self.index.queueLength())
         self.assertEquals(0, self.drilldown.queueLength())
-        self.index.delete('1')
-        self.addDocument('1', field0='term0') # re-add: delete + add
+        self.index.delete('1')                 # deletes docId=0
+        self.addDocument('1', field0='term0')  # re-add: delete docId=0 + add docId=1
         self.assertEquals(['_delete', '_add'], [command.methodName() for command in self.index._commandQueue])
         self.assertEquals(['_delete', '_delete', '_add'],
             [command.methodName() for command in self.drilldown._commandQueue])
