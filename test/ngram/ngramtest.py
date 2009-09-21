@@ -92,7 +92,7 @@ class NGramTest(CQ2TestCase):
                 )
             )
         ))
-        self.suggestionsFor = lambda word, fieldname=None: suggesterDna.any.suggestionsFor(word, fieldnameAsUtf8=fieldname)
+        self.suggestionsFor = lambda word, fieldname=None: suggesterDna.any.suggestionsFor(word, fieldname=fieldname)
 
         def addWord(word, fieldname='field'):
             global identifierNr

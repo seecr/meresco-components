@@ -42,15 +42,15 @@ class _Suggestion(Observable):
         self._threshold = threshold
         self._maxResults = maxResults
 
-    def suggestionsFor(self, wordAsUtf8, fieldnameAsUtf8=None):
+    def suggestionsFor(self, word, fieldname=None):
         """Query the given word and (re)sort the result using the
         subclass-specific algorithm.
         The  initial result of the query is limited to the predefined number
         of samples. These results are inputted into the subclass-specific
         algorithm and the result is limited to a predefined maximum.
         """
-        word = unicode(wordAsUtf8)
-        fieldname = unicode(fieldnameAsUtf8) if fieldnameAsUtf8 else None
+        word = unicode(word)
+        fieldname = unicode(fieldname) if fieldname else None
         candidates = self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
         results = sorted(candidates, key=lambda term: self.sortKey(term, word, fieldname))
 
