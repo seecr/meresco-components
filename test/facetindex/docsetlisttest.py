@@ -623,4 +623,8 @@ class DocSetListTest(LuceneTestCase):
         docSetList.add(DocSet([2]), 'term2')
         self.assertEquals(DocSet([0, 2]), docSetList.innerUnion())
 
+    def testUnicodePassedTo_cardinality(self):
+        docsetlist = DocSetList()
+        result = docsetlist.cardinality(u"ä ûñïçòdé ßtríñg")
+        self.assertEquals(0, result)
 

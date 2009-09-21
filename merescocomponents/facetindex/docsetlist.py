@@ -204,6 +204,8 @@ class DocSetList(object):
             CardinalityList_free(p)
 
     def cardinality(self, term):
+        if type(term) == unicode:
+            term = term.encode('utf-8')
         return DocSetList_cardinalityForTerm(self, term)
 
     def intersect(self, docset):
