@@ -7,7 +7,7 @@ from ngram import ngrams, NGRAMS_FIELD, NAME_FIELD, IDENTIFIER_TEMPLATE, NAME_TE
 from string import punctuation
 
 def tokenize(value):
-    for word in unicode(value).split():
+    for word in value.split():
         word = word.strip(punctuation)
         if len(word) > 1:
             yield word.lower()
@@ -15,7 +15,7 @@ def tokenize(value):
 class NGramIndex(Observable):
     def __init__(self, transactionName, N=2, fieldnames=None):
         Observable.__init__(self)
-        self._fieldnames = set(fieldnames) if fieldnames else set()
+        self._fieldnames = set(unicode(fieldname) for fieldname in fieldnames) if fieldnames else set()
         self._transactionName = transactionName
         self._N = N
 
@@ -25,6 +25,8 @@ class NGramIndex(Observable):
             self._values = set()
 
     def addField(self, name, value):
+        name = unicode(name)
+        value = unicode(value)
         for word in tokenize(value):
             self._values.add(IDENTIFIER_TEMPLATE % (word,''))
             if name in self._fieldnames:

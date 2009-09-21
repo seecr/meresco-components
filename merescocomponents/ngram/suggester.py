@@ -28,6 +28,7 @@
 #
 ## end license ##
 
+from itertools import islice
 from merescocore.framework import Observable
 from Levenshtein import distance, ratio
 
@@ -41,47 +42,36 @@ class _Suggestion(Observable):
         self._threshold = threshold
         self._maxResults = maxResults
 
-    def _suggestionsFor(self, word, sortkey, fieldname=None):
+    def suggestionsFor(self, wordAsUtf8, fieldnameAsUtf8=None):
         """Query the given word and (re)sort the result using the
         subclass-specific algorithm.
         The  initial result of the query is limited to the predefined number
         of samples. These results are inputted into the subclass-specific
         algorithm and the result is limited to a predefined maximum.
         """
-
+        word = unicode(wordAsUtf8)
+        fieldname = unicode(fieldnameAsUtf8) if fieldnameAsUtf8 else None
         candidates = self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
+        results = sorted(candidates, key=lambda term: self.sortKey(term, word, fieldname))
 
-        results = sorted(candidates, key=sortkey)
-        inclusive = results and results[0] == word
-        if inclusive:
-            return (inclusive, results[1:self._maxResults+1])
-        else:
-            return (inclusive, results[:self._maxResults])
+        inclusive = 1 if results and results[0] == word else 0
+        result = islice(results, inclusive, self._maxResults + inclusive)
+        return bool(inclusive), [str(term) for term in result if self.threshold(term, word, fieldname)]
 
 class LevenshteinSuggester(_Suggestion):
-    def suggestionsFor(self, word, fieldname=None):
-        """Return suggestions for the given word using the absolute Levenshtein
-        distance of two strings.
+    """ (see http://en.wikipedia.org/wiki/Levenshtein_distance for details). """
 
-        If the ratio between the given word and found term is less or equal to
-        the predefined threshold, the term is added to the result.
+    def sortKey(self, term, word, fieldname):
+        return distance(term, word)
 
-        (see http://en.wikipedia.org/wiki/Levenshtein_distance for details).
-        """
-        word = unicode(word)
-        inclusive, result = self._suggestionsFor(word, lambda term: distance(unicode(term), word), fieldname=fieldname)
-        return inclusive, [term for term in result if distance(unicode(term), word) <= self._threshold]
+    def threshold(self, term, word, fieldname):
+        return distance(term, word) <= self._threshold
 
 class RatioSuggester(_Suggestion):
-    def suggestionsFor(self, word, fieldname=None):
-        """Return suggestions for the given word by computing the similarity
-        of two strings.
+    """ (see http://en.wikipedia.org/wiki/Levenshtein_distance for details). """
 
-        If the ratio between the given word and found term exceeds the
-        predefined threshold, the term is added to the result.
+    def sortKey(self, word, term, fieldname):
+        return 1-ratio(term, word)
 
-        (see http://en.wikipedia.org/wiki/Levenshtein_distance for details).
-        """
-        word = unicode(word)
-        inclusive, result = self._suggestionsFor(word, lambda term: 1-ratio(unicode(term), word), fieldname=fieldname)
-        return inclusive, [term for term in result if ratio(unicode(term), word) > self._threshold]
+    def threshold(self, word, term, fieldname):
+        return ratio(term, word) > self._threshold

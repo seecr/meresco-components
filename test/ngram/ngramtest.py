@@ -44,8 +44,9 @@ from StringIO import StringIO
 
 from os.path import join
 
-PUCH_WORDS = ['capuche', 'capuches', 'Capuchin', 'capuchins', 'Mapuche', 'Pampuch', 'puchera', 'pucherite', 'capuched', 'capuchin', 'puchero', 'PUC', 'Kampuchea', 'kampuchea', 'Puchanahua', 'sepuchral', 'puca', 'puce', 'puces', 'Puck', 'puck', 'pucka', 'pucks', 'Pupuluca', 'Puccini', 'puccini', 'puccoon', 'puceron', 'Pucida', 'pucker', 'puckish', 'puckle', 'SPUCDL', 'Chuch', 'Punch', 'punch', 'cappuccino', 'capucine', 'catapuce', 'catepuce', 'depucel', 'leucopus', 'mucopus', 'praepuce', 'prepuce', 'prepuces', 'Puccinia', 'puccinoid', 'puccoons', 'pucelage', 'pucellas', 'pucelle', 'puckball', 'puckered', 'puckerel', 'puckerer', 'puckering', 'puckers', 'puckery', 'Puckett', 'puckfist', 'puckfoist', 'puckishly', 'pucklike', 'puckling', 'puckrel', 'pucksey', 'puckster', 'sapucaia', 'unpucker', 'Vespucci', 'vespucci', 'Chucho', 'aneuch', 'aucht', 'bauch', 'bouch', 'Bruch', 'Buch', 'Buchan', 'buch', 'cauch', 'Chuck', 'chuck', 'couch', 'Cuchan', 'duchan', 'duchy', 'Eucha', 'Fauch', 'fuchi', 'Fuchs', 'heuch', 'hucho', 'Jauch', 'kauch', 'leuch', 'louch', 'Lucho', 'Manouch', 'mouch', 'much', 'nauch', 'nonsuch', 'nouche', 'nucha', 'ouch', 'pouch', 'Rauch', 'ruche', 'sauch', 'snouch', 'such', 'teuch', 'touch', 'touch-', 'touche', 'touchy', 'tuchis', 'tuchit', 'Uchean', 'Uchee', 'Uchish', 'vouch', 'wauch']
+_PUCH_WORDS = ['capuche', 'capuches', 'Capuchin', 'capuchins', 'Mapuche', 'Pampuch', 'puchera', 'pucherite', 'capuched', 'capuchin', 'puchero', 'PUC', 'Kampuchea', 'kampuchea', 'Puchanahua', 'sepuchral', 'puca', 'puce', 'puces', 'Puck', 'puck', 'pucka', 'pucks', 'Pupuluca', 'Puccini', 'puccini', 'puccoon', 'puceron', 'Pucida', 'pucker', 'puckish', 'puckle', 'SPUCDL', 'Chuch', 'Punch', 'punch', 'cappuccino', 'capucine', 'catapuce', 'catepuce', 'depucel', 'leucopus', 'mucopus', 'praepuce', 'prepuce', 'prepuces', 'Puccinia', 'puccinoid', 'puccoons', 'pucelage', 'pucellas', 'pucelle', 'puckball', 'puckered', 'puckerel', 'puckerer', 'puckering', 'puckers', 'puckery', 'Puckett', 'puckfist', 'puckfoist', 'puckishly', 'pucklike', 'puckling', 'puckrel', 'pucksey', 'puckster', 'sapucaia', 'unpucker', 'Vespucci', 'vespucci', 'Chucho', 'aneuch', 'aucht', 'bauch', 'bouch', 'Bruch', 'Buch', 'Buchan', 'buch', 'cauch', 'Chuck', 'chuck', 'couch', 'Cuchan', 'duchan', 'duchy', 'Eucha', 'Fauch', 'fuchi', 'Fuchs', 'heuch', 'hucho', 'Jauch', 'kauch', 'leuch', 'louch', 'Lucho', 'Manouch', 'mouch', 'much', 'nauch', 'nonsuch', 'nouche', 'nucha', 'ouch', 'pouch', 'Rauch', 'ruche', 'sauch', 'snouch', 'such', 'teuch', 'touch', 'touch-', 'touche', 'touchy', 'tuchis', 'tuchit', 'Uchean', 'Uchee', 'Uchish', 'vouch', 'wauch']
 
+PUCH_WORDS = [unicode(word) for word in _PUCH_WORDS]
 
 class NGramTest(CQ2TestCase):
     def setUp(self):
@@ -59,8 +60,10 @@ class NGramTest(CQ2TestCase):
         class NoOpSuggester(_Suggestion):
             def __init__(self):
                 super(NoOpSuggester, self).__init__(25, 0, 25)
-            def suggestionsFor(self, word, fieldname=None):
-                return self._suggestionsFor(word, lambda term: 1, fieldname=fieldname)
+            def sortKey(*args):
+                return 1
+            def threshold(*args):
+                return True
         CQ2TestCase.setUp(self)
         ngramIndex = LuceneIndex(join(self.tempdir,'ngrams'), transactionName='batch')
         documentIndex = LuceneIndex(join(self.tempdir, 'document'), transactionName='batch')
@@ -89,7 +92,7 @@ class NGramTest(CQ2TestCase):
                 )
             )
         ))
-        self.suggestionsFor = lambda word, fieldname=None: suggesterDna.any.suggestionsFor(word, fieldname=fieldname)
+        self.suggestionsFor = lambda word, fieldname=None: suggesterDna.any.suggestionsFor(word, fieldnameAsUtf8=fieldname)
 
         def addWord(word, fieldname='field'):
             global identifierNr
@@ -107,7 +110,6 @@ class NGramTest(CQ2TestCase):
 
     def testOneWord(self):
         self.addWord('appelboom')
-
         self.assertEquals((False, ['appelboom']), self.suggestionsFor('appel'))
 
     def testCreateIndexWithFunkyCharacters(self):
@@ -116,14 +118,15 @@ class NGramTest(CQ2TestCase):
         self.addWord('Jiří')
         self.addWord('ideeën')
         self.assertEquals((False, ['škvarla']), self.suggestionsFor('ar'))
+        self.assertEquals(str, type(self.suggestionsFor('ar')[1][0]))
         self.assertEquals((False, ['ideeën']), self.suggestionsFor('ee'))
-
+        self.assertEquals((False, ['škvarla']), self.suggestionsFor('Škvarla'))
         
 
     def testNgram(self):
         self.assertEquals(set(['bo', 'oo', 'om', 'boo', 'oom', 'boom']), set(ngrams('boom', N=4)))
         self.assertEquals(set(['bo', 'oo', 'om']), set(ngrams('boom', N=2)))
-        self.assertEquals(set([u'šk','kv','va','ar','rl','la']), set(ngrams('škvarla', N=2)))
+        self.assertEquals(set([u'šk','kv','va','ar','rl','la']), set(ngrams(u'škvarla', N=2)))
 
 
     def testLevenshtein(self):

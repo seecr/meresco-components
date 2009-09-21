@@ -54,7 +54,7 @@ class CqlSuggesterTest(TestCase):
         self.assertEquals(['wordy'], result)
 
     def testTwoWordsWithRealSuggester(self) :
-        ngramQuery = MockNGramQuery(['wordy', 'wordx'])
+        ngramQuery = MockNGramQuery([u'wordy', u'wordx'])
         self.assertEquals(['wordy', 'wordx'], ngramQuery.executeNGramQuery('nonsense', 99))
         suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
         suggester.addObserver(ngramQuery)

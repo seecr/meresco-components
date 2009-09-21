@@ -28,14 +28,13 @@
 #
 ## end license ##
 
-NGRAMS_FIELD = 'ngrams'
-NAME_FIELD = 'field'
-NAME_TEMPLATE = 'ngrams$%s'
-IDENTIFIER_TEMPLATE = '%s$%s'
+NGRAMS_FIELD = u'ngrams'
+NAME_FIELD = u'field'
+NAME_TEMPLATE = u'ngrams$%s'
+IDENTIFIER_TEMPLATE = u'%s$%s'
 
 
 def ngrams(word, N=2):
-    word = unicode(word)
     for n in range(2, N+1):
         for i in range(len(word)-n+1):
             yield word[i:i+n]
