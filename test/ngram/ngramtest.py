@@ -31,7 +31,6 @@ from cq2utils import CQ2TestCase, CallTrace
 
 from merescocore.framework import Observable, TransactionScope, ResourceManager, be, Transaction
 from merescocore.components import Xml2Fields
-from merescocore.components.tokenizefieldlet import TokenizeFieldlet
 
 from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx, Document, Drilldown
 from merescocomponents.ngram.ngram import ngrams
