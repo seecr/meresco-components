@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -28,31 +28,13 @@
 #
 ## end license ##
 
-from sys import argv, path
-from os.path import abspath, dirname, join
-from glob import glob
-from os import listdir
-
-basepath=dirname(dirname(dirname(dirname(abspath(__file__)))))
-
-for dep in glob(join(basepath, 'deps.d/*')):
-    path.insert(0, dep)
-path.insert(0, basepath)
-
-from PyLucene import IndexWriter
-from merescocomponents.facetindex.lucene import IncludeStopWordAnalyzer
-from lucenetools import unlock
-
-def optimize(path):
-    unlock(path)
-    writer = IndexWriter(path, IncludeStopWordAnalyzer(), False)
-    writer.optimize()
-    writer.close()
+NGRAMS_FIELD = u'ngrams'
+NAME_FIELD = u'field'
+NAME_TEMPLATE = u'ngrams$%s'
+IDENTIFIER_TEMPLATE = u'%s$%s'
 
 
-if __name__ == '__main__':
-    args = argv[1:]
-    if not args:
-        print "Specify index directory"
-    else:
-        optimize(args[0])
+def ngrams(word, N=2):
+    for n in range(2, N+1):
+        for i in range(len(word)-n+1):
+            yield word[i:i+n]
