@@ -62,7 +62,6 @@ class DocSet : public std::vector<doc_t> {
         int     contains                 (guint32 docId);
         int     combinedCardinality      (DocSet* rhs);
         int     combinedCardinalitySearch(DocSet* longer);
-        fwPtr   intersect                (fwPtr rhs);
         void    append                   (doc_t* docarray, int count);
         void    merge                    (DocSet* docSet);
         void    remove                   (guint32 doc);
@@ -97,8 +96,6 @@ extern "C" {
     fwPtr   DocSet_forTerm                   (lucene::index::IndexReader*, char* fieldname, char* term, IntegerList* mapping);
     void    DocSet_delete                    (fwPtr docSet);
 }
-
-
 
 #define SWITCHPOINT 200 // for random docsset, this is the trippoint, experimentally
 

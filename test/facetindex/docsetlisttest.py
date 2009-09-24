@@ -29,7 +29,7 @@
 ## end license ##
 from time import time
 from merescocomponents.facetindex import DocSetList, DocSet
-from merescocomponents.facetindex.docsetlist import JACCARD_ONLY
+from merescocomponents.facetindex.docsetlist import JACCARD_ONLY, JACCARD_MI
 from merescocomponents.facetindex.triedict import TrieDict
 from lucenetestcase import LuceneTestCase
 from cq2utils import MATCHALL
@@ -227,6 +227,12 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals([], list(c))
         c = list(m.allCardinalities())
         self.assertEquals([], list(c))
+
+    def testCardinality(self):
+        dsl = DocSetList()
+        dsl.add(DocSet([1,2,3]), 'term')
+        self.assertEquals(3, dsl.cardinality('term'))
+        self.assertEquals(0, dsl.cardinality('term1'))
 
     def testEmptyDoc(self):
         m = DocSetList()
@@ -515,6 +521,42 @@ class DocSetListTest(LuceneTestCase):
         result = dsl.jaccards(DocSet([]), 0, 100, 9, JACCARD_ONLY)
         self.assertEquals([('x', 0)], list(result))
 
+    def testMi(self):
+        dsl = DocSetList()
+        dsl.add(DocSet([]), 'term0')
+        dsl.add(DocSet([1]), 'term1')
+        dsl.add(DocSet([2,3]), 'term2')
+        dsl.add(DocSet([4,5,6,7,8,9]), 'term3')
+        results = dsl.jaccards(DocSet([]), 0, 100, 9, JACCARD_MI)
+        self.assertEquals([('term3', 0L), ('term2', 0L), ('term1', 0L)], list(results))
+        results = dsl.jaccards(DocSet([1,2,3,4,5,6,7,8,9]), 0, 100, 9, JACCARD_MI)
+        self.assertEquals([('term3', 0L), ('term2', 0L), ('term1', 0L)], list(results))
+        results = dsl.jaccards(DocSet([1,3,5,7,9]), 0, 100, 9, JACCARD_MI)
+        self.assertEquals([('term1', 7083L), ('term3', 1269L), ('term2', 177L)], list(results))
+        results = dsl.jaccards(DocSet([3,7]), 0, 100, 9, JACCARD_MI)
+        self.assertEquals([('term2', 5669L), ('term1', 2985L), ('term3', 1716L)], list(results))
+
+    def testMaxTermFrequency(self):
+        dsl = DocSetList()
+        dsl.add(DocSet([]), 'freq0')
+        dsl.add(DocSet([1]), 'freq1') # 1/9 %
+        dsl.add(DocSet([2,3]), 'freq2') # 2/9 %
+        dsl.add(DocSet([4,5,6,7,8,9]), 'freq6') # 6/9 %
+        results = dsl.jaccards(DocSet([1,3,5,7,9]), 0, 100, 9, JACCARD_MI, maxTermFreqPercentage=60)
+        self.assertEquals([('freq1', 7083L), ('freq2', 177L)], list(results))
+        results = dsl.jaccards(DocSet([1,3,5,7,9]), 0, 100, 9, JACCARD_MI, maxTermFreqPercentage=100)
+        self.assertEquals([('freq1', 7083L), ('freq6', 1269L), ('freq2', 177L)], list(results))
+        try:
+            list(dsl.jaccards(DocSet([1,3,5,7,9]), 0, 100, 9, JACCARD_MI, maxTermFreqPercentage=101))
+            self.fail()
+        except ValueError, e:
+            self.assertEquals('maxTermFreqPercentage must be >0 and <=100 (101)', str(e))
+        try:
+            list(dsl.jaccards(DocSet([1,3,5,7,9]), 0, 100, 9, JACCARD_MI, maxTermFreqPercentage=0))
+            self.fail()
+        except ValueError, e:
+            self.assertEquals('maxTermFreqPercentage must be >0 and <=100 (0)', str(e))
+    
     def testSortingOnCardinalityDoesNotRuinTermLookup(self):
         ds0 = DocSet([1,2])
         ds1 = DocSet([1,2,3])
@@ -572,4 +614,8 @@ class DocSetListTest(LuceneTestCase):
         docSetList.add(DocSet([2]), 'term2')
         self.assertEquals(DocSet([0, 2]), docSetList.innerUnion())
 
+    def testUnicodePassedTo_cardinality(self):
+        docsetlist = DocSetList()
+        result = docsetlist.cardinality(u"ä ûñïçòdé ßtríñg")
+        self.assertEquals(0, result)
 

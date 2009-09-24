@@ -153,6 +153,14 @@ fwPtr DocSetList::forTerm(char* term) {
     return docset;
 }
 
+int DocSetList::cardinalityForTerm(char* term) {
+    guint32 docsetptr = dictionary.getValue(term);
+    if ( docsetptr == 0xFFFFFFFF )
+        return 0;
+    fwPtr docset = {0, docsetptr};
+    return DocSet_len(docset);
+}
+
 
 bool cmpCardinalityResults(const cardinality_t& lhs, const cardinality_t& rhs) {
     return lhs.cardinality > rhs.cardinality;
@@ -210,7 +218,7 @@ DocSetList* DocSetList::intersect(fwPtr docset) {
     DocSetList* results = new DocSetList(false);
     results->reserve(size() + 1);
     for( unsigned int i=0; i < size() ; i++ ) {
-        fwPtr intersection = pDS(at(i))->intersect(docset);
+        fwPtr intersection = DocSet_intersect(at(i), docset);
         if ( ! pDS(intersection)->size() ) {
             DocSet_delete(intersection);
         } else {
@@ -276,7 +284,8 @@ class DummyDocSet : public DocSet {
 };
 
 CardinalityList*
-DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm) {
+DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm, int maxTermFreqPercentage) {
+    //maxTermFreqPercentage IGNORED, TODO
     CardinalityList* results = new CardinalityList();
     DocSetList::iterator lower = begin();
     DocSetList::iterator upper = end();
@@ -390,6 +399,10 @@ fwPtr DocSetList_getForTerm(DocSetList* list, char* term) {
     return list->forTerm(term);
 }
 
+int DocSetList_cardinalityForTerm(DocSetList* list, char* term) {
+    return list->cardinalityForTerm(term);
+}
+
 CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr ds, guint32 maxResults, int doSort) {
     DocSet* docset = pDS(ds);
     return list->combinedCardinalities(docset, maxResults, doSort);
@@ -407,9 +420,9 @@ fwPtr DocSetList_innerUnion(DocSetList* self) {
     return self->innerUnion();
 }
 
-CardinalityList* DocSetList_jaccards(DocSetList* list, fwPtr ds, int minimum, int maximum, int totaldocs, int algorithm) {
+CardinalityList* DocSetList_jaccards(DocSetList* list, fwPtr ds, int minimum, int maximum, int totaldocs, int algorithm, int maxTermFreq) {
     DocSet* docset = pDS(ds);
-    return list->jaccards(docset, minimum, maximum, totaldocs, algorithm);
+    return list->jaccards(docset, minimum, maximum, totaldocs, algorithm, maxTermFreq);
 }
 
 void DocSetList_delete(DocSetList* list) {

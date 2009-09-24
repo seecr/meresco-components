@@ -120,8 +120,25 @@ int DocSet_combinedCardinalitySearch(fwPtr docset, fwPtr rhs) {
     return pDS(docset)->combinedCardinalitySearch(pDS(rhs));
 }
 
-fwPtr DocSet_intersect(fwPtr docset, fwPtr rhs) {
-    return pDS(docset)->intersect(rhs);
+
+/**
+ * @brief external method for DocSet.intersect
+ *
+ * Can not be defined on DocSet because it creates a new DocSet
+ * which might cause the current DocSet to be reallocated.
+ */
+fwPtr DocSet_intersect(fwPtr lhs, fwPtr rhs) {
+    fwPtr result = DocSet_create();
+    DocSet::iterator a = pDS(lhs)->begin();
+    DocSet::iterator b = pDS(lhs)->end();
+    DocSet::iterator c = pDS(rhs)->begin();
+    DocSet::iterator d = pDS(rhs)->end();
+    pDS(result)->resize(std::min(pDS(rhs)->size(), pDS(rhs)->size()));
+    guint32* result_feeder = &(pDS(result)->front());
+    guint32* start = result_feeder;
+    intersect_generic<DocSet::iterator, guint32*>(a, b, c, d, result_feeder);
+    pDS(result)->resize(result_feeder - start);
+    return result;
 }
 
 // ### C++ below ###
@@ -148,20 +165,6 @@ int DocSet::combinedCardinalitySearch(DocSet* larger) {
 
 int DocSet::combinedCardinality(DocSet* rhs) {
     return combinedCardinalitySearch(rhs);
-}
-
-fwPtr DocSet::intersect(fwPtr rhs) {
-    DocSet::iterator a = begin();
-    DocSet::iterator b = end();
-    DocSet::iterator c = pDS(rhs)->begin();
-    DocSet::iterator d = pDS(rhs)->end();
-    fwPtr result = DocSet_create();
-    pDS(result)->resize(std::min(size(), pDS(rhs)->size()));
-    guint32* result_feeder = &(pDS(result)->front());
-    guint32* start = result_feeder;
-    intersect_generic<DocSet::iterator, guint32*>(a, b, c, d, result_feeder);
-    pDS(result)->resize(result_feeder - start);
-    return result;
 }
 
 void DocSet::append(doc_t* docarray, int count) {

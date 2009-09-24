@@ -35,27 +35,19 @@ class Fields2LuceneDocumentTx(object):
         self.resourceManager = resourceManager
         self.fields = {}
         self._untokenized = untokenized
-        self._stored = []
-        self._boost = 1.0
 
-    def addField(self, name, value, store=False):
-        if store:
-            self._stored.append(name)
+    def addField(self, name, value):
         if not name in self.fields:
             self.fields[name] = []
         self.fields[name].append(value)
-
-    def changeBoost(self, boost):
-        self._boost = boost
 
     def commit(self):
         if not self.fields.keys():
             return
         document = Document(self.resourceManager.ctx.tx.locals['id'])
-        document.setBoost(self._boost);
         for name, values in self.fields.items():
             for value in values:
-                document.addIndexedField(name, value, not name in self._untokenized, store=name in self._stored)
+                document.addIndexedField(name, value, not name in self._untokenized)
         self.resourceManager.do.addDocument(document)
 
     def rollback(self):

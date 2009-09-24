@@ -29,8 +29,7 @@
 #
 ## end license ##
 
-from merescocomponents.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer
-from merescocomponents.facetindex.merescolucene import MatchAllDocsQuery
+from merescocomponents.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer, MatchAllDocsQuery
 
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import DocSet

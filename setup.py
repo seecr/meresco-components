@@ -135,8 +135,7 @@ setup(
         'merescocomponents.examples.dna',
     ],
     ext_modules = [
-        Extension("merescocomponents.facetindex._facetindex",
-                  [
+        Extension("merescocomponents.facetindex._facetindex", [
                       'merescocomponents/facetindex/zipper.c',
                       'merescocomponents/facetindex/_docsetlist.cpp',
                       'merescocomponents/facetindex/_docset.cpp',

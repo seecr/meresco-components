@@ -128,6 +128,9 @@ class Drilldown(object):
     def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
         return DocSetList.forField(indexReader, field, docIdMapping)
 
+    def docsetlist(self, field):
+        return self._docsetlists[field]
+
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         if not drilldownFieldnamesAndMaximumResults:
             drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)
@@ -137,11 +140,12 @@ class Drilldown(object):
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
             yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
 
-    def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI):
+    def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI, maxTermFreqPercentage=100):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:
             if fieldname not in self._docsetlists:
                 raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
-            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum, self._totaldocs, algorithm=algorithm)
+            yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum,
+                    self._totaldocs, algorithm=algorithm, maxTermFreqPercentage=maxTermFreqPercentage)
 
     def queueLength(self):
         return len(self._commandQueue)

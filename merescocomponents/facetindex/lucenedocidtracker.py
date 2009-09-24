@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -72,6 +73,21 @@ class SegmentInfo(object):
 class LuceneDocIdTrackerException(Exception):
     pass
 
+def trackerBisect(a, x, lo=0, hi=None):
+    """This bisect is based on bisect_left from the bisect module.
+    This implementation will take into account that elements in a
+    can be -1 and all other elements are sorted and >= 0"""
+    if hi is None:
+        hi = len(a)
+    while lo < hi:
+        mid = midKeep = (lo+hi)//2
+        while a[mid] == -1 and mid > lo:
+            mid -= 1
+        if a[mid] == -1: lo = midKeep+1
+        elif a[mid] < x: lo = mid+1
+        else: hi = mid
+    return lo
+
 class LuceneDocIdTracker(object):
     """
         This class tracks docids for Lucene version 2.2.0
@@ -97,19 +113,19 @@ class LuceneDocIdTracker(object):
         self._segmentInfo.append(SegmentInfo(maxDoc, 0))
         self._save()
 
+    def _maybeFlushRamSegments(self):
+        if len(self._ramSegmentsInfo) >= self._mergeFactor:
+            self._flushRamSegments()
+
     def next(self):
         self._ramSegmentsInfo.append(SegmentInfo(1, len(self._docIds)))
         self._docIds.append(self._nextDocId)
         self._nextDocId += 1
-        if len(self._ramSegmentsInfo) >= self._mergeFactor:
-            self._flushRamSegments()
+        self._maybeFlushRamSegments()
         return self._nextDocId - 1
 
     def getMap(self):
         return self._docIds.copy()
-
-    def mapLuceneId(self, luceneId):
-        return self._docIds[luceneId]
 
     def _flushRamSegments(self):
         if len(self._ramSegmentsInfo) > 0:
@@ -124,7 +140,7 @@ class LuceneDocIdTracker(object):
         worthySegments = list(takewhile(lambda si: si.length <= upper,
             dropwhile(lambda si: not lower < si.length <= upper , reversedSegments)))
         nrOfWorthySegments = len(worthySegments)
-        if nrOfWorthySegments == self._mergeFactor:
+        if nrOfWorthySegments >= self._mergeFactor:
             self._merge(segments, worthySegments[-1].offset, lower, upper)
 
     def _merge(self, segments, newOffset, lower, upper):
@@ -135,19 +151,14 @@ class LuceneDocIdTracker(object):
         if newSegmentLength > upper:
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
 
-    def deleteLuceneId(self, luceneId):
-        assert self._docIds[luceneId] != -1, (self._docIds, luceneId)
-        docId = self._docIds[luceneId]
-        self._docIds[luceneId] = -1
-        self._segmentForLuceneId(luceneId).deleteLuceneId(luceneId)
-        self._flushRamSegments()
-        return docId
-
-    def isDeleted(self, luceneId):
-        return self._docIds[luceneId] == -1
-
-    def map(self, luceneIds):
-        return (self._docIds[luceneId] for luceneId in luceneIds)
+    def deleteDocId(self, docId):
+        position = trackerBisect(self._docIds, docId)
+        if position < len(self._docIds) and self._docIds[position] == docId:
+            self._docIds[position] = -1
+            self._segmentForLuceneId(position).deleteLuceneId(position)
+            #self._maybeFlushRamSegments()
+            return True
+        return False
 
     def flush(self):
         self._flushRamSegments()
@@ -169,7 +180,9 @@ class LuceneDocIdTracker(object):
         lastSegmentIndex = len(self._segmentInfo) - 1
         filename = join(self._directory, str(lastSegmentIndex) + '.docids')
         if lastSegmentIndex >= 0:
-            self._docIds.save(filename, self._segmentInfo[lastSegmentIndex].offset)
+            lastSegmentInfo = self._segmentInfo[lastSegmentIndex]
+            if lastSegmentInfo.length > 0:
+                self._docIds.save(filename, lastSegmentInfo.offset)
 
     def _load(self):
         if len(self._docIds) != 0:
@@ -214,3 +227,6 @@ class LuceneDocIdTracker(object):
 
     def close(self):
         self.flush()
+
+    def nrOfDocs(self):
+        return len([docId for docId in self._docIds if docId != -1])
