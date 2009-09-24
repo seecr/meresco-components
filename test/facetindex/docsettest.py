@@ -29,6 +29,7 @@
 from merescocomponents.facetindex import DocSet
 from lucenetestcase import LuceneTestCase
 from merescocomponents.facetindex.docset import DocSet_combinedCardinalitySearch
+from PyLucene import Term
 
 class DocSetTest(LuceneTestCase):
 
@@ -50,7 +51,7 @@ class DocSetTest(LuceneTestCase):
     def testIndexable(self):
         self.assertEquals(2, DocSet([1,2])[1])
 
-    def XXXtestCombinedCardinality(self):
+    def testCombinedCardinality(self):
         self.assertEquals(1, DocSet([1,2]).combinedCardinality(DocSet([2,3])))
 
     def testDeleteDoc(self):
@@ -101,12 +102,9 @@ class DocSetTest(LuceneTestCase):
     def testReadLuceneDocs(self):
         self.createSimpleIndexWithEmptyDocuments(2)
         ds = DocSet.fromQuery(self.searcher, self.matchAllDocsQuery)
-        self.assertEquals(0, ds[0])
-        self.assertEquals(1, ds[1])
         self.assertEquals([0,1], list(iter(ds)))
 
     def testReadFrom_SEGMENT_TermDocs(self):
-        from PyLucene import Term
         self.createIndexWithFixedFieldAndValueDoc('field', 'value', 10)
         termEnum = self.reader.terms(Term('field',''))
         freq = termEnum.docFreq() # very fast, one attr lookup
@@ -117,7 +115,6 @@ class DocSetTest(LuceneTestCase):
         self.assertEquals(range(10), list(iter(docs)))
 
     def testReadFrom_MULTI_TermDocs(self):
-        from PyLucene import Term
         self.createIndexWithFixedFieldAndValueDoc('field', 'value', 11)
         termEnum = self.reader.terms(Term('field',''))
         freq = termEnum.docFreq() # very fast, one attr lookup
@@ -128,7 +125,6 @@ class DocSetTest(LuceneTestCase):
         self.assertEquals(range(11), list(iter(docs)))
 
     def testReadFrom_MULTI_TermDocsWithMoreDocs(self):
-        from PyLucene import Term
         self.createIndexWithFixedFieldAndValueDoc('field', 'value', 19)
         termEnum = self.reader.terms(Term('field',''))
         freq = termEnum.docFreq() # very fast, one attr lookup

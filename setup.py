@@ -33,9 +33,9 @@ from distutils.extension import Extension
 setup(
     name = 'merescocomponents',
     packages = [
-	'merescocomponents', 
-        'merescocomponents.facetindex', 
-        'merescocomponents.facetindex.tools', 
+        'merescocomponents',
+        'merescocomponents.facetindex',
+        'merescocomponents.facetindex.tools',
         'merescocomponents.oai',
         'merescocomponents.web',
         'merescocomponents.examples',
@@ -43,17 +43,22 @@ setup(
     ],
     ext_modules = [
         Extension("merescocomponents.facetindex._facetindex", [
-                'merescocomponents/facetindex/zipper.c',
-                'merescocomponents/facetindex/_docsetlist.cpp',
-                'merescocomponents/facetindex/_docset.cpp',
-                'merescocomponents/facetindex/_integerlist.cpp',
-                'merescocomponents/facetindex/fwpool.c',
-                'merescocomponents/facetindex/trie_c.cpp',
-                'merescocomponents/facetindex/_triedict.cpp',
-                'merescocomponents/facetindex/_stringpool.cpp',
-                ],
-        	extra_compile_args = ['-I/usr/include/glib-2.0', '-I/usr/lib/glib-2.0/include'],
-                extra_link_args = ['/usr/lib/python2.5/site-packages/_PyLucene.so']
+                      'merescocomponents/facetindex/zipper.c',
+                      'merescocomponents/facetindex/_docsetlist.cpp',
+                      'merescocomponents/facetindex/_docset.cpp',
+                      'merescocomponents/facetindex/_integerlist.cpp',
+                      'merescocomponents/facetindex/fwpool.c',
+                      'merescocomponents/facetindex/trie_c.cpp',
+                      'merescocomponents/facetindex/_triedict.cpp',
+                      'merescocomponents/facetindex/_stringpool.cpp',
+                  ],
+                  extra_compile_args = [
+                      '-I/usr/include/glib-2.0',
+                      '-I/usr/lib/glib-2.0/include',
+                  ],
+                  extra_link_args = [
+                      '/usr/lib/python2.5/site-packages/_PyLucene.so'
+                  ],
         )
     ],
     version = '%VERSION%',

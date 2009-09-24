@@ -34,8 +34,8 @@ from time import time, sleep
 from random import random, randint, sample
 
 from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
-from lucenetestcase import LuceneTestCase
 from PyLucene import Term, IndexReader
+from lucenetestcase import LuceneTestCase
 from cq2utils import CallTrace
 
 class PerformanceTuningTest(LuceneTestCase):

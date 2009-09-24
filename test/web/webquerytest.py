@@ -124,8 +124,6 @@ class WebQueryTest(TestCase):
         self.assertFalse(_feelsLikeBooleanQuery('-label="cat +cheese"'))
         self.assertTrue(_feelsLikeBooleanQuery('water +(rain or snow)'))
 
-
-
     def _assertQuery(self, expected, input, boolean=False, plusminus=False, default=False, needsBooleanHelp=False, asString=None):
         input = expected if input == None else input
         asString = expected if asString == None else asString

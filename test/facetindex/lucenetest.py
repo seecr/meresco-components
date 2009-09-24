@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -37,12 +37,11 @@ from shutil import rmtree
 
 from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex
-
 from merescocomponents.facetindex import CQL2LuceneQuery
+from PyLucene import Document as PyDocument, Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery, JavaError
 
 from cqlparser import parseString
 
-from PyLucene import Document as PyDocument, Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery, JavaError
 from weightless import Reactor
 
 class LuceneTest(CQ2TestCase):
@@ -64,9 +63,11 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
+        self.assertEquals(1, self._luceneIndex._writer.docCount())
+        self.assertEquals(1, self._luceneIndex.docCount())
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
-        self.assertEquals(len(hits), 1)
+        self.assertEquals(1, len(hits))
         self.assertEquals(['0123456789'], list(hits))
 
     def testAddToIndexWithDuplicateField(self):
@@ -345,7 +346,7 @@ class LuceneTest(CQ2TestCase):
 
         reopen()
 
-    def testAnalyser(self):
+    def testAnalyzer(self):
         myDocument = Document('id0')
         myDocument.addIndexedField('field', 'a')
         myDocument.addIndexedField('field', 'vAlUe')
@@ -353,7 +354,8 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'a')))
-        self.assertEquals(len(hits), 1)
+        self.assertEquals(1, total)
+        self.assertEquals(1, len(hits))
         self.assertEquals(['id0'], list(hits))
 
         total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'value')))
@@ -506,4 +508,3 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex._reopenIndex = reopenIndex
         self._luceneIndex.commit()
         self.assertEquals([], reopenIndexCalled)
-

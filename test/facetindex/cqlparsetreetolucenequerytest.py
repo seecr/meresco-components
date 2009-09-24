@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -117,8 +118,9 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         self.assertConversion(query, "title =/boost=2.0 cats")
 
     def testUnqualifiedTermFields(self):
-        result = LuceneQueryComposer(unqualifiedTermFields=[("field0", 0.2), ("field1", 2.0)]).compose(parseCql("value"))
-
+        composer = LuceneQueryComposer(unqualifiedTermFields=[("field0", 0.2), ("field1", 2.0)])
+        ast = parseCql("value")
+        result = composer.compose(ast)
         query = BooleanQuery()
         left = TermQuery(Term("field0", "value"))
         left.setBoost(0.2)
@@ -162,7 +164,7 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
     def assertConversion(self, expected, input):
         #print parseCql(input).prettyPrint()
         result = LuceneQueryComposer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql(input))
-        self.assertEquals(expected, result)
+        self.assertEquals(expected, result, "expected %s['%s'], but got %s['%s']" % (repr(expected), str(expected), repr(result), str(result)))
 
 
     def testUnsupportedCQL(self):

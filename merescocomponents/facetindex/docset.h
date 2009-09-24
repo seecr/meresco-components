@@ -41,6 +41,7 @@ extern "C" {
 class OnResult {
     public:
         virtual void operator () (guint32 docId) = 0;
+        virtual ~OnResult() {};
 };
 
 class DocSet : public std::vector<doc_t> {

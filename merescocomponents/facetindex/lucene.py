@@ -41,6 +41,8 @@ from docset import DocSet
 from functioncommand import FunctionCommand
 from lucenedocidtracker import LuceneDocIdTracker
 
+IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
+
 class LuceneException(Exception):
     pass
 
@@ -63,7 +65,8 @@ class LuceneIndex(Observable):
 
         self._writer = IndexWriter(
             self._directoryName,
-            IncludeStopWordAnalyzer(), not IndexReader.indexExists(self._directoryName))
+            IncludeStopWordAnalyzer(),
+            not IndexReader.indexExists(self._directoryName))
         self._reopenIndex()
 
         optimized = self.isOptimized()
@@ -86,7 +89,7 @@ class LuceneIndex(Observable):
         if self._searcher:
             self._searcher.close()
         self._searcher = IndexSearcher(self._reader)
-        self._existingFieldNames = self._reader.getFieldNames(IndexReader.FieldOption.ALL)
+        self._existingFieldNames = self._reader.getFieldNames(IndexReader_FieldOption_ALL)
 
     def observer_init(self):
         self.do.indexStarted(self._reader, docIdMapping=self._lucene2docId)

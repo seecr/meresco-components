@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -157,4 +158,3 @@ class IncrementalIndexingTest(CQ2TestCase):
         fieldname, results = self.drilldown.drilldown(DocSet([0L, 1L]), [('field0', 0, False)]).next()
         self.assertEquals('field0', fieldname)
         self.assertEquals([('othervalue', 1)], list(results))
-        

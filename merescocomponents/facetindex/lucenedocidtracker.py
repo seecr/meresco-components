@@ -31,7 +31,6 @@ from itertools import takewhile, dropwhile
 from os.path import join, isfile
 
 from integerlist import IntegerList
-from bisect import bisect_left
 
 class SegmentInfo(object):
     def __init__(self, length, offset):

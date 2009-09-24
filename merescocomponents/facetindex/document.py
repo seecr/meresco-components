@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-import PyLucene
+from PyLucene import Document as LuceneDocument, Field
 
 IDFIELD = '__id__'
 
@@ -43,12 +43,9 @@ class Document(object):
         if not self._isValidFieldValue(anId):
             raise DocumentException("Invalid ID: '%s'" % anId)
 
-        self._document = PyLucene.Document()
-        self._document.add(PyLucene.Field(IDFIELD, anId, PyLucene.Field.Store.YES, PyLucene.Field.Index.UN_TOKENIZED))
+        self._document = LuceneDocument()
+        self._document.add(Field(IDFIELD, anId, Field.Store.YES, Field.Index.UN_TOKENIZED))
         self._fields = [IDFIELD]
-
-    def setBoost(self, boost):
-        self._document.setBoost(boost)
 
     def _isValidFieldValue(self, anObject):
         return isinstance(anObject, basestring) and anObject.strip()
@@ -70,7 +67,11 @@ class Document(object):
         self._fields.append(aKey)
 
     def _addIndexedField(self, aKey, aValue, tokenize = True):
-        self._document.add(PyLucene.Field(aKey, aValue, PyLucene.Field.Store.NO, tokenize and PyLucene.Field.Index.TOKENIZED or PyLucene.Field.Index.UN_TOKENIZED))
+        self._document.add(Field(aKey,
+                                 aValue, 
+                                 Field.Store.NO,
+                                 tokenize and Field.Index.TOKENIZED or Field.Index.UN_TOKENIZED
+                           ))
 
     def addToIndexWith(self, anIndexWriter):
         anIndexWriter.addDocument(self._document)

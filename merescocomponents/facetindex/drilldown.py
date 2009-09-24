@@ -36,6 +36,9 @@ from callstackscope import callstackscope
 from .triedict import TrieDict
 from collections import defaultdict
 
+IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
+
+
 class NoFacetIndexException(Exception):
 
     def __init__(self, field, fields):
@@ -108,7 +111,7 @@ class Drilldown(object):
         fieldNames = self._staticDrilldownFieldnames
         if not fieldNames:
             fieldNames = [fieldname
-                for fieldname in indexReader.getFieldNames(IndexReader.FieldOption.ALL)
+                for fieldname in indexReader.getFieldNames(IndexReader_FieldOption_ALL)
                     if not fieldname.startswith('__')]
         for fieldname in fieldNames:
             if type(fieldname) == tuple:

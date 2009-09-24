@@ -28,7 +28,9 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 from PyLucene import MatchAllDocsQuery, IndexSearcher, IndexWriter, IndexReader, StandardAnalyzer, Document, Term, Field
+
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import DocSet
 from os.path import join, isdir
@@ -44,8 +46,8 @@ class LuceneTestCase(CQ2TestCase):
         for i in xrange(size):
             index.addDocument(Document())
         index.close()
-        self.searcher = IndexSearcher(self.tempdir)
         self.reader = IndexReader.open(self.tempdir)
+        self.searcher = IndexSearcher(self.reader)
 
     def createIndexWithFixedFieldAndValueDoc(self, field, value, size):
         index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
@@ -54,8 +56,8 @@ class LuceneTestCase(CQ2TestCase):
         for i in xrange(size):
             index.addDocument(doc)
         index.close()
-        self.searcher = IndexSearcher(self.tempdir)
         self.reader = IndexReader.open(self.tempdir)
+        self.searcher = IndexSearcher(self.reader)
 
     def createBigIndex(self, size, valuemax=1000, log=False, keepas=''):
         def create(directory):
@@ -72,5 +74,5 @@ class LuceneTestCase(CQ2TestCase):
         directory = keepas if keepas else self.tempdir
         if not IndexReader.indexExists(directory):
             create(directory)
-        self.searcher = IndexSearcher(directory)
         self.reader = IndexReader.open(directory)
+        self.searcher = IndexSearcher(self.reader)
