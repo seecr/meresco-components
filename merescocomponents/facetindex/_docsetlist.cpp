@@ -387,11 +387,10 @@ int DocSetList_size(DocSetList* list) {
 }
 
 fwPtr DocSetList_get(DocSetList* list, int i) {
-    try {
-        return list->at(i);
-    } catch (std::exception&) {
+    if (i < 0 || i >= list->size()) {
         return fwNONE;
     }
+    return list->at(i);
 }
 
 fwPtr DocSetList_getForTerm(DocSetList* list, char* term) {

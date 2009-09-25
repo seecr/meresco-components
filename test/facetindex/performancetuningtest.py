@@ -167,7 +167,6 @@ class PerformanceTuningTest(LuceneTestCase):
                 t0 = time()
                 dsl = DocSetList.fromTermEnum(termEnum, termDocs)
                 t += time() - t0
-            n += 1
             self.assertNoMemoryLeaks()
         self.assertTiming(0.05, t/n, 0.20)
 

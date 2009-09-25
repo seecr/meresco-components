@@ -49,8 +49,15 @@ class LuceneTestCase(CQ2TestCase):
         self.reader = IndexReader.open(self.tempdir)
         self.searcher = IndexSearcher(self.reader)
 
+    def addToIndexWithFixedFieldAndValueDoc(self, field, value, size):
+        index = IndexWriter(self.tempdir, StandardAnalyzer(), False)
+        self._addDocuments(index, field, value, size)
+
     def createIndexWithFixedFieldAndValueDoc(self, field, value, size):
         index = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+        self._addDocuments(index, field, value, size)
+
+    def _addDocuments(self, index, field, value, size):
         doc = Document()
         doc.add(Field('field','value', Field.Store.NO, Field.Index.UN_TOKENIZED))
         for i in xrange(size):
@@ -67,7 +74,7 @@ class LuceneTestCase(CQ2TestCase):
                 if log and i % 1000 == 0: print i
                 doc = Document()
                 for i in xrange(10):
-                    doc.add(Field('field%d' % i, 't€rm'+str(randint(0,valuemax)),
+                    doc.add(Field('field%d' % i, 't€rm'+str(randint(0, valuemax)),
                         Field.Store.NO, Field.Index.UN_TOKENIZED))
                 index.addDocument(doc)
             index.close()

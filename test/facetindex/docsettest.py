@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -189,4 +190,3 @@ class DocSetTest(LuceneTestCase):
         results = []
         for i in xrange(67890):
             results.append(a.intersect(b))
-        

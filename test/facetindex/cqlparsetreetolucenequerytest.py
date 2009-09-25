@@ -162,7 +162,6 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         self.assertEquals(query, result)
 
     def assertConversion(self, expected, input):
-        #print parseCql(input).prettyPrint()
         result = LuceneQueryComposer(unqualifiedTermFields=[("unqualified", 1.0)]).compose(parseCql(input))
         self.assertEquals(expected, result, "expected %s['%s'], but got %s['%s']" % (repr(expected), str(expected), repr(result), str(result)))
 
