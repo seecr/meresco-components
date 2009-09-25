@@ -1,6 +1,6 @@
 python-dev
 libglib2.0-dev
-g++
-gcc
+g++-4.1.2
+gcc-4.1.2
 gcj (= 4.1.1-20.CQ2)
-liblucene-core2 (2.2.0)
+liblucene-core2-dev (2.2.0)
