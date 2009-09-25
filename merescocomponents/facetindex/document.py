@@ -30,7 +30,6 @@
 
 from merescolucene import Document as LuceneDocument, Field, Fieldable, iterJ, asFloat
 
-
 IDFIELD = '__id__'
 
 class DocumentException(Exception):

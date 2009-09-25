@@ -283,22 +283,52 @@ class DummyDocSet : public DocSet {
         DummyDocSet(size_t size) : DocSet(size) { }
 };
 
+double mi(int totaldocs, int lhs_size, int rhs_size, int combinedCardinality) {
+    // Mutual Information (aka Information Gain)
+
+    int N11 = combinedCardinality;
+    int N10 = lhs_size - combinedCardinality;
+    int N01 = rhs_size - combinedCardinality;
+    int N00 = totaldocs - (lhs_size + rhs_size - combinedCardinality);
+
+    double N = totaldocs;
+
+    assert(N00 == N - N01 - N10 - N11);
+    assert(N == N00 + N10 + N01 + N11);
+
+    double N1_ = N10 + N11;
+    double N_1 = N01 + N11;
+    double N0_ = N01 + N00;
+    double N_0 = N10 + N00;
+    double MI = (N11 == 0 ? 0.0 : (N11/N)*log((N*N11)/(N1_*N_1))) +
+                (N01 == 0 ? 0.0 : (N01/N)*log((N*N01)/(N0_*N_1))) +
+                (N10 == 0 ? 0.0 : (N10/N)*log((N*N10)/(N1_*N_0))) +
+                (N00 == 0 ? 0.0 : (N00/N)*log((N*N00)/(N0_*N_0)));
+    return MI;
+}
+
+
+int min(int lhs, int rhs) {
+    return lhs < rhs ? lhs : rhs;
+}
+
 CardinalityList*
 DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm, int maxTermFreqPercentage) {
-    //maxTermFreqPercentage IGNORED, TODO
     CardinalityList* results = new CardinalityList();
     DocSetList::iterator lower = begin();
     DocSetList::iterator upper = end();
+    int maxTermFreq = maxTermFreqPercentage * totaldocs / 100;
     if ( minimum > 0 ) {
-        fwPtr dummyMax = DocSet_create(100*docset->size()/minimum);
+        maxTermFreq = min(maxTermFreq, 100 * docset->size() / minimum);
+    }
+    if (maxTermFreq < totaldocs) {
+        fwPtr dummyMax = DocSet_create(maxTermFreq);
         lower = lower_bound(lower, upper, dummyMax, cmpCardinality);
         DocSet_delete(dummyMax);
         fwPtr dummyMin = DocSet_create(docset->size()*minimum/100);
         upper = upper_bound(lower, upper, dummyMin, cmpCardinality);
         DocSet_delete(dummyMin);
     }
-
-    const double LOG2 = log(2.0);
 
     while ( lower < upper ) {
         DocSet* candidate = pDS(*lower++);
@@ -307,35 +337,13 @@ DocSetList::jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, in
         if ( c > 0 ) {
             j = 100 * c / (candidate->size() + docset->size() - c);
         }
-
         if ( j >= minimum && j <= maximum ) {
             if (algorithm == JACCARD_MI) {
-                // Mutual Information (aka Information Gain)
-                double N = totaldocs;
-
-                double N11 = c;
-                double N10 = docset->size() - c;
-                double N01 = candidate->size() -c;
-
-                // N = N00 + N01 + N10 + N11
-                double N00 = N - (docset->size() + candidate->size() - c);
-                assert(N00 == N - N01 - N10 - N11);
-                assert(N == N00 + N10 + N01 + N11);
-                double N1_ = N10 + N11;   // ==> docset->size()
-                double N_1 = N01 + N11;   // ==> candidate->size()
-                double N0_ = N01 + N00;
-                double N_0 = N10 + N00;
-                double MI = (N11/N)*log((N*N11)/(N1_*N_1))/LOG2 +
-                            (N01/N)*log((N*N01)/(N0_*N_1))/LOG2 +
-                            (N10/N)*log((N*N10)/(N1_*N_0))/LOG2 +
-                            (N00/N)*log((N*N00)/(N0_*N_0))/LOG2;
-// printf("term=%s, candidate size=%d, docset size=%d, c=%d, j=%d, MI=%f\n", getTermForDocset(candidate), candidate->size(), docset->size(), c, j, MI);
-                if ( MI < 0.5 ) {
-                    int n = int(MI * 100000.0);
-                    char *term = getTermForDocset(candidate);
-                    cardinality_t t = { term, n};
-                    results->push_back(t);
-                }
+                double MI = mi(totaldocs, docset->size(), candidate->size(), c);
+                int n = int(MI * 100000.0);
+                char *term = getTermForDocset(candidate);
+                cardinality_t t = { term, n};
+                results->push_back(t);
             } else if (algorithm == JACCARD_X2) {
                 // X^2
 /*                double X2 = ((N11+N10+N01+N00)*pow(N11*N00-N10*N01,2.0)) /

@@ -101,7 +101,7 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.assertEquals(2, self.drilldown.queueLength()) # delete, add
         self.assertEquals([
             '_delete(docId=0)',
-            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
+            "_add(docDict={'field0': ['term0'], '__id__': ['1']}, docId=0)",
             ], list(repr(command) for command in self.drilldown._commandQueue))
 
     def testAddDocumentAndThenDeleteIt(self):

@@ -182,7 +182,7 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(100, drilldown.calledMethods[-1].kwargs['docId'])
 
         hits = self._luceneIndex._searcher.search(TermQuery(Term('__id__', '100')))
-        self.assertEquals(1, len(hits))
+        self.assertEquals(1, hits.length())
         self.assertEquals(100, self._luceneIndex._lucene2docId[hits.id(0)])
         
 
@@ -447,14 +447,14 @@ class LuceneTest(CQ2TestCase):
         self.addDocument('2', field1='nut')
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals(1, len(self._luceneIndex._commandQueue))
-        self.assertEquals("addDocument(docDict={u'field1': [u'nut'], u'__id__': [u'2']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals("addDocument(docDict={'field1': ['nut'], '__id__': ['2']}, docId=0)", str(observer.calledMethods[0]))
 
     def testPassOnDeleteDocument(self):
         observer = CallTrace('observer')
         self._luceneIndex.addObserver(observer)
         self.addDocument('identifier', field0='term0') # 0
         self._luceneIndex.delete('identifier')
-        self.assertEquals("addDocument(docDict={u'field0': [u'term0'], u'__id__': [u'identifier']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals("addDocument(docDict={'field0': ['term0'], '__id__': ['identifier']}, docId=0)", str(observer.calledMethods[0]))
         self.assertEquals('deleteDocument(docId=0)', str(observer.calledMethods[1]))
 
     def testDocIdTrackerIntegration(self):

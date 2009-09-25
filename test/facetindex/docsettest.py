@@ -171,3 +171,10 @@ class DocSetTest(LuceneTestCase):
         a.merge(b)
         self.assertEquals(4, len(a))
         self.assertEquals(DocSet([1, 2, 3, 4]), a)
+
+    def testIntersectCausesPoolReallocWhichMustNotAbort(self):
+        a = DocSet([1,3])
+        b = DocSet([1,2,3])
+        results = []
+        for i in xrange(67890):
+            results.append(a.intersect(b))

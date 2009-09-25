@@ -75,7 +75,7 @@ class LuceneTestCase(CQ2TestCase):
                 doc = Document()
                 for i in xrange(10):
                     doc.add(Field('field%d' % i, 't€rm'+str(randint(0, valuemax)),
-                                  Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
+                        Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
                 index.addDocument(doc)
             index.close()
         directory = keepas if keepas else self.tempdir
