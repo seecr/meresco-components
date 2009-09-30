@@ -59,7 +59,8 @@ setup(
                       '-I/usr/lib/glib-2.0/include',
                   ],
                   extra_link_args = [
-                      '/usr/lib/python2.5/site-packages/_PyLucene.so'
+                      '-L/usr/lib/python2.5/site-packages', 
+                      '-lPyLucene',
                   ],
         )
     ],
