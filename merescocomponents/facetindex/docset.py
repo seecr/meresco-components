@@ -37,6 +37,9 @@ class DOCSET(Structure):
     _fields_ = [("type", c_int, 2),
                 ("ptr", c_int, 30)]
 
+    def isNone(self):
+        return self.type == 0 and self.ptr == -1
+
 DocSet_create = libFacetIndex.DocSet_create
 DocSet_create.argtypes = [c_int]
 DocSet_create.restype = DOCSET
@@ -99,6 +102,8 @@ class DocSet(object):
     @classmethod
     def fromQuery(clazz, searcher, query, mapping=None):
         r = DocSet_fromQuery(py_object(searcher), py_object(query), mapping)
+        if r.isNone():
+            raise Exception("org.apache.lucene.search.BooleanQuery$TooManyClauses")
         return clazz(cobj=r, own=True)
 
     @classmethod

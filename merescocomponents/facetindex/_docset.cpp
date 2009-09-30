@@ -208,8 +208,13 @@ fwPtr DocSet_fromQuery(PyJObject* psearcher, PyJObject* pquery, IntegerList* map
     HitCollector* resultCollector = new HitCollector();
     // Direct call of public void search(Query query, HitCollector results),
     // since there happens to be only one implementation which is not overridden
-    // by any of MultiSearcher, IndexSearcher, ParallelSearche etc. Luckily!
-    Searcher_search(psearcher->jobject, pquery->jobject, resultCollector);
+    // by any of MultiSearcher, IndexSearcher, ParallelSearcher etc. Luckily!
+    try {
+        Searcher_search(psearcher->jobject, pquery->jobject, resultCollector);
+    } catch (...) {
+        // catching all Java exceptions, but specifically meant for (probably) BooleanQuery.TooManyClauses
+        return fwNONE;
+    }
     pDS(resultCollector->docset)->map(mapping);
     return resultCollector->docset;
 }
