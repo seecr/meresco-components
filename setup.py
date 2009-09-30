@@ -38,6 +38,7 @@ setup(
         'merescocomponents.facetindex',
         'merescocomponents.facetindex.tools',
         'merescocomponents.oai',
+        'merescocomponents.ngram',
         'merescocomponents.web',
         'merescocomponents.examples',
         'merescocomponents.examples.dna',
