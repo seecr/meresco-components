@@ -508,3 +508,22 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex._reopenIndex = reopenIndex
         self._luceneIndex.commit()
         self.assertEquals([], reopenIndexCalled)
+
+    def testDebugLog(self):
+        logfilename = join(self.tempdir, 'logfilename')
+        self._luceneIndex.close()
+        self._luceneIndex = LuceneIndex(directoryName=join(self.tempdir, 'index'), debugLogFilename=logfilename)
+        self.addDocument('1', field0='value0')
+        self.addDocument('2', field0='value0')
+        self.addDocument('3', field0='value0')
+        self._luceneIndex.commit()
+        self._luceneIndex._debugLog.flush()
+        self.assertEqualsWS("""# Debug Log for LuceneIndex
+# directoryName = '%s/index'
+# transactionName = None
++1
++2
++3
+=
+""" % self.tempdir, open(logfilename).read()) 
+
