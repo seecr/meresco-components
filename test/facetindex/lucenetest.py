@@ -515,7 +515,8 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex = LuceneIndex(directoryName=join(self.tempdir, 'index'), debugLogFilename=logfilename)
         self.addDocument('1', field0='value0')
         self.addDocument('2', field0='value0')
-        self.addDocument('3', field0='value0')
+        self._luceneIndex.delete('3')
+        self.addDocument('4', field0='value0')
         self._luceneIndex.commit()
         self._luceneIndex._debugLog.flush()
         self.assertEqualsWS("""# Debug Log for LuceneIndex
@@ -523,7 +524,8 @@ class LuceneTest(CQ2TestCase):
 # transactionName = None
 +1
 +2
-+3
+-3
++4
 =
 """ % self.tempdir, open(logfilename).read()) 
 
