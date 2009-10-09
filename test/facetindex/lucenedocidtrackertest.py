@@ -32,6 +32,7 @@ from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, 
 from merescocomponents.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
                                                        IndexSearcher, TermQuery, MatchAllDocsQuery, Term, iterJ
 from random import randint
+from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
 from glob import glob
 from time import time
 from cq2utils.profileit import profile
@@ -59,6 +60,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.writer = IndexWriter(self.tempdir, StandardAnalyzer(), True)
         self.setMergeFactor(2)
         #self.writer.setInfoStream(System.out)
+        self.identifier2docId = {}
 
     def setMergeFactor(self, mergeFactor):
         self.writer.setMergeFactor(mergeFactor)
@@ -77,18 +79,19 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(1, self.writer.docCount())
 
     def addDoc(self, identifier):
-        self.tracker.next()
+        self.identifier2docId[identifier] = self.tracker.next()
         doc = Document()
         doc.add(Field('__id__', str(identifier), Field.Store.YES, Field.Index.UN_TOKENIZED))
         self.writer.addDocument(doc)
 
-    def deleteDoc(self, doc):
-        self.tracker.flush()
+    def deleteDoc(self, identifier):
+        docId = self.identifier2docId[identifier]
+        self.tracker.deleteDocId(docId)
+        self.writer.deleteDocuments(Term('__id__', str(identifier)))
+
+    def flush(self):
         self.writer.flush()
-        hits = IndexSearcher(self.tempdir).search(TermQuery(Term('__id__', str(doc))))
-        luceneId = hits.id(0)
-        self.tracker.deleteLuceneId(luceneId)
-        self.writer.deleteDocuments(Term('__id__', str(doc)))
+        self.tracker.flush()
 
     def processDocs(self, docs):
         for doc in docs:
@@ -98,17 +101,21 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
                 self.addDoc(doc)
 
     def findAll(self):
-        self.writer.flush()
-        self.tracker.flush()
+        self.flush()
         searcher = IndexSearcher(self.tempdir)
         hits = searcher.search(MatchAllDocsQuery())
         foundIds = [hit.getId() for hit in iterJ(hits)]
         foundDocs = [int(hit.get('__id__')) for hit in iterJ(hits)]
+        trackerDocIds = self.tracker._docIds
         return foundIds, foundDocs
+
+    def trackerMap(self, luceneIds):
+        trackerMap = self.tracker.getMap()
+        return [trackerMap[luceneId] for luceneId in luceneIds]
 
     def assertMap(self, sequence, luceneIds, foundDocs):
         docs = [doc for doc in sequence if doc >= 0]
-        docids = self.tracker.map(luceneIds)
+        docids = self.trackerMap(luceneIds)
         should = [docs[docid] for docid in docids]
         self.assertEquals(should, foundDocs)
 
@@ -123,10 +130,10 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(([0], [100]), self.findAll())
         self.processDocs([102]) # lucene does merge
         self.assertEquals(([0,1], [100,102]), self.findAll())
-        self.assertEquals([0,2], list(self.tracker.map([0,1])))
+        self.assertEquals([0,2], self.trackerMap([0,1]))
         self.processDocs([103, -102, 104, -100, 105])
-        self.assertEquals(([2,3,4], [103,104,105]), self.findAll())
-        self.assertEquals([3,4,5], list(self.tracker.map([2,3,4])))
+        self.assertEquals(([1,2,3], [103,104,105]), self.findAll())
+        self.assertEquals([3,4,5], self.trackerMap([1,2,3]))
 
     def testB(self):
         s = [100, 101, -101, 102, 103, 104, -104, 105, 106, 107, 108, -106, 109]
@@ -200,13 +207,13 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertNotEquals(LuceneDocIdTracker(2, directory='p'), LuceneDocIdTracker(3, directory='x'))
         t1 = LuceneDocIdTracker(2, directory=self.tempdir+'/1')
         t2 = LuceneDocIdTracker(2, directory=self.tempdir+'/2')
-        t1.next() # ramsegments
+        t1_id0 = t1.next() # ramsegments
         self.assertNotEquals(t1, t2)
-        t2.next()
+        t2_id0 = t2.next()
         self.assertEquals(t1, t2)
-        t1.deleteLuceneId(0)
+        t1.deleteDocId(t1_id0)
         self.assertNotEquals(t1, t2)
-        t2.deleteLuceneId(0)
+        t2.deleteDocId(t2_id0)
         self.assertEquals(t1, t2)
         t1.next() # segments
         self.assertNotEquals(t1, t2)
@@ -266,25 +273,26 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.flush()
 
     def testTrackerSavedDeletesOfOldDocIds(self):
-        tracker = LuceneDocIdTracker(2, directory = self.createTrackerDir())
-        tracker.next()
-        tracker.next()
-        tracker.next()
-        tracker.next() # generates a merge and a save of segment 0, of size 4
-        tracker.next() # creates a second segment, which must be saved properly on deletes
-        tracker.next()
-        tracker.deleteLuceneId(0) # delete first document in already saved segement 0
-        self.assertTrue(tracker.isDeleted(0))
-        tracker.close()
-        tracker = LuceneDocIdTracker(2, directory = self.getTrackerDir())
-        self.assertTrue(tracker.isDeleted(0))
+        t = self.tracker
+        id0 = t.next()
+        id1 = t.next()
+        id2 = t.next()
+        id3 = t.next() # generates a merge and a save of segment 0, of size 4
+        id4 = t.next() # creates a second segment, which must be saved properly on deletes
+        id5 = t.next()
+        t.deleteDocId(id0) # delete first document in already saved segement 0
+
+        self.assertEquals([-1,id1,id2,id3,id4,id5], t.getMap())
+        t.close()
+        t2 = LuceneDocIdTracker(mergeFactor=2, directory=self.getTrackerDir())
+        self.assertEquals([-1,id1,id2,id3,id4,id5], t2.getMap())
 
     def testDeletesAreDeletedOnMerge(self):
         """i.e. Delete information is deleted on merge"""
         tracker = LuceneDocIdTracker(mergeFactor=2, directory=self.tempdir + "/tracker")
         for i in range(5):
             tracker.next()
-        tracker.deleteLuceneId(0)
+        tracker.deleteDocId(0)
 
         tracker.next()
         tracker.next()
@@ -299,7 +307,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.flush()
         tracker.next()
         tracker.flush()
-        tracker.deleteLuceneId(1)
+        tracker.deleteDocId(1)
+        tracker.flush()
 
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
@@ -312,7 +321,77 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.flush()
         tracker.next()
         tracker.flush()
-        tracker.deleteLuceneId(1)
+        tracker.deleteDocId(1)
+        tracker.flush()
 
         tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
         self.assertEquals(tracker, tracker2)
+
+    def testNoFlushAfterDelete(self):
+        self.setMergeFactor(3)
+        self.addDoc(100)
+        self.flush()
+        self.assertEquals(([0],[100]), self.findAll())
+        self.addDoc(200)
+        self.deleteDoc(100)
+        self.addDoc(100)
+        self.flush()
+        self.assertEquals(([1,2],[200,100]), self.findAll())
+        self.deleteDoc(100)
+        self.addDoc(100)
+        self.flush()
+        self.assertEquals(([0,1],[200,100]), self.findAll())
+
+    def testNrOfDocs(self):
+        self.assertEquals(0, self.tracker.nrOfDocs())
+        self.tracker.next()
+        self.tracker.next()
+        self.assertEquals(2, self.tracker.nrOfDocs())
+        self.tracker.deleteDocId(0)
+        self.assertEquals(1, self.tracker.nrOfDocs())
+
+    def testDeleteDocIdWithExplicitFlush(self):
+        t = self.tracker
+        id0 = t.next()
+        id1 = t.next()
+        t.flush()
+        t.deleteDocId(id0)
+        self.assertEquals([-1,id1], t.getMap())
+        id2 = t.next()
+        t.flush()
+        t.deleteDocId(id2)
+        self.assertEquals([id1,-1], t.getMap())
+
+    def testDeleteDocIdWithImplicitFlush(self):
+        t = self.tracker
+        id0 = t.next()
+        id1 = t.next()
+        t.deleteDocId(id0)
+        self.assertEquals([-1,id1], t.getMap())
+        id2 = t.next()
+        t.deleteDocId(id2)
+        self.assertEquals([-1, id1,-1], t.getMap())
+
+    def testDeleteNonExistingDocIdHarmless(self):
+        self.tracker.deleteDocId(4)
+
+    def testTrackerBisect(self):
+        self.assertEquals(1, trackerBisect([0,1,2,3], 1))
+        self.assertEquals(2, trackerBisect([-1,-1,2,3], 2))
+        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 3))
+        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 2))
+        self.assertEquals(0, trackerBisect([0,-1,-1,-1], 0))
+        self.assertEquals(0, trackerBisect([3,-1,-1,-1], 3))
+        self.assertEquals(1, trackerBisect([-1], 42))
+        self.assertEquals(0, trackerBisect([], 42))
+
+    def testDeleteAddDelete(self):
+        self.addDoc(100)
+        self.flush()
+        self.deleteDoc(100)
+        self.addDoc(200)
+        self.deleteDoc(200)
+        self.flush()
+        self.addDoc(300)
+        self.assertEquals(([0],[300]),self.findAll())
+        self.assertEquals(2, self.tracker.getMap()[0])

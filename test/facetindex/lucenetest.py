@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # -*- encoding: utf-8 -*-
 ## begin license ##
 #
@@ -167,11 +166,25 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(1, len(hits))
 
     def testAddDeleteWithoutCommitInBetween(self):
-        self.addDocument('1', title='een titel')
+        drilldown = CallTrace('drilldown')
+        self._luceneIndex.addObserver(drilldown)
+        self.addDocument('1', exists='true')
         self._luceneIndex.delete('1')
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('exists', 'true')))
         self.assertEquals(0, len(hits))
+        #self.assertEquals(0, self._luceneIndex._tracker.nrOfDocs())
+        for i in range(100):
+            self.addDocument('%s' % (i+1), exists='true')
+        self._luceneIndex.commit()
+        self.assertEquals('addDocument', drilldown.calledMethods[-1].name)
+        self.assertEquals(['100'], drilldown.calledMethods[-1].kwargs['docDict']['__id__'])
+        self.assertEquals(100, drilldown.calledMethods[-1].kwargs['docId'])
+
+        hits = self._luceneIndex._searcher.search(TermQuery(Term('__id__', '100')))
+        self.assertEquals(1, hits.length())
+        self.assertEquals(100, self._luceneIndex._lucene2docId[hits.id(0)])
+        
 
     def testIndexReaderResourceManagementKeepsIndexOpenAndClosesItWhenAllRefsAreGone(self):
         myDocument = Document('0123456789')
@@ -234,6 +247,90 @@ class LuceneTest(CQ2TestCase):
         for i in range(100):
             add("a" + str(i))
             reopen()
+
+    def testAddingSameIdentifierInOneBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        add('1')
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(1, total)
+
+        add('2')
+        add('3')
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(1, total)
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'addDocument'], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1,2], [m.kwargs['docId'] for m in observer.calledMethods])
+
+    def testAddingAndDeletingInSameBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        add('1')
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+
+        
+        add('2')
+        delete()
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(0, total)
+
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument'], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1], [m.kwargs['docId'] for m in observer.calledMethods])
+
+    def testAddingAddingAndDeletingInSameBatch(self):
+        def add(value):
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', value)
+            self._luceneIndex.addDocument(doc)
+        delete = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        add('1')
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+
+        add('2')
+        add('3')
+        delete()
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(0, total)
+
+        self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'addDocument', 'deleteDocument'], [m.name for m in observer.calledMethods])
+        self.assertEquals([0,1,1,2,2], [m.kwargs['docId'] for m in observer.calledMethods])
+
+    def testAddingDeletingAddingInSameBatch(self):
+        def addSameDoc():
+            doc = Document("theIdIsTheSame")
+            doc.addIndexedField('value', 'value')
+            self._luceneIndex.addDocument(doc)
+        deleteSameDoc = lambda : self._luceneIndex.delete('theIdIsTheSame')
+        observer = CallTrace('observer')
+        addSameDoc()
+        self._luceneIndex.commit()
+        self._luceneIndex.addObserver(observer)
+        addSameDoc()
+        deleteSameDoc()
+        addSameDoc()
+        self._luceneIndex.commit()
+        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        self.assertEquals(1, total)
+        self.assertEquals(total, self._luceneIndex._currentTracker.nrOfDocs())
+        methodNames = [m.name for m in observer.calledMethods]
+        docIds = [m.kwargs['docId'] for m in observer.calledMethods]
+        self.assertEquals((['deleteDocument','addDocument','deleteDocument','addDocument',],[0,1,1,2]), (methodNames, docIds))
 
     def testMultipleAddsWithoutReopenIsEvenDifferent(self):
         reopen = self._luceneIndex._reopenIndex
@@ -411,3 +508,24 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex._reopenIndex = reopenIndex
         self._luceneIndex.commit()
         self.assertEquals([], reopenIndexCalled)
+
+    def testDebugLog(self):
+        logfilename = join(self.tempdir, 'logfilename')
+        self._luceneIndex.close()
+        self._luceneIndex = LuceneIndex(directoryName=join(self.tempdir, 'index'), debugLogFilename=logfilename)
+        self.addDocument('1', field0='value0')
+        self.addDocument('2', field0='value0')
+        self._luceneIndex.delete('3')
+        self.addDocument('4', field0='value0')
+        self._luceneIndex.commit()
+        self._luceneIndex._debugLog.flush()
+        self.assertEqualsWS("""# Debug Log for LuceneIndex
+# directoryName = '%s/index'
+# transactionName = None
++1
++2
+-3
++4
+=
+""" % self.tempdir, open(logfilename).read()) 
+

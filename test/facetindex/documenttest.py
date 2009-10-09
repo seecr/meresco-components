@@ -101,27 +101,3 @@ class DocumentTest(unittest.TestCase):
         d.addIndexedField('field', 'value1')
         d.addIndexedField('field', 'value2')
         self.assertEquals({'__id__': ['1234'], 'field': ['value1', 'value2']}, d.asDict())
-
-    def testSetBoost(self):
-        d = Document('987')
-        d.setBoost(0.1234)
-        indexwriter = CallTrace('indexwriter')
-        d.addToIndexWith(indexwriter)
-        self.assertAlmostEquals(0.1234, indexwriter.calledMethods[0].args[0].getBoost())
-
-    def testAddStoredField(self):
-        d = Document('987')
-        d.addIndexedField('field0', 'term', store=True)
-        d.addIndexedField('field1', 'term')
-        indexwriter = CallTrace('indexwriter')
-        d.addToIndexWith(indexwriter)
-        luceneDoc = indexwriter.calledMethods[0].args[0]
-        self.assertTrue(luceneDoc.getField('field0').isStored())
-        self.assertFalse(luceneDoc.getField('field1').isStored())
-
-    def testLongStringValueInDocumentAsDict(self):
-        d = Document('identifier')
-        value = 'a' * 4096 * 2
-        d.addIndexedField('key', value)
-        self.assertEquals(value, d.asDict()['key'])  # previously caused buffer overrun... (manifested itself by hanging/termination)
-

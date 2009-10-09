@@ -41,7 +41,6 @@ using namespace org::apache;
 #ifndef __docsetlist_h__
 #define __docsetlist_h__
 
-
 /**************** C++ implementation of DocSetList****************************/
 typedef struct {
     char*   term;
@@ -83,8 +82,9 @@ class DocSetList : public std::vector<fwPtr> {
         DocSetList*          intersect(fwPtr docset);
         DocSetList*          termIntersect(DocSetList* rhs);
         fwPtr                innerUnion();
-        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm);
+        CardinalityList*     jaccards(DocSet* docset, int minimum, int maximum, int totaldocs, int algorithm, int maxTermFreqPercentage);
         fwPtr                forTerm(char* term);
+        int                  cardinalityForTerm(char* term);
         void                 removeDoc(guint32 doc);
         char*                getTermForDocset(DocSet *docset);
         char*                getTermForId(guint32 termId);
@@ -134,11 +134,12 @@ extern "C" {
     int              DocSetList_size                 (DocSetList* list);
     fwPtr            DocSetList_get                  (DocSetList* list, int i);
     fwPtr            DocSetList_getForTerm           (DocSetList* list, char* term);
+    int              DocSetList_cardinalityForTerm   (DocSetList* list, char* term);
     CardinalityList* DocSetList_combinedCardinalities(DocSetList* list, fwPtr docset, guint32 maxResults, int doSort);
     DocSetList*      DocSetList_intersect            (DocSetList* list, fwPtr docset);
     DocSetList*      DocSetList_termIntersect        (DocSetList* self, DocSetList* rhs);
     fwPtr            DocSetList_innerUnion           (DocSetList* self);
-    CardinalityList* DocSetList_jaccards             (DocSetList* list, fwPtr docset, int minimum, int maximum, int totaldocs, int algorithm);
+    CardinalityList* DocSetList_jaccards             (DocSetList* list, fwPtr docset, int minimum, int maximum, int totaldocs, int algorithm, int maxTermFreqPercentage);
     void             DocSetList_delete               (DocSetList* list);
     void             DocSetList_sortOnCardinality    (DocSetList* list);
     void             DocSetList_sortOnTerm           (DocSetList* list);

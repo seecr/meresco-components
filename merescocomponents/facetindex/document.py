@@ -30,7 +30,6 @@
 
 from merescolucene import Document as LuceneDocument, Field, Fieldable, iterJ, asFloat
 
-
 IDFIELD = '__id__'
 
 class DocumentException(Exception):
@@ -48,9 +47,6 @@ class Document(object):
         self._document.add(Field(IDFIELD, anId, Field.Store.YES, Field.Index.UN_TOKENIZED) % Fieldable)
         self._fields = [IDFIELD]
 
-    def setBoost(self, boost):
-        self._document.setBoost(asFloat(boost))
-
     def _isValidFieldValue(self, anObject):
         return isinstance(anObject, basestring) and anObject.strip()
 
@@ -60,22 +56,22 @@ class Document(object):
     def _validFieldName(self, aKey):
         return self._isValidFieldValue(aKey) and aKey.lower() != IDFIELD
 
-    def addIndexedField(self, aKey, aValue, tokenize = True, store=False):
+    def addIndexedField(self, aKey, aValue, tokenize = True):
         if not self._validFieldName(aKey):
             raise DocumentException('Invalid fieldname: "%s"' % aKey)
 
         if not self._isValidFieldValue(aValue):
             return
 
-        self._addIndexedField(aKey, aValue, tokenize, store and Field.Store.YES or Field.Store.NO)
+        self._addIndexedField(aKey, aValue, tokenize)
         self._fields.append(aKey)
 
-    def _addIndexedField(self, aKey, aValue, tokenize = True, store=Field.Store.NO):
+    def _addIndexedField(self, aKey, aValue, tokenize = True):
         self._document.add(Field(aKey,
-								 aValue, 
-                                 store,
+                                 aValue, 
+                                 Field.Store.NO,
                                  tokenize and Field.Index.TOKENIZED or Field.Index.UN_TOKENIZED
-							) % Fieldable)
+                           ) % Fieldable)
 
     def addToIndexWith(self, anIndexWriter):
         anIndexWriter.addDocument(self._document)

@@ -77,6 +77,16 @@ class DocSetTest(LuceneTestCase):
         i.add(10)
         self.assertEquals([0,1,2,3,4,  6,7,8,9,10], i)
 
+    def testAddRaisesException(self):
+        i = DocSet(xrange(10))
+        try:
+            i.add(9)
+            self.fail()
+        except AssertionError:
+            raise
+        except Exception, e:
+            self.assertTrue('non-increasing' in str(e))
+
     def assertIntersect(self, lhs, rhs):
         soll = set(lhs).intersection(set(rhs))
         intersection1 = DocSet(lhs).intersect(DocSet(rhs))
@@ -171,3 +181,10 @@ class DocSetTest(LuceneTestCase):
         a.merge(b)
         self.assertEquals(4, len(a))
         self.assertEquals(DocSet([1, 2, 3, 4]), a)
+
+    def testIntersectCausesPoolReallocWhichMustNotAbort(self):
+        a = DocSet([1,3])
+        b = DocSet([1,2,3])
+        results = []
+        for i in xrange(67890):
+            results.append(a.intersect(b))

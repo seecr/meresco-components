@@ -207,6 +207,14 @@ class DrilldownTest(CQ2TestCase):
         jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 45, 55)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
 
+    def testJaccardPassMaxTermFreqPercentage(self):
+        drilldown = Drilldown([])
+        drilldown._totaldocs = 78
+        docSetList_for_title = CallTrace('DocSetList')
+        drilldown._docsetlists['title'] = docSetList_for_title
+        list(drilldown.jaccard(None, [("title", 17, 67)], maxTermFreqPercentage=80))
+        self.assertEquals("[jaccards(None, 17, 67, 78, algorithm=<class c_int>, maxTermFreqPercentage=80)]", str(docSetList_for_title.calledMethods))
+
     def testJaccardIndexChecksFields(self):
         drilldown = Drilldown(['title'])
         try:

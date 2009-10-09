@@ -53,9 +53,35 @@ class IncludeStopWordAnalyzer(object):
     def tokenStream(self, fieldName, reader):
         return LowerCaseFilter(StandardFilter(StandardTokenizer(reader)))
 
+class _Logger(object):
+    def comment(self, *strings):
+        self.writeLine('# ', *strings)
+    def delete(self, identifier):
+        self.writeLine('-', identifier)
+    def add(self, identifier):
+        self.writeLine('+', identifier)
+    def commit(self):
+        self.writeLine('=')
+
+class DebugLogger(_Logger):
+    def __init__(self, filename):
+        self._file = open(filename, 'w')
+
+    def writeLine(self, *strings):
+        for aString in strings:
+            self._file.write(str(aString))
+        self._file.write('\n')
+
+    def flush(self):
+        self._file.flush()
+
+class DevNullLogger(_Logger):
+    def writeLine(self, *args):
+        pass
+
 class LuceneIndex(Observable):
 
-    def __init__(self, directoryName, transactionName=None):
+    def __init__(self, directoryName, transactionName=None, debugLogFilename=None):
         Observable.__init__(self)
         self._searcher = None
         self._reader = None
@@ -66,9 +92,10 @@ class LuceneIndex(Observable):
         if not isdir(self._directoryName):
             makedirs(self._directoryName)
 
-        self._writer = IndexWriter(self._directoryName,
-                                   merescoStandardAnalyzer,
-                                   not IndexReader.indexExists(self._directoryName))
+        self._writer = IndexWriter(
+            self._directoryName,
+            merescoStandardAnalyzer,
+            not IndexReader.indexExists(self._directoryName))
         self._reopenIndex()
 
         optimized = self.isOptimized()
@@ -77,8 +104,12 @@ class LuceneIndex(Observable):
         maxBufferedDocs = self.getMaxBufferedDocs()
         assert mergeFactor == maxBufferedDocs, 'mergeFactor != maxBufferedDocs'
         maxDoc = self.docCount() if optimized else 0
-        self._tracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
-        self._lucene2docId = self._tracker.getMap()
+        self._currentTracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
+        self._lucene2docId = self._currentTracker.getMap()
+        self._debugLog = DevNullLogger() if debugLogFilename == None else DebugLogger(debugLogFilename)
+        self._debugLog.comment('Debug Log for LuceneIndex')
+        self._debugLog.comment('directoryName = ', repr(directoryName))
+        self._debugLog.comment('transactionName = ', transactionName)
 
     def getDocIdMapping(self):
         return self._lucene2docId
@@ -99,16 +130,12 @@ class LuceneIndex(Observable):
     def docsetFromQuery(self, pyLuceneQuery, **kwargs):
         return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
 
-    def _executeQuery(self, pyLuceneQuery, sortBy=None, sortDescending=None):
+    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, docfilter=None, **kwargs):
         sortField = self._getPyLuceneSort(sortBy, sortDescending)
         if sortField:
             hits = self._searcher.search(pyLuceneQuery % Query, sortField)
         else:
             hits = self._searcher.search(pyLuceneQuery % Query)
-        return hits
-
-    def executeQuery(self, pyLuceneQuery, start=0, stop=10, sortBy=None, sortDescending=None, docfilter=None, **kwargs):
-        hits = self._executeQuery(pyLuceneQuery, sortBy, sortDescending)
         nrOfResults = hits.length()
         hits = iterJ(hits)
         if docfilter != None:
@@ -116,14 +143,6 @@ class LuceneIndex(Observable):
             nrOfResults = len(docfilter)
         results = islice(hits, start, stop)
         return nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]
-
-
-    def executeQueryWithField(self, pyLuceneQuery, fieldname, start=0, stop=10, sortBy=None, sortDescending=None):
-        hits = self._executeQuery(pyLuceneQuery, sortBy=sortBy, sortDescending=sortDescending)
-        nrOfResults = hits.length()
-        hits = iterJ(hits)
-        results = islice(hits, start, stop)
-        return nrOfResults, [hit.getDocument().get(fieldname) for hit in results]
 
     def _luceneIdForIdentifier(self, identifier):
         hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)) % Query)
@@ -137,41 +156,39 @@ class LuceneIndex(Observable):
     def _delete(self, identifier):
         self._writer.deleteDocuments(Term(IDFIELD, identifier))
 
-    def _add(self, document):
+    def _add(self, identifier, document):
         document.addToIndexWith(self._writer)
 
+    def _docIdFromLastAddCommandFor(self, identifier):
+        try:
+            return (command for command in reversed(self._commandQueue) if command._kwargs['identifier'] == identifier and command.methodName() == '_add').next()._kwargs['document'].docId
+        except StopIteration:
+            return None
+
     def _luceneDelete(self, identifier):
-        docId = None
-        luceneId = self._luceneIdForIdentifier(identifier)
-        if luceneId == None:  # not in index, perhaps it is in the queue?
-            for command in self._commandQueue:
-                if 'document' in command._kwargs:
-                    if command._kwargs['document'].identifier == identifier:
-                        docId = command._kwargs['document'].docId
-                        break
-        else:  # in index, so delete it first
-            # it might already have been delete by a previous delete()
-            if not self._tracker.isDeleted(luceneId):
-                docId = self._tracker.map([luceneId]).next()
-                self._tracker.deleteLuceneId(luceneId)
+        docId = self._docIdFromLastAddCommandFor(identifier)
+        if docId is None:
+            prevTxLuceneId = self._luceneIdForIdentifier(identifier)
+            if prevTxLuceneId != None:
+                docId = self._lucene2docId[prevTxLuceneId]
         if docId != None:
-            self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
-        return docId
+            deleted = self._currentTracker.deleteDocId(docId)
+            if deleted:
+                self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
+                self.do.deleteDocument(docId=docId)
 
     def delete(self, identifier):
-        docId = self._luceneDelete(identifier)
-        if docId != None:
-            self.do.deleteDocument(docId=docId)
+        self._debugLog.delete(identifier)
+        self._luceneDelete(identifier)
 
     def addDocument(self, luceneDocument=None):
+        self._debugLog.add(luceneDocument.identifier)
         try:
             luceneDocument.validate()
-            oldDocId = self._luceneDelete(luceneDocument.identifier)
-            if oldDocId != None:
-                self.do.deleteDocument(docId=oldDocId)
-            docId = self._tracker.next()
+            self._luceneDelete(luceneDocument.identifier)
+            docId = self._currentTracker.next()
             luceneDocument.docId = docId
-            self._commandQueue.append(FunctionCommand(self._add, document=luceneDocument))
+            self._commandQueue.append(FunctionCommand(self._add, identifier=luceneDocument.identifier, document=luceneDocument))
             self.do.addDocument(docId=docId, docDict=luceneDocument.asDict())
         except:
             self._commandQueue = []
@@ -182,14 +199,15 @@ class LuceneIndex(Observable):
             self.ctx.tx.join(self)
 
     def commit(self):
+        self._debugLog.commit()
         if len(self._commandQueue) == 0:
             return
         for command in self._commandQueue:
             command.execute()
         self._commandQueue = []
         self._reopenIndex()
-        self._tracker.flush()
-        self._lucene2docId = self._tracker.getMap()
+        self._currentTracker.flush()
+        self._lucene2docId = self._currentTracker.getMap()
 
     def rollback(self):
         pass

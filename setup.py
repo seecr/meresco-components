@@ -130,13 +130,13 @@ setup(
         'merescocomponents.facetindex',
         'merescocomponents.facetindex.tools',
         'merescocomponents.oai',
+        'merescocomponents.ngram',
         'merescocomponents.web',
         'merescocomponents.examples',
         'merescocomponents.examples.dna',
     ],
     ext_modules = [
-        Extension("merescocomponents.facetindex._facetindex",
-                  [
+        Extension("merescocomponents.facetindex._facetindex", [
                       'merescocomponents/facetindex/zipper.c',
                       'merescocomponents/facetindex/_docsetlist.cpp',
                       'merescocomponents/facetindex/_docset.cpp',

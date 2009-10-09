@@ -84,6 +84,10 @@ DocSetList_getForTerm = libFacetIndex.DocSetList_getForTerm
 DocSetList_getForTerm.argtypes = [DOCSETLIST, c_char_p]
 DocSetList_getForTerm.restype = DOCSET
 
+DocSetList_cardinalityForTerm = libFacetIndex.DocSetList_cardinalityForTerm
+DocSetList_cardinalityForTerm.argtypes = [DOCSETLIST, c_char_p]
+DocSetList_cardinalityForTerm.restype = int
+
 DocSetList_combinedCardinalities = libFacetIndex.DocSetList_combinedCardinalities
 DocSetList_combinedCardinalities.argtypes = [DOCSETLIST, DOCSET, c_uint32, c_int]
 DocSetList_combinedCardinalities.restype = CARDINALITYLIST
@@ -105,7 +109,7 @@ DocSetList_getTermForDocset.argtypes = [DOCSETLIST, DOCSET]
 DocSetList_getTermForDocset.restype = c_char_p
 
 DocSetList_jaccards = libFacetIndex.DocSetList_jaccards
-DocSetList_jaccards.argtypes = [DOCSETLIST, DOCSET, c_int, c_int, c_int, c_int]
+DocSetList_jaccards.argtypes = [DOCSETLIST, DOCSET, c_int, c_int, c_int, c_int, c_int]
 DocSetList_jaccards.restype = CARDINALITYLIST
 JACCARD_MI = c_int.in_dll(libFacetIndex, "JACCARD_MI")
 JACCARD_X2 = c_int.in_dll(libFacetIndex, "JACCARD_X2")
@@ -200,6 +204,11 @@ class DocSetList(object):
         finally:
             CardinalityList_free(p)
 
+    def cardinality(self, term):
+        if type(term) == unicode:
+            term = term.encode('utf-8')
+        return DocSetList_cardinalityForTerm(self, term)
+
     def intersect(self, docset):
         cobj = DocSetList_intersect(self, docset)
         return DocSetList(cobj, own=True)
@@ -232,9 +241,11 @@ class DocSetList(object):
         for docset in self:
             yield (DocSetList_getTermForDocset(self, docset), len(docset))
 
-    def jaccards(self, docset, minimum, maximum, totaldocs, algorithm=JACCARD_MI):
+    def jaccards(self, docset, minimum, maximum, totaldocs, algorithm=JACCARD_MI, maxTermFreqPercentage=100):
+        if not (0 < maxTermFreqPercentage <= 100):
+            raise ValueError("maxTermFreqPercentage must be >0 and <=100 (%d)" % maxTermFreqPercentage)
         self.sortOnCardinality()
-        p = DocSetList_jaccards(self, docset, minimum, maximum, totaldocs, algorithm)
+        p = DocSetList_jaccards(self, docset, minimum, maximum, totaldocs, algorithm, maxTermFreqPercentage)
         try:
             for i in xrange(CardinalityList_size(p)):
                 c = CardinalityList_at(p, i)
