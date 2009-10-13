@@ -179,3 +179,15 @@ class OaiJazzTest(CQ2TestCase):
         r2 = r[6:]
         self.assertEquals('fier', r2)
         self.assertEquals(12345, r2.stamp)
+        
+    def testGetNrOfRecords(self):
+        self.assertEquals(0, self.jazz.getNrOfRecords('aPrefix'))        
+        self.jazz.addOaiRecord('id1', metadataFormats=[('aPrefix', 'schema', 'namespace')])
+        self.assertEquals(1, self.jazz.getNrOfRecords('aPrefix'))
+        self.assertEquals(0, self.jazz.getNrOfRecords('anotherPrefix'))        
+        self.jazz.addOaiRecord('id2', metadataFormats=[('aPrefix', 'schema', 'namespace')])
+        self.assertEquals(2, self.jazz.getNrOfRecords('aPrefix'))
+        self.jazz.delete('id1')
+        self.assertEquals(2, self.jazz.getNrOfRecords('aPrefix'))
+        
+        

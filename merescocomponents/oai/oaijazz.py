@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -130,6 +131,9 @@ class OaiJazz(object):
 
     def getAllSets(self):
         return self._sets.keys()
+        
+    def getNrOfRecords(self, prefix):
+        return len(self._prefixes.get(prefix, []))
 
     # private methods
 
