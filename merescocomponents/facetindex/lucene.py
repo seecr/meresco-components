@@ -50,9 +50,35 @@ class IncludeStopWordAnalyzer(object):
     def tokenStream(self, fieldName, reader):
         return LowerCaseFilter(StandardFilter(StandardTokenizer(reader)))
 
+class _Logger(object):
+    def comment(self, *strings):
+        self.writeLine('# ', *strings)
+    def delete(self, identifier):
+        self.writeLine('-', identifier)
+    def add(self, identifier):
+        self.writeLine('+', identifier)
+    def commit(self):
+        self.writeLine('=')
+
+class DebugLogger(_Logger):
+    def __init__(self, filename):
+        self._file = open(filename, 'w')
+
+    def writeLine(self, *strings):
+        for aString in strings:
+            self._file.write(str(aString))
+        self._file.write('\n')
+
+    def flush(self):
+        self._file.flush()
+
+class DevNullLogger(_Logger):
+    def writeLine(self, *args):
+        pass
+
 class LuceneIndex(Observable):
 
-    def __init__(self, directoryName, transactionName=None):
+    def __init__(self, directoryName, transactionName=None, debugLogFilename=None):
         Observable.__init__(self)
         self._searcher = None
         self._reader = None
@@ -77,6 +103,10 @@ class LuceneIndex(Observable):
         maxDoc = self.docCount() if optimized else 0
         self._currentTracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
         self._lucene2docId = self._currentTracker.getMap()
+        self._debugLog = DevNullLogger() if debugLogFilename == None else DebugLogger(debugLogFilename)
+        self._debugLog.comment('Debug Log for LuceneIndex')
+        self._debugLog.comment('directoryName = ', repr(directoryName))
+        self._debugLog.comment('transactionName = ', transactionName)
 
     def getDocIdMapping(self):
         return self._lucene2docId
@@ -144,9 +174,11 @@ class LuceneIndex(Observable):
                 self.do.deleteDocument(docId=docId)
 
     def delete(self, identifier):
+        self._debugLog.delete(identifier)
         self._luceneDelete(identifier)
 
     def addDocument(self, luceneDocument=None):
+        self._debugLog.add(luceneDocument.identifier)
         try:
             luceneDocument.validate()
             self._luceneDelete(luceneDocument.identifier)
@@ -163,6 +195,7 @@ class LuceneIndex(Observable):
             self.ctx.tx.join(self)
 
     def commit(self):
+        self._debugLog.commit()
         if len(self._commandQueue) == 0:
             return
         for command in self._commandQueue:
