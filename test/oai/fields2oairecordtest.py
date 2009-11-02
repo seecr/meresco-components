@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -35,7 +36,8 @@ class Fields2OaiRecordTest(CQ2TestCase):
     def testOne(self):
         transaction = CallTrace('Transaction')
         rm = CallTrace('ResourceManager')
-        rm.tx = transaction
+        rm.ctx = CallTrace('ctx')
+        rm.ctx.tx = transaction
         rm.do = rm
         transaction.locals = {'id':'identifier'}
         
