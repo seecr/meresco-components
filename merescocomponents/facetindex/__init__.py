@@ -45,5 +45,6 @@ from integerlist import IntegerList
 from trie import Trie
 from cql2lucenequery import CQL2LuceneQuery
 from fields2lucenedocument import Fields2LuceneDocumentTx
+from clausecollector import ClauseCollector
 import merescolucene
 
