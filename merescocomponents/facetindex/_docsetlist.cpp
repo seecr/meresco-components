@@ -444,7 +444,7 @@ DocSetList* DocSetList_forField(lucene::index::IndexReader* reader, char* fieldn
     lucene::index::TermEnum* termEnum =
         reader->terms(new lucene::index::Term(field, JvNewStringUTF("")));
     lucene::index::Term* term = termEnum->term();
-    if (!term->field()->equals((java::lang::Object*) field)) {
+    if (!term || !term->field()->equals((java::lang::Object*) field)) {
         return list;
     }
     field = term->field();
