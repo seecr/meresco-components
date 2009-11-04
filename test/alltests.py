@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.5
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -61,6 +62,7 @@ from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
 
 from facetindex.incrementalindexingtest import IncrementalIndexingTest
 from facetindex.integerlisttest import IntegerListTest
+from facetindex.clausecollectortest import ClauseCollectorTest
 
 from ngram.ngramtest import NGramTest
 from ngram.ngramquerytest import NGramQueryTest
