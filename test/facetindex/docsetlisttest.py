@@ -202,6 +202,10 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals(('t€rm0', NA), cs.next())
         self.assertEquals(('t€rm1', NA), cs.next())
 
+    def testForFieldNotIndexed(self):
+        self.createBigIndex(4, 5)
+        self.assertEquals(0, len(DocSetList.forField(self.reader, 'field')))
+
     #def testAppendToRow(self):
     def testAppendDocument(self):
         docsetlist = DocSetList()
@@ -556,7 +560,7 @@ class DocSetListTest(LuceneTestCase):
             self.fail()
         except ValueError, e:
             self.assertEquals('maxTermFreqPercentage must be >0 and <=100 (0)', str(e))
-    
+
     def testSortingOnCardinalityDoesNotRuinTermLookup(self):
         ds0 = DocSet([1,2])
         ds1 = DocSet([1,2,3])
