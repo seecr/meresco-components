@@ -459,12 +459,15 @@ DocSetList* DocSetList_forField(lucene::index::IndexReader* reader, char* fieldn
 
         jstring termText = term->text();
 
-        char cTermText[2000];   // FIXME: potential abort in case of term size > 2000
-        int w = JvGetStringUTFRegion(termText, 0, termText->length(), cTermText);
+        int jTermTextLength = termText->length();
+        char* cTermText = (char*) malloc(jTermTextLength * 4 + 1);
+        int w = JvGetStringUTFRegion(termText, 0, jTermTextLength, cTermText);
         cTermText[w] = '\0';
 
         fwPtr ds = DocSet::forTerm(reader, fieldname, cTermText, mapping);
         list->addDocSet(ds, cTermText);
+
+        free(cTermText);
     } while (termEnum->next());
     return list;
 }
