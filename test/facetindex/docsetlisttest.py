@@ -31,6 +31,7 @@ from time import time
 from merescocomponents.facetindex import DocSetList, DocSet
 from merescocomponents.facetindex.docsetlist import JACCARD_ONLY, JACCARD_MI
 from merescocomponents.facetindex.triedict import TrieDict
+from merescocomponents.facetindex.merescolucene import IndexReader
 from lucenetestcase import LuceneTestCase
 from cq2utils import MATCHALL
 
@@ -201,6 +202,14 @@ class DocSetListTest(LuceneTestCase):
         NA = MATCHALL
         self.assertEquals(('t€rm0', NA), cs.next())
         self.assertEquals(('t€rm1', NA), cs.next())
+
+    def testForFieldEmptyIndex(self):
+        self.createSimpleIndexWithEmptyDocuments(0)
+        self.assertEquals(0, len(DocSetList.forField(self.reader, 'aField')))
+
+    def testForFieldNotIndexed(self):
+        self.createBigIndex(4, 5)
+        self.assertEquals(0, len(DocSetList.forField(self.reader, 'field')))
 
     #def testAppendToRow(self):
     def testAppendDocument(self):
@@ -556,7 +565,7 @@ class DocSetListTest(LuceneTestCase):
             self.fail()
         except ValueError, e:
             self.assertEquals('maxTermFreqPercentage must be >0 and <=100 (0)', str(e))
-    
+
     def testSortingOnCardinalityDoesNotRuinTermLookup(self):
         ds0 = DocSet([1,2])
         ds1 = DocSet([1,2,3])

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -41,7 +42,7 @@ class Fields2OaiRecordTx(object):
 
     def commit(self):
         if self._metadataFormats:
-            identifier = self.resourceManager.tx.locals['id']
+            identifier = self.resourceManager.ctx.tx.locals['id']
             self.resourceManager.do.addOaiRecord(identifier=identifier, sets=self._sets, metadataFormats = self._metadataFormats)
 
     def rollback(self):

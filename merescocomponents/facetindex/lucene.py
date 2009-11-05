@@ -49,10 +49,6 @@ IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 class LuceneException(Exception):
     pass
 
-class IncludeStopWordAnalyzer(object):
-    def tokenStream(self, fieldName, reader):
-        return LowerCaseFilter(StandardFilter(StandardTokenizer(reader)))
-
 class _Logger(object):
     def comment(self, *strings):
         self.writeLine('# ', *strings)

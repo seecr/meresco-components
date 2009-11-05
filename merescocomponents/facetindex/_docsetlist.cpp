@@ -28,6 +28,7 @@
  * end license */
 
 #include <gcj/cni.h>
+#include "java/lang/Object.h"
 #include "org/apache/lucene/index/TermEnum.h"
 #include "org/apache/lucene/index/Term.h"
 
@@ -438,37 +439,36 @@ void DocSetList_delete(DocSetList* list) {
 }
 
 DocSetList* DocSetList_forField(lucene::index::IndexReader* reader, char* fieldname, IntegerList *mapping) {
-    //printf("DocSetList_forField 1\n");
     DocSetList* list = DocSetList_create();
-    jstring field = NULL;
+    jstring field = JvNewStringUTF(fieldname);
     lucene::index::TermEnum* termEnum =
-        reader->terms(new lucene::index::Term(JvNewStringUTF(fieldname), JvNewStringUTF("")));
-    //("DocSetList_forField 2\n");
+        reader->terms(new lucene::index::Term(field, JvNewStringUTF("")));
+    lucene::index::Term* term = termEnum->term();
+    if (!term || !term->field()->equals((java::lang::Object*) field)) {
+        return list;
+    }
+    field = term->field();
     do {
         lucene::index::Term* term = termEnum->term();
         if (!term) {
             break;
         }
-        if (!field) {
-            field = term->field();
-        }
-        else if (term->field() != field) {
+        if (field != term->field()) {
             break;
         }
-        //("DocSetList_forField 3\n");
 
         jstring termText = term->text();
 
-        char cTermText[2000];
-        int w = JvGetStringUTFRegion(termText, 0, termText->length(), cTermText);
+        int jTermTextLength = termText->length();
+        char* cTermText = (char*) malloc(jTermTextLength * 4 + 1);
+        int w = JvGetStringUTFRegion(termText, 0, jTermTextLength, cTermText);
         cTermText[w] = '\0';
 
-        //("DocSetList_forField 4\n");
         fwPtr ds = DocSet::forTerm(reader, fieldname, cTermText, mapping);
         list->addDocSet(ds, cTermText);
-        //("DocSetList_forField 5\n");
+
+        free(cTermText);
     } while (termEnum->next());
-    //("DocSetList_forField 6\n");
     return list;
 }
 
