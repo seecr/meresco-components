@@ -32,6 +32,7 @@ from sys import stdout
 import os
 from time import time, sleep
 from random import random, randint, sample
+from os.path import join
 
 from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
 from merescocomponents.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
@@ -210,6 +211,29 @@ class PerformanceTuningTest(LuceneTestCase):
             stdout.flush()
 
         #print ts
+
+
+    def testBaseLucenePerformanceWithVaryingBatchSize(self):
+        timings = {}
+        print
+        for batchsize in [1, 10, 100, 1000]:
+            print 'batch', batchsize
+            index = LuceneIndex(join(self.tempdir, 'batch_%s' % batchsize))
+            t0 = time()
+            for docid in range(1000):
+                for field, term in (('field%d'%n, 'term%d'%n) for n in xrange(10)):
+                    doc = Document('__doc%s__'%docid)
+                    doc.addIndexedField(field, term)
+                    index.addDocument(doc)
+                if docid % batchsize == 0:
+                    print 'commit'
+                    index.commit()
+            index.commit()
+            t1 = time() - t0
+            timings[batchsize] = t1
+            print timings
+        print timings
+
 
 # Some tests on Juicer with EduRep 8/2008:
 # (1st time)
