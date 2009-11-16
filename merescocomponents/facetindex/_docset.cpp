@@ -27,6 +27,8 @@
  *
  * end license */
 
+#include <glib.h>
+
 #include "assert.h"
 
 #include "org/apache/lucene/search/MatchAllDocsQuery.h"

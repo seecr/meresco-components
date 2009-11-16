@@ -27,6 +27,8 @@
  *
  * end license */
 
+#include <glib.h>
+
 #include <gcj/cni.h>
 #include "java/lang/Object.h"
 #include "org/apache/lucene/index/TermEnum.h"
