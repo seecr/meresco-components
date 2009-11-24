@@ -124,23 +124,10 @@ class WebQueryTest(TestCase):
         self.assertFalse(_feelsLikeBooleanQuery('-label="cat +cheese"'))
         self.assertTrue(_feelsLikeBooleanQuery('water +(rain or snow)'))
 
-    def _assertQuery(self, expected, input, boolean=False, plusminus=False, default=False, needsBooleanHelp=False, asString=None):
-        input = expected if input == None else input
-        asString = expected if asString == None else asString
-        wq = WebQuery(input, antiUnaryClause='antiunary exact true')
-        self.assertEquals((boolean, plusminus, default, needsBooleanHelp), (wq.isBooleanQuery(), wq.isPlusMinusQuery(), wq.isDefaultQuery(), wq.needsBooleanHelp()))
-        self.assertEquals(parseCql(expected), wq.ast)
-        self.assertEquals(asString, wq.asString())
-        self.assertEquals(input, wq.original)
+    def testWrongQueries(self):
+        self.assertDefaultQuery('+', needsBooleanHelp=True)
+        self.assertDefaultQuery('-', needsBooleanHelp=True)
 
-    def assertDefaultQuery(self, expected, input=None, needsBooleanHelp = False, asString=None):
-        self._assertQuery(expected, input, default=True, needsBooleanHelp=needsBooleanHelp, asString=asString)
-
-    def assertPlusMinusQuery(self, expected, input, asString=None):
-        self._assertQuery(expected, input, plusminus=True, asString=asString)
-
-    def assertBooleanQuery(self, expected, input=None, asString=None):
-        self._assertQuery(expected, input, boolean=True, asString=asString)
 
     def testReportedProblemWithGoogleLikeQuery(self):
         self.assertDefaultQuery('fiscal AND OR AND "(market" AND "municipalities)"', 'fiscal OR (market municipalities)', needsBooleanHelp=True)
@@ -215,3 +202,22 @@ class WebQueryTest(TestCase):
 
     def assertCql(self, expected, input):
         self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))
+
+    def _assertQuery(self, expected, input, boolean=False, plusminus=False, default=False, needsBooleanHelp=False, asString=None):
+        input = expected if input == None else input
+        asString = expected if asString == None else asString
+        wq = WebQuery(input, antiUnaryClause='antiunary exact true')
+        self.assertEquals((boolean, plusminus, default, needsBooleanHelp), (wq.isBooleanQuery(), wq.isPlusMinusQuery(), wq.isDefaultQuery(), wq.needsBooleanHelp()))
+        self.assertEquals(parseCql(expected), wq.ast)
+        self.assertEquals(asString, wq.asString())
+        self.assertEquals(input, wq.original)
+
+    def assertDefaultQuery(self, expected, input=None, needsBooleanHelp = False, asString=None):
+        self._assertQuery(expected, input, default=True, needsBooleanHelp=needsBooleanHelp, asString=asString)
+
+    def assertPlusMinusQuery(self, expected, input, asString=None):
+        self._assertQuery(expected, input, plusminus=True, asString=asString)
+
+    def assertBooleanQuery(self, expected, input=None, asString=None):
+        self._assertQuery(expected, input, boolean=True, asString=asString)
+
