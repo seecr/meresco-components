@@ -10,22 +10,19 @@ from os import makedirs, rename, listdir
 from lxml.etree import tostring
 
 from merescocomponents.inbox import Inbox, InboxException
-from merescocomponents.xmldocumentadapter import XmlDocumentAdapter
 
 class InboxTest(CQ2TestCase):
 
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.reactor = Reactor()
-        documentAdapter = XmlDocumentAdapter()
         self.observer = CallTrace('Observer')
         self.inboxDirectory = join(self.tempdir, 'inbox')
         self.doneDirectory = join(self.tempdir, 'done')
         makedirs(self.inboxDirectory)
         makedirs(self.doneDirectory)
         self.inbox = Inbox(self.reactor, inboxDirectory=self.inboxDirectory, doneDirectory=self.doneDirectory)
-        self.inbox.addObserver(documentAdapter)
-        documentAdapter.addObserver(self.observer)
+        self.inbox.addObserver(self.observer)
 
     def testCheckDirectoriesOnCreate(self):
         try:

@@ -91,7 +91,6 @@ from oai.berkeleydicttest import BerkeleyDictTest
 from web.webquerytest import WebQueryTest
 
 from inboxtest import InboxTest
-from xmldocumentadaptertest import XmlDocumentAdapterTest
 
 if __name__ == '__main__':
     unittest.main()
