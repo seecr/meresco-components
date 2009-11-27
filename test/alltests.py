@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.5
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -88,6 +89,9 @@ from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
 from oai.berkeleydicttest import BerkeleyDictTest
 
 from web.webquerytest import WebQueryTest
+
+from inboxtest import InboxTest
+from xmldocumentadaptertest import XmlDocumentAdapterTest
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 from cq2utils import CQ2TestCase, CallTrace
 
 from os.path import join
 from lxml.etree import parse
 from StringIO import StringIO
 
-from bzv import XmlDocumentAdapter
+from merescocomponents.xmldocumentadapter import XmlDocumentAdapter
 
 class XmlDocumentAdapterTest(CQ2TestCase):
     def setUp(self):

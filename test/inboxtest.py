@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from cq2utils import CQ2TestCase, CallTrace
 
 from merescocore.framework import be, Transparant
@@ -8,7 +9,8 @@ from os.path import join, isfile
 from os import makedirs, rename, listdir
 from lxml.etree import tostring
 
-from bzv import Inbox, InboxException, XmlDocumentAdapter
+from merescocomponents.inbox import Inbox, InboxException
+from merescocomponents.xmldocumentadapter import XmlDocumentAdapter
 
 class InboxTest(CQ2TestCase):
 
