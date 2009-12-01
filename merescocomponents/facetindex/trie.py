@@ -26,10 +26,12 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from sys import maxint
 from ctypes import cdll, c_uint32, c_int, c_char_p, Structure, POINTER, pointer
 from os.path import join, abspath, dirname
 from libfacetindex import libFacetIndex as lib
 from docset import DocSet
+from integerlist import INTEGERLIST, IntegerList
 
 class fwPtr(Structure):
     _fields_ = [ ('type', c_int, 2),
@@ -57,9 +59,9 @@ TrieNode_getValue2 = lib.TrieNode_getValue2
 TrieNode_getValue2.argtypes = [ fwPtr, c_char_p ]
 TrieNode_getValue2.restype = c_uint32
 
-TrieNode_getValues = lib.TrieNode_getValues
-TrieNode_getValues.argtypes = [fwPtr, c_char_p, POINTER(None), c_int]
-TrieNode_getValues.restype = None
+TrieNode_getValues2 = lib.TrieNode_getValues2
+TrieNode_getValues2.argtypes = [ fwPtr, c_char_p, c_uint32, INTEGERLIST ]
+TrieNode_getValues2.restype = None
 
 TrieNode_printit2 = lib.TrieNode_printit
 TrieNode_printit2.argtypes = [ fwPtr, c_int ]
@@ -70,7 +72,7 @@ nodecount.argtypes = None
 nodecount.restype = None
 
 
-class Trie:
+class Trie(object):
 
     def __init__(self):
         self._as_parameter_ = TrieNode_create(fwValueNone)
@@ -84,9 +86,9 @@ class Trie:
             return default
         return r
 
-    def getValues(self, prefix, caseSensitive=True):
-        result = DocSet()
-        TrieNode_getValues(self, prefix, result, caseSensitive)
+    def getValues(self, prefix, maxresults=maxint):
+        result = IntegerList()
+        TrieNode_getValues2(self, prefix, maxint, result)
         return result
 
     def printit(self):

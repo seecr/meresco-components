@@ -29,10 +29,11 @@
 ## end license ##
 
 from sys import maxint
+from itertools import islice
 from ctypes import c_uint32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
 from libfacetindex import libFacetIndex
 from docset import DocSet, DOCSET
-from integerlist import IntegerList
+from integerlist import INTEGERLIST, IntegerList
 from cq2utils import deallocator
 
 DOCSETLIST = POINTER(None)
@@ -134,6 +135,10 @@ DocSetList_printMemory = libFacetIndex.DocSetList_printMemory
 DocSetList_printMemory.argtypes = [DOCSETLIST]
 DocSetList_printMemory.restype = None
 
+DocSetList_filterByPrefix = libFacetIndex.DocSetList_filterByPrefix
+DocSetList_filterByPrefix.argtypes = [DOCSETLIST, c_char_p, c_uint32]
+DocSetList_filterByPrefix.restype = CARDINALITYLIST
+
 DocSetList_docId2terms_add = libFacetIndex.DocSetList_docId2terms_add
 DocSetList_docId2terms_add.argtypes = [DOCSETLIST, c_uint32, DOCSET]
 DocSetList_docId2terms_add.resType = None
@@ -149,6 +154,10 @@ CardinalityList_at.restype = POINTER(cardinality_t)
 CardinalityList_free = libFacetIndex.CardinalityList_free
 CardinalityList_free.argtypes = [CARDINALITYLIST]
 CardinalityList_free.restype = None
+
+CardinalityList_sortOnCardinality = libFacetIndex.CardinalityList_sortOnCardinality
+CardinalityList_sortOnCardinality.argtypes = [CARDINALITYLIST]
+CardinalityList_sortOnCardinality.restype = None
 
 SORTEDONTERM = 1
 SORTEDONCARDINALITY = 2
@@ -195,13 +204,7 @@ class DocSetList(object):
             self.sortOnCardinality()
         elif self._sorted == None or self._sorted == SORTEDONTERM:
             self.sortOnTerm()
-        p = DocSetList_combinedCardinalities(self, docset, maxResults, sorted)
-        try:
-            for i in xrange(CardinalityList_size(p)):
-                c = CardinalityList_at(p, i)
-                yield (c.contents.term, c.contents.cardinality)
-        finally:
-            CardinalityList_free(p)
+        return self._iterCardinalityList(DocSetList_combinedCardinalities(self, docset, maxResults, sorted))
 
     def cardinality(self, term):
         if type(term) == unicode:
@@ -226,13 +229,7 @@ class DocSetList(object):
         cardinalityList_at_original_restype = CardinalityList_at.restype
         try:
             CardinalityList_at.restype = POINTER(cardinality_t_RAW)
-            p = DocSetList_combinedCardinalities(self, docset, maxint, False)
-            try:
-                for i in xrange(CardinalityList_size(p)):
-                    c = CardinalityList_at(p, i)
-                    yield (c.contents.term, c.contents.cardinality)
-            finally:
-                CardinalityList_free(p)
+            return self._iterCardinalityList(DocSetList_combinedCardinalities(self, docset, maxint, False))
         finally:
             CardinalityList_at.restype = cardinalityList_at_original_restype
 
@@ -301,6 +298,23 @@ class DocSetList(object):
 
     def printMemory(self):
         DocSetList_printMemory(self)
+
+    def prefixSearch(self, prefix, maxresults=None):
+        if maxresults == None:
+            maxresults = maxint - 1
+        cardinalityList = DocSetList_filterByPrefix(self, prefix, maxresults + 1)
+        listSize = CardinalityList_size(cardinalityList)
+        if listSize <= maxresults:
+            CardinalityList_sortOnCardinality(cardinalityList)
+        return islice(self._iterCardinalityList(cardinalityList), 0, maxresults)
+
+    def _iterCardinalityList(self, cardinalityList):
+        try:
+            for i in xrange(CardinalityList_size(cardinalityList)):
+                c = CardinalityList_at(cardinalityList, i)
+                yield (c.contents.term, c.contents.cardinality)
+        finally:
+            CardinalityList_free(cardinalityList)
 
     def measure(self):
         return DocSetList_measure(self)

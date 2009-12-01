@@ -83,7 +83,43 @@ class TrieTest(TestCase):
         trie.add(0, "prefix")
         self.assertEquals("default", trie.getValue("prefix, but other stuff follows", "default"))
 
-    def XXXXXXXXXXXXXXXtestGetValues(self):
+    def testGetValuesEmptyTrie(self):
+        trie = Trie()
+        self.assertEquals([], trie.getValues(""))
+        self.assertEquals([], trie.getValues("abc"))
+
+    def testGetValuesTrieWithOneCharacter(self):
+        trie = Trie()
+        trie.add(0, "X")
+        self.assertEquals([0], trie.getValues(""))
+        self.assertEquals([], trie.getValues("abc"))
+        self.assertEquals([0], trie.getValues("X"))
+        self.assertEquals([], trie.getValues("Xyz"))
+
+    def testGetValuesTrieWithString(self):
+        trie = Trie()
+        trie.add(0, "abcd")
+        self.assertEquals([0], trie.getValues(""))
+        self.assertEquals([], trie.getValues("xxx"))
+        self.assertEquals([0], trie.getValues("abc"))
+        self.assertEquals([0], trie.getValues("abcd"))
+        self.assertEquals([], trie.getValues("abcde"))
+
+    def testGetValuesTrieWithList(self):
+        trie = Trie()
+        trie.add(0, "abcd")
+        trie.add(1, "a000")
+        self.assertEquals([1, 0], trie.getValues(""))
+        self.assertEquals([1, 0], trie.getValues("a"))
+        self.assertEquals([], trie.getValues("xxx"))
+        self.assertEquals([0], trie.getValues("abc"))
+        self.assertEquals([0], trie.getValues("abcd"))
+        self.assertEquals([], trie.getValues("abcde"))
+        self.assertEquals([1], trie.getValues("a00"))
+        self.assertEquals([1], trie.getValues("a000"))
+        self.assertEquals([], trie.getValues("a0000"))
+
+    def testGetValues(self):
         trie = Trie()
         trie.add(0, "prefix-0")
         trie.add(1, "prefix-1")
@@ -101,13 +137,28 @@ class TrieTest(TestCase):
         self.assertEquals([], trie.getValues("prefix-0-enmeer"))
         self.assertEquals([], trie.getValues("not found"))
 
-    def XXXXXXXXXXXXXXXXtestSearchBugWithCaseSensitivityOnNumbers(self):
+    def testSearchBugWithCaseSensitivityOnNumbers(self):
         trie = Trie()
         trie.add(0, "prefix-0")
         trie.add(1, "prefix-1")
-        self.assertEquals([0], trie.getValues("prefix-0", caseSensitive=False))
+        self.assertEquals([0], trie.getValues("prefix-0"))
 
-    def XXXXXXXXXXXXXXtestSearchCaseInsensitive(self):
+    def testCaseInsensitive(self):
+        trie = Trie()
+        trie.add(0, 'A')
+        trie.add(1, 'a')
+
+        def trieGetValues(aString):
+            return sorted(trie.getValues(aString))
+
+        self.assertEquals([0, 1], trieGetValues(''))
+        self.assertEquals([0, 1], trieGetValues('a'))
+        self.assertEquals([0, 1], trieGetValues('A'))
+        self.assertEquals([], trieGetValues('a0'))
+        self.assertEquals([], trieGetValues('A0'))
+
+
+    def testSomeComplicatedCases(self):
         trie = Trie()
         trie.add(0,'ABC')
         trie.add(1,'abc')
@@ -119,7 +170,7 @@ class TrieTest(TestCase):
         trie.add(7, 'met xxx creates stringnode')
 
         def trieGetValues(aString):
-            return sorted(trie.getValues(aString, caseSensitive=False))
+            return sorted(trie.getValues(aString))
 
         self.assertEquals(range(8), trieGetValues(''))
         self.assertEquals(range(5), trieGetValues('ab'))

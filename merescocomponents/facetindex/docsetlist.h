@@ -93,6 +93,7 @@ class DocSetList : public std::vector<fwPtr> {
         void                 nodecount(void);
         DocSetIterator       begin_docId(void);
         DocSetIterator       end_docId(void);
+        CardinalityList*     filterByPrefix(char* prefix, guint32 maxResults);
 };
 
 
@@ -145,12 +146,14 @@ extern "C" {
     DocSetList*      DocSetList_fromTermEnum         (PyJObject* termEnum, PyJObject* termDocs, IntegerList *);
     void             DocSetList_printMemory          (DocSetList* list);
     char*            DocSetList_getTermForDocset     (DocSetList* list, fwPtr docset);
+
     void             DocSetList_docId2terms_add      (DocSetList* list, guint32 docid, fwPtr docset);
+    CardinalityList* DocSetList_filterByPrefix       (DocSetList* list, char* prefix, guint32 maxResults);
 
     cardinality_t*   CardinalityList_at              (CardinalityList* vector, int i);
     int              CardinalityList_size            (CardinalityList* vector);
     void             CardinalityList_free            (CardinalityList* vector);
-
+    void             CardinalityList_sortOnCardinality  (CardinalityList* vector);
 }
 
 #endif
