@@ -262,7 +262,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
           }
           // call AJAX get
           else if($.isFunction(options.ajax_get)){
-            clearSuggestions();
+            //clearSuggestions();
             //showLoadingTimer = setTimeout(show_loading,options.delay);
             options.ajax_get(val,ajax_continuation);
           }
