@@ -15,7 +15,7 @@
  var ARRDOWN = 40;
  var BACKSPACE = 8;
  var DELETE = 46;
- 
+
 function debug(s){
   $('#info').append(htmlspecialchars(s)+'<br>');
 }
@@ -40,7 +40,7 @@ function getCaretPosition(obj){
     start=Lp.text.length;
     if(start>obj.value.length)
       start = -1;
-    
+
     Lp.setEndPoint("EndToStart",M);
     end=Lp.text.length;
     if(end>obj.value.length)
@@ -55,7 +55,7 @@ function setCaret(obj,l){
     obj.setSelectionRange(l,l);
   }
   else if(obj.createTextRange){
-    m = obj.createTextRange();      
+    m = obj.createTextRange();
     m.moveStart('character',l);
     m.collapse();
     m.select();
@@ -109,7 +109,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
   // get or ajax_get required!
   if(!options && (!$.isFunction(options.get) || !options.ajax_get)){
   return;
-  }  
+  }
   // check plugin enabled
   if(me.attr('jqac') == 'on') return;
 
@@ -120,12 +120,12 @@ $.fn.autocomplete = function(options){ return this.each(function(){
   me.attr('autocomplete','off');
 
   // default options
-  options = $.extend({ 
+  options = $.extend({
                       delay     : 500 ,
-                      timeout   : 5000 ,
+                      timeout   : 50000 ,
                       minchars  : 3 ,
                       multi     : false ,
-                      cache     : true , 
+                      cache     : true ,
                       height    : 150 ,
                       autowidth : false ,
                       noresults : 'No results'
@@ -249,8 +249,8 @@ $.fn.autocomplete = function(options){ return this.each(function(){
       clearTimeout(getSuggestionsTimer);
       user_input = val;
       input_chars_size = val.length;
-      getSuggestionsTimer = setTimeout( 
-        function(){ 
+      getSuggestionsTimer = setTimeout(
+        function(){
           suggestions = [];
           // call pre callback, if exists
           if($.isFunction(options.pre_callback))
@@ -263,7 +263,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
           // call AJAX get
           else if($.isFunction(options.ajax_get)){
             clearSuggestions();
-            showLoadingTimer = setTimeout(show_loading,options.delay);
+            //showLoadingTimer = setTimeout(show_loading,options.delay);
             options.ajax_get(val,ajax_continuation);
           }
         },
@@ -273,7 +273,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
   };
   // AJAX continuation
   function ajax_continuation(jsondata){
-    hide_loading();
+    //hide_loading();
     suggestions = prepareArray(jsondata);
     createList(suggestions);
   }
@@ -292,7 +292,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     $(loading_indicator).show();
     setTimeout(hide_loading,10000);
   }
-  // hides loading indicator 
+  // hides loading indicator
   function hide_loading(){
     if(loading_indicator)
       $(loading_indicator).hide();
@@ -302,13 +302,13 @@ $.fn.autocomplete = function(options){ return this.each(function(){
   function createList(arr){
     if(suggestions_menu)
       $(suggestions_menu).remove();
-    hide_loading();
+    //hide_loading();
     killTimeout();
 
     // create holding div
     suggestions_menu = $('<div class="jqac-menu"></div>').get(0);
 
-    // ovveride some necessary CSS properties 
+    // ovveride some necessary CSS properties
     $(suggestions_menu).css({'position':'absolute',
                              'z-index':zIndex,
                              'max-height':options.height+'px',
@@ -322,7 +322,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
       css('margin','0px').
       css('padding','2px').
       css('overflow','hidden');
-    // regexp for replace 
+    // regexp for replace
     var re = new RegExp("("+escapearg(htmlspecialchars(user_input))+")",'ig');
     // loop throught arr of suggestions creating an LI element for each suggestion
     for (var i=0;i<arr.length;i++){
@@ -350,47 +350,45 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     }
 
     // no results
-    if (arr.length == 0){
-      $(suggestions_list).append('<li class="jqac-warning">'+options.noresults+'</li>');
+    if (arr.length != 0){
+        $(suggestions_menu).append(suggestions_list);
+
+        // get position of target textfield
+        // position holding div below it
+        // set width of holding div to width of field
+        var pos = me.offset();
+
+        $(suggestions_menu).css('left', pos.left + "px");
+        $(suggestions_menu).css('top', ( pos.top + me.height() + 2 ) + "px");
+        if(!options.autowidth)
+        $(suggestions_menu).width(me.width());
+
+        // set mouseover functions for div
+        // when mouse pointer leaves div, set a timeout to remove the list after an interval
+        // when mouse enters div, kill the timeout so the list won't be removed
+        $(suggestions_menu).mouseover(function(){ killTimeout() });
+        $(suggestions_menu).mouseout(function(){ resetTimeout() });
+
+        // add DIV to document
+        $('body').append(suggestions_menu);
+
+        // bgIFRAME support
+        if($.fn.bgiframe)
+        $(suggestions_menu).bgiframe({height: suggestions_menu.scrollHeight});
+
+
+        // adjust height: add +20 for scrollbar
+        if(suggestions_menu.scrollHeight > options.height){
+        $(suggestions_menu).height(options.height);
+        $(suggestions_menu).width($(suggestions_menu).width()+20);
+        }
+
+        // currently no item is highlighted
+        current_highlight = 0;
+
+        // remove list after an interval
+        clearSuggestionsTimer = setTimeout(function () { clearSuggestions() }, options.timeout);
     }
-
-    $(suggestions_menu).append(suggestions_list);
-
-    // get position of target textfield
-    // position holding div below it
-    // set width of holding div to width of field
-    var pos = me.offset();
-
-    $(suggestions_menu).css('left', pos.left + "px");
-    $(suggestions_menu).css('top', ( pos.top + me.height() + 2 ) + "px");
-    if(!options.autowidth)
-      $(suggestions_menu).width(me.width());
-
-    // set mouseover functions for div
-    // when mouse pointer leaves div, set a timeout to remove the list after an interval
-    // when mouse enters div, kill the timeout so the list won't be removed
-    $(suggestions_menu).mouseover(function(){ killTimeout() });
-    $(suggestions_menu).mouseout(function(){ resetTimeout() });
-
-    // add DIV to document
-    $('body').append(suggestions_menu);
-
-    // bgIFRAME support
-    if($.fn.bgiframe)
-      $(suggestions_menu).bgiframe({height: suggestions_menu.scrollHeight});
-
-
-    // adjust height: add +20 for scrollbar
-    if(suggestions_menu.scrollHeight > options.height){
-      $(suggestions_menu).height(options.height);
-      $(suggestions_menu).width($(suggestions_menu).width()+20);
-    }
-	
-    // currently no item is highlighted
-    current_highlight = 0;
-
-    // remove list after an interval
-    clearSuggestionsTimer = setTimeout(function () { clearSuggestions() }, options.timeout);
   };
   // set highlighted value
   function setHighlightedValue(){
@@ -408,7 +406,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     }
   };
   // change highlight according to key
-  function changeHighlight(key){	
+  function changeHighlight(key){
     if(!suggestions_list || suggestions.length == 0) return false;
     var n;
     if (key == ARRDOWN)
@@ -454,7 +452,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
   // set scroll
   function adjustScroll(el){
     if(!suggestions_menu) return false;
-    var viewportHeight = suggestions_menu.clientHeight;        
+    var viewportHeight = suggestions_menu.clientHeight;
     var wholeHeight = suggestions_menu.scrollHeight;
     var scrolled = suggestions_menu.scrollTop;
     var elTop = el.offsetTop;
@@ -465,7 +463,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     else if(elTop < scrolled){
       suggestions_menu.scrollTop = elTop;
     }
-    return true; 
+    return true;
   }
   // timeout funcs
   function killTimeout(){

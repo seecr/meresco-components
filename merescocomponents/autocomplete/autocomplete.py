@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Core is an open-source library containing components to build
@@ -29,6 +30,7 @@ from rfc822 import formatdate
 from time import mktime, gmtime, timezone
 from xml.sax.saxutils import escape as escapeXml
 from os.path import dirname, abspath, join
+from time import time
 
 from merescocore.framework import Observable
 from merescocore.components.http import utils as httputils, FileServer
@@ -58,6 +60,7 @@ class Autocomplete(Observable):
             yield self._prefixSearch(arguments)
 
     def _prefixSearch(self, arguments):
+        t0 = time()
         yield httputils.okXml
         yield '<?xml version="1.0" encoding="utf-8"?><root>'
         for item, count in self.any.prefixSearch(
@@ -67,6 +70,7 @@ class Autocomplete(Observable):
             ):
             yield """<item count="%s">%s</item>""" % (count, escapeXml(item))
         yield '</root>'
+        print "autocomplete -> prefixSearch", time()-t0
 
     def _javascript(self, filename, **kwargs):
         yield self._fileServer.handleRequest(path=filename, **kwargs)
@@ -82,18 +86,21 @@ class Autocomplete(Observable):
         yield """
             function buildSuggestionList(cont) {
                 return function(obj) {
-                            l = obj.firstChild.childNodes;
                             var res = [];
-                            for (var i = 0; i < l.length; i++) {
+                            i = 0;
+                            $(obj).find("item").each(function() {
+                                i++;
                                 res.push({
                                     id: i,
-                                    value: l[i].firstChild.nodeValue,
-                                    info: "(" + l[i].attributes[0].nodeValue + " results)"});
-                            }
+                                    value: $(this).text(),
+                                    info: "(" + $(this).attr("count") + " results)"});
+                            });
+
                             // will build suggestions list
                             cont(res);
                         }
-            }"""
+            }
+            """
 
         yield "$(document).ready(function() {"
         path = self._path
@@ -108,7 +115,9 @@ class Autocomplete(Observable):
                                         'xml');},
                     minchars: 1,
                     cache: false,
-                    delay: %(delay)s});
+                    delay: %(delay)s,
+                    noresults: ""});
+
             """ % locals()
         yield "});"
 

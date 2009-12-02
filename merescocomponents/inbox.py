@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from merescocore.framework import Observable
 
 from cq2utils import DirectoryWatcher
@@ -74,3 +75,4 @@ class Inbox(Observable):
         except Exception, e:
             open(join(self._doneDirectory, filename + ".error"), 'w').write(format_exc(limit=7))
         rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))
+        

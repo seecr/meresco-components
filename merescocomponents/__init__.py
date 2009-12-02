@@ -27,3 +27,4 @@
 #
 ## end license ##
 from filelist import SortedFileList, FileList
+from inbox import Inbox
