@@ -75,7 +75,7 @@ function prepareArray(jsondata){
       new_arr.push(jsondata[i]);
     }
   }
-  return new_arr;
+  return $(new_arr).sort(function(l,r) {return l.value > r.value;});
 }
 // php analogs
 function escapearg(s){
@@ -148,7 +148,8 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     }
     return true;
   });
-  me.keypress(function(ev){
+  
+  me.keyup(function(ev){
     // ev.which doesn't work here - it always returns 0
     switch(ev.keyCode){
       case RETURN: case ESC:
@@ -162,18 +163,10 @@ $.fn.autocomplete = function(options){ return this.each(function(){
         if(!suggestions_menu) getSuggestions(getUserInput());
         else changeHighlight(ev.keyCode);
         return false;
+      default:
+        getSuggestions(getUserInput());
      }
      return true;
-  });
-  // handle normal characters here
-  me.keyup(function(ev) {
-      switch(ev.which) {
-        case RETURN: case ESC: case ARRLEFT: case ARRRIGHT: case ARRUP: case ARRDOWN:
-          return false;
-        default:
-          getSuggestions(getUserInput());
-      }
-      return true;
   });
 
   // init variables
@@ -388,7 +381,10 @@ $.fn.autocomplete = function(options){ return this.each(function(){
 
         // remove list after an interval
         clearSuggestionsTimer = setTimeout(function () { clearSuggestions() }, options.timeout);
+    } else {
+        clearSuggestions();
     }
+
   };
   // set highlighted value
   function setHighlightedValue(){

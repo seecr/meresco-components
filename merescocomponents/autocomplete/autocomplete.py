@@ -42,7 +42,7 @@ def _date(offset=0):
     return formatdate(mktime(gmtime()) - timezone + offset)
 
 class Autocomplete(Observable):
-    def __init__(self, path, inputs, maxresults, delay=10):
+    def __init__(self, path, inputs, maxresults, delay=100):
         Observable.__init__(self)
         self._path = path
         self._maxresults = maxresults
