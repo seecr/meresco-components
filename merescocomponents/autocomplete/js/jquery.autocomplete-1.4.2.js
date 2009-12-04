@@ -138,7 +138,7 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     switch(ev.which){
       // return choose highlighted item or default propogate
       case RETURN:
-        if(!suggestions_menu) return true;
+        if(!suggestions_menu || current_highlight == 0) return true;
         else setHighlightedValue();
         return false;
       // escape clears menu
