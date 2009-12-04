@@ -42,12 +42,13 @@ def _date(offset=0):
     return formatdate(mktime(gmtime()) - timezone + offset)
 
 class Autocomplete(Observable):
-    def __init__(self, path, inputs, maxresults, delay=100):
+    def __init__(self, path, inputs, maxresults, labelMapping=None, delay=100):
         Observable.__init__(self)
         self._path = path
         self._maxresults = maxresults
         self._delay = delay
         self._inputs = inputs
+        self._labelMapping = labelMapping if labelMapping else {}
         self._fileServer = FileServer(documentRoot=javascriptDir)
 
     def handleRequest(self, arguments, path, **kwargs):
@@ -61,14 +62,21 @@ class Autocomplete(Observable):
 
     def _prefixSearch(self, arguments):
         t0 = time()
+        fieldname = arguments['fieldname'][0]
+        prefix = arguments['prefix'][0]
+        label = None
+        if '=' in prefix:
+            label, newPrefix = prefix.split('=', 1)
+            if label in self._labelMapping:
+                fieldname = self._labelMapping[label]
+                prefix = newPrefix
+        
         yield httputils.okXml
         yield '<?xml version="1.0" encoding="utf-8"?><root>'
-        for item, count in self.any.prefixSearch(
-                fieldname=arguments['fieldname'][0],
-                prefix=arguments['prefix'][0],
-                maxresults=self._maxresults
-            ):
-            yield """<item count="%s">%s</item>""" % (count, escapeXml(item))
+        for item, count in self.any.prefixSearch(fieldname=fieldname, prefix=prefix,
+                maxresults=self._maxresults):
+            escapedItem = escapeXml(item)
+            yield """<item count="%s">%s</item>""" % (count, '%s=%s' % (label, escapedItem) if label else escapedItem)
         yield '</root>'
         print "autocomplete -> prefixSearch", time()-t0
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 from merescocomponents.autocomplete import Autocomplete
 
@@ -20,6 +21,51 @@ class AutocompleteTest(CQ2TestCase):
 </root>""", body)
         self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
         self.assertEquals({'prefix':'t', 'fieldname':'field0', 'maxresults':50}, observer.calledMethods[0].kwargs)
+    
+    def testPrefixWithLabel(self):
+        auto = Autocomplete(
+            path='/some/path', 
+            maxresults=50, 
+            inputs=[('mainsearchinput', 'drilldown.dc.subject')],
+            labelMapping={'author': 'some.field.with.authors'}
+            )
+        observer = CallTrace('observer')
+        auto.addObserver(observer)
+        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+
+        head,body = ''.join(compose(auto.handleRequest(
+            path='/path', 
+            arguments={
+                'prefix': ['author=t'], 
+                'fieldname': ['field0']
+            }))).split('\r\n'*2)
+
+        self.assertEqualsWS("""<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <item count="1">author=term0</item>
+    <item count="3">author=term&lt;1&gt;</item>
+</root>""", body)
+        self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'prefix':'t', 'fieldname':'some.field.with.authors', 'maxresults':50}, observer.calledMethods[0].kwargs)
+        
+    def testPrefixWithNotExistingLabel(self):
+        auto = Autocomplete(
+            path='/some/path', 
+            maxresults=50, 
+            inputs=[('mainsearchinput', 'drilldown.dc.subject')],
+            labelMapping={'author': 'some.field.with.authors'}
+            )
+        observer = CallTrace('observer')
+        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+        auto.addObserver(observer)
+
+        result = ''.join(compose(auto.handleRequest(
+            path='/path', 
+            arguments={'prefix': ['authorwrong=t'], 'fieldname': ['field0']})))
+        header,body = result.split('\r\n'*2)
+        
+        self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'prefix':'authorwrong=t', 'fieldname':'field0', 'maxresults':50}, observer.calledMethods[0].kwargs)
 
     def testJqueryJS(self):
         auto = Autocomplete(path='/some/path', maxresults=50, inputs=[('mainsearchinput', 'drilldown.dc.subject')])
