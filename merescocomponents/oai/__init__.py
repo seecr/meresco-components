@@ -35,4 +35,3 @@ from uniquenumbergenerator import UniqueNumberGenerator
 from fields2oairecord import Fields2OaiRecordTx
 from oaijazz import OaiJazz
 from oaiaddrecord import OaiAddRecord, OaiAddRecordWithDefaults
-from berkeleydict import BerkeleyDict

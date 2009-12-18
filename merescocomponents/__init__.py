@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -27,3 +28,4 @@
 #
 ## end license ##
 from filelist import SortedFileList, FileList
+from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict

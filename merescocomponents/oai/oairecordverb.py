@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -65,8 +66,3 @@ class OaiRecordVerb(OaiVerb):
         if sets:
             return ''.join('<setSpec>%s</setSpec>' % xmlEscape(setSpec) for setSpec in sets)
         return ''
-
-    def _getPartFromStorage(self, recordId, aPartname):
-        stream = StringIO()
-        self.any.write(stream, recordId, aPartname)
-        return stream.getvalue()

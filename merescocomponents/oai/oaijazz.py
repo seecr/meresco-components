@@ -35,33 +35,35 @@ from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
-from merescocomponents import SortedFileList
+from merescocomponents import SortedFileList, DoubleUniqueBerkeleyDict, BerkeleyDict
 
 from bisect import bisect_left
 
-from berkeleydict import BerkeleyDict
-
 MERGE_TRIGGER = 1000
-class OaiJazz(object):
+SETSPEC_SEPARATOR = ','
 
+class OaiJazz(object):
     def __init__(self, aDirectory):
         self._directory = aDirectory
+        if isdir(join(aDirectory, 'sets')):
+            assert isdir(join(aDirectory, 'identifier2setSpecs')), "This is an old OaiJazz data storage which doesn't have the identifier2setSpecs directory. Please convert manually or rebuild complete data storage."
         isdir(join(aDirectory, 'stamp2identifier')) or makedirs(join(aDirectory,'stamp2identifier'))
+        isdir(join(aDirectory, 'identifier2setSpecs')) or makedirs(join(aDirectory,'identifier2setSpecs'))
         isdir(join(aDirectory, 'sets')) or makedirs(join(aDirectory,'sets'))
         isdir(join(aDirectory, 'prefixes')) or makedirs(join(aDirectory,'prefixes'))
         isdir(join(aDirectory, 'prefixesInfo')) or makedirs(join(aDirectory,'prefixesInfo'))
         self._prefixes = {}
         self._sets = {}
-        self._stamp2identifier = BerkeleyDict(join(self._directory, 'stamp2identifier'))
-        self._tombStones = SortedFileList(join(self._directory, 'tombStones.list'), mergeTrigger=MERGE_TRIGGER)
+        self._stamp2identifier = DoubleUniqueBerkeleyDict(join(self._directory, 'stamp2identifier'))
+        self._tombStones = SortedFileList(join(self._directory, 'tombStones.list'),
+        mergeTrigger=MERGE_TRIGGER)
+        self._identifier2setSpecs = BerkeleyDict(join(self._directory, 'identifier2setSpecs'))
         self._read()
-
-    def close(self):
-        #self._stamp2identifier.close()
-        pass
 
     def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
+        for setSpec, setName in sets:
+            assert SETSPEC_SEPARATOR not in setSpec, 'SetSpec "%s" contains illegal characters' % setSpec
         oldPrefixes, oldSets = self._delete(identifier)
         stamp = self._stamp()
         prefixes = set(prefix for prefix, schema, namespace in metadataFormats)
@@ -118,10 +120,9 @@ class OaiJazz(object):
         return self._prefixes.keys()
 
     def getSets(self, identifier):
-        stamp = self.getUnique(identifier)
-        if not stamp:
+        if identifier not in self._identifier2setSpecs:
             return []
-        return WrapIterable((setSpec for setSpec, stampIds in self._sets.items() if stamp in stampIds))
+        return self._identifier2setSpecs[identifier].split(SETSPEC_SEPARATOR)
 
     def getPrefixes(self, identifier):
         stamp = self.getUnique(identifier)
@@ -143,6 +144,8 @@ class OaiJazz(object):
         for prefix in prefixes:
             self._getPrefixList(prefix).append(stamp)
         self._stamp2identifier[str(stamp)]=identifier
+        if setSpecs:
+            self._identifier2setSpecs[identifier] = SETSPEC_SEPARATOR.join(setSpecs) 
 
     def _getAllMetadataFormats(self):
         for prefix in self._prefixes.keys():
@@ -193,10 +196,11 @@ class OaiJazz(object):
                 if stamp in prefixStamps:
                     oldPrefixes.append(prefix)
                     prefixStamps.remove(stamp)
-            for setSpec, setStamps in self._sets.items():
-                if stamp in setStamps:
-                    oldSets.append(setSpec)
-                    setStamps.remove(stamp)
+            if identifier in self._identifier2setSpecs:
+                oldSets = self._identifier2setSpecs[identifier].split(SETSPEC_SEPARATOR)
+                for setSpec in oldSets:
+                    self._sets[setSpec].remove(stamp)
+                del self._identifier2setSpecs[identifier]
         return oldPrefixes, oldSets
 
     def _read(self):

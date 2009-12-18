@@ -1,10 +1,10 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
-#       http://www.kennisnetictopschool.nl
+#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+#    Copyright (C) 2007-2009 Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
@@ -33,29 +33,41 @@ from os.path import join
 class BerkeleyDict(object):
     def __init__(self, directory):
         self._keyvalueDict = btopen(join(directory, 'keyvalue'))
-        self._valuekeyDict = btopen(join(directory, 'valuekey'))
 
     def __contains__(self, key):
         return self._keyvalueDict.__contains__(key)
 
     def __setitem__(self, key, value):
         self._keyvalueDict.__setitem__(key, value)
-        self._valuekeyDict.__setitem__(value, key)
         self._keyvalueDict.sync()
-        self._valuekeyDict.sync()
 
     def __getitem__(self, key):
         return self._keyvalueDict.__getitem__(key)
 
     def __delitem__(self, key):
-        value = self._keyvalueDict[key]
         self._keyvalueDict.__delitem__(key)
-        self._valuekeyDict.__delitem__(value)
         self._keyvalueDict.sync()
-        self._valuekeyDict.sync()
 
     def get(self, key, default=None):
         return self._keyvalueDict.get(key, default=default)
 
+class DoubleUniqueBerkeleyDict(BerkeleyDict):
+    """Berkeley based dictionary where both key and value must be unique"""
+    def __init__(self, directory):
+        BerkeleyDict.__init__(self, directory)
+        self._valuekeyDict = btopen(join(directory, 'valuekey'))
+
+    def __setitem__(self, key, value):
+        BerkeleyDict.__setitem__(self, key, value)
+        self._valuekeyDict.__setitem__(value, key)
+        self._valuekeyDict.sync()
+
+    def __delitem__(self, key):
+        value = self[key]
+        BerkeleyDict.__delitem__(self, key)
+        self._valuekeyDict.__delitem__(value)
+        self._valuekeyDict.sync()
+
     def getKeyFor(self, value):
         return self._valuekeyDict.get(value, None)
+        

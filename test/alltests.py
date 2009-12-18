@@ -43,6 +43,7 @@ import unittest
 
 from sorteditertoolstest import SortedItertoolsTest
 from filelisttest import FileListTest
+from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from packertest import PackerTest
 
 from facetindex.libfacetindextest import LibFacetIndexTest
@@ -87,7 +88,6 @@ from oai.xml2documenttest import Xml2DocumentTest
 from oai.oaijazztest import OaiJazzTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
 from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
-from oai.berkeleydicttest import BerkeleyDictTest
 
 from web.webquerytest import WebQueryTest
 

@@ -33,12 +33,13 @@ from os.path import isfile, join
 from time import time, mktime, strptime
 
 from merescocomponents.oai import OaiJazz
-from merescocomponents.oai.oaijazz import _flattenSetHierarchy, RecordId
+from merescocomponents.oai.oaijazz import _flattenSetHierarchy, RecordId, SETSPEC_SEPARATOR
 from StringIO import StringIO
 from lxml.etree import parse
 from merescocore.framework import Observable, be, Transparant
 
 from os import listdir
+from shutil import rmtree
 
 class OaiJazzTest(CQ2TestCase):
     def setUp(self):
@@ -61,7 +62,6 @@ class OaiJazzTest(CQ2TestCase):
 
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
-        self.jazz.close()
         myJazz = OaiJazz(self.tempdir)
         recordIds = myJazz.oaiSelect(prefix='prefix')
         self.assertEquals('oai://1234?34', recordIds.next())
@@ -69,7 +69,7 @@ class OaiJazzTest(CQ2TestCase):
     def xtestPerformanceTestje(self):
         t0 = time()
         lastTime = t0
-        for i in xrange(1,10**4 + 1):
+        for i in xrange(1, 10**4 + 1):
             self.jazz.addOaiRecord('id%s' % i, sets=[('setSpec%s' % ((i / 100)*100), 'setName')], metadataFormats=[('prefix','schema', 'namespace')])
             if i%1000 == 0 and i > 0:
                 tmp = time()
@@ -78,12 +78,17 @@ class OaiJazzTest(CQ2TestCase):
         t1 = time()
         ids = self.jazz.oaiSelect(sets=['setSpec9500'],prefix='prefix')
         firstId = ids.next()
+        allids = [firstId]
         t2 = time()
-        self.assertEquals(99, len(list(ids)))
+        allids.extend(list(ids))
+        self.assertEquals(100, len(allids))
         t3 = time()
-        jazz = OaiJazz(self.tempdir)
+        for identifier in allids:
+            list(self.jazz.getSets(identifier))
         t4 = time()
-        print t1 - t0, t2 - t1, t3 -t2, t3 -t1, t4 - t3
+        jazz = OaiJazz(self.tempdir)
+        t5 = time()
+        print t1 - t0, t2 - t1, t3 -t2, t3 -t1, t4 - t3, t5 - t4
         # a set form 10 million records costs 3.9 seconds (Without any efficiency things applied
         # it costs 0.3 seconds with 1 million records
         # retimed it at 2009-01-13:
@@ -95,7 +100,14 @@ class OaiJazzTest(CQ2TestCase):
         # New implementation with LuceneDict and SortedFileList with delete support
         #  insert of 10*4 took 153 secs
         #  oaiSelect took 0.1285
-
+        # 2009-11-18: new implementation of lookup of sets for an identifier (getSets) using
+        # berkeleydict.
+        # previous getSets(id) for 100 identifiers took 1.10 secs
+        # after getSets(id) for 100 identifiers took 0.004 secs
+        # penalty on insertion of 10.000 records previous 22 secs, after 27 secs
+        # Same test but with 100.000 records (ulimit must be increased)
+        # 285.413653135 0.240143060684 0.0137410163879 0.253884077072 0.00416588783264 0.167983055115
+        # 237.773926973 0.240620851517 0.0134921073914 0.254112958908 14.3589520454 0.160785913467
 
     def testGetDatestamp(self):
         self.jazz.addOaiRecord('123', metadataFormats=[('oai_dc', 'schema', 'namespace')])
@@ -128,13 +140,11 @@ class OaiJazzTest(CQ2TestCase):
 
     def testAddOaiRecordPersistent(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec', 'setName')])
-        self.jazz.close()
         jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='prefix', sets=['setSpec'])))
 
     def testWeirdSetOrPrefixNamesDoNotMatter(self):
         self.jazz.addOaiRecord('42', metadataFormats=[('/%^!@#$   \n\t','schema', 'namespace')], sets=[('set%2Spec\n\n', 'setName')])
-        self.jazz.close()
         jazz2 = OaiJazz(self.tempdir)
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
 
@@ -190,4 +200,17 @@ class OaiJazzTest(CQ2TestCase):
         self.jazz.delete('id1')
         self.assertEquals(2, self.jazz.getNrOfRecords('aPrefix'))
         
+    def testIllegalSetRaisesException(self):
+        # XSD: http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd
+        # according to the xsd the setSpec should conform to:
+        # ([A-Za-z0-9\-_\.!~\*'\(\)])+(:[A-Za-z0-9\-_\.!~\*'\(\)]+)*
+        #
+        # we will only check that a , (comma) is not used.
+        self.assertEquals(',', SETSPEC_SEPARATOR)
+        self.assertRaises(AssertionError, lambda: self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec,', 'setName')]))
+        
+    def testConversionNeeded(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('prefix','schema', 'namespace')], sets=[('setSpec', 'setName')])
+        rmtree(join(self.tempdir, 'identifier2setSpecs'))
+        self.assertRaises(AssertionError, lambda: OaiJazz(self.tempdir))
         
