@@ -213,7 +213,7 @@ class PerformanceTuningTest(LuceneTestCase):
         #print ts
 
 
-    def testBaseLucenePerformanceWithVaryingBatchSize(self):
+    def XXXXXXXXXtestBaseLucenePerformanceWithVaryingBatchSize(self):
         timings = {}
         print
         for batchsize in [1, 10, 100, 1000]:
