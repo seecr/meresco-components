@@ -91,6 +91,8 @@ from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
 
 from web.webquerytest import WebQueryTest
 
+from inboxtest import InboxTest
+
 if __name__ == '__main__':
     unittest.main()
     os.system('find .. -name "*.pyc" | xargs rm -f')
