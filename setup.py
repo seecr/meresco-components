@@ -112,7 +112,7 @@ class gcj_build_ext(build_ext):
                 os.makedirs(os.path.dirname(oFile))
             except OSError:
                 pass
-            cl = "CLASSPATH=%s gcj-4.1 -fPIC -c %s -o %s" % (CLASSPATH, sourceFile, oFile)
+            cl = "CLASSPATH=%s gcj-4.3 -fPIC -c %s -o %s" % (CLASSPATH, sourceFile, oFile)
             log.info(cl)
             rv = os.system(cl)
             if rv != 0:

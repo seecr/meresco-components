@@ -1,5 +1,8 @@
 #!/bin/bash
 MACHINE=`gcc -dumpmachine`
-LIBRARY_PATH=/usr/lib/gcc/$MACHINE/4.1.2 \
-CPLUS_INCLUDE_PATH=/usr/include/c++/4.1.2:/usr/lib/gcc/$MACHINE/4.1.2/include \
-CPP=cpp-4.1 CC=gcc-4.1 CXX=g++-4.1 python2.5 setup.py build_ext --inplace
+GCCVERSION=`gcc -dumpversion`
+GCCVERSION_SHORT=$(echo $GCCVERSION | awk -F. '{print $1"."$2}')
+
+LIBRARY_PATH=/usr/lib/gcc/$MACHINE/${GCCVERSION} \
+CPLUS_INCLUDE_PATH=/usr/include/c++/${GCCVERSION}:/usr/lib/gcc/$MACHINE/${GCCVERSION}/include \
+CPP=cpp-${GCCVERSION_SHORT} CC=gcc-${GCCVERSION_SHORT} CXX=g++-${GCCVERSION_SHORT} python2.5 setup.py build_ext --inplace
