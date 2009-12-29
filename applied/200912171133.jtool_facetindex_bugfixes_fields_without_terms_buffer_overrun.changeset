@@ -1,5 +1,15 @@
-diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1_with_oai/merescocomponents/facetindex/_docsetlist.cpp trunk/merescocomponents/facetindex/_docsetlist.cpp
---- version_2.23.1_with_oai/merescocomponents/facetindex/_docsetlist.cpp	2009-12-16 16:30:47.000000000 +0100
+Changeset created on 2009-12-17 11:33 by Seek You Too
+
+Description: DocSetList_forField fixes
+  - Character buffer for term dynamically allocated based on size in DocSetList_forField.
+  - Fixed issue with DocSetList_forField for fields that don't appear in the index.
+
+This was originally implemented around 2009-11-14.
+
+Baseline version: meresco-components/tags/version_2.23.1
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1/merescocomponents/facetindex/_docsetlist.cpp trunk/merescocomponents/facetindex/_docsetlist.cpp
+--- version_2.23.1/merescocomponents/facetindex/_docsetlist.cpp	2009-12-16 16:30:47.000000000 +0100
 +++ trunk/merescocomponents/facetindex/_docsetlist.cpp	2009-12-15 14:26:58.000000000 +0100
 @@ -27,6 +27,7 @@
   * end license */
@@ -60,8 +70,8 @@ diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applie
      return list;
  }
  
-diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1_with_oai/merescocomponents/facetindex/__init__.py trunk/merescocomponents/facetindex/__init__.py
---- version_2.23.1_with_oai/merescocomponents/facetindex/__init__.py	2009-12-16 16:30:47.000000000 +0100
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1/merescocomponents/facetindex/__init__.py trunk/merescocomponents/facetindex/__init__.py
+--- version_2.23.1/merescocomponents/facetindex/__init__.py	2009-12-16 16:30:47.000000000 +0100
 +++ trunk/merescocomponents/facetindex/__init__.py	2009-12-15 14:26:58.000000000 +0100
 @@ -44,5 +44,6 @@
  from trie import Trie
@@ -70,8 +80,8 @@ diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applie
 +from clausecollector import ClauseCollector
  import merescolucene
  
-diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1_with_oai/merescocomponents/facetindex/lucene.py trunk/merescocomponents/facetindex/lucene.py
---- version_2.23.1_with_oai/merescocomponents/facetindex/lucene.py	2009-12-16 16:30:47.000000000 +0100
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1/merescocomponents/facetindex/lucene.py trunk/merescocomponents/facetindex/lucene.py
+--- version_2.23.1/merescocomponents/facetindex/lucene.py	2009-12-16 16:30:47.000000000 +0100
 +++ trunk/merescocomponents/facetindex/lucene.py	2009-12-15 14:26:58.000000000 +0100
 @@ -48,10 +48,6 @@
  class LuceneException(Exception):
@@ -84,8 +94,8 @@ diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applie
  class _Logger(object):
      def comment(self, *strings):
          self.writeLine('# ', *strings)
-diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1_with_oai/test/alltests.py trunk/test/alltests.py
---- version_2.23.1_with_oai/test/alltests.py	2009-12-16 16:30:59.000000000 +0100
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1/test/alltests.py trunk/test/alltests.py
+--- version_2.23.1/test/alltests.py	2009-12-16 16:30:59.000000000 +0100
 +++ trunk/test/alltests.py	2009-12-15 14:26:58.000000000 +0100
 @@ -62,6 +62,7 @@
  
@@ -95,8 +105,8 @@ diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applie
  
  from ngram.ngramtest import NGramTest
  from ngram.ngramquerytest import NGramQueryTest
-diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1_with_oai/test/facetindex/clausecollectortest.py trunk/test/facetindex/clausecollectortest.py
---- version_2.23.1_with_oai/test/facetindex/clausecollectortest.py	1970-01-01 01:00:00.000000000 +0100
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1/test/facetindex/clausecollectortest.py trunk/test/facetindex/clausecollectortest.py
+--- version_2.23.1/test/facetindex/clausecollectortest.py	1970-01-01 01:00:00.000000000 +0100
 +++ trunk/test/facetindex/clausecollectortest.py	2009-12-15 14:26:54.000000000 +0100
 @@ -0,0 +1,46 @@
 +# -*- coding: utf-8 -*-
@@ -145,8 +155,8 @@ diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applie
 +        ClauseCollector(parseString(cql), logger=lambda clause: clauses.append(clause)).visit()
 +        return clauses
 +
-diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1_with_oai/test/facetindex/docsetlisttest.py trunk/test/facetindex/docsetlisttest.py
---- version_2.23.1_with_oai/test/facetindex/docsetlisttest.py	2009-12-16 16:30:47.000000000 +0100
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2.23.1/test/facetindex/docsetlisttest.py trunk/test/facetindex/docsetlisttest.py
+--- version_2.23.1/test/facetindex/docsetlisttest.py	2009-12-16 16:30:47.000000000 +0100
 +++ trunk/test/facetindex/docsetlisttest.py	2009-12-15 14:26:54.000000000 +0100
 @@ -30,6 +30,7 @@
  from merescocomponents.facetindex import DocSetList, DocSet
