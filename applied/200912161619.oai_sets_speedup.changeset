@@ -1,3 +1,15 @@
+Changeset created on 2009-12-16 16:19 by Seek You Too
+
+Description: OAI-PMH Performance improvement
+    
+    For LOREnet we've changed the implementation of sets in the oai components to improve the performance. Having multiple sets in (173 in this case) meant that while returning a record it had to look into each set list if the record was part of that set. This could take up several seconds.
+
+    The new implementation uses a dictionary to state all sets a particular record is a member of. This greatly increased the performance.
+
+This was originally implemented around 2009-11-20
+
+Baseline version: meresco-components/tags/version_2.23.1
+
 diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified --exclude=facetindex version_2.23.1/merescocomponents/berkeleydict.py trunk/merescocomponents/berkeleydict.py
 --- version_2.23.1/merescocomponents/berkeleydict.py	1970-01-01 01:00:00.000000000 +0100
 +++ trunk/merescocomponents/berkeleydict.py	2009-12-15 14:27:01.000000000 +0100
