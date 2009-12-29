@@ -1,3 +1,14 @@
+Changeset created on 2009-12-17 14:20 by Seek You Too
+
+Description: Added Inbox
+   
+    Added component Inbox which was originally developed for University of Tilburg. Inbox is an alternative update mechanism for your Meresco server. It will pick up records from the inbox directory and sends a corresponding 'add' message to observing components.
+
+Originally developed around 2008-12-08.
+Added to Meresco around 2009-11-27.
+
+Baseline version: meresco-components/tags/version_2.21.4
+
 diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified without_inbox/merescocomponents/inbox.py with_inbox/merescocomponents/inbox.py
 --- without_inbox/merescocomponents/inbox.py	1970-01-01 01:00:00.000000000 +0100
 +++ with_inbox/merescocomponents/inbox.py	2009-12-17 14:18:20.000000000 +0100
