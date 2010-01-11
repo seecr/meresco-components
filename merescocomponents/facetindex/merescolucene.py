@@ -26,16 +26,27 @@
 import sys
 from os.path import join, abspath, dirname, isfile
 
-try:
-    import jtool
+import jtool
+from jtool import JClass
+
+if hasattr(jtool, "load"):
     jtool.load(join(abspath(dirname(__file__)), "_facetindex.so"))
     jtool.load('liblucene-core.so.2')
-except:
+    MerescoJClass = type
+else:
     facetIndexLibPath = join(abspath(dirname(__file__)), "_facetindex.so")
-    assert(isfile(facetIndexLibPath))                                     
-    sys.path.extend([facetIndexLibPath, 'liblucene-core.so.2'])           
+    assert(isfile(facetIndexLibPath))
+    sys.path.extend([facetIndexLibPath, 'liblucene-core.so.2'])
+    class MerescoJClass(JClass):
+        def __new__(self, name, bases, dct):
+            base = bases[0]
+            kwargs = { 'jlib': base._jlib } if hasattr(base, '_jlib') else {}
+            return JClass.__new__(self, name, bases, dct, jclassname=base.__name__, **kwargs)
+        def __repr__(self):
+            return 'Submetatype of ' + str(JClass)
+        __str__ = __repr__
 
-from jtool import JClass
+
 from java.lang import Object, Float
 from java.lang.reflect import Array
 from java.util import Iterator
@@ -69,15 +80,6 @@ def iterJ(jIterator):
             return
     while jIterator.hasNext():
         yield jIterator.next()
-
-class MerescoJClass(JClass):
-    def __new__(self, name, bases, dct):
-        base = bases[0]
-        kwargs = { 'jlib': base._jlib } if hasattr(base, '_jlib') else {}
-        return JClass.__new__(self, name, bases, dct, jclassname=base.__name__, **kwargs)
-    def __repr__(self):
-        return 'Submetatype of ' + str(JClass)
-    __str__ = __repr__
 
 
 class IndexWriter(_IndexWriter):
