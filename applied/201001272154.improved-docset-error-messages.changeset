@@ -1,0 +1,46 @@
+Changeset created on Wed Jan 27 21:54:03 CET 2010 by Seek You Too
+
+Description: improved message on add wrong docIds to a DocSet. 
+
+Baseline version: meresco-components/tags/version_2.21.5
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0-r1760/merescocomponents/facetindex/docset.py version_0-r1817/merescocomponents/facetindex/docset.py
+--- version_0-r1760/merescocomponents/facetindex/docset.py	2010-01-27 21:45:33.357895414 +0100
++++ version_0-r1817/merescocomponents/facetindex/docset.py	2010-01-27 21:46:21.258959014 +0100
+@@ -144,8 +144,9 @@
+ 
+     def add(self, doc):
+         l = DocSet_len(self)
+-        if l > 0 and doc <= DocSet_get(self, l-1):
+-            raise Exception('non-increasing docid: %d must be > %d' % (doc, l))
++        lastDoc = DocSet_get(self, l-1)
++        if l > 0 and doc <= lastDoc:
++            raise Exception('non-increasing docid: %d must be > %d, (length %d)' % (doc, lastDoc, l))
+         DocSet_add(self._cobj, doc)
+ 
+     def merge(self, anotherDocSet):
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0-r1760/test/facetindex/docsettest.py version_0-r1817/test/facetindex/docsettest.py
+--- version_0-r1760/test/facetindex/docsettest.py	2010-01-27 21:45:31.945129487 +0100
++++ version_0-r1817/test/facetindex/docsettest.py	2010-01-27 21:46:19.841193913 +0100
+@@ -1,3 +1,4 @@
++# -*- coding: utf-8 -*-
+ ## begin license ##
+ #
+ #    Meresco Components are components to build searchengines, repositories
+@@ -75,6 +76,16 @@
+         i.add(10)
+         self.assertEquals([0,1,2,3,4,  6,7,8,9,10], i)
+ 
++    def testAddRaisesException(self):
++        i = DocSet(xrange(10))
++        try:
++            i.add(9)
++            self.fail()
++        except AssertionError:
++            raise
++        except Exception, e:
++            self.assertTrue('non-increasing' in str(e))
++
+     def assertIntersect(self, lhs, rhs):
+         soll = set(lhs).intersection(set(rhs))
+         intersection1 = DocSet(lhs).intersect(DocSet(rhs))

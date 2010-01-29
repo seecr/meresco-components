@@ -95,6 +95,10 @@ DocSet_delete = libFacetIndex.DocSet_delete
 DocSet_delete.argtypes = [DOCSET]
 DocSet_delete.restype = None
 
+DocSet_capacity = libFacetIndex.DocSet_capacity
+DocSet_capacity.argtypes = [DOCSET]
+DocSet_capacity.restype = c_int
+
 
 class DocSet(object):
 
@@ -168,3 +172,6 @@ class DocSet(object):
     def intersect(self, rhs):
         r = DocSet_intersect(self, rhs)
         return DocSet(cobj=r, own=True)
+
+    def capacity(self):
+        return DocSet_capacity(self)

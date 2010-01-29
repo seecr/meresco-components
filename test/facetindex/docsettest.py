@@ -188,3 +188,11 @@ class DocSetTest(LuceneTestCase):
         results = []
         for i in xrange(67890):
             results.append(a.intersect(b))
+
+    def testIntersectAllocatesMinimalAmountOfMemory(self):
+        a = DocSet.forTesting(1000)
+        b = DocSet.forTesting(100)
+        result = a.intersect(b)
+        self.assertEquals(100, result.capacity())
+        result = b.intersect(a)
+        self.assertEquals(100, result.capacity())

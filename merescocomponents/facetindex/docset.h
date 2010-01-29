@@ -95,6 +95,7 @@ extern "C" {
     fwPtr   DocSet_fromQuery                 (lucene::search::Searcher* searcher, lucene::search::Query* query, IntegerList* mapping);
     fwPtr   DocSet_forTerm                   (lucene::index::IndexReader*, char* fieldname, char* term, IntegerList* mapping);
     void    DocSet_delete                    (fwPtr docSet);
+    int     DocSet_capacity                  (fwPtr docSet);
 }
 
 #define SWITCHPOINT 200 // for random docsset, this is the trippoint, experimentally

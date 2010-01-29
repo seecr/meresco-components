@@ -73,6 +73,10 @@ void DocSet_delete(fwPtr docset) {
     Pool_free(_docsetPool, docset);
 }
 
+int DocSet_capacity(fwPtr docset) {
+    return pDS(docset)->capacity();
+}
+
 int DocSet_measure(fwPtr docset) {
     return pDS(docset)->measure();
 }
@@ -135,7 +139,7 @@ fwPtr DocSet_intersect(fwPtr lhs, fwPtr rhs) {
     DocSet::iterator b = pDS(lhs)->end();
     DocSet::iterator c = pDS(rhs)->begin();
     DocSet::iterator d = pDS(rhs)->end();
-    pDS(result)->resize(std::min(pDS(rhs)->size(), pDS(rhs)->size()));
+    pDS(result)->resize(std::min(pDS(lhs)->size(), pDS(rhs)->size()));
     guint32* result_feeder = &(pDS(result)->front());
     guint32* start = result_feeder;
     intersect_generic<DocSet::iterator, guint32*>(a, b, c, d, result_feeder);

@@ -1,0 +1,79 @@
+Changeset created on Wed Jan 27 22:00:25 CET 2010 by Seek You Too
+
+Description: fixed docset resize to reduce memory usage.
+
+resize is now based on left and righthand size to reserve no memory than nec
+essary.
+
+Baseline version: meresco-components/tags/version_2.21.5
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0-r1831/merescocomponents/facetindex/_docset.cpp version_0-r1850/merescocomponents/facetindex/_docset.cpp
+--- version_0-r1831/merescocomponents/facetindex/_docset.cpp	2010-01-27 21:48:41.638700594 +0100
++++ version_0-r1850/merescocomponents/facetindex/_docset.cpp	2010-01-27 21:50:37.758461768 +0100
+@@ -60,6 +60,10 @@
+     Pool_free(_docsetPool, docset);
+ }
+ 
++int DocSet_capacity(fwPtr docset) {
++    return pDS(docset)->capacity();
++}
++
+ int DocSet_measure(fwPtr docset) {
+     return pDS(docset)->measure();
+ }
+@@ -121,7 +125,7 @@
+     DocSet::iterator b = pDS(lhs)->end();
+     DocSet::iterator c = pDS(rhs)->begin();
+     DocSet::iterator d = pDS(rhs)->end();
+-    pDS(result)->resize(std::min(pDS(rhs)->size(), pDS(rhs)->size()));
++    pDS(result)->resize(std::min(pDS(lhs)->size(), pDS(rhs)->size()));
+     guint32* result_feeder = &(pDS(result)->front());
+     guint32* start = result_feeder;
+     intersect_generic<DocSet::iterator, guint32*>(a, b, c, d, result_feeder);
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0-r1831/merescocomponents/facetindex/docset.h version_0-r1850/merescocomponents/facetindex/docset.h
+--- version_0-r1831/merescocomponents/facetindex/docset.h	2010-01-27 21:48:41.639700428 +0100
++++ version_0-r1850/merescocomponents/facetindex/docset.h	2010-01-27 21:50:37.759461603 +0100
+@@ -88,6 +88,7 @@
+     fwPtr   DocSet_fromQuery                 (PyJObject* psearcher, PyJObject* pquery, IntegerList* mapping);
+     fwPtr   DocSet_fromTermDocs              (PyJObject* termDocs, int freq, IntegerList* mapping);
+     void    DocSet_delete                    (fwPtr docSet);
++    int     DocSet_capacity                  (fwPtr docSet);
+ }
+ 
+ #define SWITCHPOINT 200 // for random docsset, this is the trippoint, experimentally
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0-r1831/merescocomponents/facetindex/docset.py version_0-r1850/merescocomponents/facetindex/docset.py
+--- version_0-r1831/merescocomponents/facetindex/docset.py	2010-01-27 21:48:41.639700428 +0100
++++ version_0-r1850/merescocomponents/facetindex/docset.py	2010-01-27 21:50:37.759461603 +0100
+@@ -96,6 +96,10 @@
+ DocSet_delete.argtypes = [DOCSET]
+ DocSet_delete.restype = None
+ 
++DocSet_capacity = libFacetIndex.DocSet_capacity
++DocSet_capacity.argtypes = [DOCSET]
++DocSet_capacity.restype = c_int
++
+ 
+ class DocSet(object):
+ 
+@@ -171,3 +175,6 @@
+     def intersect(self, rhs):
+         r = DocSet_intersect(self, rhs)
+         return DocSet(cobj=r, own=True)
++
++    def capacity(self):
++        return DocSet_capacity(self)
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0-r1831/test/facetindex/docsettest.py version_0-r1850/test/facetindex/docsettest.py
+--- version_0-r1831/test/facetindex/docsettest.py	2010-01-27 21:48:03.735980379 +0100
++++ version_0-r1850/test/facetindex/docsettest.py	2010-01-27 21:50:17.697785430 +0100
+@@ -200,3 +200,11 @@
+         results = []
+         for i in xrange(67890):
+             results.append(a.intersect(b))
++
++    def testIntersectAllocatesMinimalAmountOfMemory(self):
++        a = DocSet.forTesting(1000)
++        b = DocSet.forTesting(100)
++        result = a.intersect(b)
++        self.assertEquals(100, result.capacity())
++        result = b.intersect(a)
++        self.assertEquals(100, result.capacity())
