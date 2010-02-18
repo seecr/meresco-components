@@ -149,6 +149,10 @@ class OaiJazzTest(CQ2TestCase):
         self.assertEquals(['42'], list(jazz2.oaiSelect(prefix='/%^!@#$   \n\t', sets=['set%2Spec\n\n'])))
 
 
+    def testOaiSelectWithFromAfterEndOfTime(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
+        result = self.jazz.oaiSelect(prefix='oai_dc', oaiFrom='9999-01-01T00:00:00Z')
+        self.assertEquals(0,len(list(result)))
 
     # unique, for continueAfter
 

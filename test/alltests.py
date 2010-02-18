@@ -80,6 +80,7 @@ from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
 from oai.oailistsetstest import OaiListSetsTest
 from oai.oailisttest import OaiListTest
 from oai.oaipmhtest import OaiPmhTest, OaiPmhWithIdentifierTest
+from oai.oaipmhjazztest import OaiPmhJazzTest
 from oai.oaitooltest import OaiToolTest
 from oai.oaiprovenancetest import OaiProvenanceTest
 from oai.resumptiontokentest import ResumptionTokenTest

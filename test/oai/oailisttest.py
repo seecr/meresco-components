@@ -7,7 +7,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -277,6 +277,8 @@ class OaiListTest(OaiTestCase):
         self.observable.any.listIdentifiers(self.request)
 
         self.assertTrue(self.stream.getvalue().find("noRecordsMatch") > -1)
+
+        self.assertEquals('noRecordsMatch', self.subject.preProcess(self.request))
 
     def testSetsInHeader(self):
         self.request.args = {'verb':['ListRecords'], 'metadataPrefix': ['oai_dc']}
