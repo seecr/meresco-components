@@ -33,6 +33,7 @@ from os import makedirs
 from PyLucene import IndexReader, IndexWriter, IndexSearcher, StandardAnalyzer, Term, Field, TermQuery, Sort,  StandardTokenizer, StandardFilter, LowerCaseFilter, QueryFilter
 from time import time
 from itertools import ifilter, islice
+from StringIO import StringIO
 
 from document import IDFIELD
 from merescocore.framework import Observable
@@ -49,6 +50,17 @@ class LuceneException(Exception):
 class IncludeStopWordAnalyzer(object):
     def tokenStream(self, fieldName, reader):
         return LowerCaseFilter(StandardFilter(StandardTokenizer(reader)))
+
+def tokenize(aString):
+    analyzer = IncludeStopWordAnalyzer()
+    ts = analyzer.tokenStream('ignored fieldname', StringIO(unicode(aString)))
+    tokens = []
+    
+    token = ts.next()
+    while token != None:
+        tokens.append(token.termText())
+        token = ts.next()
+    return tokens
 
 class _Logger(object):
     def comment(self, *strings):

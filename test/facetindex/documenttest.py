@@ -101,3 +101,15 @@ class DocumentTest(unittest.TestCase):
         d.addIndexedField('field', 'value1')
         d.addIndexedField('field', 'value2')
         self.assertEquals({'__id__': ['1234'], 'field': ['value1', 'value2']}, d.asDict())
+        
+    def testTokenizedFields(self):
+        d = Document('1234')
+        self.assertEquals([], d.tokenizedFields())
+        
+        d.addIndexedField('field1', 'value1')
+        d.addIndexedField('field2', 'value2.1')
+        self.assertEquals(['field1', 'field2'], d.tokenizedFields())
+        
+        d.addIndexedField('field2', 'value2.2')
+        self.assertEquals(['field1', 'field2'], d.tokenizedFields())
+        

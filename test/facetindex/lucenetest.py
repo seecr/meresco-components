@@ -44,6 +44,8 @@ from cqlparser import parseString
 
 from weightless import Reactor
 
+from merescocomponents.facetindex.lucene import tokenize
+
 class LuceneTest(CQ2TestCase):
 
     def setUp(self):
@@ -57,6 +59,17 @@ class LuceneTest(CQ2TestCase):
     def testCreation(self):
         self.assertEquals(os.path.isdir(self.tempdir), True)
         self.assertTrue(IndexReader.indexExists(self.tempdir))
+
+    def testTokenize(self):
+        self.assertEquals([], tokenize(''))
+        self.assertEquals(['token'], tokenize('token'))
+        self.assertEquals(['token'], tokenize('TOKEN'))
+        self.assertEquals(['token'], tokenize('token.'))
+        self.assertEquals(['token'], tokenize("token's"))
+        self.assertEquals(['token'], tokenize('t.o.k.e.n.'))
+        self.assertEquals(['this', 'is', 'a', 'text'], tokenize('This is a text.'))
+        
+        
 
     def testAddToIndex(self):
         myDocument = Document('0123456789')

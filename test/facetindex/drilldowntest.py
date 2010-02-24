@@ -408,3 +408,24 @@ class DrilldownTest(CQ2TestCase):
             64: {'dictionaries':1360889,'postings':8, 'terms':7, 'fields':3, 'totalBytes':628}
         }
         self.assertEquals(results[machineBits], measure)
+        
+    def testTokenize(self):
+        drilldown = Drilldown(['tokenized', 'untokenized', ('tokenized', 'untokenized')], tokenize=['tokenized', ('tokenized', 'untokenized')])
+        drilldown.addDocument(0, {'tokenized': ['token one'], 'untokenized': ['token two']})
+        drilldown.addDocument(1, {'tokenized': ['token two'], 'untokenized': ['token two']})
+        drilldown.commit()
+        self.assertEquals([('token', 2), ('one', 1), ('two', 1)], list(drilldown._docsetlists['tokenized'].allCardinalities()))
+        self.assertEquals(
+            [('token two', 2)], 
+            list(drilldown._docsetlists['untokenized'].allCardinalities()))
+        self.assertEquals(
+            set([('token', 2), ('one', 1), ('two', 2)]), 
+            set(drilldown._docsetlists[('tokenized', 'untokenized')].allCardinalities()))
+
+    def testWeirdBehaviourWithDoubles(self):
+        drilldown = Drilldown(['field1', ('field1', 'field2')], tokenize=[('field1', 'field2')])
+        drilldown.addDocument(0, {'field1': ['1'], 'field2': ['a four word line']})
+        
+        drilldown.addDocument(1, {'field1': ['2'], 'field2': ['a four word line']})
+        drilldown.commit()
+        self.assertEquals([], list(drilldown._docsetlists[('field1', 'field2')].allCardinalities()))

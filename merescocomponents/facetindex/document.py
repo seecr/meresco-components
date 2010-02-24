@@ -46,6 +46,7 @@ class Document(object):
         self._document = LuceneDocument()
         self._document.add(Field(IDFIELD, anId, Field.Store.YES, Field.Index.UN_TOKENIZED))
         self._fields = [IDFIELD]
+        self._tokenizedFields = []
 
     def _isValidFieldValue(self, anObject):
         return isinstance(anObject, basestring) and anObject.strip()
@@ -65,6 +66,8 @@ class Document(object):
 
         self._addIndexedField(aKey, aValue, tokenize)
         self._fields.append(aKey)
+        if tokenize and not aKey in self._tokenizedFields:
+            self._tokenizedFields.append(aKey)
 
     def _addIndexedField(self, aKey, aValue, tokenize = True):
         self._document.add(Field(aKey,
@@ -89,6 +92,9 @@ class Document(object):
             if not field.stringValue()  in dictionary[key]:
                 dictionary[key].append(field.stringValue())
         return dictionary
+
+    def tokenizedFields(self):
+        return self._tokenizedFields
 
     def __repr__(self):
         return repr(self.asDict())
