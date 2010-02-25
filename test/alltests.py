@@ -85,7 +85,6 @@ from oai.oaitooltest import OaiToolTest
 from oai.oaiprovenancetest import OaiProvenanceTest
 from oai.resumptiontokentest import ResumptionTokenTest
 from oai.oaisetselecttest import OaiSetSelectTest
-from oai.xml2documenttest import Xml2DocumentTest
 from oai.oaijazztest import OaiJazzTest
 from oai.oaiaddrecordtest import OaiAddRecordTest
 from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
