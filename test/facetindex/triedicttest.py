@@ -34,4 +34,26 @@ from merescocomponents.facetindex.triedict import TrieDict
 class TrieDictTest(TestCase):
     def testConstructor(self):
         t = TrieDict()
-    
+        
+    def xtestAddWords(self):
+        t = TrieDict()
+        termId1 = t.add('xy', 1)
+        termId2 = t.add('y', 1)
+        self.assertEquals(termId1, t.add('xy', 1))
+        self.assertEquals(termId2, t.add('y', 1))
+
+    def testAddWords2(self):
+        t = TrieDict()
+        termId1 = t.add('xy', 1)
+        termId2 = t.add('x', 1)
+        self.assertEquals(termId1, t.add('xy', 1))
+        self.assertEquals(termId2, t.add('x', 1))
+        
+    def xtestAddWords3(self):
+        t = TrieDict()
+        termId1 = t.add('x', 1)
+        termId2 = t.add('xy', 1)
+        
+        self.assertEquals(termId1, t.add('x', 1))
+        self.assertEquals(termId2, t.add('xy', 1))
+

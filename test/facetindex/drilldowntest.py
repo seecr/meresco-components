@@ -421,11 +421,3 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(
             set([('token', 2), ('one', 1), ('two', 2)]), 
             set(drilldown._docsetlists[('tokenized', 'untokenized')].allCardinalities()))
-
-    def testWeirdBehaviourWithDoubles(self):
-        drilldown = Drilldown(['field1', ('field1', 'field2')], tokenize=[('field1', 'field2')])
-        drilldown.addDocument(0, {'field1': ['1'], 'field2': ['a four word line']})
-        
-        drilldown.addDocument(1, {'field1': ['2'], 'field2': ['a four word line']})
-        drilldown.commit()
-        self.assertEquals([], list(drilldown._docsetlists[('field1', 'field2')].allCardinalities()))

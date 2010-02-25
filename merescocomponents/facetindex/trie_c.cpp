@@ -452,8 +452,7 @@ void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* poo
             interface(child)->free(child);
             child = ListNode_create(fwValueNone);
             ListNode_addValue(child, value, string, pool);
-        }
-        else if (isList(child)) {
+        } else if (isList(child)) {
             if ( ! ListNode_hasRoom(child) ) {
                 guint32 value = ListNode_getValue(child, (char*) "", pool);
                 fwPtr newNode = TrieNode_create(value);

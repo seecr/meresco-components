@@ -28,7 +28,7 @@
 ## end license ##
 
 from libfacetindex import libFacetIndex
-from ctypes import POINTER
+from ctypes import POINTER, c_char_p, c_uint32
 from cq2utils import deallocator
 
 TRIEDICT = POINTER(None)
@@ -45,6 +45,10 @@ TrieDict_measureall = libFacetIndex.TrieDict_measureall
 TrieDict_measureall.argtypes = None
 TrieDict_measureall.restype = int
 
+TrieDict_add = libFacetIndex.TrieDict_add
+TrieDict_add.argtypes = [TRIEDICT, c_char_p, c_uint32]
+TrieDict_add.restype = c_uint32
+
 class TrieDict(object):
 
     @classmethod
@@ -55,3 +59,6 @@ class TrieDict(object):
         self._cobj = TrieDict_create()
         self._dealloc = deallocator(TrieDict_delete, self._cobj)
         self._as_parameter_ = self._cobj
+
+    def add(self, term, value):
+        return TrieDict_add(self, term, value)

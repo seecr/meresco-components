@@ -71,6 +71,10 @@ void TrieDict::nodecount(void) {
 
 
 // ########### C Wrappers #############
+guint32 TrieDict_add(TrieDict* trieDict, char* term, value value) {
+    return trieDict->add(term, value);
+}
+
 TrieDict* TrieDict_create(void) {
     return new TrieDict();
 }

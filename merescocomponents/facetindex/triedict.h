@@ -59,6 +59,7 @@ class TrieDict {
         void               nodecount(void);
 };
 extern "C" {
+    guint32                TrieDict_add(TrieDict*, char* term, value value);
     TrieDict*              TrieDict_create(void);
     void                   TrieDict_delete(TrieDict*);
     void                   TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, IntegerList* result);
