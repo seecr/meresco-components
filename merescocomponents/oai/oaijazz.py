@@ -8,7 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -29,11 +30,10 @@
 ## end license ##
 
 from __future__ import with_statement
-from os.path import isdir, join, isfile
+from os.path import isdir, join
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
-from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 from merescocomponents import SortedFileList, DoubleUniqueBerkeleyDict, BerkeleyDict
 
@@ -60,7 +60,9 @@ class OaiJazz(object):
         self._identifier2setSpecs = BerkeleyDict(join(self._directory, 'identifier2setSpecs'))
         self._read()
 
-    def addOaiRecord(self, identifier, sets=[], metadataFormats=[]):
+    def addOaiRecord(self, identifier, sets=None, metadataFormats=None):
+        sets = [] if sets == None else sets
+        metadataFormats = [] if metadataFormats == None else metadataFormats
         assert [prefix for prefix, schema, namespace in metadataFormats], 'No metadataFormat specified for record with identifier "%s"' % identifier
         for setSpec, setName in sets:
             assert SETSPEC_SEPARATOR not in setSpec, 'SetSpec "%s" contains illegal characters' % setSpec
@@ -81,7 +83,8 @@ class OaiJazz(object):
         self._add(stamp, identifier, oldSets, oldPrefixes)
         self._tombStones.append(stamp)
 
-    def oaiSelect(self, sets=[], prefix='oai_dc', continueAfter='0', oaiFrom=None, oaiUntil=None, batchSize='ignored'):
+    def oaiSelect(self, sets=None, prefix='oai_dc', continueAfter='0', oaiFrom=None, oaiUntil=None, batchSize='ignored'):
+        sets = [] if sets == None else sets
         start = max(int(continueAfter)+1, self._fromTime(oaiFrom))
         stop = self._untilTime(oaiUntil)
         stampIds = self._prefixes.get(prefix, [])
