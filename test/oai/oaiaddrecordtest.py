@@ -64,6 +64,17 @@ class OaiAddRecordTest(CQ2TestCase):
         self.assertEquals(set([('1','1')]), self.observer.calledMethods[0].kwargs['sets'])
         self.assertEquals([('oai_dc', '', "http://www.openarchives.org/OAI/2.0/")], self.observer.calledMethods[0].kwargs['metadataFormats'])
 
+    def testAddElementTree(self):
+        header = parse(StringIO('<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>1</setSpec></header>'))
+        
+        self.subject.add('123', 'oai_dc', header)
+        
+        self.assertEquals(1,len(self.observer.calledMethods))
+        self.assertEquals('addOaiRecord', self.observer.calledMethods[0].name)
+        self.assertEquals('123', self.observer.calledMethods[0].kwargs['identifier'])
+        self.assertEquals(set([('1','1')]), self.observer.calledMethods[0].kwargs['sets'])
+        self.assertEquals([('oai_dc', '', "http://www.openarchives.org/OAI/2.0/")], self.observer.calledMethods[0].kwargs['metadataFormats'])
+
     def testAddRecognizeNamespace(self):
         header = '<header xmlns="this.is.not.the.right.ns"><setSpec>%s</setSpec></header>'
         self.subject.add('123', 'oai_dc', parseLxml(header % 1))

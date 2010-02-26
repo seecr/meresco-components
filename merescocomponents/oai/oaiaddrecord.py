@@ -29,6 +29,7 @@
 ## end license ##
 
 from merescocore.framework import Transparant
+from lxml.etree import iselement
 
 namespaces = {
     'oai': 'http://www.openarchives.org/OAI/2.0/',
@@ -37,6 +38,7 @@ namespaces = {
 
 class OaiAddRecord(Transparant):
     def add(self, id, partName, record):
+        record = record if iselement(record) else record.getroot()
         setSpecs = record.xpath('/oai:header/oai:setSpec/text()', namespaces=namespaces)
         sets = set((str(s), str(s)) for s in setSpecs)
         
