@@ -7,7 +7,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -31,13 +32,14 @@ from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import LuceneIndex
 from os.path import join
 from merescocore.components import StorageComponent
-from amara.binderytools import bind_string
 from time import sleep, mktime
 from StringIO import StringIO
 from lxml.etree import parse
 from merescocomponents.oai.oailist import OaiList
 
 from merescocomponents.oai import OaiJazz, OaiAddRecord
+
+parseLxml = lambda s: parse(StringIO(s)).getroot()
 
 class OaiJazzImplementationsTest(CQ2TestCase):
     def setUp(self):
@@ -81,7 +83,7 @@ class OaiJazzImplementationsTest(CQ2TestCase):
 
     def testDeleteIncrementsDatestampAndUnique(self):
         header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        self.oaiAddRecord.add('23', 'oai_dc', bind_string(header % 'aSet').header)
+        self.oaiAddRecord.add('23', 'oai_dc', parseLxml(header % 'aSet'))
         stamp = self.jazz.getDatestamp('23')
         unique = self.jazz.getUnique('23')
         sleep(1)
@@ -95,8 +97,8 @@ class OaiJazzImplementationsTest(CQ2TestCase):
     
     def testAddSetInfo(self):
         header = '<header xmlns="http://www.openarchives.org/OAI/2.0/"><setSpec>%s</setSpec></header>'
-        self.oaiAddRecord.add('123', 'oai_dc', bind_string(header % 1).header)
-        self.oaiAddRecord.add('124', 'oai_dc', bind_string(header % 2).header)
+        self.oaiAddRecord.add('123', 'oai_dc', parseLxml(header % 1))
+        self.oaiAddRecord.add('124', 'oai_dc', parseLxml(header % 2))
         results = self.jazz.oaiSelect(sets=['1'], prefix='oai_dc')
         self.assertEquals(1, len(list(results)))
         results = self.jazz.oaiSelect(sets=['2'], prefix='oai_dc')
@@ -159,10 +161,10 @@ class OaiJazzImplementationsTest(CQ2TestCase):
         self.assertEquals(['id:1'], list(result))
 
     def testAddPartWithUniqueNumbersAndSorting(self):
-        self.oaiAddRecord.add('123', 'oai_dc', bind_string('<oai_dc/>'))
-        self.oaiAddRecord.add('124', 'lom', bind_string('<lom/>'))
-        self.oaiAddRecord.add('121', 'lom', bind_string('<lom/>'))
-        self.oaiAddRecord.add('122', 'lom', bind_string('<lom/>'))
+        self.oaiAddRecord.add('123', 'oai_dc', parseLxml('<oai_dc/>'))
+        self.oaiAddRecord.add('124', 'lom', parseLxml('<lom/>'))
+        self.oaiAddRecord.add('121', 'lom', parseLxml('<lom/>'))
+        self.oaiAddRecord.add('122', 'lom', parseLxml('<lom/>'))
         results = self.jazz.oaiSelect(prefix='oai_dc')
         self.assertEquals(1, len(list(results)))
         results = self.jazz.oaiSelect(prefix='lom')
@@ -281,29 +283,29 @@ class OaiJazzImplementationsTest(CQ2TestCase):
         self.assertEquals(['id:%d' % i for i in range(BATCH_SIZE, BATCH_SIZE +5)], recordIds)
 
     def testPreserveRicherPrefixInfo(self):
-        self.oaiAddRecord.add('457', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-             xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
-        self.oaiAddRecord.add('457', 'oai_dc', bind_string('<oai_dc/>'))
+        self.oaiAddRecord.add('457', 'oai_dc', parseLxml('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+             xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>'))
+        self.oaiAddRecord.add('457', 'oai_dc', parseLxml('<oai_dc/>'))
         metadataFormats = set(self.jazz.getAllMetadataFormats())
         self.assertEquals(set([('oai_dc', 'http://oai_dc/dc.xsd', 'http://oai_dc')]), metadataFormats)
 
     def testIncompletePrefixInfo(self):
-        self.oaiAddRecord.add('457', 'dc2', bind_string('<oai_dc/>').oai_dc)
+        self.oaiAddRecord.add('457', 'dc2', parseLxml('<oai_dc/>'))
         metadataFormats = set(self.jazz.getAllMetadataFormats())
         self.assertEquals(set([('dc2', '', '')]), metadataFormats)
 
     def testMetadataPrefixesOnly(self):
-        self.oaiAddRecord.add('456', 'oai_dc', bind_string('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-             xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>').dc)
+        self.oaiAddRecord.add('456', 'oai_dc', parseLxml('<oai_dc:dc xmlns:oai_dc="http://oai_dc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+             xsi:schemaLocation="http://oai_dc http://oai_dc/dc.xsd"/>'))
         prefixes = set(self.jazz.getAllPrefixes())
         self.assertEquals(set(['oai_dc']), prefixes)
-        self.oaiAddRecord.add('457', 'dc2', bind_string('<oai_dc:dc xmlns:oai_dc="http://dc2"/>').dc)
+        self.oaiAddRecord.add('457', 'dc2', parseLxml('<oai_dc:dc xmlns:oai_dc="http://dc2"/>'))
         prefixes = set(self.jazz.getAllPrefixes())
         self.assertEquals(set(['oai_dc', 'dc2']), prefixes)
         
     def testGetPrefixes(self):
-        self.oaiAddRecord.add('123', 'oai_dc', bind_string('<dc/>').dc)
-        self.oaiAddRecord.add('123', 'lom', bind_string('<lom/>').lom)
+        self.oaiAddRecord.add('123', 'oai_dc', parseLxml('<dc/>'))
+        self.oaiAddRecord.add('123', 'lom', parseLxml('<lom/>'))
         parts = set(self.jazz.getPrefixes('123'))
         self.assertEquals(set(['oai_dc', 'lom']), parts)
         self.assertEquals(['123'], list(self.jazz.oaiSelect(prefix='lom')))

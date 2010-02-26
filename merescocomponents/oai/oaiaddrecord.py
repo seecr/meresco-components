@@ -7,7 +7,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -27,23 +28,24 @@
 #
 ## end license ##
 
-from cq2utils.xmlutils import findNamespaces
 from merescocore.framework import Transparant
 
-class OaiAddRecord(Transparant):
-    def add(self, id, name, record):
-        sets=set()
-        if record.localName == "header" and record.namespaceURI == "http://www.openarchives.org/OAI/2.0/" and getattr(record, 'setSpec', None):
-            sets.update((str(s), str(s)) for s in record.setSpec)
+namespaces = {
+    'oai': 'http://www.openarchives.org/OAI/2.0/',
+    'xsi': "http://www.w3.org/2001/XMLSchema-instance",
+}
 
-        if 'amara.bindery.root_base' in str(type(record)):
-            record = record.childNodes[0]
-        ns2xsd = _findSchema(record)
-        nsmap = findNamespaces(record)
-        ns = nsmap[record.prefix]
-        schema, namespace = (ns2xsd.get(ns,''), ns)
-        schema, namespace = self._magicSchemaNamespace(record.prefix, name, schema, namespace)
-        metadataFormats=[(name, schema, namespace)]
+class OaiAddRecord(Transparant):
+    def add(self, id, partName, record):
+        setSpecs = record.xpath('/oai:header/oai:setSpec/text()', namespaces=namespaces)
+        sets = set((str(s), str(s)) for s in setSpecs)
+        
+        namespace = record.nsmap.get(record.prefix or None, '') 
+        schemaLocations = record.xpath('@xsi:schemaLocation', namespaces=namespaces)
+        ns2xsd = ''.join(schemaLocations).split()
+        schema = dict(zip(ns2xsd[::2],ns2xsd[1::2])).get(namespace, '')
+        schema, namespace = self._magicSchemaNamespace(record.prefix, partName, schema, namespace)
+        metadataFormats=[(partName, schema, namespace)]
 
         self.do.addOaiRecord(identifier=id, sets=sets, metadataFormats=metadataFormats)
 
@@ -63,12 +65,3 @@ class OaiAddRecordWithDefaults(Transparant):
     def add(self, id, name, record):
         self.do.addOaiRecord(identifier=id, sets=self._sets, metadataFormats=self._metadataFormats)
 
-def _findSchema(record):
-    if 'amara.bindery.root_base' in str(type(record)):
-        record = record.childNodes[0]
-    ns2xsd = {}
-    if hasattr(record, 'schemaLocation'):
-        nsXsdList = record.schemaLocation.split()
-        for n in range(0, len(nsXsdList), 2):
-            ns2xsd[nsXsdList[n]] = nsXsdList[n+1]
-    return ns2xsd

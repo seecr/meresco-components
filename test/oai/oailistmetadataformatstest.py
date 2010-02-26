@@ -7,7 +7,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -27,7 +28,6 @@
 #
 ## end license ##
 from os.path import join
-from amara.binderytools import bind_string
 
 from oaitestcase import OaiTestCase
 from merescocomponents.facetindex import LuceneIndex
@@ -35,8 +35,12 @@ from merescocore.components import StorageComponent
 from merescocomponents.oai import OaiAddRecord, OaiJazz
 from merescocomponents.oai.oailistmetadataformats import OaiListMetadataFormats
 from merescocore.framework import be, Observable
+from lxml.etree import parse
+from StringIO import StringIO
 
 from cq2utils import CallTrace
+
+parseLxml = lambda s: parse(StringIO(s)).getroot()
 
 class OaiListMetadataFormatsTest(OaiTestCase):
 
@@ -80,10 +84,10 @@ class OaiListMetadataFormatsTest(OaiTestCase):
         ))
         self.subject.addObserver(jazz)
         self.request.args = {'verb': ['ListMetadataFormats'], 'identifier': ['id_0']}
-        server.do.add('id_0', 'oai_dc', bind_string("""<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+        server.do.add('id_0', 'oai_dc', parseLxml("""<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"></oai_dc:dc>""").dc)
-        server.do.add('id_0', 'olac', bind_string('<tag/>').tag)
+            xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"></oai_dc:dc>"""))
+        server.do.add('id_0', 'olac', parseLxml('<tag/>'))
         self.subject.listMetadataFormats(self.request)
         self.assertEqualsWS(self.OAIPMH % """<request identifier="id_0" verb="ListMetadataFormats">http://server:9000/path/to/oai</request>
     <ListMetadataFormats>
