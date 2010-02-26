@@ -51,21 +51,21 @@ TrieNode_create = lib.TrieNode_create
 TrieNode_create.argtypes = [ c_uint32 ]
 TrieNode_create.restype = fwPtr
 
-TrieNode_addValue2 = lib.TrieNode_addValue2
-TrieNode_addValue2.argtypes = [ fwPtr, c_uint32, c_char_p ]
-TrieNode_addValue2.restype = None
+TrieNode_addValue = lib.TrieNode_addValue
+TrieNode_addValue.argtypes = [ fwPtr, c_uint32, c_char_p ]
+TrieNode_addValue.restype = None
 
-TrieNode_getValue2 = lib.TrieNode_getValue2
-TrieNode_getValue2.argtypes = [ fwPtr, c_char_p ]
-TrieNode_getValue2.restype = c_uint32
+TrieNode_getValue = lib.TrieNode_getValue
+TrieNode_getValue.argtypes = [ fwPtr, c_char_p ]
+TrieNode_getValue.restype = c_uint32
 
-TrieNode_getValues2 = lib.TrieNode_getValues2
-TrieNode_getValues2.argtypes = [ fwPtr, c_char_p, c_uint32, INTEGERLIST ]
-TrieNode_getValues2.restype = None
+TrieNode_getValues = lib.TrieNode_getValues
+TrieNode_getValues.argtypes = [ fwPtr, c_char_p, c_uint32, INTEGERLIST ]
+TrieNode_getValues.restype = None
 
-TrieNode_printit2 = lib.TrieNode_printit
-TrieNode_printit2.argtypes = [ fwPtr, c_int ]
-TrieNode_printit2.restype = None
+TrieNode_printit = lib.TrieNode_printit
+TrieNode_printit.argtypes = [ fwPtr, c_int ]
+TrieNode_printit.restype = None
 
 nodecount = lib.nodecount
 nodecount.argtypes = None
@@ -78,21 +78,21 @@ class Trie(object):
         self._as_parameter_ = TrieNode_create(fwValueNone)
 
     def add(self, value, word):
-        TrieNode_addValue2(self, value, word)
+        TrieNode_addValue(self, value, word)
 
     def getValue(self, word, default=None):
-        r = TrieNode_getValue2(self, word)
+        r = TrieNode_getValue(self, word)
         if r == fwValueNone.value:
             return default
         return r
 
     def getValues(self, prefix, maxresults=maxint):
         result = IntegerList()
-        TrieNode_getValues2(self, prefix, maxint, result)
+        TrieNode_getValues(self, prefix, maxint, result)
         return result
 
     def printit(self):
-        TrieNode_printit2(self, 0)
+        TrieNode_printit(self, 0)
 
     def nodecount(self):
         nodecount()

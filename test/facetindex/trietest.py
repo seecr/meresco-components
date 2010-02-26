@@ -206,3 +206,12 @@ class TrieTest(TestCase):
         self.assertEquals(2, trie.getValue('aaa'))
         self.assertEquals(1, trie.getValue('aa'))
         self.assertEquals(0, trie.getValue('a'))
+        
+    def testOneCharacter(self):
+        print "BEGIN TEST creating TRIE"
+        trie = Trie()
+        print "ADDING 42 a"
+        trie.add(42, 'a')
+        trie.printit()
+        trie.add(87, 'a')
+        trie.printit()

@@ -55,6 +55,7 @@ setup(
                       'merescocomponents/facetindex/_stringpool.cpp',
                   ],
                   extra_compile_args = [
+                      '-g', 
                       '-I/usr/include/glib-2.0',
                       '-I/usr/lib/glib-2.0/include',
                   ],

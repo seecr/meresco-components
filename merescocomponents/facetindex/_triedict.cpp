@@ -36,12 +36,16 @@ int TrieDict_measureall(void) {
     return globalStringPool.measure() + measureall() /* from TrieNode */;
 }
 
-TrieDict::TrieDict(): termPool(&globalStringPool) {
+TrieDict::TrieDict(int uselocalpool): termPool(&globalStringPool) {
+    if (uselocalpool)
+        this->termPool = new StringPool();
     termIndex = TrieNode_create(fwValueNone);
 }
 
 TrieDict::~TrieDict() {
     TrieNode_free(termIndex);
+    if (termPool != &globalStringPool)
+        delete termPool;
 }
 
 termid TrieDict::add(char* term, value value) {
@@ -75,8 +79,12 @@ guint32 TrieDict_add(TrieDict* trieDict, char* term, value value) {
     return trieDict->add(term, value);
 }
 
-TrieDict* TrieDict_create(void) {
-    return new TrieDict();
+value TrieDict_getValue(TrieDict* trieDict, char* term) {
+    return trieDict->getValue(term);
+}
+
+TrieDict* TrieDict_create(int uselocalpool) {
+    return new TrieDict(uselocalpool);
 }
 
 void TrieDict_delete(TrieDict* trieDict) {

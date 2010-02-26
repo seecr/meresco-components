@@ -35,25 +35,32 @@ class TrieDictTest(TestCase):
     def testConstructor(self):
         t = TrieDict()
         
-    def xtestAddWords(self):
-        t = TrieDict()
+    def testAddWords(self):
+        t = TrieDict(uselocalpool=1)
         termId1 = t.add('xy', 1)
         termId2 = t.add('y', 1)
         self.assertEquals(termId1, t.add('xy', 1))
         self.assertEquals(termId2, t.add('y', 1))
 
     def testAddWords2(self):
-        t = TrieDict()
-        termId1 = t.add('xy', 1)
-        termId2 = t.add('x', 1)
+        t = TrieDict(uselocalpool=1)
+        termId1 = t.add('xy', 8)
+        termId2 = t.add('x', 6)
+        self.assertEquals(8, t.getValue('xy'))
+        self.assertEquals(6, t.getValue('x'))
         self.assertEquals(termId1, t.add('xy', 1))
         self.assertEquals(termId2, t.add('x', 1))
         
-    def xtestAddWords3(self):
-        t = TrieDict()
+    def testAddWords3(self):
+        t = TrieDict(uselocalpool=1)
         termId1 = t.add('x', 1)
         termId2 = t.add('xy', 1)
         
         self.assertEquals(termId1, t.add('x', 1))
         self.assertEquals(termId2, t.add('xy', 1))
-
+        
+    def testAddAndGet(self):
+        t = TrieDict(uselocalpool=1)
+        self.assertEquals(0xffffffff, t.getValue('q'))
+        t.add('q', 1)
+        self.assertEquals(1, t.getValue('q'))        

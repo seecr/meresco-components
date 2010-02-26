@@ -47,7 +47,7 @@ class TrieDict {
         fwPtr termIndex;
         StringPool* termPool;
     public:
-        TrieDict(void);
+        TrieDict(int uselocalpool = 0);
         ~TrieDict(void);
         int                measure(void) {
             return sizeof(this); // excluding global termPool and TrieNodes, use TrieNode_measureall()
@@ -59,8 +59,9 @@ class TrieDict {
         void               nodecount(void);
 };
 extern "C" {
-    guint32                TrieDict_add(TrieDict*, char* term, value value);
-    TrieDict*              TrieDict_create(void);
+    termid                 TrieDict_add(TrieDict*, char* term, value value);
+    value                  TrieDict_getValue(TrieDict*, char* term);
+    TrieDict*              TrieDict_create(int uselocalpool = 0);
     void                   TrieDict_delete(TrieDict*);
     void                   TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, IntegerList* result);
     int                    TrieDict_measureall(void);

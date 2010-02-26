@@ -278,8 +278,16 @@ void ListNode_printit(fwPtr self, int indent, StringPool* pool) {
     fwPtr last = me->first;
     while ( ! isNone(last) ) {
         ListItem* plast = ListItem_state(last);
+        printf("plast = %p\n", plast);
         for(int i=0;i<indent; i++) printf(" ");
+        printf("begin plats->aString=%d \n", plast->aString);
+        printf("pool: %p\n", pool->get(0));
+        printf("pool: %p\n", pool->get(1));
+        printf("pool: %p\n", pool->get(2));
+        printf("pool: %p\n", pool->get(3));
+        printf("begin pool-get(plats->aString=%d)=%p \n", plast->aString, pool->get(plast->aString));
         printf("  %s:%d\n", pool->get(plast->aString), plast->value);
+        printf("klaar\n");
         last = ListItem_state(last)->next;
     }
 }
@@ -358,6 +366,7 @@ Link TrieNode__findLink(fwPtr parent, unsigned char character, CreateFlag create
     int i;
     for (i = 0; i < 8/ALPHABET_IN_BITS-1; i++) {
         result.letter = letters[i];
+        printf("TrieNode__findLink: letter: %d\n", result.letter);
         result.child = TrieNode_state(result.parent)->child[result.letter];
         if (isNone(result.child)) {
             if (create) {
@@ -426,12 +435,15 @@ void TrieNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList*
 }
 
 void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool) {
+    printf("TrieNode_addValue: %d, %s\n", value, pool->get(term));
     if (*pool->get(term) == '\0') {
+        printf("TrieNode_addValue: setting value in node itself; done\n");
         TrieNode_state(self)->value = value;
         return;
     }
 
     Link link = TrieNode__findLink(self, *pool->get(term), Create);
+    printf("found link: parent: %d, letter: %d, child: %d\n", link.parent.ptr, link.letter, link.child.ptr);
 
     /********** Code to decide about what node type to create is ONLY here *******************/
     fwPtr child = link.child;
