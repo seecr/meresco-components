@@ -1,0 +1,144 @@
+Changeset created on Wed Mar  3 13:50:10 CET 2010 by Seek You Too
+
+Description: Increased robustness of OAI to handle time changes
+
+    Automatic time update mechanisms like e.g. NTP can cause time to
+    change to the past. This causes problems for the RangeIndex used by
+    OAI. OAI will now handle this exception and rollback the changes 
+    made in the several indexes.
+
+Baseline version: meresco-components/workingsets/2.23.5-EduRep/version_1
+
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_1/merescocomponents/filelist.py version_2/merescocomponents/filelist.py
+--- version_1/merescocomponents/filelist.py	2010-03-03 09:45:06.000000000 +0100
++++ version_2/merescocomponents/filelist.py	2010-03-03 13:47:07.000000000 +0100
+@@ -7,7 +7,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -127,7 +128,7 @@
+ 
+     def append(self, item):
+         if len(self) > 0 and item <= self[-1]:
+-            raise ValueError('%s should be greater than %s', (item, self[-1]))
++            raise ValueError('list.append(%s): expected value to be greater than %s' % (item, self[-1]))
+         self._list.append(item)
+     
+     def remove(self, item):
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_1/merescocomponents/oai/oaijazz.py version_2/merescocomponents/oai/oaijazz.py
+--- version_1/merescocomponents/oai/oaijazz.py	2010-03-03 09:45:03.000000000 +0100
++++ version_2/merescocomponents/oai/oaijazz.py	2010-03-03 13:47:07.000000000 +0100
+@@ -142,13 +142,30 @@
+     # private methods
+ 
+     def _add(self, stamp, identifier, setSpecs, prefixes):
++        try:
++            for setSpec in setSpecs:
++                self._getSetList(setSpec).append(stamp)
++            for prefix in prefixes:
++                self._getPrefixList(prefix).append(stamp)
++            self._stamp2identifier[str(stamp)]=identifier
++            if setSpecs:
++                self._identifier2setSpecs[identifier] = SETSPEC_SEPARATOR.join(setSpecs) 
++        except ValueError, e:
++            self._rollback(stamp, identifier, setSpecs, prefixes)
++            raise ValueError('Timestamp error, original message: "%s"' % str(e))
++
++    def _rollback(self, stamp, identifier, setSpecs, prefixes):
+         for setSpec in setSpecs:
+-            self._getSetList(setSpec).append(stamp)
++            try:
++                self._getSetList(setSpec).remove(stamp)
++            except ValueError:
++                pass #ignored because stamp could not have been added.
+         for prefix in prefixes:
+-            self._getPrefixList(prefix).append(stamp)
+-        self._stamp2identifier[str(stamp)]=identifier
+-        if setSpecs:
+-            self._identifier2setSpecs[identifier] = SETSPEC_SEPARATOR.join(setSpecs) 
++            try:
++                self._getPrefixList(prefix).remove(stamp)
++            except ValueError:
++                pass #ignored because stamp could not have been added.
++
+ 
+     def _getAllMetadataFormats(self):
+         for prefix in self._prefixes.keys():
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_1/test/filelisttest.py version_2/test/filelisttest.py
+--- version_1/test/filelisttest.py	2010-03-03 09:45:03.000000000 +0100
++++ version_2/test/filelisttest.py	2010-03-03 13:47:07.000000000 +0100
+@@ -7,7 +7,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -138,8 +139,9 @@
+         try:
+             s.append(5)
+             self.fail()
+-        except ValueError:
+-            pass
++        except ValueError, e:
++            self.assertEquals('list.append(5): expected value to be greater than 10',str(e))
++
+         self.assertEquals([10], list(s))
+         
+     def testAppendSucceedsEvenWhenUnsortedForFileList(self):
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_1/test/oai/oaijazztest.py version_2/test/oai/oaijazztest.py
+--- version_1/test/oai/oaijazztest.py	2010-03-03 09:45:03.000000000 +0100
++++ version_2/test/oai/oaijazztest.py	2010-03-03 13:47:07.000000000 +0100
+@@ -8,7 +8,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -154,16 +155,29 @@
+         result = self.jazz.oaiSelect(prefix='oai_dc', oaiFrom='9999-01-01T00:00:00Z')
+         self.assertEquals(0,len(list(result)))
+ 
+-    # unique, for continueAfter
+-
+     def testDeleteIncrementsDatestampAndUnique(self):
+         self.jazz.addOaiRecord('23', metadataFormats=[('oai_dc','schema', 'namespace')])
+         stamp = self.jazz.getDatestamp('23')
+-        #unique = jazz.getUnique('23')
++        unique = self.jazz.getUnique('23')
+         self.stampNumber += 1234567890 # increaseTime
+         self.jazz.delete('23')
+         self.assertNotEqual(stamp, self.jazz.getDatestamp('23'))
+-        #self.assertNotEquals(unique, int(jazz.getUnique('23')))
++        self.assertNotEquals(unique, int(self.jazz.getUnique('23')))
++
++    def testTimeUpdateRaisesErrorButLeavesIndexCorrect(self):
++        self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
++        self.stampNumber -= 12345 # time corrected by -0.012345 seconds
++        try:
++            self.jazz.addOaiRecord('43', sets=[('setSpec', 'setName')], metadataFormats=[('other', 'schema', 'namespace'), ('oai_dc','schema', 'namespace')])
++            self.fail()
++        except ValueError, e:
++            self.assertEquals('Timestamp error, original message: "list.append(1215313442987656): expected value to be greater than 1215313443000000"', str(e))
++
++        self.assertEquals(0, len(self.jazz._getSetList('setSpec')))
++        self.assertEquals(0, len(self.jazz._getPrefixList('other')))
++        self.assertEquals(1, len(self.jazz._getPrefixList('oai_dc')))
++
++
+ 
+     def testFlattenSetHierarchy(self):
+         self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(_flattenSetHierarchy(['set1:set2:set3'])))
