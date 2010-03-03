@@ -140,7 +140,7 @@ class FileListTest(CQ2TestCase):
             s.append(5)
             self.fail()
         except ValueError, e:
-            self.assertEquals('5 should be greater than 10',str(e))
+            self.assertEquals('list.append(5): expected value to be greater than 10',str(e))
 
         self.assertEquals([10], list(s))
         

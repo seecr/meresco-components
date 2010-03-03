@@ -142,13 +142,30 @@ class OaiJazz(object):
     # private methods
 
     def _add(self, stamp, identifier, setSpecs, prefixes):
+        try:
+            for setSpec in setSpecs:
+                self._getSetList(setSpec).append(stamp)
+            for prefix in prefixes:
+                self._getPrefixList(prefix).append(stamp)
+            self._stamp2identifier[str(stamp)]=identifier
+            if setSpecs:
+                self._identifier2setSpecs[identifier] = SETSPEC_SEPARATOR.join(setSpecs) 
+        except ValueError, e:
+            self._rollback(stamp, identifier, setSpecs, prefixes)
+            raise ValueError('Timestamp error, original message: "%s"' % str(e))
+
+    def _rollback(self, stamp, identifier, setSpecs, prefixes):
         for setSpec in setSpecs:
-            self._getSetList(setSpec).append(stamp)
+            try:
+                self._getSetList(setSpec).remove(stamp)
+            except ValueError:
+                pass #ignored because stamp could not have been added.
         for prefix in prefixes:
-            self._getPrefixList(prefix).append(stamp)
-        self._stamp2identifier[str(stamp)]=identifier
-        if setSpecs:
-            self._identifier2setSpecs[identifier] = SETSPEC_SEPARATOR.join(setSpecs) 
+            try:
+                self._getPrefixList(prefix).remove(stamp)
+            except ValueError:
+                pass #ignored because stamp could not have been added.
+
 
     def _getAllMetadataFormats(self):
         for prefix in self._prefixes.keys():

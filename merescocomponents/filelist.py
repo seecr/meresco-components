@@ -128,7 +128,7 @@ class SortedFileList(object):
 
     def append(self, item):
         if len(self) > 0 and item <= self[-1]:
-            raise ValueError('%s should be greater than %s' % (item, self[-1]))
+            raise ValueError('list.append(%s): expected value to be greater than %s' % (item, self[-1]))
         self._list.append(item)
     
     def remove(self, item):

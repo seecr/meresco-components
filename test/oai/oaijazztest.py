@@ -164,6 +164,21 @@ class OaiJazzTest(CQ2TestCase):
         self.assertNotEqual(stamp, self.jazz.getDatestamp('23'))
         self.assertNotEquals(unique, int(self.jazz.getUnique('23')))
 
+    def testTimeUpdateRaisesErrorButLeavesIndexCorrect(self):
+        self.jazz.addOaiRecord('42', metadataFormats=[('oai_dc','schema', 'namespace')])
+        self.stampNumber -= 12345 # time corrected by -0.012345 seconds
+        try:
+            self.jazz.addOaiRecord('43', sets=[('setSpec', 'setName')], metadataFormats=[('other', 'schema', 'namespace'), ('oai_dc','schema', 'namespace')])
+            self.fail()
+        except ValueError, e:
+            self.assertEquals('Timestamp error, original message: "list.append(1215313442987656): expected value to be greater than 1215313443000000"', str(e))
+
+        self.assertEquals(0, len(self.jazz._getSetList('setSpec')))
+        self.assertEquals(0, len(self.jazz._getPrefixList('other')))
+        self.assertEquals(1, len(self.jazz._getPrefixList('oai_dc')))
+
+
+
     def testFlattenSetHierarchy(self):
         self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(_flattenSetHierarchy(['set1:set2:set3'])))
         self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3', 'set1:set2:set4'], sorted(_flattenSetHierarchy(['set1:set2:set3', 'set1:set2:set4'])))
