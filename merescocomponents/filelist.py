@@ -7,7 +7,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -127,7 +128,7 @@ class SortedFileList(object):
 
     def append(self, item):
         if len(self) > 0 and item <= self[-1]:
-            raise ValueError('%s should be greater than %s', (item, self[-1]))
+            raise ValueError('%s should be greater than %s' % (item, self[-1]))
         self._list.append(item)
     
     def remove(self, item):

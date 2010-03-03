@@ -7,7 +7,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -138,8 +139,9 @@ class FileListTest(CQ2TestCase):
         try:
             s.append(5)
             self.fail()
-        except ValueError:
-            pass
+        except ValueError, e:
+            self.assertEquals('5 should be greater than 10',str(e))
+
         self.assertEquals([10], list(s))
         
     def testAppendSucceedsEvenWhenUnsortedForFileList(self):
