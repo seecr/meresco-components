@@ -8,7 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -154,16 +155,14 @@ class OaiJazzTest(CQ2TestCase):
         result = self.jazz.oaiSelect(prefix='oai_dc', oaiFrom='9999-01-01T00:00:00Z')
         self.assertEquals(0,len(list(result)))
 
-    # unique, for continueAfter
-
     def testDeleteIncrementsDatestampAndUnique(self):
         self.jazz.addOaiRecord('23', metadataFormats=[('oai_dc','schema', 'namespace')])
         stamp = self.jazz.getDatestamp('23')
-        #unique = jazz.getUnique('23')
+        unique = self.jazz.getUnique('23')
         self.stampNumber += 1234567890 # increaseTime
         self.jazz.delete('23')
         self.assertNotEqual(stamp, self.jazz.getDatestamp('23'))
-        #self.assertNotEquals(unique, int(jazz.getUnique('23')))
+        self.assertNotEquals(unique, int(self.jazz.getUnique('23')))
 
     def testFlattenSetHierarchy(self):
         self.assertEquals(['set1', 'set1:set2', 'set1:set2:set3'], sorted(_flattenSetHierarchy(['set1:set2:set3'])))
