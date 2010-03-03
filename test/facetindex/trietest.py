@@ -129,7 +129,6 @@ class TrieTest(TestCase):
         trie.add(5, "z1-meer")
         trie.add(6, "z2-spul")
         trie.add(7, "z3-enzo")
-        #trie.printit()
         self.assertEquals(range(8), trie.getValues(""))
         self.assertEquals(range(4), trie.getValues("prefix"))
         self.assertEquals([0], trie.getValues("prefix-0"))
@@ -208,10 +207,7 @@ class TrieTest(TestCase):
         self.assertEquals(0, trie.getValue('a'))
         
     def testOneCharacter(self):
-        print "BEGIN TEST creating TRIE"
         trie = Trie()
-        print "ADDING 42 a"
-        trie.add(42, 'a')
-        trie.printit()
+        trie.add(42, 'aa')
         trie.add(87, 'a')
-        trie.printit()
+        self.assertEquals(87, trie.getValue('a'))

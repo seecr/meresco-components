@@ -53,6 +53,9 @@ TrieDict_getValue = libFacetIndex.TrieDict_getValue
 TrieDict_getValue.argtypes = [TRIEDICT, c_char_p]
 TrieDict_getValue.restype = c_uint32
 
+TrieDict_printit = libFacetIndex.TrieDict_printit
+TrieDict_printit.argtypes = [TRIEDICT]
+TrieDict_printit.restype = None
 
 class TrieDict(object):
 
@@ -70,3 +73,7 @@ class TrieDict(object):
     
     def getValue(self, term):
         return TrieDict_getValue(self, term)
+
+    def printit(self):
+        return TrieDict_printit(self)
+

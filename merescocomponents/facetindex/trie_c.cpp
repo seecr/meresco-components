@@ -42,7 +42,6 @@ extern "C" {
 /************** for TESTING ****************/
 extern "C" {
 #include "integerlist.h"
-
     StringPool stringPoolForTesting;
     guint32 TrieNode_getValue2(fwPtr node, char *str) {
         return TrieNode_getValue(node, str, &stringPoolForTesting);
@@ -59,7 +58,6 @@ extern "C" {
     }
 }
 /*********** End for Testing ******************/
-
 
 void TrieNode_init(void);
 void LeafNode_init(void);
@@ -182,9 +180,12 @@ fwPtr ListNode_create(guint32 value) {
 }
 
 inline void ListNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool) {
+    if (*pool->get(term) == '\0') { 
+        ListNode_state(self)->value = value;
+        return;
+    }
     ListNodeState* me = ListNode_state(self);
     if (me->size > LISTSIZE) {
-        printf("ListNode_addValue(): Ignoring new string '%s'\n", pool->get(term));
         return;
     }
 
@@ -366,7 +367,6 @@ Link TrieNode__findLink(fwPtr parent, unsigned char character, CreateFlag create
     int i;
     for (i = 0; i < 8/ALPHABET_IN_BITS-1; i++) {
         result.letter = letters[i];
-        printf("TrieNode__findLink: letter: %d\n", result.letter);
         result.child = TrieNode_state(result.parent)->child[result.letter];
         if (isNone(result.child)) {
             if (create) {
@@ -435,15 +435,12 @@ void TrieNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList*
 }
 
 void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool) {
-    printf("TrieNode_addValue: %d, %s\n", value, pool->get(term));
     if (*pool->get(term) == '\0') {
-        printf("TrieNode_addValue: setting value in node itself; done\n");
         TrieNode_state(self)->value = value;
         return;
     }
 
     Link link = TrieNode__findLink(self, *pool->get(term), Create);
-    printf("found link: parent: %d, letter: %d, child: %d\n", link.parent.ptr, link.letter, link.child.ptr);
 
     /********** Code to decide about what node type to create is ONLY here *******************/
     fwPtr child = link.child;

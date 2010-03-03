@@ -56,6 +56,7 @@ class TrieDict {
         value              getValue(char* term);
         void               valuesForPrefix(char* prefix, guint32 maxResults, IntegerList* result);
         char*              getTerm(termid termId);
+        void               printit();
         void               nodecount(void);
 };
 extern "C" {
@@ -65,5 +66,6 @@ extern "C" {
     void                   TrieDict_delete(TrieDict*);
     void                   TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, IntegerList* result);
     int                    TrieDict_measureall(void);
+    void                   TrieDict_printit(TrieDict*);
 }
 #endif

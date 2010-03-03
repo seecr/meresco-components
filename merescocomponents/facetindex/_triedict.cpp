@@ -69,6 +69,10 @@ char* TrieDict::getTerm(termid termId) {
     return this->termPool->get(termId);
 }
 
+void TrieDict::printit() {
+    TrieNode_printit(termIndex, 0, termPool);
+}
+
 void TrieDict::nodecount(void) {
     nodecount();
 }
@@ -95,4 +99,7 @@ void TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, 
     self->valuesForPrefix(prefix, maxResults, result);
 }
 
+void TrieDict_printit(TrieDict* trieDict) {
+    trieDict->printit();
+}
 
