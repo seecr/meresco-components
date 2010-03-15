@@ -5,7 +5,7 @@
     <srw:record xmlns:srw="http://www.loc.gov/zing/srw/">
         <srw:recordPacking>xml</srw:recordPacking>
         <srw:recordSchema>metadata</srw:recordSchema>
-        <srw:recordData><document xmlns="http://meresco.com/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
+        <srw:recordData><document xmlns="http://meresco.org/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
 &lt;oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/      http://www.openarchives.org/OAI/2.0/oai_dc.xsd"&gt;
 &lt;dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;http://meresco.com?record=1&lt;/dc:identifier&gt;
 &lt;dc:description xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;This is an example program about Search with Meresco&lt;/dc:description&gt;

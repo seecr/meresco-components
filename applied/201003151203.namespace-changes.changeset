@@ -1,0 +1,57 @@
+Changeset created on Mon Mar 15 12:03:14 CET 2010 by Seek You Too
+
+Description: namespace change meresco.com -> meresco.org
+
+    The namespace has changed in merescocore 2.22.9-EduRep-5 this
+    changeset reflects these changes in the example server.
+
+Baseline version: meresco-components/workingsets/2.23.5-EduRep/version_2
+
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_2/merescocomponents/examples/dna/server.py version_3/merescocomponents/examples/dna/server.py
+--- version_2/merescocomponents/examples/dna/server.py	2010-03-15 12:02:45.000000000 +0100
++++ version_3/merescocomponents/examples/dna/server.py	2010-03-15 12:02:26.000000000 +0100
+@@ -72,7 +72,7 @@
+                         ('metadata', '/document:document/document:part[@name="metadata"]/text()'),
+                         ('header', '/document:document/document:part[@name="header"]/text()')
+                     ],
+-                    namespaceMap={'document': 'http://meresco.com/namespace/harvester/document'}),
++                    namespaceMap={'document': 'http://meresco.org/namespace/harvester/document'}),
+                     (FilterMessages(allowed=['delete']),
+                         indexHelix
+                     ),
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_2/test/harvester_output/001_record.updateRequest version_3/test/harvester_output/001_record.updateRequest
+--- version_2/test/harvester_output/001_record.updateRequest	2010-03-15 12:02:40.000000000 +0100
++++ version_3/test/harvester_output/001_record.updateRequest	2010-03-15 12:02:25.000000000 +0100
+@@ -5,7 +5,7 @@
+     <srw:record xmlns:srw="http://www.loc.gov/zing/srw/">
+         <srw:recordPacking>xml</srw:recordPacking>
+         <srw:recordSchema>metadata</srw:recordSchema>
+-        <srw:recordData><document xmlns="http://meresco.com/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
++        <srw:recordData><document xmlns="http://meresco.org/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
+ &lt;oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/      http://www.openarchives.org/OAI/2.0/oai_dc.xsd"&gt;
+ &lt;dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;http://meresco.com?record=1&lt;/dc:identifier&gt;
+ &lt;dc:description xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;This is an example program about Search with Meresco&lt;/dc:description&gt;
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_2/test/harvester_output/002_record.updateRequest version_3/test/harvester_output/002_record.updateRequest
+--- version_2/test/harvester_output/002_record.updateRequest	2010-03-15 12:02:40.000000000 +0100
++++ version_3/test/harvester_output/002_record.updateRequest	2010-03-15 12:02:25.000000000 +0100
+@@ -5,7 +5,7 @@
+     <srw:record xmlns:srw="http://www.loc.gov/zing/srw/">
+         <srw:recordPacking>xml</srw:recordPacking>
+         <srw:recordSchema>metadata</srw:recordSchema>
+-        <srw:recordData><document xmlns="http://meresco.com/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
++        <srw:recordData><document xmlns="http://meresco.org/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
+ &lt;oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/      http://www.openarchives.org/OAI/2.0/oai_dc.xsd"&gt;
+ &lt;dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;http://meresco.com?record=2&lt;/dc:identifier&gt;
+ &lt;dc:title xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;Example Program 2&lt;/dc:title&gt;
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_2/test/harvester_output/003_record.updateRequest version_3/test/harvester_output/003_record.updateRequest
+--- version_2/test/harvester_output/003_record.updateRequest	2010-03-15 12:02:40.000000000 +0100
++++ version_3/test/harvester_output/003_record.updateRequest	2010-03-15 12:02:25.000000000 +0100
+@@ -5,7 +5,7 @@
+     <srw:record xmlns:srw="http://www.loc.gov/zing/srw/">
+         <srw:recordPacking>xml</srw:recordPacking>
+         <srw:recordSchema>metadata</srw:recordSchema>
+-        <srw:recordData><document xmlns="http://meresco.com/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
++        <srw:recordData><document xmlns="http://meresco.org/namespace/harvester/document"><part name="metadata">&lt;metadata xmlns="http://www.openarchives.org/OAI/2.0/"&gt;
+ &lt;oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/      http://www.openarchives.org/OAI/2.0/oai_dc.xsd"&gt;
+ &lt;dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;http://meresco.com?record=3&lt;/dc:identifier&gt;
+ &lt;dc:title xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;Example Program 3&lt;/dc:title&gt;

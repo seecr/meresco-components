@@ -72,7 +72,7 @@ def createUploadHelix(indexHelix, storageComponent, oaiJazz):
                         ('metadata', '/document:document/document:part[@name="metadata"]/text()'),
                         ('header', '/document:document/document:part[@name="header"]/text()')
                     ],
-                    namespaceMap={'document': 'http://meresco.com/namespace/harvester/document'}),
+                    namespaceMap={'document': 'http://meresco.org/namespace/harvester/document'}),
                     (FilterMessages(allowed=['delete']),
                         indexHelix
                     ),
