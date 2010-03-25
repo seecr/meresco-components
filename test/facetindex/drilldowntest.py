@@ -8,7 +8,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -39,6 +39,8 @@ from merescocomponents.facetindex.lucene import LuceneIndex
 
 from merescocomponents.facetindex.docset import DocSet
 from merescocomponents.facetindex.docsetlist import DocSetList, JACCARD_ONLY
+
+MACHINEBITS = calcsize('P') * 8
 
 class DrilldownTest(CQ2TestCase):
 
@@ -213,7 +215,8 @@ class DrilldownTest(CQ2TestCase):
         docSetList_for_title = CallTrace('DocSetList')
         drilldown._docsetlists['title'] = docSetList_for_title
         list(drilldown.jaccard(None, [("title", 17, 67)], maxTermFreqPercentage=80))
-        self.assertEquals("[jaccards(None, 17, 67, 78, algorithm=<class c_int>, maxTermFreqPercentage=80)]", str(docSetList_for_title.calledMethods))
+        algorithm = '<class c_int>' if MACHINEBITS == 64 else '<class c_long>'
+        self.assertEquals("[jaccards(None, 17, 67, 78, algorithm=%s, maxTermFreqPercentage=80)]" % algorithm, str(docSetList_for_title.calledMethods))
 
     def testJaccardIndexChecksFields(self):
         drilldown = Drilldown(['title'])
@@ -390,21 +393,3 @@ class DrilldownTest(CQ2TestCase):
         drilldown = Drilldown([('field_0', 'field_1')])
         drilldown._add(0, {'field_0': ['value'], 'field_1': ['value']}) # had a bug causing: "non-increasing docid" error
 
-    def testGetIndexMeasure(self):
-        machineBits = calcsize('P') * 8
-        drilldown = Drilldown(['fld0', 'fld1', 'fld2'])
-        measure = drilldown.measure()
-        results = {
-            32: {'dictionaries':1361047,'postings':0, 'terms':0, 'fields':3, 'totalBytes':120},
-            64: {'dictionaries':1360874,'postings':0, 'terms':0, 'fields':3, 'totalBytes':144}
-        }
-        self.assertEquals(results[machineBits], measure)
-        drilldown.addDocument(0, {'fld0':['t1','t2'],'fld1': ['t1','t3']})
-        drilldown.addDocument(1, {'fld1':['t3','t4'],'fld2': ['t4','t5']})
-        drilldown.commit()
-        measure = drilldown.measure()
-        results = {
-            32: {'dictionaries':1361056,'postings':8, 'terms':7, 'fields':3, 'totalBytes':416},
-            64: {'dictionaries':1360889,'postings':8, 'terms':7, 'fields':3, 'totalBytes':628}
-        }
-        self.assertEquals(results[machineBits], measure)

@@ -9,7 +9,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -47,7 +47,6 @@ from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from packertest import PackerTest
 
 from facetindex.libfacetindextest import LibFacetIndexTest
-from facetindex.performancetuningtest import PerformanceTuningTest
 from facetindex.docsettest import DocSetTest
 from facetindex.docsetlisttest import DocSetListTest
 from facetindex.trietest import TrieTest
