@@ -225,19 +225,6 @@ class IntegerListTest(CQ2TestCase):
             self.assertEquals("[Errno 2] No such file or directory: '/doesnotexist'", str(e))
         self.assertEquals([0,1,2,3,4], list(l1))
 
-    def testLoadAndSaveSpeed(self):
-        l = IntegerList(10**6)
-        l1 = IntegerList()
-        t0 = time()
-        l.save(self.tempdir+'/list.bin')
-        t1 = time()
-        l1.extendFrom(self.tempdir+'/list.bin')
-        t2 = time()
-        tsave = t1 - t0
-        tload = t2 - t1
-        self.assertTiming(0.004, tsave, 0.020)
-        self.assertTiming(0.10, tload, 0.50)
-
     def testExtendTo(self):
         def check(expected):
             l2 = IntegerList()
