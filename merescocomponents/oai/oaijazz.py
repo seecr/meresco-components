@@ -8,7 +8,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -36,6 +36,7 @@ from time import time, strftime, localtime, mktime, strptime
 from itertools import ifilter, dropwhile, takewhile, chain
 from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
 from merescocomponents import SortedFileList, DoubleUniqueBerkeleyDict, BerkeleyDict
+from sys import maxint
 
 from bisect import bisect_left
 
@@ -168,13 +169,21 @@ class OaiJazz(object):
     def _fromTime(self, oaiFrom):
         if not oaiFrom:
             return 0
-        return int(mktime(strptime(oaiFrom, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
+        return self._timeToNumber(oaiFrom)
 
     def _untilTime(self, oaiUntil):
         if not oaiUntil:
             return None
         UNTIL_IS_INCLUSIVE = 1 # Add one second to 23:59:59
-        return int(mktime(strptime(oaiUntil, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0) + UNTIL_IS_INCLUSIVE
+        return self._timeToNumber(oaiUntil) + UNTIL_IS_INCLUSIVE
+
+    @staticmethod
+    def _timeToNumber(time):
+        try:
+            return int(mktime(strptime(time, '%Y-%m-%dT%H:%M:%SZ'))*1000000.0)
+        except (ValueError, OverflowError):
+            return maxint * 1000000
+
 
     def _getIdentifier(self, stamp):
         return self._stamp2identifier.get(str(stamp), None)
