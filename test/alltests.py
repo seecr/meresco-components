@@ -97,4 +97,3 @@ from inboxtest import InboxTest
 
 if __name__ == '__main__':
     unittest.main()
-    os.system('find .. -name "*.pyc" | xargs rm -f')
