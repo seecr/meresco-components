@@ -7,7 +7,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -211,18 +211,18 @@ class IntegerListTest(CQ2TestCase):
     def testSaveWrongDir(self):
         l1 = IntegerList(5)
         try:
-            l1.save('/doesnotexist')
+            l1.save(self.tempdir + '/notexist/doesnotexist')
             self.fail('must raise ioerror')
         except IOError, e:
-            self.assertEquals("[Errno 13] No such file or directory: '/doesnotexist'", str(e))
+            self.assertTrue("[Errno 2] No such file or directory:" in str(e), str(e))
 
     def testLoadWrongDir(self):
         l1 = IntegerList(5)
         try:
-            l1.extendFrom('/doesnotexist')
+            l1.extendFrom(self.tempdir + '/doesnotexist')
             self.fail('must raise ioerror')
         except IOError, e:
-            self.assertEquals("[Errno 2] No such file or directory: '/doesnotexist'", str(e))
+            self.assertTrue("[Errno 2] No such file or directory" in str(e), str(e))
         self.assertEquals([0,1,2,3,4], list(l1))
 
     def testExtendTo(self):

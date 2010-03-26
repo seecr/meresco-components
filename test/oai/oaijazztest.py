@@ -8,7 +8,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -30,7 +30,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from os.path import isfile, join
-from time import time, mktime, strptime
+from time import time, mktime, strptime, sleep
 
 from merescocomponents.oai import OaiJazz
 from merescocomponents.oai.oaijazz import _flattenSetHierarchy, RecordId, SETSPEC_SEPARATOR
@@ -54,11 +54,10 @@ class OaiJazzTest(CQ2TestCase):
 
     def testOriginalStamp(self):
         jazz = OaiJazz(self.tempdir)
-        stamps = []
-        for i in xrange(1000):
-            stamps.append(jazz._stamp())
-            var = 30.0/2.0
-        self.assertEquals(list(sorted(set(stamps))), stamps, "Stamps not equal.")
+        stamp0 = jazz._stamp()
+        sleep(0.0001)
+        stamp1 = jazz._stamp()
+        self.assertTrue(stamp0 < stamp1, "Expected %s < %s" % (stamp0, stamp1))
 
     def testResultsStored(self):
         self.jazz.addOaiRecord(identifier='oai://1234?34', sets=[], metadataFormats=[('prefix', 'schema', 'namespace')])
