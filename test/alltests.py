@@ -9,7 +9,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -29,15 +29,17 @@
 #
 ## end license ##
 
-import os, sys
-os.system('find .. -name "*.pyc" | xargs rm -f')
+from os import getuid
+assert getuid() != 0, "Do not run tests as 'root'"
 
-import test
-
-from glob import glob
-for path in glob('../deps.d/*'):
-    sys.path.insert(0, path)
-sys.path.insert(0,'..')
+from os import system                             #DO_NOT_DISTRIBUTE
+from sys import path as sysPath                   #DO_NOT_DISTRIBUTE
+system('find .. -name "*.pyc" | xargs rm -f')     #DO_NOT_DISTRIBUTE
+                                                  #DO_NOT_DISTRIBUTE
+from glob import glob                             #DO_NOT_DISTRIBUTE
+for path in glob('../deps.d/*'):                  #DO_NOT_DISTRIBUTE
+    sysPath.insert(0, path)                       #DO_NOT_DISTRIBUTE
+sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
 
 import unittest
 
@@ -47,7 +49,6 @@ from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from packertest import PackerTest
 
 from facetindex.libfacetindextest import LibFacetIndexTest
-from facetindex.performancetuningtest import PerformanceTuningTest
 from facetindex.docsettest import DocSetTest
 from facetindex.docsetlisttest import DocSetListTest
 from facetindex.trietest import TrieTest
