@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -7,7 +8,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -26,3 +27,21 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from os import getuid
+assert getuid() != 0, "Do not run tests as 'root'"
+
+from os import system                             #DO_NOT_DISTRIBUTE
+from sys import path as sysPath                   #DO_NOT_DISTRIBUTE
+system('find .. -name "*.pyc" | xargs rm -f')     #DO_NOT_DISTRIBUTE
+                                                  #DO_NOT_DISTRIBUTE
+from glob import glob                             #DO_NOT_DISTRIBUTE
+for path in glob('../deps.d/*'):                  #DO_NOT_DISTRIBUTE
+    sysPath.insert(0, path)                       #DO_NOT_DISTRIBUTE
+sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
+
+import unittest
+
+from facetindex.performancetuningtest import PerformanceTuningTest
+
+if __name__ == '__main__':
+    unittest.main()

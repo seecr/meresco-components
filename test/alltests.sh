@@ -1,15 +1,9 @@
-#!/usr/bin/env python2.5
-# -*- coding: utf-8 -*-
+#!/bin/bash
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
-#       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
-#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -29,20 +23,5 @@
 #
 ## end license ##
 
-import os, sys
-os.system('find .. -name "*.pyc" | xargs rm -f')
-
-import test
-
-from glob import glob
-for path in glob('../deps.d/*'):
-    sys.path.insert(0, path)
-sys.path.insert(0,'..')
-
-import unittest
-
-from facetindex.performancetuningtest import PerformanceTuningTest
-
-if __name__ == '__main__':
-    unittest.main()
-    os.system('find .. -name "*.pyc" | xargs rm -f')
+export PYTHONPATH=.
+python2.5 _alltests.py

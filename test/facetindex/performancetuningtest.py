@@ -150,14 +150,14 @@ class PerformanceTuningTest(LuceneTestCase):
         self.assertTiming(0.002, tdisp2, 0.005) # zipper/upper_bound optimization 2
 
     def testNoMemoryLeaksInTermCardinalities(self):
-        self.createBigIndex(9, 2, keepas='testMemoryLeaks') # 10 records, 6 values
+        self.createBigIndex(9, 2, indexName='testMemoryLeaks') # 10 records, 6 values
         dsl = DocSetList.forField(self.reader, 'field0')
         for i in range(100000):
             cs = dsl.termCardinalities(DocSet([1,2,3,4,5,6,7,8,9])).next()
         self.assertNoMemoryLeaks(bandwidth=0.9)
 
     def testPerformanceOfDocSetListForField(self):
-        self.createBigIndex(size=10000, keepas='testIndex0')
+        self.createBigIndex(size=10000, indexName='testIndex0')
         t = 0.0
         for n in range(10):
             for field in iterJ(self.reader.getFieldNames(IndexReader.FieldOption.ALL)):
