@@ -33,6 +33,8 @@ from merescocomponents.facetindex.merescolucene import IndexReader, IndexSearche
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex import DocSet
 from os.path import join, isdir
+from os import getlogin
+from tempfile import gettempdir
 
 class LuceneTestCase(CQ2TestCase):
 
@@ -65,7 +67,7 @@ class LuceneTestCase(CQ2TestCase):
         self.reader = IndexReader.open(self.tempdir)
         self.searcher = IndexSearcher(self.reader % IndexReader)
 
-    def createBigIndex(self, size, valuemax=1000, log=False, keepas=''):
+    def createBigIndex(self, size, valuemax=1000, log=False, indexName=None):
         def create(directory):
             from random import randint
             index = IndexWriter(directory, merescoStandardAnalyzer, True)
@@ -77,8 +79,14 @@ class LuceneTestCase(CQ2TestCase):
                         Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
                 index.addDocument(doc)
             index.close()
-        directory = keepas if keepas else self.tempdir
+        directory = self.getDir(indexName)
         if not IndexReader.indexExists(directory):
             create(directory)
         self.reader = IndexReader.open(directory)
         self.searcher = IndexSearcher(self.reader % IndexReader)
+
+    def getDir(self, indexName):
+        if indexName:
+            return join(gettempdir(), 'meresco-components-%s' % getlogin(), indexName) 
+        return self.tempdir
+        
