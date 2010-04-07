@@ -31,7 +31,6 @@
 from sys import maxint
 from ctypes import c_uint32, c_int32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
 from libfacetindex import libFacetIndex
-from cq2utils import deallocator
 
 INTEGERLIST = POINTER(None)
 
@@ -90,8 +89,10 @@ class IntegerList(object):
             self._cobj = cobj
         else:
             self._cobj = IntegerList_create(size)
-        self._deallocator = deallocator(IntegerList_delete, self._cobj)
         self._as_parameter_ = self._cobj
+
+    def __del__(self):
+        IntegerList_delete(self._cobj)
 
     def __len__(self):
         return IntegerList_size(self)
