@@ -1,0 +1,133 @@
+Changeset created on Fri Apr  9 16:40:09 CEST 2010 by Seek You Too
+
+Description: open file verification added to 'unlock'
+
+    Before removing the lock 'unlock' now verifies that no other process still has index files open.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.0-beta/version_2
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/merescocomponents/facetindex/tools/lucenetools.py version_2.unlock_check_open_index_files/merescocomponents/facetindex/tools/lucenetools.py
+--- version_2/merescocomponents/facetindex/tools/lucenetools.py	2010-04-07 14:46:11.000000000 +0200
++++ version_2.unlock_check_open_index_files/merescocomponents/facetindex/tools/lucenetools.py	2010-04-09 16:34:36.000000000 +0200
+@@ -28,11 +28,23 @@
+ #
+ ## end license ##
+ 
++from subprocess import Popen, PIPE
++
+ from merescocomponents.facetindex.merescolucene import FSDirectory, IndexReader, Directory
+ 
++
+ def unlock(path):
+     """
+     Unlock the directory specified by path.
+     This is a manual operation, when locking somehow has gone wrong.
+     """
++    _assertNoFilesOpenInPath(path)
+     IndexReader.unlock(FSDirectory.getDirectory(path, False) % Directory)
++
++def _assertNoFilesOpenInPath(path):
++    cmdline = "lsof +D %s" % path
++    (out, err) = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE).communicate()
++    if err:
++        raise Exception("'%s' failed:\n%s" % (cmdline, err))
++    if out and len(out.split("\n")) > 0:
++        raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
+\ No newline at end of file
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/test/_alltests.py version_2.unlock_check_open_index_files/test/_alltests.py
+--- version_2/test/_alltests.py	2010-04-07 14:46:11.000000000 +0200
++++ version_2.unlock_check_open_index_files/test/_alltests.py	2010-04-09 10:10:59.000000000 +0200
+@@ -74,6 +74,8 @@
+ # incremental indexing
+ from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
+ 
++from facetindex.tools.lucenetoolstest import LuceneToolsTest
++
+ from oai.fields2oairecordtest import Fields2OaiRecordTest
+ from oai.oaigetrecordtest import OaiGetRecordTest
+ from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/test/alltests.sh version_2.unlock_check_open_index_files/test/alltests.sh
+--- version_2/test/alltests.sh	2010-04-07 14:46:11.000000000 +0200
++++ version_2.unlock_check_open_index_files/test/alltests.sh	2010-04-09 10:13:31.000000000 +0200
+@@ -24,4 +24,4 @@
+ ## end license ##
+ 
+ export PYTHONPATH=.
+-python2.5 _alltests.py
++python2.5 _alltests.py $@
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/test/facetindex/tools/__init__.py version_2.unlock_check_open_index_files/test/facetindex/tools/__init__.py
+--- version_2/test/facetindex/tools/__init__.py	1970-01-01 01:00:00.000000000 +0100
++++ version_2.unlock_check_open_index_files/test/facetindex/tools/__init__.py	2010-04-09 10:09:07.000000000 +0200
+@@ -0,0 +1,28 @@
++## begin license ##
++#
++#    Meresco Components are components to build searchengines, repositories
++#    and archives, based on Meresco Core.
++#    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
++#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
++#       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
++#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
++#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/test/facetindex/tools/lucenetoolstest.py version_2.unlock_check_open_index_files/test/facetindex/tools/lucenetoolstest.py
+--- version_2/test/facetindex/tools/lucenetoolstest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_2.unlock_check_open_index_files/test/facetindex/tools/lucenetoolstest.py	2010-04-09 16:19:16.000000000 +0200
+@@ -0,0 +1,39 @@
++# -*- coding: utf-8 -*-
++
++from os.path import join, isfile
++
++from cq2utils import CQ2TestCase
++from merescocomponents.facetindex.tools import unlock
++
++class LuceneToolsTest(CQ2TestCase):
++    def testUnlockNoFilesPresent(self):
++        unlock(self.tempdir)
++
++    def testUnlockNoLockPresent(self):
++        open(join(self.tempdir, "afile"), "w").close()
++        unlock(self.tempdir)
++
++    def testUnlock(self):
++        lockFile = join(self.tempdir, "write.lock")
++        open(lockFile, "w").close()
++        self.assertTrue(isfile(lockFile))
++        unlock(self.tempdir)
++        self.assertFalse(isfile(lockFile))
++
++    def testUnlockWithFilesOpen(self):
++        lockFile = join(self.tempdir, "write.lock")
++        open(lockFile, "w").close()
++        afile = join(self.tempdir, "afile")
++        openFile = open(afile, "w")
++
++        try:
++            unlock(self.tempdir)
++        except Exception, e:
++            self.assertTrue(str(e).startswith("Refusing to remove Lucene lock"))
++            self.assertTrue("/afile" in str(e))
++        finally:
++            openFile.close()
++        self.assertTrue(isfile(lockFile))
++
++        unlock(self.tempdir)
++        self.assertFalse(isfile(lockFile))
+\ No newline at end of file
