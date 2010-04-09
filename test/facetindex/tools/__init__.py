@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -27,24 +26,3 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-
-from subprocess import Popen, PIPE
-
-from merescocomponents.facetindex.merescolucene import FSDirectory, IndexReader, Directory
-
-
-def unlock(path):
-    """
-    Unlock the directory specified by path.
-    This is a manual operation, when locking somehow has gone wrong.
-    """
-    _assertNoFilesOpenInPath(path)
-    IndexReader.unlock(FSDirectory.getDirectory(path, False) % Directory)
-
-def _assertNoFilesOpenInPath(path):
-    cmdline = "lsof +D %s" % path
-    (out, err) = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE).communicate()
-    if err:
-        raise Exception("'%s' failed:\n%s" % (cmdline, err))
-    if out and len(out.split("\n")) > 0:
-        raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)

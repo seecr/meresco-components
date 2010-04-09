@@ -74,6 +74,8 @@ from ngram.cqltermvisitortest import CqlTermVisitorTest
 # incremental indexing
 from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
 
+from facetindex.tools.lucenetoolstest import LuceneToolsTest
+
 from oai.fields2oairecordtest import Fields2OaiRecordTest
 from oai.oaigetrecordtest import OaiGetRecordTest
 from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
