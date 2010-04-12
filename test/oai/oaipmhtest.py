@@ -38,7 +38,8 @@ from lxml.etree import parse
 from StringIO import StringIO
 
 def xpath(node, path):
-    return '\n'.join(node.xpath(path, namespaces={'oai':"http://www.openarchives.org/OAI/2.0/"}))
+    return '\n'.join(node.xpath(path, namespaces={'oai':"http://www.openarchives.org/OAI/2.0/",
+                                                  'tkit':"http://oai.dlib.vt.edu/OAI/metadata/toolkit"}))
 
 class _OaiPmhTest(OaiTestCase):
 
@@ -57,6 +58,10 @@ class _OaiPmhTest(OaiTestCase):
         self.assertEquals('YYYY-MM-DDThh:mm:ssZ', xpath(response, '/oai:OAI-PMH/oai:Identify/oai:granularity/text()'))
         self.assertEquals('1970-01-01T00:00:00Z', xpath(response, '/oai:OAI-PMH/oai:Identify/oai:earliestDatestamp/text()'))
         self.assertEquals('persistent', xpath(response, '/oai:OAI-PMH/oai:Identify/oai:deletedRecord/text()'))
+        
+        self.assertEquals('Meresco', xpath(response, '/oai:OAI-PMH/oai:Identify/oai:description/tkit:toolkit/tkit:title/text()'))
+        self.assertEquals('http://www.meresco.org', xpath(response, '/oai:OAI-PMH/oai:Identify/oai:description/tkit:toolkit/tkit:URL/text()'))
+
 
     def testGetRecordUsesObservers(self):
         self.request.args = {'verb':['GetRecord'], 'metadataPrefix': ['oai_dc'], 'identifier': [self.prefix + 'ident']}

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -106,11 +107,23 @@ IDENTIFY = """<repositoryName>%(repositoryName)s</repositoryName>
 <earliestDatestamp>%(earliestDatestamp)s</earliestDatestamp>
 <deletedRecord>%(deletedRecord)s</deletedRecord>
 <granularity>%(granularity)s</granularity>
-%(descriptionRepositoryIdentifier)s"""
+%(descriptionRepositoryIdentifier)s
+<description>
+    <toolkit xmlns="http://oai.dlib.vt.edu/OAI/metadata/toolkit"
+             xsi:schemaLocation="http://oai.dlib.vt.edu/OAI/metadata/toolkit http://oai.dlib.vt.edu/OAI/metadata/toolkit.xsd">
+        <title>Meresco</title>
+        <author>
+            <email>info@cq2.nl</email>
+            <institution>Seek You Too with the Meresco community</institution>
+        </author>
+        <toolkitIcon>http://meresco.org/files/images/meresco-logo-small.png</toolkitIcon>
+        <URL>http://www.meresco.org</URL>
+    </toolkit>
+</description>"""
 
 DESCRIPTION_REPOSITORY_IDENTIFIER = """<description>
-  <oai-identifier xmlns="http://www.openarchives.org/OAI/2.0/oai-identifier" 
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  <oai-identifier xmlns="http://www.openarchives.org/OAI/2.0/oai-identifier"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai-identifier
       http://www.openarchives.org/OAI/2.0/oai-identifier.xsd">
     <scheme>oai</scheme>
@@ -118,4 +131,4 @@ DESCRIPTION_REPOSITORY_IDENTIFIER = """<description>
     <delimiter>:</delimiter>
     <sampleIdentifier>oai:%(repositoryIdentifier)s:5324</sampleIdentifier>
   </oai-identifier>
-</description>"""
+  </description>"""
