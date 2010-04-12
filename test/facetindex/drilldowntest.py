@@ -6,7 +6,7 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
@@ -393,3 +393,15 @@ class DrilldownTest(CQ2TestCase):
         drilldown = Drilldown([('field_0', 'field_1')])
         drilldown._add(0, {'field_0': ['value'], 'field_1': ['value']}) # had a bug causing: "non-increasing docid" error
 
+    def testTokenize(self):
+        drilldown = Drilldown(['tokenized', 'untokenized', ('tokenized', 'untokenized')], tokenize=['tokenized', ('tokenized', 'untokenized')])
+        drilldown.addDocument(0, {'tokenized': ['token one'], 'untokenized': ['token two']})
+        drilldown.addDocument(1, {'tokenized': ['token two'], 'untokenized': ['token two']})
+        drilldown.commit()
+        self.assertEquals([('token', 2), ('one', 1), ('two', 1)], list(drilldown._docsetlists['tokenized'].allCardinalities()))
+        self.assertEquals(
+            [('token two', 2)], 
+            list(drilldown._docsetlists['untokenized'].allCardinalities()))
+        self.assertEquals(
+            set([('token', 2), ('one', 1), ('two', 2)]), 
+            set(drilldown._docsetlists[('tokenized','untokenized')].allCardinalities()))
