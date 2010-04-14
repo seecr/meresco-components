@@ -1,0 +1,36 @@
+Changeset created on Wed Apr 14 09:54:56 CEST 2010 by Seek You Too
+
+Description: NoFacetIndexException behaves like a normal Exception
+
+    Changed NoFacetIndexException so that it calls its superclass.
+
+Baseline version: meresco-components/workingsets/3.0-beta/version_5
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_5/merescocomponents/facetindex/drilldown.py version_6/merescocomponents/facetindex/drilldown.py
+--- version_5/merescocomponents/facetindex/drilldown.py	2010-04-12 14:20:38.000000000 +0200
++++ version_6/merescocomponents/facetindex/drilldown.py	2010-04-14 09:54:38.000000000 +0200
+@@ -41,16 +41,10 @@
+ from lucene import tokenize
+ 
+ class NoFacetIndexException(Exception):
+-
+     def __init__(self, field, fields):
+-        self._str = "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields))
+-
+-    def __str__(self):
+-        return self._str
+-
++        Exception.__init__(self, "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields)))
+ 
+ class Drilldown(object):
+-
+     def __init__(self, staticDrilldownFieldnames=None, transactionName=None, tokenize=None):
+         self._staticDrilldownFieldnames = staticDrilldownFieldnames
+         self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
+@@ -174,4 +168,4 @@
+             terms += len(docsetlist)
+             postings += sum(len(docset) for docset in docsetlist)
+         dictionaries = TrieDict.measureall()
+-        return {'dictionaries':dictionaries, 'postings': postings, 'terms': terms, 'fields': len(self._docsetlists), 'totalBytes': totalBytes}
+\ No newline at end of file
++        return {'dictionaries':dictionaries, 'postings': postings, 'terms': terms, 'fields': len(self._docsetlists), 'totalBytes': totalBytes}
