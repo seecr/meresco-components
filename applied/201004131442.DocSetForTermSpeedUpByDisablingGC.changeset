@@ -1,0 +1,82 @@
+Changeset created on Tue Apr 13 14:42:14 CEST 2010 by Seek You Too
+
+Description: DocSet::forTerm faster by temporarily disabling garbage collection
+
+    Speeds up converting a Lucene index to a facet index.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.3-CQ2/version_1
+
+Binary files version_1/build/temp.linux-x86_64-2.5/merescocomponents/facetindex/_docset.o and version_1-GC_dis_en_able/build/temp.linux-x86_64-2.5/merescocomponents/facetindex/_docset.o differ
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_1/merescocomponents/facetindex/_docset.cpp version_1-GC_dis_en_able/merescocomponents/facetindex/_docset.cpp
+--- version_1/merescocomponents/facetindex/_docset.cpp	2010-04-13 14:11:52.000000000 +0200
++++ version_1-GC_dis_en_able/merescocomponents/facetindex/_docset.cpp	2010-04-13 14:36:59.000000000 +0200
+@@ -38,6 +38,7 @@
+ #include "org/apache/lucene/index/Term.h"
+ #include "java/lang/Throwable.h"
+ #include "docset.h"
++#include "gc.h"
+ #include <algorithm>
+ 
+ using namespace org::apache;
+@@ -251,6 +252,7 @@
+ #define TERMDOCS_READ_BUFF_SIZE 32
+ 
+ fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping) {
++    GC_disable(); // speeds up 25%
+     jintArray documents = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
+     jintArray ignored = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
+     fwPtr docset = DocSet_create();
+@@ -273,6 +275,7 @@
+         count += additional;
+     }
+     docs->map(mapping);
++    GC_enable();
+     return docset;
+ }
+ 
+Binary files version_1/merescocomponents/facetindex/_facetindex.so and version_1-GC_dis_en_able/merescocomponents/facetindex/_facetindex.so differ
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_1/merescocomponents/facetindex/gc.h version_1-GC_dis_en_able/merescocomponents/facetindex/gc.h
+--- version_1/merescocomponents/facetindex/gc.h	1970-01-01 01:00:00.000000000 +0100
++++ version_1-GC_dis_en_able/merescocomponents/facetindex/gc.h	2010-04-13 14:35:41.000000000 +0200
+@@ -0,0 +1,41 @@
++/* begin license *
++ *
++ *     Meresco Components are components to build searchengines, repositories
++ *     and archives, based on Meresco Core.
++ *     Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
++ *
++ *     This file is part of Meresco Components.
++ *
++ *     Meresco Components is free software; you can redistribute it and/or modify
++ *     it under the terms of the GNU General Public License as published by
++ *     the Free Software Foundation; either version 2 of the License, or
++ *     (at your option) any later version.
++ *
++ *     Meresco Components is distributed in the hope that it will be useful,
++ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *     GNU General Public License for more details.
++ *
++ *     You should have received a copy of the GNU General Public License
++ *     along with Meresco Components; if not, write to the Free Software
++ *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ * end license */
++
++#ifndef __gc_h__
++#define __gc_h__
++
++/*
++ * These functions are not usually exported by libgcj (8 and up).
++ * Meresco requires a patched libgcj that does export them.
++ *
++ * This header file should become part of libgcj9-dev.
++ */
++
++extern "C" {
++    void GC_disable(void);
++    void GC_enable(void);
++}
++
++#endif
++

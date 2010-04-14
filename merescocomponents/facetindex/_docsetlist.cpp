@@ -400,7 +400,7 @@ int DocSetList_size(DocSetList* list) {
 }
 
 fwPtr DocSetList_get(DocSetList* list, int i) {
-    if (i < 0 || i >= list->size()) {
+    if (i < 0 || i >= (int) list->size()) {
         return fwNONE;
     }
     return list->at(i);
@@ -466,7 +466,7 @@ DocSetList* DocSetList_forField(lucene::index::IndexReader* reader, char* fieldn
         int w = JvGetStringUTFRegion(termText, 0, jTermTextLength, cTermText);
         cTermText[w] = '\0';
 
-        fwPtr ds = DocSet::forTerm(reader, fieldname, cTermText, mapping);
+        fwPtr ds = DocSet::forTerm(reader, fieldname, cTermText, mapping, termEnum);
         list->addDocSet(ds, cTermText);
 
         free(cTermText);

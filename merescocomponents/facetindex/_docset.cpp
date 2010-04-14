@@ -38,6 +38,7 @@
 #include "org/apache/lucene/index/Term.h"
 #include "java/lang/Throwable.h"
 #include "docset.h"
+#include "gc.h"
 #include <algorithm>
 
 using namespace org::apache;
@@ -254,13 +255,18 @@ fwPtr DocSet_fromQuery(lucene::search::Searcher* searcher, lucene::search::Query
 
 #define TERMDOCS_READ_BUFF_SIZE 32
 
-fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping) {
-    jintArray documents = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
-    jintArray ignored = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
+static jintArray* anchor = (jintArray*) GC_malloc_uncollectable(2 * sizeof(jintArray));
+static jintArray documents = anchor[0] = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
+static jintArray ignored   = anchor[1] = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
+
+fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping, lucene::index::TermEnum* termEnum) {
+    GC_disable(); // speeds up 25%
     fwPtr docset = DocSet_create();
     DocSet* docs = pDS(docset);
-    lucene::index::TermEnum *termEnum = reader->terms(
-        new lucene::index::Term(JvNewStringUTF(fieldname), JvNewStringUTF(term)));
+    if (!termEnum) {
+        termEnum = reader->terms(
+            new lucene::index::Term(JvNewStringUTF(fieldname), JvNewStringUTF(term)));
+    }
     int freq = termEnum->docFreq();
     docs->reserve(freq); // <<== this really speeds up: from 3.1/3.2 => 2.6/2.7 seconds.
     lucene::index::TermDocs *termDocs = reader->termDocs();
@@ -277,6 +283,7 @@ fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char*
         count += additional;
     }
     docs->map(mapping);
+    GC_enable();
     return docset;
 }
 

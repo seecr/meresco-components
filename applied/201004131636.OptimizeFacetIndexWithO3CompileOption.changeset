@@ -1,0 +1,17 @@
+Changeset created on Tue Apr 13 16:36:14 CEST 2010 by Seek You Too
+
+Description: Optimizing facet index by applying -O3 compile option
+
+    General performance improvement for facet index.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.3-CQ2/version_3
+--- version_3/setup.py	2010-04-13 16:09:23.000000000 +0200
++++ version_3.O3/setup.py	2010-04-13 16:31:39.000000000 +0200
+@@ -150,6 +150,7 @@
+                   extra_compile_args = [
+                       '-I/usr/include/glib-2.0',
+                       '-I/usr/lib/glib-2.0/include',
++                      '-O3'
+                   ],
+                   extra_link_args = [
+                       '-llucene-core',

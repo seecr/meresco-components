@@ -66,7 +66,7 @@ class DocSet : public std::vector<doc_t> {
         void    merge                    (DocSet* docSet);
         void    remove                   (guint32 doc);
         void    map                      (IntegerList* mapping);
-        static  fwPtr forTerm            (lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping);
+        static  fwPtr forTerm            (lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping, lucene::index::TermEnum* termEnum = NULL);
         void    setTermOffset            (guint32 offset);
 };
 
