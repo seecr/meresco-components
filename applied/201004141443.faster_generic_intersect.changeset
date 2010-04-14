@@ -1,0 +1,143 @@
+Changeset created on Wed Apr 14 14:43:24 CEST 2010 by Seek You Too
+
+Description: Improved performance of intersections
+
+    Improved performance of intersections for  DocSets and DocSetLists
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.3-CQ2/version_4
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_4/merescocomponents/facetindex/_docset.cpp version_4.intersect_list_terminator/merescocomponents/facetindex/_docset.cpp
+--- version_4/merescocomponents/facetindex/_docset.cpp	2010-04-14 14:35:19.000000000 +0200
++++ version_4.intersect_list_terminator/merescocomponents/facetindex/_docset.cpp	2010-04-14 12:33:34.000000000 +0200
+@@ -149,15 +150,6 @@
+     return binary_search(begin(), end(), docId);
+ }
+ 
+-class CardinalityCounter {
+-    public:
+-        int count;
+-        CardinalityCounter() : count( 0 ) {};
+-        CardinalityCounter& operator++ (int i) { return *this; }
+-        CardinalityCounter& operator* () { return *this; }
+-        CardinalityCounter& operator= (guint32 termId) { count++; return *this; }
+-};
+-
+ int DocSet::combinedCardinalitySearch(DocSet* larger) {
+     CardinalityCounter counter;
+     intersect_generic<DocSet::iterator, CardinalityCounter>
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_4/merescocomponents/facetindex/docset.h version_4.intersect_list_terminator/merescocomponents/facetindex/docset.h
+--- version_4/merescocomponents/facetindex/docset.h	2010-04-14 14:36:02.000000000 +0200
++++ version_4.intersect_list_terminator/merescocomponents/facetindex/docset.h	2010-04-14 14:09:45.000000000 +0200
+@@ -77,6 +77,15 @@
+     return (DocSet*) Pool_get(_docsetPool, ds);
+ }
+ 
++class CardinalityCounter {
++    public:
++        int count;
++        inline CardinalityCounter() : count(0) {};
++        inline CardinalityCounter& operator++ (int i) {return *this;}
++        inline CardinalityCounter& operator* () {return *this;}
++        inline CardinalityCounter& operator= (guint32 termId) {count++; return *this;}
++};
++
+ extern "C" {
+     fwPtr   DocSet_create                    (int size);
+     DocSet* DocSet_create2                   (void);
+@@ -138,10 +147,12 @@
+             ForwardIterator lhs = lhs_from; // Reassign slow iterator to faster one (pointer)
+             ForwardIterator rhs = rhs_from;
+             while ( 1 ) {
+-                while ( rhs < rhs_till && *rhs < *lhs ) rhs++;
++                while (*rhs++ < *lhs); // terminates without boundary checks
++                rhs--;
+                 if ( rhs >= rhs_till )
+                     return;
+-                while ( lhs < lhs_till && *lhs < *rhs ) lhs++;
++                while (*lhs++ < *rhs); // terminates without boundary checks
++                lhs--;
+                 if ( lhs >= lhs_till )
+                     return;
+                 if ( *lhs == *rhs ) {
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_4/merescocomponents/facetindex/docsetlist.h version_4.intersect_list_terminator/merescocomponents/facetindex/docsetlist.h
+--- version_4/merescocomponents/facetindex/docsetlist.h	2010-04-14 14:36:33.000000000 +0200
++++ version_4.intersect_list_terminator/merescocomponents/facetindex/docsetlist.h	2010-04-14 11:09:28.000000000 +0200
+@@ -111,8 +111,16 @@
+         bool operator< (DocSetIterator& rhs) { return _iter <  rhs._iter; };
+         bool operator>=(DocSetIterator& rhs) { return _iter >= rhs._iter; };
+         bool operator<=(DocSetIterator& rhs) { return _iter <= rhs._iter; };
+-        void operator++(int n) { _iter.operator++(n); };
+-        void operator--(int n) { _iter.operator--(n); };
++        DocSetIterator operator++(int n) {
++            DocSetIterator result = *this;
++            _iter.operator++(n);
++            return result;
++        };
++        DocSetIterator operator--(int n) {
++            DocSetIterator result = *this;
++            _iter.operator--(n);
++            return result;
++        };
+         void operator+=(int n) { _iter.operator+=(n); };
+ 
+         guint32& operator*() { return pDS(*_iter)->_termOffset; };
+Binary files version_4/merescocomponents/facetindex/_facetindex.so and version_4.intersect_list_terminator/merescocomponents/facetindex/_facetindex.so differ
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_4/rmbuilt.sh version_4.intersect_list_terminator/rmbuilt.sh
+--- version_4/rmbuilt.sh	1970-01-01 01:00:00.000000000 +0100
++++ version_4.intersect_list_terminator/rmbuilt.sh	2010-04-14 10:51:03.000000000 +0200
+@@ -0,0 +1,2 @@
++rm -rfv build/temp.linux-x86_64-2.5
++rm -v merescocomponents/facetindex/_facetindex.so
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_4/test/facetindex/docsetlisttest.py version_4.intersect_list_terminator/test/facetindex/docsetlisttest.py
+--- version_4/test/facetindex/docsetlisttest.py	2010-04-14 14:37:41.000000000 +0200
++++ version_4.intersect_list_terminator/test/facetindex/docsetlisttest.py	2010-04-14 12:46:48.000000000 +0200
+@@ -180,6 +180,19 @@
+         self.assertEquals([0, 1   ], docsetlistResult._TEST_getDocsetForTerm('t0'))
+         self.assertEquals(2, len(docsetlistResult))
+ 
++    def testTermIntersectZipperReliesOnSearch(self):
++        docsetlist0 = DocSetList()
++        docsetlist0.add(DocSet([0]), 't0')
++        docsetlist0.add(DocSet([0]), 't99')
++
++        docsetlist1 = DocSetList()
++        docsetlist1.add(DocSet([0]), 't0')
++        docsetlist1.add(DocSet([0]), 't99')
++
++        docsetlistResult = docsetlist0.termIntersect(docsetlist1)
++        self.assertEquals([0], docsetlistResult._TEST_getDocsetForTerm('t0'))
++        self.assertEquals([0], docsetlistResult._TEST_getDocsetForTerm('t99'))
++        self.assertEquals(2, len(docsetlistResult))
+ 
+     def testReadTermsFrom_SEGMENT_reader(self):
+         self.createBigIndex(10, 1) # 10 records, two values 0 and 1
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_4/test/facetindex/performancetuningtest.py version_4.intersect_list_terminator/test/facetindex/performancetuningtest.py
+--- version_4/test/facetindex/performancetuningtest.py	2010-04-14 14:38:09.000000000 +0200
++++ version_4.intersect_list_terminator/test/facetindex/performancetuningtest.py	2010-04-14 12:49:20.000000000 +0200
+@@ -46,7 +46,7 @@
+         ds1 = DocSet.forTesting(10000000)
+         t0 = time()
+         ds0.combinedCardinality(ds1)
+-        self.assertTiming(0.02, time() - t0, 0.05)
++        self.assertTiming(0.04, time() - t0, 0.05)
+ 
+     def testStayWithSearch(self):
+         ds0 = DocSet.forTesting(10000000)  # one continous (large)
+@@ -157,15 +157,15 @@
+         self.assertNoMemoryLeaks(bandwidth=0.9)
+ 
+     def testPerformanceOfDocSetListForField(self):
+-        self.createBigIndex(size=10000, keepas='testIndex0')
++        self.createBigIndex(size=99999, keepas='testIndex0')
+         t = 0.0
+         for n in range(10):
+             for field in iterJ(self.reader.getFieldNames(IndexReader.FieldOption.ALL)):
+                 t0 = time()
+                 dsl = DocSetList.forField(self.reader, field)
+                 t += time() - t0
+-            self.assertNoMemoryLeaks()
+         self.assertTiming(0.05, t/n, 0.20)
++        self.assertNoMemoryLeaks()
+ 
+     def XXXXtestReadRealyBigIndex(self):
+         try:
