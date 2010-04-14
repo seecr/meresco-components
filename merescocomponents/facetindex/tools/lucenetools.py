@@ -41,10 +41,16 @@ def unlock(path):
     _assertNoFilesOpenInPath(path)
     IndexReader.unlock(FSDirectory.getDirectory(path, False) % Directory)
 
-def _assertNoFilesOpenInPath(path):
-    cmdline = "lsof +D %s" % path
-    (out, err) = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE).communicate()
-    if err:
+def _assertNoFilesOpenInPath(path, lsofFunc=None):
+    lsofFunc = lsofFunc if lsofFunc else _lsof
+    cmdline, out, err, exitcode = lsofFunc(path)
+    if exitcode != 0 and not 'WARNING' in err:
         raise Exception("'%s' failed:\n%s" % (cmdline, err))
     if out and len(out.split("\n")) > 0:
         raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
+
+def _lsof(path):
+    cmdline = "lsof +D %s" % path
+    process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
+    (out, err) = process.communicate()
+    return cmdline, out, err, process.poll()

@@ -4,6 +4,7 @@ from os.path import join, isfile
 
 from cq2utils import CQ2TestCase
 from merescocomponents.facetindex.tools import unlock
+from merescocomponents.facetindex.tools.lucenetools import _assertNoFilesOpenInPath
 
 class LuceneToolsTest(CQ2TestCase):
     def testUnlockNoFilesPresent(self):
@@ -37,3 +38,13 @@ class LuceneToolsTest(CQ2TestCase):
 
         unlock(self.tempdir)
         self.assertFalse(isfile(lockFile))
+
+    def testAssertNoFilesOpenInPathLsofError(self):
+        try:
+            _assertNoFilesOpenInPath("dummy", lsofFunc=lambda path: ("dummy cmdline", "", "Some Error", 1))
+            self.fail()
+        except Exception, e:
+            self.assertEquals("'dummy cmdline' failed:\nSome Error", str(e))
+
+    def testAssertNoFilesOpenInPathLsofWarning(self):
+        _assertNoFilesOpenInPath("dummy", lsofFunc=lambda path: ("dummy cmdline", "", "WARNING: some warning", 1))
