@@ -46,7 +46,7 @@ class PerformanceTuningTest(LuceneTestCase):
         ds1 = DocSet.forTesting(10000000)
         t0 = time()
         ds0.combinedCardinality(ds1)
-        self.assertTiming(0.02, time() - t0, 0.05)
+        self.assertTiming(0.04, time() - t0, 0.05)
 
     def testStayWithSearch(self):
         ds0 = DocSet.forTesting(10000000)  # one continous (large)
@@ -157,15 +157,15 @@ class PerformanceTuningTest(LuceneTestCase):
         self.assertNoMemoryLeaks(bandwidth=0.9)
 
     def testPerformanceOfDocSetListForField(self):
-        self.createBigIndex(size=10000, indexName='testIndex0')
+        self.createBigIndex(size=99999, indexName='testIndex0')
         t = 0.0
         for n in range(10):
             for field in iterJ(self.reader.getFieldNames(IndexReader.FieldOption.ALL)):
                 t0 = time()
                 dsl = DocSetList.forField(self.reader, field)
                 t += time() - t0
-            self.assertNoMemoryLeaks()
         self.assertTiming(0.05, t/n, 0.20)
+        self.assertNoMemoryLeaks()
 
     def XXXXtestReadRealyBigIndex(self):
         try:

@@ -180,6 +180,19 @@ class DocSetListTest(LuceneTestCase):
         self.assertEquals([0, 1   ], docsetlistResult._TEST_getDocsetForTerm('t0'))
         self.assertEquals(2, len(docsetlistResult))
 
+    def testTermIntersectZipperReliesOnSearch(self):
+        docsetlist0 = DocSetList()
+        docsetlist0.add(DocSet([0]), 't0')
+        docsetlist0.add(DocSet([0]), 't99')
+
+        docsetlist1 = DocSetList()
+        docsetlist1.add(DocSet([0]), 't0')
+        docsetlist1.add(DocSet([0]), 't99')
+
+        docsetlistResult = docsetlist0.termIntersect(docsetlist1)
+        self.assertEquals([0], docsetlistResult._TEST_getDocsetForTerm('t0'))
+        self.assertEquals([0], docsetlistResult._TEST_getDocsetForTerm('t99'))
+        self.assertEquals(2, len(docsetlistResult))
 
     def testReadTermsFrom_SEGMENT_reader(self):
         self.createBigIndex(10, 1) # 10 records, two values 0 and 1

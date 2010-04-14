@@ -111,8 +111,16 @@ class DocSetIterator : public  Guint32Iterator {
         bool operator< (DocSetIterator& rhs) { return _iter <  rhs._iter; };
         bool operator>=(DocSetIterator& rhs) { return _iter >= rhs._iter; };
         bool operator<=(DocSetIterator& rhs) { return _iter <= rhs._iter; };
-        void operator++(int n) { _iter.operator++(n); };
-        void operator--(int n) { _iter.operator--(n); };
+        DocSetIterator operator++(int n) {
+            DocSetIterator result = *this;
+            _iter.operator++(n);
+            return result;
+        };
+        DocSetIterator operator--(int n) {
+            DocSetIterator result = *this;
+            _iter.operator--(n);
+            return result;
+        };
         void operator+=(int n) { _iter.operator+=(n); };
 
         guint32& operator*() { return pDS(*_iter)->_termOffset; };

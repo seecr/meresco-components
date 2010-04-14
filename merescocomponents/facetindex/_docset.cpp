@@ -153,15 +153,6 @@ int DocSet::contains(guint32 docId) {
     return binary_search(begin(), end(), docId);
 }
 
-class CardinalityCounter {
-    public:
-        int count;
-        CardinalityCounter() : count( 0 ) {};
-        CardinalityCounter& operator++ (int i) { return *this; }
-        CardinalityCounter& operator* () { return *this; }
-        CardinalityCounter& operator= (guint32 termId) { count++; return *this; }
-};
-
 int DocSet::combinedCardinalitySearch(DocSet* larger) {
     CardinalityCounter counter;
     intersect_generic<DocSet::iterator, CardinalityCounter>

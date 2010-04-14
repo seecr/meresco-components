@@ -77,6 +77,15 @@ inline DocSet* pDS(fwPtr ds) {
     return (DocSet*) Pool_get(_docsetPool, ds);
 }
 
+class CardinalityCounter {
+    public:
+        int count;
+        inline CardinalityCounter() : count(0) {};
+        inline CardinalityCounter& operator++ (int i) {return *this;}
+        inline CardinalityCounter& operator* () {return *this;}
+        inline CardinalityCounter& operator= (guint32 termId) {count++; return *this;}
+};
+
 extern "C" {
     fwPtr   DocSet_create                    (int size);
     DocSet* DocSet_create2                   (void);
@@ -139,10 +148,12 @@ void intersect_generic(
             ForwardIterator lhs = lhs_from; // Reassign slow iterator to faster one (pointer)
             ForwardIterator rhs = rhs_from;
             while ( 1 ) {
-                while ( rhs < rhs_till && *rhs < *lhs ) rhs++;
+                while (*rhs++ < *lhs); // terminates without boundary checks
+                rhs--;
                 if ( rhs >= rhs_till )
                     return;
-                while ( lhs < lhs_till && *lhs < *rhs ) lhs++;
+                while (*lhs++ < *rhs); // terminates without boundary checks
+                lhs--;
                 if ( lhs >= lhs_till )
                     return;
                 if ( *lhs == *rhs ) {
