@@ -41,16 +41,10 @@ IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 from lucene import tokenize
 
 class NoFacetIndexException(Exception):
-
     def __init__(self, field, fields):
-        self._str = "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields))
-
-    def __str__(self):
-        return self._str
-
+        Exception.__init__(self, "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields)))
 
 class Drilldown(object):
-
     def __init__(self, staticDrilldownFieldnames=None, transactionName=None, tokenize=None):
         self._staticDrilldownFieldnames = staticDrilldownFieldnames
         self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
