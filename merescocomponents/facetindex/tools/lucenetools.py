@@ -28,6 +28,7 @@
 #
 ## end license ##
 
+from os.path import isdir
 from subprocess import Popen, PIPE
 
 from merescocomponents.facetindex.merescolucene import FSDirectory, IndexReader, Directory
@@ -43,11 +44,12 @@ def unlock(path):
 
 def _assertNoFilesOpenInPath(path, lsofFunc=None):
     lsofFunc = lsofFunc if lsofFunc else _lsof
-    cmdline, out, err, exitcode = lsofFunc(path)
-    if exitcode != 0 and not 'WARNING' in err:
-        raise Exception("'%s' failed:\n%s" % (cmdline, err))
-    if out and len(out.split("\n")) > 0:
-        raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
+    if isdir(path):
+        cmdline, out, err, exitcode = lsofFunc(path)
+        if exitcode != 0 and not 'WARNING' in err:
+            raise Exception("'%s' failed:\n%s" % (cmdline, err))
+        if out and len(out.split("\n")) > 0:
+            raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
 
 def _lsof(path):
     cmdline = "lsof +D %s" % path

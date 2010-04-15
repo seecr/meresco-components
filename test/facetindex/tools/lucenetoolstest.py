@@ -7,6 +7,9 @@ from merescocomponents.facetindex.tools import unlock
 from merescocomponents.facetindex.tools.lucenetools import _assertNoFilesOpenInPath
 
 class LuceneToolsTest(CQ2TestCase):
+    def testUnlockUnexistingDir(self):
+        unlock(join(self.tempdir, 'doesntexist'))
+
     def testUnlockNoFilesPresent(self):
         unlock(self.tempdir)
 
@@ -41,7 +44,7 @@ class LuceneToolsTest(CQ2TestCase):
 
     def testAssertNoFilesOpenInPathLsofError(self):
         try:
-            _assertNoFilesOpenInPath("dummy", lsofFunc=lambda path: ("dummy cmdline", "", "Some Error", 1))
+            _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "Some Error", 1))
             self.fail()
         except Exception, e:
             self.assertEquals("'dummy cmdline' failed:\nSome Error", str(e))
