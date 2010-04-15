@@ -50,4 +50,9 @@ class LuceneToolsTest(CQ2TestCase):
             self.assertEquals("'dummy cmdline' failed:\nSome Error", str(e))
 
     def testAssertNoFilesOpenInPathLsofWarning(self):
-        _assertNoFilesOpenInPath("dummy", lsofFunc=lambda path: ("dummy cmdline", "", "WARNING: some warning", 1))
+        _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "WARNING: some warning", 1))
+
+    def testAssertNoFilesOpenInPathLsofNotCalledInCaseDirDoesntExist(self):
+        def lsofFunc(path):
+            raise Exception("Should not have been called")
+        _assertNoFilesOpenInPath(join(self.tempdir, "doesnotexist"), lsofFunc=lsofFunc)
