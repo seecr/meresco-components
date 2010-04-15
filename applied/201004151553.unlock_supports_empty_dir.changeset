@@ -1,0 +1,82 @@
+Changeset created on Thu Apr 15 15:53:25 CEST 2010 by Seek You Too
+
+Description: no open index files assert in unlock made more robust
+
+    Assert that no files are open for index now allows for the directory not to exist and other warnings
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.0-beta/version_6.merge_optimizations
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_6.facetindex_speedups/merescocomponents/facetindex/tools/lucenetools.py version_6.unlock_empty_dirs/merescocomponents/facetindex/tools/lucenetools.py
+--- version_6.facetindex_speedups/merescocomponents/facetindex/tools/lucenetools.py	2010-04-15 15:52:35.000000000 +0200
++++ version_6.unlock_empty_dirs/merescocomponents/facetindex/tools/lucenetools.py	2010-04-15 15:39:56.000000000 +0200
+@@ -28,6 +28,7 @@
+ #
+ ## end license ##
+ 
++from os.path import isdir
+ from subprocess import Popen, PIPE
+ 
+ from merescocomponents.facetindex.merescolucene import FSDirectory, IndexReader, Directory
+@@ -41,10 +42,17 @@
+     _assertNoFilesOpenInPath(path)
+     IndexReader.unlock(FSDirectory.getDirectory(path, False) % Directory)
+ 
+-def _assertNoFilesOpenInPath(path):
++def _assertNoFilesOpenInPath(path, lsofFunc=None):
++    lsofFunc = lsofFunc if lsofFunc else _lsof
++    if isdir(path):
++        cmdline, out, err, exitcode = lsofFunc(path)
++        if exitcode != 0 and not 'WARNING' in err:
++            raise Exception("'%s' failed:\n%s" % (cmdline, err))
++        if out and len(out.split("\n")) > 0:
++            raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
++
++def _lsof(path):
+     cmdline = "lsof +D %s" % path
+-    (out, err) = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE).communicate()
+-    if err:
+-        raise Exception("'%s' failed:\n%s" % (cmdline, err))
+-    if out and len(out.split("\n")) > 0:
+-        raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
+\ No newline at end of file
++    process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
++    (out, err) = process.communicate()
++    return cmdline, out, err, process.poll()
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_6.facetindex_speedups/test/facetindex/tools/lucenetoolstest.py version_6.unlock_empty_dirs/test/facetindex/tools/lucenetoolstest.py
+--- version_6.facetindex_speedups/test/facetindex/tools/lucenetoolstest.py	2010-04-15 15:52:34.000000000 +0200
++++ version_6.unlock_empty_dirs/test/facetindex/tools/lucenetoolstest.py	2010-04-15 15:39:56.000000000 +0200
+@@ -4,8 +4,12 @@
+ 
+ from cq2utils import CQ2TestCase
+ from merescocomponents.facetindex.tools import unlock
++from merescocomponents.facetindex.tools.lucenetools import _assertNoFilesOpenInPath
+ 
+ class LuceneToolsTest(CQ2TestCase):
++    def testUnlockUnexistingDir(self):
++        unlock(join(self.tempdir, 'doesntexist'))
++
+     def testUnlockNoFilesPresent(self):
+         unlock(self.tempdir)
+ 
+@@ -36,4 +40,19 @@
+         self.assertTrue(isfile(lockFile))
+ 
+         unlock(self.tempdir)
+-        self.assertFalse(isfile(lockFile))
+\ No newline at end of file
++        self.assertFalse(isfile(lockFile))
++
++    def testAssertNoFilesOpenInPathLsofError(self):
++        try:
++            _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "Some Error", 1))
++            self.fail()
++        except Exception, e:
++            self.assertEquals("'dummy cmdline' failed:\nSome Error", str(e))
++
++    def testAssertNoFilesOpenInPathLsofWarning(self):
++        _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "WARNING: some warning", 1))
++
++    def testAssertNoFilesOpenInPathLsofNotCalledInCaseDirDoesntExist(self):
++        def lsofFunc(path):
++            raise Exception("Should not have been called")
++        _assertNoFilesOpenInPath(join(self.tempdir, "doesnotexist"), lsofFunc=lsofFunc)
