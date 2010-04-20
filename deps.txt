@@ -1,4 +1,4 @@
-python-meresco-core-3.0-beta
+python-meresco-core-3.0-beta (= 3-package-reshuffle)
 python-jtool (>= 0.4)
 python-jtool (<< 0.6)
 liblucene-core2-gcj9 (>= 2.2.0)

@@ -4,10 +4,10 @@
 #    and archives, based on Meresco Core.
 #    Copyright (C) 2008 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2008 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2008 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2008-2010 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -29,7 +29,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocore.framework import Transaction
+from meresco.core import Transaction
 from merescocomponents.ngram import NGramIndex
 from merescocomponents.ngram.ngram import NGRAMS_FIELD, NAME_FIELD
 

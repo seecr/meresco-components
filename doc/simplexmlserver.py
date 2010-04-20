@@ -7,7 +7,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -31,14 +31,14 @@ from sys import stdout
 from os.path import join, isdir
 from os import makedirs
 
-from merescocore.framework import be, Observable, TransactionScope, ResourceManager
+from meresco.core import be, Observable, TransactionScope, ResourceManager
 
-from merescocore.components import StorageComponent, XmlPrintLxml, Xml2Fields, Amara2Lxml
-from merescocore.components.http import PathFilter, ObservableHttpServer
-from merescocore.components.http.webrequestserver import WebRequestServer
+from meresco.components import StorageComponent, XmlPrintLxml, Xml2Fields, Amara2Lxml
+from meresco.components.http import PathFilter, ObservableHttpServer
+from meresco.components.http.webrequestserver import WebRequestServer
 from merescocomponents.facetindex import LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
 from merescocomponents.facetindex.tools import unlock
-from merescocore.components.sru import SruParser, SruHandler, SRURecordUpdate
+from meresco.components.sru import SruParser, SruHandler, SRURecordUpdate
 
 from weightless import Reactor
 

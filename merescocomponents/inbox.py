@@ -3,9 +3,9 @@
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
 #    Copyright (C) 2008 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2008 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2008-2010 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #
 #    This file is part of Meresco Components.
@@ -25,7 +25,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from merescocore.framework import Observable
+from meresco.core import Observable
 
 from cq2utils import DirectoryWatcher
 from lxml.etree import parse

@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-from merescocore.components import XmlCompose
+from meresco.components import XmlCompose
 
 PROVENANCE_TEMPLATE = """<provenance xmlns="http://www.openarchives.org/OAI/2.0/provenance"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

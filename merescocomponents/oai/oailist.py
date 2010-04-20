@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from merescocore.framework.observable import Observable
+from meresco.core.observable import Observable
 
 from resumptiontoken import resumptionTokenFromString, ResumptionToken
 from oaitool import ISO8601, ISO8601Exception

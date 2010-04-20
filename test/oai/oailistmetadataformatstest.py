@@ -31,10 +31,10 @@ from os.path import join
 
 from oaitestcase import OaiTestCase
 from merescocomponents.facetindex import LuceneIndex
-from merescocore.components import StorageComponent
+from meresco.components import StorageComponent
 from merescocomponents.oai import OaiAddRecord, OaiJazz
 from merescocomponents.oai.oailistmetadataformats import OaiListMetadataFormats
-from merescocore.framework import be, Observable
+from meresco.core import be, Observable
 from lxml.etree import parse
 from StringIO import StringIO
 

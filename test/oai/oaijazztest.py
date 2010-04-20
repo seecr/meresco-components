@@ -37,7 +37,7 @@ from merescocomponents.oai import OaiJazz
 from merescocomponents.oai.oaijazz import _flattenSetHierarchy, RecordId, SETSPEC_SEPARATOR
 from StringIO import StringIO
 from lxml.etree import parse
-from merescocore.framework import Observable, be, Transparant
+from meresco.core import Observable, be, Transparant
 
 from os import listdir
 from shutil import rmtree

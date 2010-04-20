@@ -31,7 +31,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from merescocomponents.facetindex import LuceneIndex
 from os.path import join
-from merescocore.components import StorageComponent
+from meresco.components import StorageComponent
 from time import sleep, mktime
 from StringIO import StringIO
 from lxml.etree import parse

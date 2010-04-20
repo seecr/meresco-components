@@ -31,7 +31,7 @@
 from xml.sax.saxutils import escape as xmlEscape
 
 from oaiverb import OaiVerb
-from merescocore.framework.generatorutils import decorate
+from meresco.core.generatorutils import decorate
 
 class OaiRecordVerb(OaiVerb):
 

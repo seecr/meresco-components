@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-from merescocore.framework import Transparant
+from meresco.core import Transparant
 from lxml.etree import iselement
 
 namespaces = {

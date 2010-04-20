@@ -39,7 +39,7 @@ from itertools import ifilter, islice
 from StringIO import StringIO
 
 from document import IDFIELD
-from merescocore.framework import Observable
+from meresco.core import Observable
 
 from docset import DocSet
 from functioncommand import FunctionCommand

@@ -7,7 +7,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -31,12 +31,12 @@ from cq2utils.cq2testcase import CQ2TestCase
 
 from lxml.etree import parse, XMLSchema, XMLSchemaParseError, tostring
 from cq2utils.calltrace import CallTrace
-from merescocore.framework.observable import Observable
+from meresco.core.observable import Observable
 from StringIO import StringIO
 from os.path import join, dirname, abspath
 from glob import glob
 
-from merescocore.components.xml_generic import  __file__ as xml_genericpath
+from meresco.components.xml_generic import  __file__ as xml_genericpath
 
 
 class OaiTestCase(CQ2TestCase):

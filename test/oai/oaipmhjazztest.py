@@ -25,9 +25,9 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from merescocomponents.oai import OaiPmh, OaiJazz
-from merescocore.framework import Observable, be
-from merescocore.components.http.webrequestserver import WebRequestServer
-from merescocore.components.http.utils import CRLF
+from meresco.core import Observable, be
+from meresco.components.http.webrequestserver import WebRequestServer
+from meresco.components.http.utils import CRLF
 from urllib import urlencode
 from lxml.etree import parse
 from StringIO import StringIO
