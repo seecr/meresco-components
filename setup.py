@@ -124,7 +124,7 @@ setup(
     cmdclass={
               'build_ext': gcj_build_ext,
              },
-    name = 'merescocomponents',
+    name = 'meresco-components',
     packages = [
         'merescocomponents',
         'merescocomponents.facetindex',
@@ -132,8 +132,6 @@ setup(
         'merescocomponents.oai',
         'merescocomponents.ngram',
         'merescocomponents.web',
-        'merescocomponents.examples',
-        'merescocomponents.examples.dna',
     ],
     ext_modules = [
         Extension("merescocomponents.facetindex._facetindex", [
