@@ -34,8 +34,8 @@ from os.path import isdir, join
 from os import makedirs, listdir, rename
 from storage.storage import escapeName, unescapeName
 from time import time, strftime, localtime, mktime, strptime
-from merescocomponents.sorteditertools import OrIterator, AndIterator, WrapIterable
-from merescocomponents import SortedFileList, DoubleUniqueBerkeleyDict, BerkeleyDict
+from meresco.components.sorteditertools import OrIterator, AndIterator, WrapIterable
+from meresco.components import SortedFileList, DoubleUniqueBerkeleyDict, BerkeleyDict
 from sys import maxint
 
 from bisect import bisect_left

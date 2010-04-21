@@ -29,10 +29,10 @@
 #
 ## end license ##
 
-from merescocomponents.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer, MatchAllDocsQuery
+from meresco.components.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer, MatchAllDocsQuery
 
 from cq2utils import CQ2TestCase
-from merescocomponents.facetindex import DocSet
+from meresco.components.facetindex import DocSet
 from os.path import join, isdir
 from os import getlogin
 from tempfile import gettempdir

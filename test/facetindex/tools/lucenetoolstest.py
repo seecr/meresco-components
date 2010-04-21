@@ -3,8 +3,8 @@
 from os.path import join, isfile
 
 from cq2utils import CQ2TestCase
-from merescocomponents.facetindex.tools import unlock
-from merescocomponents.facetindex.tools.lucenetools import _assertNoFilesOpenInPath
+from meresco.components.facetindex.tools import unlock
+from meresco.components.facetindex.tools.lucenetools import _assertNoFilesOpenInPath
 
 class LuceneToolsTest(CQ2TestCase):
     def testUnlockUnexistingDir(self):

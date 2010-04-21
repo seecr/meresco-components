@@ -30,7 +30,7 @@
 
 from cq2utils import CQ2TestCase
 
-from merescocomponents import DoubleUniqueBerkeleyDict, BerkeleyDict
+from meresco.components import DoubleUniqueBerkeleyDict, BerkeleyDict
 
 class BerkeleyDictTestBase(CQ2TestCase):
     def testInsert(self):

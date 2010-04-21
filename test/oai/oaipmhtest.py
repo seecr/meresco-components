@@ -31,7 +31,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import Observable, be
 
-from merescocomponents.oai import OaiPmh
+from meresco.components.oai import OaiPmh
 from oaitestcase import OaiTestCase
 
 from lxml.etree import parse

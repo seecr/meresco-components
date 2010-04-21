@@ -36,7 +36,7 @@ from os.path import join, isfile
 from os import makedirs, rename, listdir
 from lxml.etree import tostring
 
-from merescocomponents.inbox import Inbox, InboxException
+from meresco.components.inbox import Inbox, InboxException
 
 class InboxTest(CQ2TestCase):
 

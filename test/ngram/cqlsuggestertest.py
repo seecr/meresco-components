@@ -30,8 +30,8 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from cqlparser import parseString
-from merescocomponents.cqlsuggester import CqlSuggester
-from merescocomponents.ngram import LevenshteinSuggester
+from meresco.components.cqlsuggester import CqlSuggester
+from meresco.components.ngram import LevenshteinSuggester
 
 
 class MockNGramQuery(object):

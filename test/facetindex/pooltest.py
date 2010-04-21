@@ -28,8 +28,8 @@
 ## end license ##
 from unittest import TestCase
 from ctypes import c_int, c_uint, c_short, Structure
-from merescocomponents.facetindex.libfacetindex import libFacetIndex as lib
-from merescocomponents.facetindex.docset import DocSet
+from meresco.components.facetindex.libfacetindex import libFacetIndex as lib
+from meresco.components.facetindex.docset import DocSet
 
 fwPool = c_int
 class fwPtr(Structure):

@@ -31,8 +31,8 @@ from os.path import join
 from cq2utils.calltrace import CallTrace
 
 from oaitestcase import OaiTestCase
-from merescocomponents.oai.oailistsets import OaiListSets
-from merescocomponents.facetindex import LuceneIndex
+from meresco.components.oai.oailistsets import OaiListSets
+from meresco.components.facetindex import LuceneIndex
 from meresco.components import StorageComponent
 
 class OaiListSetsTest(OaiTestCase):

@@ -29,7 +29,7 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from cqlparser import parseString
-from merescocomponents.facetindex import CQL2LuceneQuery
+from meresco.components.facetindex import CQL2LuceneQuery
 
 class Cql2LuceneQueryTest(TestCase):
     def setUp(self):

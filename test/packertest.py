@@ -30,7 +30,7 @@
 
 from cq2utils import CQ2TestCase
 
-from merescocomponents.packer import IntStringPacker, IntPacker, StringIntPacker
+from meresco.components.packer import IntStringPacker, IntPacker, StringIntPacker
 
 class PackerTest(CQ2TestCase):
     def assertPacking(self, item):

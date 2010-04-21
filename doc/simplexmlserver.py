@@ -36,8 +36,8 @@ from meresco.core import be, Observable, TransactionScope, ResourceManager
 from meresco.components import StorageComponent, XmlPrintLxml, Xml2Fields, Amara2Lxml
 from meresco.components.http import PathFilter, ObservableHttpServer
 from meresco.components.http.webrequestserver import WebRequestServer
-from merescocomponents.facetindex import LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
-from merescocomponents.facetindex.tools import unlock
+from meresco.components.facetindex import LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
+from meresco.components.facetindex.tools import unlock
 from meresco.components.sru import SruParser, SruHandler, SRURecordUpdate
 
 from weightless import Reactor

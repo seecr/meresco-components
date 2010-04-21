@@ -30,7 +30,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocomponents.oai import Fields2OaiRecordTx
+from meresco.components.oai import Fields2OaiRecordTx
 
 class Fields2OaiRecordTest(CQ2TestCase):
     def testOne(self):

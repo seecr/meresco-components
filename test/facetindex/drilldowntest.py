@@ -28,17 +28,17 @@
 #
 ## end license ##
 from struct import calcsize
-from merescocomponents.facetindex.merescolucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
+from meresco.components.facetindex.merescolucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocomponents.facetindex.document import Document
-from merescocomponents.facetindex.drilldown import Drilldown, NoFacetIndexException
-from merescocomponents.facetindex.drilldownfieldnames import DrilldownFieldnames
-from merescocomponents.facetindex.lucene import LuceneIndex
+from meresco.components.facetindex.document import Document
+from meresco.components.facetindex.drilldown import Drilldown, NoFacetIndexException
+from meresco.components.facetindex.drilldownfieldnames import DrilldownFieldnames
+from meresco.components.facetindex.lucene import LuceneIndex
 
-from merescocomponents.facetindex.docset import DocSet
-from merescocomponents.facetindex.docsetlist import DocSetList, JACCARD_ONLY
+from meresco.components.facetindex.docset import DocSet
+from meresco.components.facetindex.docsetlist import DocSetList, JACCARD_ONLY
 
 MACHINEBITS = calcsize('P') * 8
 

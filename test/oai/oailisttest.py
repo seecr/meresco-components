@@ -36,8 +36,8 @@ from itertools import imap
 from mockoaijazz import MockOaiJazz
 
 from meresco.core import ObserverFunction
-from merescocomponents.oai.oailist import BATCH_SIZE, OaiList
-from merescocomponents.oai.resumptiontoken import resumptionTokenFromString, ResumptionToken
+from meresco.components.oai.oailist import BATCH_SIZE, OaiList
+from meresco.components.oai.resumptiontoken import resumptionTokenFromString, ResumptionToken
 
 from oaitestcase import OaiTestCase
 

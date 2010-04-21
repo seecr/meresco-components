@@ -28,10 +28,10 @@
 #
 ## end license ##
 from time import time
-from merescocomponents.facetindex import DocSetList, DocSet
-from merescocomponents.facetindex.docsetlist import JACCARD_ONLY, JACCARD_MI
-from merescocomponents.facetindex.triedict import TrieDict
-from merescocomponents.facetindex.merescolucene import IndexReader
+from meresco.components.facetindex import DocSetList, DocSet
+from meresco.components.facetindex.docsetlist import JACCARD_ONLY, JACCARD_MI
+from meresco.components.facetindex.triedict import TrieDict
+from meresco.components.facetindex.merescolucene import IndexReader
 from lucenetestcase import LuceneTestCase
 from cq2utils import MATCHALL
 

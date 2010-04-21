@@ -28,11 +28,11 @@
 #
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
-from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
-from merescocomponents.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
+from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
+from meresco.components.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
                                                        IndexSearcher, TermQuery, MatchAllDocsQuery, Term, iterJ
 from random import randint
-from merescocomponents.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
+from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
 from glob import glob
 from time import time
 from cq2utils.profileit import profile

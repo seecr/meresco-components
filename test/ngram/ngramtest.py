@@ -32,10 +32,10 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import Observable, TransactionScope, ResourceManager, be, Transaction
 from meresco.components import Xml2Fields
 
-from merescocomponents.facetindex import LuceneIndex, Fields2LuceneDocumentTx, Document, Drilldown
-from merescocomponents.ngram.ngram import ngrams
-from merescocomponents.ngram.suggester import _Suggestion
-from merescocomponents.ngram import NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
+from meresco.components.facetindex import LuceneIndex, Fields2LuceneDocumentTx, Document, Drilldown
+from meresco.components.ngram.ngram import ngrams
+from meresco.components.ngram.suggester import _Suggestion
+from meresco.components.ngram import NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
 
 from Levenshtein import distance, ratio
 from lxml.etree import parse

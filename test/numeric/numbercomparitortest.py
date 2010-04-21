@@ -29,7 +29,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from cqlparser import parseString
-from merescocomponents.facetindex import LuceneIndex, Document, CQL2LuceneQuery
+from meresco.components.facetindex import LuceneIndex, Document, CQL2LuceneQuery
 from meresco.components.numeric.numbercomparitorfieldlet import NumberComparitorFieldlet
 from meresco.components.numeric import NumberComparitorCqlConversion
 from meresco.components.numeric.convert import Convert

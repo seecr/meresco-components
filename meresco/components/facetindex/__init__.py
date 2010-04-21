@@ -27,5 +27,24 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from filelist import SortedFileList, FileList
-from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
+from os.path import dirname, abspath, isdir, join            #DO_NOT_DISTRIBUTE
+if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
+    from os import system                                    #DO_NOT_DISTRIBUTE
+    status = system("cd %s/../../..; ./setup.sh"  % abspath(dirname(__file__)))  #DO_NOT_DISTRIBUTE
+    if status > 0:                                           #DO_NOT_DISTRIBUTE
+        import sys                                           #DO_NOT_DISTRIBUTE
+        sys.exit(status)                                     #DO_NOT_DISTRIBUTE
+                                                             #DO_NOT_DISTRIBUTE
+
+from lucene import LuceneIndex
+from drilldown import Drilldown
+from document import Document, IDFIELD, DocumentException
+from docset import DocSet
+from docsetlist import DocSetList
+from integerlist import IntegerList
+from trie import Trie
+from cql2lucenequery import CQL2LuceneQuery
+from fields2lucenedocument import Fields2LuceneDocumentTx
+from clausecollector import ClauseCollector
+import merescolucene
+

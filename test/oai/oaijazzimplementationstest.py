@@ -29,15 +29,15 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
-from merescocomponents.facetindex import LuceneIndex
+from meresco.components.facetindex import LuceneIndex
 from os.path import join
 from meresco.components import StorageComponent
 from time import sleep, mktime
 from StringIO import StringIO
 from lxml.etree import parse
-from merescocomponents.oai.oailist import OaiList
+from meresco.components.oai.oailist import OaiList
 
-from merescocomponents.oai import OaiJazz, OaiAddRecord
+from meresco.components.oai import OaiJazz, OaiAddRecord
 
 parseLxml = lambda s: parse(StringIO(s)).getroot()
 

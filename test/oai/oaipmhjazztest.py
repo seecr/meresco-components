@@ -24,7 +24,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocomponents.oai import OaiPmh, OaiJazz
+from meresco.components.oai import OaiPmh, OaiJazz
 from meresco.core import Observable, be
 from meresco.components.http.webrequestserver import WebRequestServer
 from meresco.components.http.utils import CRLF

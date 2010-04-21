@@ -37,15 +37,15 @@ from os import listdir
 from shutil import rmtree
 
 from cq2utils import CQ2TestCase, CallTrace
-from merescocomponents.facetindex import Document, IDFIELD, LuceneIndex
-from merescocomponents.facetindex import CQL2LuceneQuery
-from merescocomponents.facetindex.merescolucene import Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery
+from meresco.components.facetindex import Document, IDFIELD, LuceneIndex
+from meresco.components.facetindex import CQL2LuceneQuery
+from meresco.components.facetindex.merescolucene import Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery
 
 from cqlparser import parseString
 
 from weightless import Reactor
 
-from merescocomponents.facetindex.lucene import tokenize
+from meresco.components.facetindex.lucene import tokenize
 
 class LuceneTest(CQ2TestCase):
 

@@ -29,7 +29,7 @@
 from cq2utils import CQ2TestCase
 from time import time
 
-from merescocomponents.facetindex import IntegerList
+from meresco.components.facetindex import IntegerList
 
 class IntegerListTest(CQ2TestCase):
 

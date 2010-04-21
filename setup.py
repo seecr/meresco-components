@@ -41,7 +41,7 @@ from distutils.core import setup
 from distutils import log
 
 
-CLASSPATH = "merescocomponents/facetindex/lucene-core-2.2.0.jar"
+CLASSPATH = "meresco/components/facetindex/lucene-core-2.2.0.jar"
 class gcj_build_ext(build_ext):
     """Adds GCJ compilation of Java sources into object files that get linked into the specified extension."""
 
@@ -133,12 +133,12 @@ setup(
         'meresco.components.numeric',
         'meresco.components.sru',
         'meresco.components.xml_generic',
-        'merescocomponents',
-        'merescocomponents.facetindex',
-        'merescocomponents.facetindex.tools',
-        'merescocomponents.oai',
-        'merescocomponents.ngram',
-        'merescocomponents.web',
+        'meresco.components',
+        'meresco.components.facetindex',
+        'meresco.components.facetindex.tools',
+        'meresco.components.oai',
+        'meresco.components.ngram',
+        'meresco.components.web',
     ],
     package_data={
         'meresco.components': ['rules/*.rules'],
@@ -153,16 +153,16 @@ setup(
         ]
     },
     ext_modules = [
-        Extension("merescocomponents.facetindex._facetindex", [
-                      'merescocomponents/facetindex/zipper.c',
-                      'merescocomponents/facetindex/_docsetlist.cpp',
-                      'merescocomponents/facetindex/_docset.cpp',
-                      'merescocomponents/facetindex/_integerlist.cpp',
-                      'merescocomponents/facetindex/fwpool.c',
-                      'merescocomponents/facetindex/trie_c.cpp',
-                      'merescocomponents/facetindex/_triedict.cpp',
-                      'merescocomponents/facetindex/_stringpool.cpp',
-                      'merescocomponents/facetindex/MerescoStandardAnalyzer.java',
+        Extension("meresco.components.facetindex._facetindex", [
+                      'meresco/components/facetindex/zipper.c',
+                      'meresco/components/facetindex/_docsetlist.cpp',
+                      'meresco/components/facetindex/_docset.cpp',
+                      'meresco/components/facetindex/_integerlist.cpp',
+                      'meresco/components/facetindex/fwpool.c',
+                      'meresco/components/facetindex/trie_c.cpp',
+                      'meresco/components/facetindex/_triedict.cpp',
+                      'meresco/components/facetindex/_stringpool.cpp',
+                      'meresco/components/facetindex/MerescoStandardAnalyzer.java',
                   ],
                   extra_compile_args = [
                       '-g', 

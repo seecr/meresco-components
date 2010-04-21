@@ -32,8 +32,8 @@ from cq2utils import CallTrace
 from meresco.core import be, Transparant, Observable
 from meresco.core import TransactionScope, ResourceManager
 
-from merescocomponents.facetindex import Fields2LuceneDocumentTx, Document
-from merescocomponents.facetindex.merescolucene import iterJ
+from meresco.components.facetindex import Fields2LuceneDocumentTx, Document
+from meresco.components.facetindex.merescolucene import iterJ
 
 class Fields2LuceneDocumentTest(TestCase):
 

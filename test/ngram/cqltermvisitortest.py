@@ -28,7 +28,7 @@
 ## end license ##
 
 from unittest import TestCase
-from merescocomponents.cqltermvisitor import CqlTermVisitor
+from meresco.components.cqltermvisitor import CqlTermVisitor
 from cqlparser import parseString
 
 class CqlTermVisitorTest(TestCase):

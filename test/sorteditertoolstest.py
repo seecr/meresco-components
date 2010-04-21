@@ -28,7 +28,7 @@
 ## end license ##
 from unittest import TestCase, main
 
-from merescocomponents.sorteditertools import PeekIterator, OrIterator, AndIterator
+from meresco.components.sorteditertools import PeekIterator, OrIterator, AndIterator
 
 class SortedItertoolsTest(TestCase):
     def testOne(self):

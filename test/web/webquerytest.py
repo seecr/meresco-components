@@ -29,8 +29,8 @@
 ## end license ##
 from unittest import TestCase
 
-from merescocomponents.web import WebQuery
-from merescocomponents.web.webquery import _feelsLikePlusMinusQuery, _feelsLikeBooleanQuery
+from meresco.components.web import WebQuery
+from meresco.components.web.webquery import _feelsLikePlusMinusQuery, _feelsLikeBooleanQuery
 from cqlparser import parseString as parseCql
 
 class WebQueryTest(TestCase):

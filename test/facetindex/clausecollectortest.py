@@ -27,7 +27,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from merescocomponents.facetindex import ClauseCollector
+from meresco.components.facetindex import ClauseCollector
 from cq2utils import CQ2TestCase
 from cqlparser import parseString
 

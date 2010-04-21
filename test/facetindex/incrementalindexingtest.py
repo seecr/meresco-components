@@ -29,8 +29,8 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase
-from merescocomponents.facetindex import LuceneIndex, Drilldown, Document, DocSet
-from merescocomponents.facetindex.merescolucene import MatchAllDocsQuery
+from meresco.components.facetindex import LuceneIndex, Drilldown, Document, DocSet
+from meresco.components.facetindex.merescolucene import MatchAllDocsQuery
 
 class IncrementalIndexingTest(CQ2TestCase):
 

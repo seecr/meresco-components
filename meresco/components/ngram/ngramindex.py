@@ -29,7 +29,7 @@
 ## end license ##
 
 from meresco.core import Observable
-from merescocomponents.facetindex import Document
+from meresco.components.facetindex import Document
 from ngram import ngrams, NGRAMS_FIELD, NAME_FIELD, IDENTIFIER_TEMPLATE, NAME_TEMPLATE
 
 from string import punctuation

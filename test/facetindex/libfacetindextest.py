@@ -28,8 +28,8 @@
 ## end license ##
 from unittest import TestCase
 
-from merescocomponents.facetindex.libfacetindex import libFacetIndex, c_method, c_wrapper, mangle
-from merescocomponents.facetindex.docset import DOCSET
+from meresco.components.facetindex.libfacetindex import libFacetIndex, c_method, c_wrapper, mangle
+from meresco.components.facetindex.docset import DOCSET
 from ctypes import c_uint, c_uint32, Structure, c_int, POINTER
 
 class LibFacetIndexTest(TestCase):

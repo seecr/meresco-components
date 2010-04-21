@@ -27,7 +27,7 @@
 #
 ## end license ##
 from unittest import TestCase
-from merescocomponents.facetindex import Trie
+from meresco.components.facetindex import Trie
 from time import time
 
 class TrieTest(TestCase):

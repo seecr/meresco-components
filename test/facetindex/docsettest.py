@@ -27,10 +27,10 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from merescocomponents.facetindex import DocSet
+from meresco.components.facetindex import DocSet
 from lucenetestcase import LuceneTestCase
-from merescocomponents.facetindex.docset import DocSet_combinedCardinalitySearch
-from merescocomponents.facetindex.merescolucene import Term
+from meresco.components.facetindex.docset import DocSet_combinedCardinalitySearch
+from meresco.components.facetindex.merescolucene import Term
 
 class DocSetTest(LuceneTestCase):
 

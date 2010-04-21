@@ -29,7 +29,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocomponents.ngram import NGramQuery
+from meresco.components.ngram import NGramQuery
 
 class NGramQueryTest(CQ2TestCase):
     def testOne(self):

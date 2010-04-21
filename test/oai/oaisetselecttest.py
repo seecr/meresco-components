@@ -29,7 +29,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.core import be, Observable
-from merescocomponents.oai import OaiSetSelect
+from meresco.components.oai import OaiSetSelect
 
 class OaiSetSelectTest(CQ2TestCase):
     def setUp(self):

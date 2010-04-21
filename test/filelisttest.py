@@ -33,8 +33,8 @@ from cq2utils import CQ2TestCase
 from os.path import join
 from bisect import bisect_left, bisect_right
 
-from merescocomponents import SortedFileList, FileList
-from merescocomponents.packer import IntStringPacker, IntPacker
+from meresco.components import SortedFileList, FileList
+from meresco.components.packer import IntStringPacker, IntPacker
 from time import time
 
 class FileListTest(CQ2TestCase):

@@ -33,8 +33,8 @@ from cq2utils import CQ2TestCase, CallTrace
 from os.path import isfile, join
 from time import time, mktime, strptime, sleep
 
-from merescocomponents.oai import OaiJazz
-from merescocomponents.oai.oaijazz import _flattenSetHierarchy, RecordId, SETSPEC_SEPARATOR
+from meresco.components.oai import OaiJazz
+from meresco.components.oai.oaijazz import _flattenSetHierarchy, RecordId, SETSPEC_SEPARATOR
 from StringIO import StringIO
 from lxml.etree import parse
 from meresco.core import Observable, be, Transparant

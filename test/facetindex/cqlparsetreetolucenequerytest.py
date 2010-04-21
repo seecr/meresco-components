@@ -29,10 +29,10 @@
 ## end license ##
 from unittest import TestCase
 
-from merescocomponents.facetindex.merescolucene import TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, PrefixQuery, asFloat, Query
+from meresco.components.facetindex.merescolucene import TermQuery, Term, BooleanQuery, BooleanClause, PhraseQuery, PrefixQuery, asFloat, Query
 
 from cqlparser import parseString as parseCql, UnsupportedCQL
-from merescocomponents.facetindex.cqlparsetreetolucenequery import LuceneQueryComposer
+from meresco.components.facetindex.cqlparsetreetolucenequery import LuceneQueryComposer
 
 class CqlParseTreeToLuceneQueryTest(TestCase):
 

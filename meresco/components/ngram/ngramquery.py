@@ -31,7 +31,7 @@
 from meresco.core import Observable
 from itertools import islice
 from ngram import ngrams, NGRAMS_FIELD, NAME_FIELD, NAME_TEMPLATE
-from merescocomponents.facetindex.merescolucene import BooleanQuery, BooleanClause, TermQuery, Term, Query
+from meresco.components.facetindex.merescolucene import BooleanQuery, BooleanClause, TermQuery, Term, Query
 
 BooleanClause_Occur_MUST = BooleanClause.Occur.MUST
 BooleanClause_Occur_SHOULD = BooleanClause.Occur.SHOULD

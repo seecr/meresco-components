@@ -34,8 +34,8 @@ from time import time, sleep
 from random import random, randint, sample
 from os.path import join
 
-from merescocomponents.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
-from merescocomponents.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
+from meresco.components.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
+from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
 from lucenetestcase import LuceneTestCase
 from cq2utils import CallTrace
 

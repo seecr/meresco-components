@@ -29,7 +29,7 @@
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
 
-from merescocomponents.oai import OaiAddRecord
+from meresco.components.oai import OaiAddRecord
 from StringIO import StringIO
 from lxml.etree import parse
 

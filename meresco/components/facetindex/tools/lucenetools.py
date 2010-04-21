@@ -27,24 +27,32 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from os.path import dirname, abspath, isdir, join            #DO_NOT_DISTRIBUTE
-if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
-    from os import system                                    #DO_NOT_DISTRIBUTE
-    status = system("cd %s/../..; ./setup.sh"  % abspath(dirname(__file__)))  #DO_NOT_DISTRIBUTE
-    if status > 0:                                           #DO_NOT_DISTRIBUTE
-        import sys                                           #DO_NOT_DISTRIBUTE
-        sys.exit(status)                                     #DO_NOT_DISTRIBUTE
-                                                             #DO_NOT_DISTRIBUTE
 
-from lucene import LuceneIndex
-from drilldown import Drilldown
-from document import Document, IDFIELD, DocumentException
-from docset import DocSet
-from docsetlist import DocSetList
-from integerlist import IntegerList
-from trie import Trie
-from cql2lucenequery import CQL2LuceneQuery
-from fields2lucenedocument import Fields2LuceneDocumentTx
-from clausecollector import ClauseCollector
-import merescolucene
+from os.path import isdir
+from subprocess import Popen, PIPE
 
+from meresco.components.facetindex.merescolucene import FSDirectory, IndexReader, Directory
+
+
+def unlock(path):
+    """
+    Unlock the directory specified by path.
+    This is a manual operation, when locking somehow has gone wrong.
+    """
+    _assertNoFilesOpenInPath(path)
+    IndexReader.unlock(FSDirectory.getDirectory(path, False) % Directory)
+
+def _assertNoFilesOpenInPath(path, lsofFunc=None):
+    lsofFunc = lsofFunc if lsofFunc else _lsof
+    if isdir(path):
+        cmdline, out, err, exitcode = lsofFunc(path)
+        if exitcode != 0 and not 'WARNING' in err:
+            raise Exception("'%s' failed:\n%s" % (cmdline, err))
+        if out and len(out.split("\n")) > 0:
+            raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
+
+def _lsof(path):
+    cmdline = "lsof +D %s" % path
+    process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
+    (out, err) = process.communicate()
+    return cmdline, out, err, process.poll()

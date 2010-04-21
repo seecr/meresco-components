@@ -32,7 +32,7 @@ from cq2utils.calltrace import CallTrace
 from StringIO import StringIO
 
 from meresco.core import Observable
-from merescocomponents.oai.oaiprovenance import OaiProvenance
+from meresco.components.oai.oaiprovenance import OaiProvenance
 
 class OaiProvenanceTest(CQ2TestCase):
 

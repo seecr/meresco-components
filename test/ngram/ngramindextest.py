@@ -30,8 +30,8 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.core import Transaction
-from merescocomponents.ngram import NGramIndex
-from merescocomponents.ngram.ngram import NGRAMS_FIELD, NAME_FIELD
+from meresco.components.ngram import NGramIndex
+from meresco.components.ngram.ngram import NGRAMS_FIELD, NAME_FIELD
 
 class NGramIndexTest(CQ2TestCase):
     def testIndexOneField(self):
