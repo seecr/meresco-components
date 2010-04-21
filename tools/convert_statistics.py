@@ -38,7 +38,7 @@ def convert_pickle_file(pickle_file):
         return
         
     contents = open(pickle_file).read()
-    converted = contents.replace('meresco.components.statistics', 'meresco.components.statistics')
+    converted = contents.replace('merescocore.components.statistics', 'meresco.components.statistics')
     
     fp = open(target, 'wb')
     try:

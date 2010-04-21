@@ -430,14 +430,14 @@ class StatisticsTest(CQ2TestCase):
         self.assertEquals(["value00", "value01"], aggregator.get((2000, 1, 1, 0), (2000, 1, 1, 0)))
 
     def testDataSnapshotStaysCompatible(self):
-        data = """eJyVk01v2zAMhu/8I8kpsKwPx8ddBvRSYGvvhiILmrvUEiylSP/9SNpOs3aHGTAMWhL58H1NORfT
-ezf5APhyccxlurgSJ0gC9u7VTz67eHDxNcXRjyUfcrFlyGVwGb6FgImWT9fguu50Gc5lGLsO4unF
-uwJJwmP5mRTs+6ThadfZJWWI44+Lv/i8g2Rgf04NvY4QtlAfY+8htRBmiqgIIwQEA6GBjLjr9frd
-kpx35Ij6f8o/RyxU5SUNs+StvuKaqwTfU00ND1XF62/2POsRZgMHjzc3wJEFtGRUb4vFWjVrqgXk
-EzHcr+HcT36knZp3JDwIxoWbDzXbXevVh8DCFQVLt2FpMXywa8NJ+L0gj4QMC6X9SpF8TIpNFMnl
-pFwpUt1RJOV9pnBbstlGYR9lu1JUdUdR4itFzTtyE0WxzUrfKOae0vyDwm2pdhNFc20tVorG8k+7
-3x4HuiQteUnREo8fzoXWtGHoh+X80ZBuqLu/H2vxzmm8dDgxc0y9VnNssH10f44Rjx7NMTaNSuZY
-gqWxnGIsdJHVJ8VGE9qYTYpNw0nHVbFp73xtKhTWNmQtZtP6WvJ0+AO3mVOw"""
+        data = """eJyVk81u2zAQhO/7IvbJEMUfWcdeCuQSoE3uAk0RrFJHJEQ6cN6+uyvJcZMeKsAQVqRnv50R6VxM
+793kA+DDxTGX6eJKnCAJ2LtXP/nsoouTP7j4muLox5IPudgy5DK4DN9CQLFlRQ2u606X4VyGsesg
+nl68K5AkPJafScG+Txqedp1dJEMcf1z8xecdJAP7c2rocYSwlfwYew+phTCTREUoISAYCA1kRF6v
+1++WbL0jS9T/i3iO2KzKixSV8sZQ3He14nvqq+Ghqnj9zZ5nX8JsZKGkuUGObKSl0HpbLPar2Vst
+IJ+I434N537yI+3UvCPhQTAy3PKoOfpar3kEDkBRsUwcljHDB7s2LML3BXkkZFgo7VeK5L9JsYki
+uZ2UK0WqO4ok3WcKjyWbbRTOUbYrRVV3FCW+UtS8IzdRFMes9I1i7inNPyg8lmo3UTT31mKlaGz/
+tPvt8WCXpCUvKVriI4jnQmvaMPTBcv4YSDc03d8/a/H+abyAeGLmmmat5trg+Jj+XCMeM5prHBqd
+zLUES8dyirHQpVafHBtNaGM2OTYNi46rY9Pe5dpUaKxtKFpU0/ra8nSAPzePWl4="""
         from base64 import decodestring
         from zlib import decompress
         snaphotFilename=join(self.tempdir, 'snapshot')
@@ -446,8 +446,9 @@ gqWxnGIsdJHVJ8VGE9qYTYpNw0nHVbFp73xtKhTWNmQtZtP6WvJ0+AO3mVOw"""
         f.close()
         try:
             stats = Statistics(self.tempdir, [('key',)])
+            self.fail()
         except ImportError, e:
-            self.assertEquals("meresco.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory", str(e))
+            self.assertEquals("merescocore.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory", str(e))
 
         #
         # Add the tools package to the python path so the conversion tool can

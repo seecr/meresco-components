@@ -205,8 +205,8 @@ class Statistics(Observable):
         try:
             self._data = pickle.load(snapshotFile)
         except ImportError, e:
-            if str(e) == 'No module named meresco.components.statistics':
-                raise ImportError("meresco.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory")
+            if str(e) == 'No module named merescocore.components.statistics':
+                raise ImportError("merescocore.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory")
             else:
                 raise
         finally:
