@@ -126,6 +126,13 @@ setup(
              },
     name = 'meresco-components',
     packages = [
+        'meresco',
+        'meresco.components',
+        'meresco.components.drilldown',
+        'meresco.components.http',
+        'meresco.components.numeric',
+        'meresco.components.sru',
+        'meresco.components.xml_generic',
         'merescocomponents',
         'merescocomponents.facetindex',
         'merescocomponents.facetindex.tools',
@@ -133,6 +140,18 @@ setup(
         'merescocomponents.ngram',
         'merescocomponents.web',
     ],
+    package_data={
+        'meresco.components': ['rules/*.rules'],
+        'meresco.components.xml_generic': [
+            'schemas/*',
+            'schemas-lom/*.xsd',
+            'schemas-lom/common/*',
+            'schemas-lom/examples/*',
+            'schemas-lom/extend/*',
+            'schemas-lom/unique/*',
+            'schemas-lom/vocab/*'
+        ]
+    },
     ext_modules = [
         Extension("merescocomponents.facetindex._facetindex", [
                       'merescocomponents/facetindex/zipper.c',
