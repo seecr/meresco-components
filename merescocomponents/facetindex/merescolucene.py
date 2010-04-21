@@ -2,7 +2,7 @@
 ## begin license ##
 #
 #    Meresco-Lucene is a Python binding for Lucene using CTypes
-#    Copyright (C) 2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco-Lucene.
 #
