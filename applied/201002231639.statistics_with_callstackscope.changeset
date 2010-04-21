@@ -1,0 +1,284 @@
+Changeset created on Tue Feb 23 16:39:46 CET 2010 by Seek You Too
+
+Description: Statistics uses CallStackscope for performance improvement
+
+    For logging statistics a variable is set on the callstack. Components 
+retrieve the variable from the callstack to add their log values. The
+variable is now retrieved using the callstackscope C library which is much
+faster than the python lookup.
+
+Baseline version: meresco-core/tags/version_2.22.9
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0/merescocore/components/http/pathfilter.py version_1/merescocore/components/http/pathfilter.py
+--- version_0/merescocore/components/http/pathfilter.py	2010-02-23 12:01:27.042880308 +0100
++++ version_1/merescocore/components/http/pathfilter.py	2010-02-23 16:39:18.389154874 +0100
+@@ -3,10 +3,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -27,13 +28,14 @@
+ #
+ ## end license ##
+ 
+-from merescocore.components.statistics import Logger
++from merescocore.components.statistics import log
+ from handlerequestfilter import HandleRequestFilter
+ 
+-class PathFilter(HandleRequestFilter, Logger):
++class PathFilter(HandleRequestFilter):
++    log = log
++
+     def __init__(self, subPaths, excluding=[]):
+         HandleRequestFilter.__init__(self, self._filter)
+-        Logger.__init__(self)
+         self._subPaths = subPaths
+         if type(subPaths) == str:
+             self._subPaths = [subPaths]
+@@ -45,4 +47,4 @@
+         if matchesSubPath and not matchesExcludedPath:
+             self.log(path=matchesSubPath[0])
+             return True
+-        return False
+\ No newline at end of file
++        return False
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0/merescocore/components/statistics.py version_1/merescocore/components/statistics.py
+--- version_0/merescocore/components/statistics.py	2010-02-23 12:01:27.106869706 +0100
++++ version_1/merescocore/components/statistics.py	2010-02-23 16:39:18.403152556 +0100
+@@ -3,10 +3,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -33,6 +34,7 @@
+ from time import mktime, gmtime
+ import operator
+ from merescocore.framework import Observable
++from callstackscope import callstackscope
+ 
+ snapshotFilename = 'snapshot'
+ 
+@@ -44,19 +46,24 @@
+             for trailer in combinations(tail[0], tail[1:]):
+                 yield (value,) + trailer
+ 
++def _log(statisticsLog, **kwargs):
++    for key, value in kwargs.items():
++        statisticsLog.setdefault(key, []).append(value)
++
++def log(observable, **kwargs):
++    try:
++        _log(observable.ctx.statisticsLog, **kwargs)
++    except AttributeError:
++        pass
++
+ class Logger(object):
+     def log(self, **kwargs):
+-        frame = currentframe().f_back
+-        while frame:
+-            if "__log__" in frame.f_locals:
+-                var = frame.f_locals["__log__"]
+-                for key, value in kwargs.items():
+-                    if not key in var:
+-                        var[key] = []
+-                    var[key].append(value)
+-                return
+-            frame = frame.f_back
+-            
++        try:
++            _log(callstackscope('__callstack_var_statisticsLog__'), **kwargs)
++        except AttributeError:
++            pass
++        
++    
+ class Top100s(object):
+     def __init__(self, data=None):
+         if not data:
+@@ -115,11 +122,11 @@
+         self._data.merge(rhsStatistics._data)
+ 
+     def unknown(self, message, *args, **kwargs):
+-        __log__ = {} # to be found on the call stack by Logger
++        __callstack_var_statisticsLog__ = {} 
+         responses = self.all.unknown(message, *args, **kwargs)
+         for response in responses:
+             yield response
+-        self._process(__log__)
++        self._process(__callstack_var_statisticsLog__)
+         self._snapshotIfNeeded()
+ 
+     def listKeys(self):
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0/merescocore/components/statisticsxml.py version_1/merescocore/components/statisticsxml.py
+--- version_0/merescocore/components/statisticsxml.py	2010-02-23 12:01:27.113868547 +0100
++++ version_1/merescocore/components/statisticsxml.py	2010-02-23 16:39:18.404152390 +0100
+@@ -3,10 +3,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -33,6 +34,7 @@
+ 
+ from merescocore.components.statistics import AggregatorException
+ from weightless import compose
++from xml.sax.saxutils import escape as xmlEscape
+ 
+ NAMESPACE="http://meresco.com/namespace/meresco/statistics"
+ 
+@@ -123,7 +125,7 @@
+             yield "<%s>%s</%s>" % (tagName, "None", tagName)
+         else:
+             for e in list:
+-                yield "<%s>%s</%s>" % (tagName, e, tagName)
++                yield "<%s>%s</%s>" % (tagName, xmlEscape(e), tagName)
+ 
+     def _parseArguments(self, RequestURI):
+         Scheme, Netloc, Path, Query, Fragment = urlsplit(RequestURI)
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0/test/statisticstest.py version_1/test/statisticstest.py
+--- version_0/test/statisticstest.py	2010-02-23 12:01:26.999887430 +0100
++++ version_1/test/statisticstest.py	2010-02-23 16:39:18.381156198 +0100
+@@ -3,10 +3,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -32,7 +33,8 @@
+ from cq2utils import CQ2TestCase
+ from os import makedirs, rename
+ from os.path import isfile, join
+-from merescocore.components.statistics import Statistics, Logger, combinations, Aggregator, AggregatorException, Top100s, snapshotFilename
++from merescocore.components.statistics import Statistics, Logger, combinations, Aggregator, AggregatorException, Top100s, snapshotFilename, log
++from merescocore.framework import Observable
+ 
+ class StatisticsTest(CQ2TestCase):
+ 
+@@ -196,6 +198,42 @@
+         list(stats.unknown("aMessage"))
+         self.assertEquals({('newValue',): 1}, stats.get(('message',)))
+ 
++    def testSelfLogWithObservableAndDelegation(self):
++        class MyObserver(Observable):
++            log=log
++            def aMessage(self):
++                self.log(message='newValue')
++        stats = Statistics(self.tempdir, [('message',)])
++        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
++        myObserver = MyObserver()
++        stats.addObserver(myObserver)
++        list(stats.unknown("aMessage"))
++        self.assertEquals({('newValue',): 1}, stats.get(('message',)))
++
++    def testLogWithoutStatistics(self):
++        result = []
++        class MyObserver(Logger):
++            def aMessage(self):
++                self.log(message='newValue')
++                result.append('aMessage')
++        observable = Observable()
++        myObserver = MyObserver()
++        observable.addObserver(myObserver)
++        observable.do.aMessage()
++        self.assertEquals(['aMessage'], result)
++    
++    def testLogWithObserverWithoutStatistics(self):
++        result = []
++        class MyObserver(Observable):
++            log = log
++            def aMessage(self):
++                self.log(message='newValue')
++                result.append('aMessage')
++        observable = Observable()
++        myObserver = MyObserver()
++        observable.addObserver(myObserver)
++        observable.do.aMessage()
++
+     def testSelfLogMultipleValuesForSameKey(self):
+         class MyObserver(Logger):
+             def aMessage(self):
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_0/test/statisticsxmltest.py version_1/test/statisticsxmltest.py
+--- version_0/test/statisticsxmltest.py	2010-02-23 12:01:26.996887927 +0100
++++ version_1/test/statisticsxmltest.py	2010-02-23 16:39:18.380156364 +0100
+@@ -3,10 +3,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -26,9 +27,12 @@
+ #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ #
+ ## end license ##
+-from cq2utils import CQ2TestCase
++from cq2utils import CQ2TestCase, CallTrace
+ from merescocore.components.statisticsxml import StatisticsXml
+ from merescocore.components.statistics import Statistics
++from merescocore.components.http.utils import CRLF
++from StringIO import StringIO
++from lxml.etree import parse
+ 
+ from weightless import compose
+ 
+@@ -99,4 +103,25 @@
+         self.assertTrue("""<serverTime""" in result, result)
+ 
+ 
++    def testXmlProperlyEscaped(self):
++        stats = CallTrace('stats')
++        value1 = 'value1'
++        value2 = 'value2&two'
++        nsmap = {'stats': 'http://meresco.com/namespace/meresco/statistics'}
++        stats.returnValues['get'] = {(value1,): 13, (value2,): 100}
++        stats.returnValues['listKeys'] = [('key',)]
++        xml = StatisticsXml(stats)
++        head, body = ''.join(compose(xml.handleRequest(RequestURI="http://localhost/statistics?key=key"))).split(CRLF*2)
++        xmlnode = parse(StringIO(body))
++        observations = xmlnode.xpath('/stats:statistics/stats:observations/stats:observation',
++                namespaces=nsmap)
++        self.assertEquals(2, len(observations))
++        result = []
++        for observation in observations:
++            value = observation.xpath('stats:value/text()', namespaces=nsmap)[0]
++            occurrences = observation.xpath('stats:occurrences/text()', namespaces=nsmap)[0]
++            result.append((value, occurrences))
++        self.assertEquals([(value2, '100'), (value1, '13')], result)
++
++
+ 

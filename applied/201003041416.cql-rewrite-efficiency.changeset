@@ -1,0 +1,349 @@
+Changeset created on Thu Mar  4 14:16:59 CET 2010 by Seek You Too
+
+Description: CQL rewrites are more efficient.
+
+    Instead of rebuild complete CQL AbstractSyntaxTrees, the 
+    improved CQL rewrite components change the tree inplace.
+
+    CqlMultiSearchClauseConversion can apply different SearchClause
+    modification in one single visit to the AbstractSyntaxTree.
+
+Baseline version: meresco-core/workingsets/2.22.9-EduRep/version_3
+
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/deps.txt version_4/deps.txt
+--- version_3/deps.txt	2010-02-25 15:27:52.000000000 +0100
++++ version_4/deps.txt	2010-03-04 14:14:28.000000000 +0100
+@@ -1,4 +1,4 @@
+-python-cqlparser (>=1.5)
++python-cqlparser (>=1.5.2)
+ python-cqlparser (<<1.6)
+ python-storage (>=5.1.7)
+ python-storage (<<5.2)
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/merescocore/components/cqlconversion.py version_4/merescocore/components/cqlconversion.py
+--- version_3/merescocore/components/cqlconversion.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/merescocore/components/cqlconversion.py	2010-03-04 14:14:28.000000000 +0100
+@@ -3,11 +3,12 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Core.
+ #
+@@ -29,7 +30,7 @@
+ 
+ from xmlpump import Converter
+ from cqlparser.cqlparser import CQLAbstractSyntaxNode
+-from cqlparser import CqlIdentityVisitor
++from cqlparser import CqlVisitor
+ 
+ class CQLConversion(Converter):
+     def __init__(self, astConversion):
+@@ -42,22 +43,30 @@
+     def _convert(self, cqlAst):
+         return self._astConversion(cqlAst)
+ 
+-class CqlSearchClauseConversion(CQLConversion):
+-    def __init__(self, searchClauseFilter, modifier):
++class CqlMultiSearchClauseConversion(CQLConversion):
++    def __init__(self, filtersAndModifiers):
+         CQLConversion.__init__(self, self._convertAst)
+-        self._searchClauseFilter = searchClauseFilter
+-        self._modifier = modifier
++        self._filtersAndModifiers = filtersAndModifiers
+ 
+     def _convertAst(self, ast):
+-        return CqlSearchClauseModification(ast, self._searchClauseFilter, self._modifier).visit()
++        CqlMultiSearchClauseModification(ast, self._filtersAndModifiers).visit()
++        return ast
+ 
+-class CqlSearchClauseModification(CqlIdentityVisitor):
+-    def __init__(self, ast, searchClauseFilter, modifier):
+-        CqlIdentityVisitor.__init__(self, ast)
+-        self._searchClauseFilter = searchClauseFilter
+-        self._modifier = modifier
++class CqlSearchClauseConversion(CqlMultiSearchClauseConversion):
++    def __init__(self, searchClauseFilter, modifier):
++        CqlMultiSearchClauseConversion.__init__(self, [(searchClauseFilter, modifier)])
++    
++class CqlMultiSearchClauseModification(CqlVisitor):
++    def __init__(self, ast, filtersAndModifiers):
++        CqlVisitor.__init__(self, ast)
++        self._filtersAndModifiers = filtersAndModifiers
+ 
+     def visitSEARCH_CLAUSE(self, node):
+-        if self._searchClauseFilter(node):
+-            return self._modifier(node)
+-        return CqlIdentityVisitor.visitSEARCH_CLAUSE(self, node)
++        for searchClauseFilter, searchClauseModifier in self._filtersAndModifiers:
++            if searchClauseFilter(node):
++                newSearchClause = searchClauseModifier(node)
++                assert newSearchClause.name() == 'SEARCH_CLAUSE', 'Expected a SEARCH_CLAUSE'
++                node.replaceChildren(*newSearchClause.children())
++                return ()
++        return CqlVisitor.visitSEARCH_CLAUSE(self, node)
++
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/merescocore/components/__init__.py version_4/merescocore/components/__init__.py
+--- version_3/merescocore/components/__init__.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/merescocore/components/__init__.py	2010-03-04 14:14:28.000000000 +0100
+@@ -49,7 +49,7 @@
+ from filtermessages import FilterMessages
+ from reindex import Reindex
+ from parsecql import ParseCQL
+-from cqlconversion import CQLConversion, CqlSearchClauseModification, CqlSearchClauseConversion
++from cqlconversion import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
+ from renamecqlindex import RenameCqlIndex
+ from statisticsxml import StatisticsXml
+ from requestscope import RequestScope
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/merescocore/components/numeric/__init__.py version_4/merescocore/components/numeric/__init__.py
+--- version_3/merescocore/components/numeric/__init__.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/merescocore/components/numeric/__init__.py	2010-03-04 14:14:28.000000000 +0100
+@@ -2,10 +2,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -26,4 +27,5 @@
+ #
+ ## end license ##
+ from numbercomparitorfieldlet import NumberComparitorFieldlet
+-from numbercomparitorcqlconversion import NumberComparitorCqlConversion
++from numbercomparitormodifier import NumberComparitorCqlConversion, filterAndModifier
++
+Only in version_3/merescocore/components/numeric: numbercomparitorcqlconversion.py
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/merescocore/components/numeric/numbercomparitormodifier.py version_4/merescocore/components/numeric/numbercomparitormodifier.py
+--- version_3/merescocore/components/numeric/numbercomparitormodifier.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/merescocore/components/numeric/numbercomparitormodifier.py	2010-03-04 14:14:28.000000000 +0100
+@@ -2,10 +2,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -29,6 +30,16 @@
+ from cqlparser.cqlparser import RELATION, SEARCH_CLAUSE, CQL_QUERY, INDEX, COMPARITOR, SEARCH_TERM, TERM, BOOLEAN, SCOPED_CLAUSE
+ from util import Util
+ 
++from merescocore.components import CqlSearchClauseConversion
++from convert import Convert
++
++def filterAndModifier(fieldname, nrOfDecimals, valueLength):
++    modifier = NumberComparitorModifier(fieldname=fieldname, convert=Convert(nrOfDecimals), valueLength=valueLength)
++    return modifier.canModify, modifier.modify
++
++def NumberComparitorCqlConversion(fieldname, nrOfDecimals, valueLength):
++    return CqlSearchClauseConversion(*filterAndModifier(fieldname, nrOfDecimals, valueLength))
++
+ class NumberComparitorModifier(object):
+     def __init__(self, fieldname, convert, valueLength):
+         self._fieldname = fieldname
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/merescocore/components/renamecqlindex.py version_4/merescocore/components/renamecqlindex.py
+--- version_3/merescocore/components/renamecqlindex.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/merescocore/components/renamecqlindex.py	2010-03-04 14:14:28.000000000 +0100
+@@ -3,11 +3,12 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Core.
+ #
+@@ -27,22 +28,25 @@
+ #
+ ## end license ##
+ 
+-from cqlparser import CqlIdentityVisitor
++from cqlparser import CqlVisitor
+ 
+ class RenameCqlIndex(object):
+     def __init__(self, fieldRename):
+         self._fieldRename = fieldRename
+ 
+     def __call__(self, cqlAst):
+-        return _CqlIndexChangeVisitor(self._fieldRename, cqlAst).visit()
++        _CqlIndexChangeVisitor(self._fieldRename, cqlAst).visit()
++        return cqlAst
+ 
+-class _CqlIndexChangeVisitor(CqlIdentityVisitor):
++class _CqlIndexChangeVisitor(CqlVisitor):
+     def __init__(self, fieldRename, root):
+-        CqlIdentityVisitor.__init__(self, root)
++        CqlVisitor.__init__(self, root)
+         self._fieldRename = fieldRename
+ 
+     def visitINDEX(self, node):
++        #INDEX(TERM('term'))
+         assert len(node.children()) == 1
+-        myterm = node.children()[0]
+-        return node.__class__(myterm.__class__(self._fieldRename(myterm.children()[0])))
+-
++        term = node.children()[0]
++        termString = term.children()[0]
++        term.replaceChildren(self._fieldRename(termString))
++        return node
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/test/cqlconversiontest.py version_4/test/cqlconversiontest.py
+--- version_3/test/cqlconversiontest.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/test/cqlconversiontest.py	2010-03-04 14:14:28.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Core.
+ #
+@@ -27,9 +28,10 @@
+ ## end license ##
+ 
+ from cq2utils import CQ2TestCase, CallTrace
+-from merescocore.components import CQLConversion
++from merescocore.components import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
+ from merescocore.framework import Observable, be
+-from cqlparser import parseString
++from cqlparser import parseString, cql2string
++from cqlparser.cqlparser import SEARCH_TERM, SEARCH_CLAUSE, TERM
+ 
+ 
+ class CQLConversionTest(CQ2TestCase):
+@@ -57,3 +59,83 @@
+         c = CQLConversion(converter.convert)
+         self.assertEquals(parseString('ast'), c._convert(parseString('otherfield = value')))
+         self.assertEquals(['convert'], [m.name for m in converter.calledMethods])
++
++    def testSearchClauseNoModification(self):
++        ast = parseString('field=value')
++        modifier = CallTrace('SearchClauseModifier')
++        conversion = CqlSearchClauseConversion(lambda node: False, modifier.modify)
++        result = conversion._detectAndConvert(ast)
++        self.assertEquals('field=value', cql2string(result))
++        self.assertEquals(0, len(modifier.calledMethods))
++
++    def testSearchClauseModifySimpleSearchClause(self):
++        ast = parseString('field=value')
++        def canModify(node):
++            self.assertEquals(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name() for c in node.children()])
++            return True
++        def modify(node):
++            return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
++        conversion = CqlSearchClauseConversion(canModify, modify)
++        result = conversion._detectAndConvert(ast)
++        self.assertEquals('newvalue', cql2string(result))
++
++    def testReplaceSubtree(self):
++        ast = parseString('field1=value1 AND (field2=value2 OR (field3=value3))')
++        def canModify(node):
++            return ['CQL_QUERY'] == [c.name() for c in node.children()]
++        def modify(node):
++            return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
++        conversion = CqlSearchClauseConversion(canModify, modify)
++        result = conversion._detectAndConvert(ast)
++        self.assertEquals('field1=value1 AND newvalue', cql2string(result))
++
++    def testReplacementMustBeSearchClause(self):
++        ast = parseString('term')
++        canModify = lambda node: True
++        modify = lambda node: TERM('wrong')
++        conversion = CqlSearchClauseConversion(canModify, modify)
++        self.assertRaises(AssertionError, conversion._detectAndConvert, ast)
++
++    def testMultipleSearchClauseReplacements(self):
++        ast = parseString('term1 AND term2 AND term3')
++        #SEARCH_TERM(TERM('term'))
++        def canModifyTerm1(node):
++            return "SEARCH_CLAUSE(SEARCH_TERM(TERM('term1')))" == str(node)
++        def modifyTerm1(node):
++            return SEARCH_CLAUSE(SEARCH_TERM(TERM('termOne')))
++        def canModifyTerm3(node):
++            return "SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))" == str(node)
++        def modifyTerm3(node):
++            return SEARCH_CLAUSE(SEARCH_TERM(TERM('termThree')))
++        observerClassic = CallTrace('observerClassic')
++        observerNewStyle = CallTrace('observerNewStyle')
++        classic = be((Observable(),
++            (CqlSearchClauseConversion(canModifyTerm1,modifyTerm1),
++                (CqlSearchClauseConversion(canModifyTerm3,modifyTerm3),
++                    (observerClassic,)
++                )
++            )
++        ))
++        newStyle = be((Observable(),
++            (CqlMultiSearchClauseConversion([
++                    (canModifyTerm1, modifyTerm1),
++                    (canModifyTerm3, modifyTerm3)
++                ]),
++                (observerNewStyle,)
++            )
++        ))
++
++        classic.do.message(ast)
++        newStyle.do.message(ast)
++
++        self.assertEquals(['message'], [m.name for m in observerClassic.calledMethods])
++        resultClassic = observerClassic.calledMethods[0].args[0]
++        self.assertEquals(['message'], [m.name for m in observerNewStyle.calledMethods])
++        resultNewStyle = observerNewStyle.calledMethods[0].args[0]
++
++        self.assertEquals('termOne AND term2 AND termThree', cql2string(resultClassic))
++        self.assertEquals('termOne AND term2 AND termThree', cql2string(resultNewStyle))
++
++
++
++
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_3/test/numeric/numbercomparitortest.py version_4/test/numeric/numbercomparitortest.py
+--- version_3/test/numeric/numbercomparitortest.py	2010-02-25 15:27:52.000000000 +0100
++++ version_4/test/numeric/numbercomparitortest.py	2010-03-04 14:14:28.000000000 +0100
+@@ -2,10 +2,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -30,7 +31,7 @@
+ from cqlparser import parseString
+ from merescocomponents.facetindex import LuceneIndex, Document, CQL2LuceneQuery
+ from merescocore.components.numeric.numbercomparitorfieldlet import NumberComparitorFieldlet
+-from merescocore.components.numeric.numbercomparitorcqlconversion import NumberComparitorCqlConversion
++from merescocore.components.numeric import NumberComparitorCqlConversion
+ from merescocore.components.numeric.convert import Convert
+ from merescocore.framework import be, Observable
+ 

@@ -1,0 +1,92 @@
+Changeset created on Mon Mar 15 12:08:01 CET 2010 by Seek You Too
+
+Description: Change namespace uri from meresco.com to meresco.org
+
+    The namespace changed from http://meresco.com/namespace/... to
+    http://meresco.org/namespace/... The actual new namespaces in
+    this changeset are:
+    - http://meresco.org/namespace/drilldown
+    - http://meresco.org/namespace/harvester/meta
+    - http://meresco.org/namespace/meresco/statistics
+
+Baseline version: meresco-core/workingsets/2.22.9-EduRep/version_4
+
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_4/merescocore/components/drilldown/drilldown.py version_5/merescocore/components/drilldown/drilldown.py
+--- version_4/merescocore/components/drilldown/drilldown.py	2010-03-04 14:14:28.000000000 +0100
++++ version_5/merescocore/components/drilldown/drilldown.py	2010-03-15 12:07:31.000000000 +0100
+@@ -29,7 +29,7 @@
+ DEFAULT_MAXIMUM_TERMS = 10
+ 
+ DRILLDOWN_HEADER = """<dd:drilldown
+-    xmlns:dd="http://meresco.com/namespace/drilldown"
++    xmlns:dd="http://meresco.org/namespace/drilldown"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-    xsi:schemaLocation="http://meresco.com/namespace/drilldown http://meresco.com/files/xsd/drilldown-20070730.xsd">"""
++    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd">"""
+ DRILLDOWN_FOOTER = "</dd:drilldown>"
+\ No newline at end of file
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_4/merescocore/components/statisticsxml.py version_5/merescocore/components/statisticsxml.py
+--- version_4/merescocore/components/statisticsxml.py	2010-03-04 14:14:28.000000000 +0100
++++ version_5/merescocore/components/statisticsxml.py	2010-03-15 12:07:31.000000000 +0100
+@@ -36,7 +36,7 @@
+ from weightless import compose
+ from xml.sax.saxutils import escape as xmlEscape
+ 
+-NAMESPACE="http://meresco.com/namespace/meresco/statistics"
++NAMESPACE="http://meresco.org/namespace/meresco/statistics"
+ 
+ class StatisticsXml(object):
+ 
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_4/merescocore/components/xmlxpath.py version_5/merescocore/components/xmlxpath.py
+--- version_4/merescocore/components/xmlxpath.py	2010-03-04 14:14:28.000000000 +0100
++++ version_5/merescocore/components/xmlxpath.py	2010-03-15 12:07:31.000000000 +0100
+@@ -35,7 +35,7 @@
+     'dc': "http://purl.org/dc/elements/1.1/",
+     'oai': "http://www.openarchives.org/OAI/2.0/",
+     'lom': "http://ltsc.ieee.org/xsd/LOM",
+-    'meta': "http://meresco.com/namespace/harvester/meta",
++    'meta': "http://meresco.org/namespace/harvester/meta",
+ }
+ 
+ class XmlXPath(Observable):
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_4/test/fields2xmltest.py version_5/test/fields2xmltest.py
+--- version_4/test/fields2xmltest.py	2010-03-04 14:14:28.000000000 +0100
++++ version_5/test/fields2xmltest.py	2010-03-15 12:07:31.000000000 +0100
+@@ -80,11 +80,11 @@
+         transactionDo = CallTrace('TransactionDo')
+         transaction.do = transactionDo
+         
+-        f = Fields2XmlTx(transaction, 'extra', namespace="http://meresco.com/namespace/fields/extra")
++        f = Fields2XmlTx(transaction, 'extra', namespace="http://meresco.org/namespace/fields/extra")
+         f.addField('key.sub', 'value')
+         f.commit()
+         
+-        self.assertEquals(('identifier', 'extra', '<extra xmlns="http://meresco.com/namespace/fields/extra"><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
++        self.assertEquals(('identifier', 'extra', '<extra xmlns="http://meresco.org/namespace/fields/extra"><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
+ 
+     def testIllegalPartNameRaisesException(self):
+         for name in ['this is wrong', '%%@$%*^$^', '/slash', 'dot.dot']:
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_4/test/sru/sruhandlertest.py version_5/test/sru/sruhandlertest.py
+--- version_4/test/sru/sruhandlertest.py	2010-03-04 14:14:28.000000000 +0100
++++ version_5/test/sru/sruhandlertest.py	2010-03-15 12:07:31.000000000 +0100
+@@ -125,7 +125,7 @@
+         sruTermDrilldown.addObserver(observer)
+         sruHandler.addObserver(sruTermDrilldown)
+         result = "".join(list(sruHandler._writeExtraResponseData(cqlAbstractSyntaxTree=None, **arguments)))
+-        self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.com/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.com/namespace/drilldown http://meresco.com/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
++        self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.org/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
+ 
+     def testNextRecordPosition(self):
+         observer = CallTrace()
+diff --unidirectional-new-file '--exclude=.svn' '--exclude=*.pyc' '--exclude=applied' --recursive --unified version_4/test/statisticsxmltest.py version_5/test/statisticsxmltest.py
+--- version_4/test/statisticsxmltest.py	2010-03-04 14:14:28.000000000 +0100
++++ version_5/test/statisticsxmltest.py	2010-03-15 12:07:31.000000000 +0100
+@@ -107,7 +107,7 @@
+         stats = CallTrace('stats')
+         value1 = 'value1'
+         value2 = 'value2&two'
+-        nsmap = {'stats': 'http://meresco.com/namespace/meresco/statistics'}
++        nsmap = {'stats': 'http://meresco.org/namespace/meresco/statistics'}
+         stats.returnValues['get'] = {(value1,): 13, (value2,): 100}
+         stats.returnValues['listKeys'] = [('key',)]
+         xml = StatisticsXml(stats)

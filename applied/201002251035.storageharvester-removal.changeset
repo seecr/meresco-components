@@ -1,0 +1,48 @@
+Changeset created on Thu Feb 25 10:35:59 CET 2010 by Seek You Too
+
+Description: Remove storageharvester, which is very old and never used.
+
+    StorageHarvester was the predecessor of Reindex, is not used and
+    therefor removed.
+
+Baseline version: workingsets/2.22.9-EduRep/version_1
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_1/merescocore/components/__init__.py version_2/merescocore/components/__init__.py
+--- version_1/merescocore/components/__init__.py	2010-02-23 16:39:18.000000000 +0100
++++ version_2/merescocore/components/__init__.py	2010-02-25 10:35:40.585862436 +0100
+@@ -2,10 +2,11 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Core.
+@@ -28,8 +29,7 @@
+ 
+ from timeddictionary import TimedDictionary
+ from logobserver import LogObserver
+-from storagecomponent import StorageComponent, defaultSplit
+-from storageharvester import defaultJoin
++from storagecomponent import StorageComponent, defaultSplit, defaultJoin
+ from xmlpump import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml
+ from contextset import ContextSetList, ContextSet
+ 
+Only in version_1/merescocore/components: storageharvester.py
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_1/test/alltests.py version_2/test/alltests.py
+--- version_1/test/alltests.py	2010-02-23 16:39:18.000000000 +0100
++++ version_2/test/alltests.py	2010-02-25 10:35:40.560866579 +0100
+@@ -48,7 +48,6 @@
+ from logobservertest import LogObserverTest
+ from parsecqltest import ParseCQLTest
+ from storagecomponenttest import StorageComponentTest
+-from storageharvestertest import StorageHarvesterTest
+ from renamecqlindextest import RenameCqlIndexTest
+ from requestscopetest import RequestScopeTest
+ from rsstest import RssTest
+Only in version_1/test: storageharvestertest.py

@@ -1,0 +1,304 @@
+Changeset created on Wed Apr 14 09:58:58 CEST 2010 by Seek You Too
+
+Description: Return a proper XML error message in drilldown.
+
+    Drilldown component will now return a proper XML response when
+    some exception occurs.
+
+Baseline version: meresco-core/workingsets/3.0-beta/version_2
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/merescocore/components/drilldown/srutermdrilldown.py version_3/merescocore/components/drilldown/srutermdrilldown.py
+--- version_2/merescocore/components/drilldown/srutermdrilldown.py	2010-03-31 14:57:39.000000000 +0200
++++ version_3/merescocore/components/drilldown/srutermdrilldown.py	2010-04-14 09:58:39.000000000 +0200
+@@ -2,7 +2,7 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+@@ -30,6 +30,8 @@
+ from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+ from xml.sax.saxutils import escape as xmlEscape, quoteattr
+ 
++from merescocore.components.sru.diagnostic import generalSystemError
++
+ class SRUTermDrilldown(Observable):
+     def __init__(self, sortedByTermCount=False):
+         Observable.__init__(self)
+@@ -54,17 +56,33 @@
+         drilldownResults = self.any.drilldown(
+             self.any.docsetFromQuery(cqlAbstractSyntaxTree),
+             fieldMaxTuples)
+-        yield "<dd:term-drilldown>"
+-        for fieldname, termCounts in drilldownResults:
++
++        yield self._termDrilldown(drilldownResults)
++
++    @decorateWith("<dd:term-drilldown>", "</dd:term-drilldown>")
++    def _termDrilldown(self, drilldownResults):
++        try:
++            for fieldname, termCounts in drilldownResults:
++                yield self._dd_navigator(fieldname, termCounts)
++        except Exception, e:
++            yield generalSystemError(xmlEscape(e.message))
++            return
++
++    def _dd_navigator(self, fieldname, termCounts):
++        try:
++            firstTerm, firstCount = termCounts.next()
+             yield '<dd:navigator name=%s>' % quoteattr(fieldname)
++            yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(firstCount)), xmlEscape(str(firstTerm)))
+             for term, count in termCounts:
+                 yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(count)), xmlEscape(str(term)))
+             yield '</dd:navigator>'
+-        yield "</dd:term-drilldown>"
++        except Exception, e:
++            yield generalSystemError(xmlEscape(e.message))
++            return
+         
+     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
+     def echoedExtraRequestData(self, x_term_drilldown=None, **kwargs):
+         if x_term_drilldown and len(x_term_drilldown) == 1:
+             yield "<dd:term-drilldown>"
+             yield xmlEscape(x_term_drilldown[0])
+-            yield "</dd:term-drilldown>"
+\ No newline at end of file
++            yield "</dd:term-drilldown>"
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/merescocore/components/sru/diagnostic.py version_3/merescocore/components/sru/diagnostic.py
+--- version_2/merescocore/components/sru/diagnostic.py	1970-01-01 01:00:00.000000000 +0100
++++ version_3/merescocore/components/sru/diagnostic.py	2010-04-14 09:58:39.000000000 +0200
+@@ -0,0 +1,41 @@
++## begin license ##
++#
++#    Meresco Core is an open-source library containing components to build
++#    searchengines, repositories and archives.
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of Meresco Core.
++#
++#    Meresco Core is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Core is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Core; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++GENERAL_SYSTEM_ERROR = [1, "General System Error"]
++SYSTEM_TEMPORARILY_UNAVAILABLE = [2, "System Temporarily Unavailable"]
++UNSUPPORTED_OPERATION = [4, "Unsupported Operation"]
++UNSUPPORTED_VERSION = [5, "Unsupported Version"]
++UNSUPPORTED_PARAMETER_VALUE = [6, "Unsupported Parameter Value"]
++MANDATORY_PARAMETER_NOT_SUPPLIED = [7, "Mandatory Parameter Not Supplied"]
++UNSUPPORTED_PARAMETER = [8, "Unsupported Parameter"]
++QUERY_FEATURE_UNSUPPORTED = [48, "Query Feature Unsupported"]
++
++DIAGNOSTIC = """<diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
++        <uri>info://srw/diagnostics/1/%s</uri>
++        <details>%s</details>
++        <message>%s</message>
++    </diagnostic>"""
++    
++def generalSystemError(message):
++    return DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [message])
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/merescocore/components/sru/sruparser.py version_3/merescocore/components/sru/sruparser.py
+--- version_2/merescocore/components/sru/sruparser.py	2010-03-31 14:57:39.000000000 +0200
++++ version_3/merescocore/components/sru/sruparser.py	2010-04-14 09:58:39.000000000 +0200
+@@ -2,7 +2,7 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+@@ -34,6 +34,9 @@
+ 
+ from weightless import compose
+ 
++from diagnostic import DIAGNOSTIC
++from diagnostic import GENERAL_SYSTEM_ERROR, SYSTEM_TEMPORARILY_UNAVAILABLE, UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
++
+ VERSION = '1.1'
+ DEFAULT_MAXIMUMRECORDS = '10'
+ 
+@@ -56,26 +59,9 @@
+ 
+ RESPONSE_FOOTER = """</srw:searchRetrieveResponse>"""
+ 
+-
+-DIAGNOSTIC = """<diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
+-        <uri>info://srw/diagnostics/1/%s</uri>
+-        <details>%s</details>
+-        <message>%s</message>
+-    </diagnostic>"""
+-    
+ DIAGNOSTICS = """%s%s%s<srw:diagnostics>%s</srw:diagnostics>%s""" % (RESPONSE_HEADER, '<srw:version>%s</srw:version>' % VERSION, '<srw:numberOfRecords>0</srw:numberOfRecords>', DIAGNOSTIC, RESPONSE_FOOTER)
+ 
+ 
+-
+-GENERAL_SYSTEM_ERROR = [1, "General System Error"]
+-SYSTEM_TEMPORARILY_UNAVAILABLE = [2, "System Temporarily Unavailable"]
+-UNSUPPORTED_OPERATION = [4, "Unsupported Operation"]
+-UNSUPPORTED_VERSION = [5, "Unsupported Version"]
+-UNSUPPORTED_PARAMETER_VALUE = [6, "Unsupported Parameter Value"]
+-MANDATORY_PARAMETER_NOT_SUPPLIED = [7, "Mandatory Parameter Not Supplied"]
+-UNSUPPORTED_PARAMETER = [8, "Unsupported Parameter"]
+-QUERY_FEATURE_UNSUPPORTED = [48, "Query Feature Unsupported"]
+-
+ class SruException(Exception):
+ 
+     def __init__(self, (code, message), details="No details available"):
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/test/sru/sruhandlertest.py version_3/test/sru/sruhandlertest.py
+--- version_2/test/sru/sruhandlertest.py	2010-03-31 14:57:39.000000000 +0200
++++ version_3/test/sru/sruhandlertest.py	2010-04-14 09:58:38.000000000 +0200
+@@ -3,7 +3,7 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+@@ -118,10 +118,11 @@
+         sruTermDrilldown = SRUTermDrilldown()
+         observer = CallTrace("Drilldown")
+         observer.returnValues['docsetFromQuery'] = 'docset'
+-        observer.returnValues['drilldown'] = [
+-                ('field0', [('value0_0', 14)]),
+-                ('field1', [('value1_0', 13), ('value1_1', 11)]),
+-                ('field2', [('value2_0', 3), ('value2_1', 2), ('value2_2', 1)])]
++        observer.returnValues['drilldown'] = iter([
++                ('field0', iter([('value0_0', 14)])),
++                ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
++                ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))
++            ])
+         sruTermDrilldown.addObserver(observer)
+         sruHandler.addObserver(sruTermDrilldown)
+         result = "".join(list(sruHandler._writeExtraResponseData(cqlAbstractSyntaxTree=None, **arguments)))
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified version_2/test/sru/srutermdrilldowntest.py version_3/test/sru/srutermdrilldowntest.py
+--- version_2/test/sru/srutermdrilldowntest.py	2010-03-31 14:57:39.000000000 +0200
++++ version_3/test/sru/srutermdrilldowntest.py	2010-04-14 09:58:38.000000000 +0200
+@@ -2,7 +2,7 @@
+ #
+ #    Meresco Core is an open-source library containing components to build
+ #    searchengines, repositories and archives.
+-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+@@ -27,6 +27,9 @@
+ ## end license ##
+ 
+ from cq2utils import CQ2TestCase, CallTrace
++from weightless import compose
++
++from merescocore.components.sru.diagnostic import generalSystemError
+ 
+ from merescocore.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+ 
+@@ -37,15 +40,15 @@
+ 
+         observer = CallTrace("Drilldown")
+         observer.returnValues['docsetFromQuery'] = 'docset'
+-        observer.returnValues['drilldown'] = [
+-                ('field0', [('value0_0', 14)]),
+-                ('field1', [('value1_0', 13), ('value1_1', 11)]),
+-                ('field2', [('value2_0', 3), ('value2_1', 2), ('value2_2', 1)])]
++        observer.returnValues['drilldown'] = iter([
++                ('field0', iter([('value0_0', 14)])),
++                ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
++                ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))])
+ 
+         sruTermDrilldown.addObserver(observer)
+         cqlAbstractSyntaxTree = 'cqlAbstractSyntaxTree'
+ 
+-        result = sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree, x_term_drilldown=["field0:1,field1:2,field2"])
++        result = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree, x_term_drilldown=["field0:1,field1:2,field2"]))
+         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:term-drilldown><dd:navigator name="field0">
+     <dd:item count="14">value0_0</dd:item>
+ </dd:navigator>
+@@ -62,6 +65,62 @@
+         self.assertEquals('cqlAbstractSyntaxTree', observer.calledMethods[0].args[0])
+         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[1].args[1]))
+ 
++    def testDrilldownCallRaisesAnError(self):
++        sruTermDrilldown = SRUTermDrilldown()
++        observer = CallTrace("Drilldown")
++        def mockDrilldown(*args):
++            raise Exception("Some Exception")
++            yield "Some thing"
++        observer.methods["drilldown"] = mockDrilldown
++        sruTermDrilldown.addObserver(observer)
++
++        cqlAbstractSyntaxTree = 'ignored'
++        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
++        result = "".join(composedGenerator)
++
++        expected = DRILLDOWN_HEADER + """
++            <dd:term-drilldown>
++                <diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
++                    <uri>info://srw/diagnostics/1/1</uri>
++                    <details>General System Error</details>
++                    <message>Some Exception</message>
++                </diagnostic>
++            </dd:term-drilldown>
++        """ + DRILLDOWN_FOOTER
++        self.assertEqualsWS(expected, result)
++
++    def testDrilldownInternalRaisesExceptionNotTheFirst(self):
++        sruTermDrilldown = SRUTermDrilldown()
++        observer = CallTrace("Drilldown")
++        def raiser(*args):
++            raise Exception("Some Exception")
++            yield
++        drilldownResults = iter([
++                ('field0', iter([('value0_0', 14)])),
++                ('field1', raiser()),
++            ])
++        observer.returnValues["drilldown"] = drilldownResults
++        sruTermDrilldown.addObserver(observer)
++
++        cqlAbstractSyntaxTree = 'ignored'
++
++        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
++        result = "".join(composedGenerator)
++
++        expected = DRILLDOWN_HEADER + """
++            <dd:term-drilldown>
++                <dd:navigator name="field0">
++                    <dd:item count="14">value0_0</dd:item>
++                </dd:navigator>
++                <diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
++                    <uri>info://srw/diagnostics/1/1</uri>
++                    <details>General System Error</details>
++                    <message>Some Exception</message>
++                </diagnostic>
++            </dd:term-drilldown>
++        """ + DRILLDOWN_FOOTER
++        self.assertEqualsWS(expected, result)
++
+ 
+     def testEchoedExtraRequestData(self):
+         component =SRUTermDrilldown()
+@@ -70,4 +129,4 @@
+         
+         self.assertEqualsWS(DRILLDOWN_HEADER \
+         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
+-        + DRILLDOWN_FOOTER, result)
+\ No newline at end of file
++        + DRILLDOWN_FOOTER, result)
