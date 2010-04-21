@@ -1,4 +1,4 @@
-python-meresco-core-3.0-beta (>= 4)
+python-meresco-core-3.0-beta (>= 5)
 python-cqlparser (>=1.5.2)
 python-cqlparser (<<1.6)
 python-storage (>=5.1.7)
