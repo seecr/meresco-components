@@ -160,8 +160,8 @@ setup(
     url = 'http://www.cq2.nl',
     author = 'Seek You Too',
     author_email = 'info@cq2.nl',
-    description = 'Meresco Components are components to build searchengines, repositories and archives, based on Meresco Core.',
-    long_description = 'Meresco Components are components to build searchengines, repositories and archives, based on Meresco Core.',
+    description = 'Meresco Components are components to build and archives, based on Meresco Core. based on Meresco Core.',
+    long_description = 'Meresco Components are components to build and archives, based on Meresco Core. based on Meresco Core.',
     license = 'GPL',
     platforms='all',
 )
