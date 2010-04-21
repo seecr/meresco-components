@@ -126,7 +126,6 @@ setup(
              },
     name = 'meresco-components',
     packages = [
-        'meresco',
         'meresco.components',
         'meresco.components.drilldown',
         'meresco.components.http',
