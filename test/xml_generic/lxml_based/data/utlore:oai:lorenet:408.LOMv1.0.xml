@@ -1,0 +1,53 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+	    <identifier>
+		      <catalog>arno</catalog>
+		      <entry>ut-lo:408</entry>
+		    </identifier>
+	    <title>
+		      <string language="nl">Multimediale leermiddelen. Her ontwerpen en ontwikkelen van leer-, werk- &amp; doe-omgevingen. Inzichten, Concepten, Methoden en Technieken</string>
+		    </title>
+	    <language>nl</language>
+		<description>
+			<string language="nl">Interactief digitaal 'electronisch boek' op internet of multifunctioneel, 6 dimensionaal collegediktaat met interactieve 'dynamische' voorbeelden over multimedia en ontwerpen, in het bijzonder over interactieve, moderne methoden en technieken voor het ontwikkelen van multimediale leermiddelen.</string>
+		</description>
+	</general>
+  <lifeCycle>
+	    <contribute>
+		      <role>
+			        <source>LOMv1.0</source>
+			        <value>author</value>
+			      </role>
+		      <entity>BEGIN:VCARD
+FN: Min, F.B.M.
+END:VCARD</entity>
+				<date>
+					<dateTime>2003</dateTime>
+				</date>
+		    </contribute>
+	  </lifeCycle>
+  <metaMetadata>
+	    <metadataSchema>LORENET</metadataSchema>
+	  </metaMetadata>
+  <technical>
+	    <format>application/octet-stream</format>
+	    <location>/cgi-bin/arno/show.cgi?fid=613</location>
+	  </technical>
+  <educational>
+	    <learningResourceType>
+		      <source>LOMv1.0</source>
+		      <value>other</value>
+		    </learningResourceType>
+	  </educational>
+  <rights>
+	    <cost>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </cost>
+	    <copyrightAndOtherRestrictions>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </copyrightAndOtherRestrictions>
+	  </rights>
+  <classification/>
+</lom>

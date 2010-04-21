@@ -1,0 +1,89 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ltsc.ieee.org/xsd/LOM http://ltsc.ieee.org/xsd/lomv1.0/lomLoose.xsd">
+          <general>
+            <!--General Section-->
+            <identifier>
+              <catalog>SURE</catalog>
+              <entry>oai:nl.SURFnet.sure:568</entry>
+            </identifier>
+            <title>
+              <string language="en">Fysica echografie 8</string>
+            </title>
+            <language>nl</language>
+            <description>
+              <string language="nl">Beeld processing</string>
+            </description>
+          </general>
+          <lifeCycle>
+            <!--Lifecycle Section-->
+            <contribute>
+              <role>
+                <source>LOREnet LOM v1.0</source>
+                <value>auteur</value>
+              </role>
+              <entity>BEGIN:vcard\nFN:onbekend\nORG:Fonys/PABO\nEND:vcard</entity>
+              <date>
+                <dateTime>2005-12-14T00:00:00Z</dateTime>
+              </date>
+            </contribute>
+          </lifeCycle>
+          <metaMetadata>
+            <!--Metametadata Section-->
+            <contribute>
+              <role>
+                <source>LOMv1.0</source>
+                <value>creator</value>
+              </role>
+              <entity>BEGIN:vcard\nFN:Aleks Veldhoen\nEMAIL:a.veldhoen@fontys.nl\nEND:vcard</entity>
+              <date>
+                <dateTime>2005-12-14T09:05:29.314Z</dateTime>
+              </date>
+            </contribute>
+            <metadataSchema>IEEE LOM 1.0</metadataSchema>
+            <language>nl</language>
+          </metaMetadata>
+          <technical>
+            <!--Technical Section-->
+            <format>application/vndms-powerpoint</format>
+            <size>1310720</size>
+            <location>http://elo.fontys.nl/Services/CMS.asmx/ExportPackage?packageId=3748173&amp;exportType=Preserved</location>
+          </technical>
+          <educational>
+            <!--Educational Section-->
+            <learningResourceType>
+              <source>CZP VO/PO v1.0.1</source>
+              <value>verkennings- en onderzoeks materiaal</value>
+            </learningResourceType>
+          </educational>
+          <rights>
+            <!--Rights Section-->
+            <cost>
+              <source>LOMv1.0</source>
+              <value>yes</value>
+            </cost>
+            <copyrightAndOtherRestrictions>
+              <source>LOMv1.0</source>
+              <value>yes</value>
+            </copyrightAndOtherRestrictions>
+            <description>
+              <string language="en">Copyright (c) 2007 Fontys University of Applied Science. All rights reserved</string>
+              <string language="nl">Copyright (c) 2007 Fontys Hogescholen. Alle rechten voorbehouden</string>
+            </description>
+          </rights>
+          <classification>
+            <!--Classification Section-->
+            <purpose>
+              <source>LOREnet LOM v1.0</source>
+              <value>vakgebied</value>
+            </purpose>
+            <taxonPath>
+              <taxon>
+                <entry>
+                  <string language="nl">Zorg</string>
+                </entry>
+              </taxon>
+              <source>
+                <string language="nl">Fontys</string>
+              </source>
+            </taxonPath>
+          </classification>
+        </lom>

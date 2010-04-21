@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+
+	<!-- 1 -->
+	<general>
+
+		<!-- 1.1 -->
+		<!-- Verplicht -->
+		<identifier>
+			<!-- 1.1.1 -->
+			<catalog>Naam van de repository of instelling</catalog>
+			<!-- 1.1.2 -->
+			<entry>Identificatiecode/identifier/etc, uniek binnen catalog</entry>
+		</identifier>
+
+		<!-- 1.2 -->
+		<!-- Verplicht -->
+		<title>
+			<string>Een titel</string>
+		</title>
+
+		<!-- 1.3 -->
+		<!-- Aanbevolen -->
+		<language>
+			nl
+		</language>
+
+		<!-- 1.4 -->
+		<!-- Aanbevolen -->
+		<description>
+			<string>aap</string>
+		</description>
+
+		<!-- 1.5 -->
+		<!-- Aanbevolen -->
+		<keyword>
+			<string>aap noot mies</string>
+		</keyword>
+
+		<!-- 1.6 -->
+		<!-- Optioneel -->
+		<coverage>
+			<string>nederland en belgie?</string>
+		</coverage>
+
+		<!-- 1.7 -->
+		<!-- Optioneel -->
+		<structure>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- atomic, collection, networked, hierarchical, lineair -->
+			<value>atomic</value>
+		</structure>
+
+		<!-- 1.8 -->
+		<!-- Optioneel -->
+		<aggregationLevel>
+			<!-- 1, 2, 3, 4 -->
+			<value>1</value>
+		</aggregationLevel>
+
+	</general>
+
+	<!-- 2. -->
+	<!-- Aanbevolen -->
+	<lifeCycle>
+
+		<!-- 2.1 -->
+		<version>
+			<string>v1.0beta-rc01-with-fixes</string>
+		</version>
+
+		<!-- 2.2 -->
+		<status>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- draft, final, revised, unavailable -->
+			<value>final</value>
+		</status>
+
+		<!-- 2.3 -->
+		<contribute>
+
+			<!-- 2.3.1 -->
+			<role>
+				<source>LOMv1.0</source>
+				<!-- author, publisher, etc -->
+				<value>author</value>
+			</role>
+
+			<!-- 2.3.2 -->
+			<!-- Vcard with custom validation -->
+			<entity>
+BEGIN:VCARD
+FN:Suilen, A.
+END:VCARD
+			</entity>
+
+			<!-- 2.3.3 -->
+			<date>
+				<!-- format volgens voorbeeld, en/of -->
+				<dateTime>2007-12-31T13:31:45</dateTime>
+				<!-- een vrije string -->
+				<description>
+					<string>Vandaag</string>
+				</description>
+			</date>
+
+		</contribute>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>publisher</value>
+			</role>
+			<entity>
+				BEGIN:VCARD
+				FN:Uni van Berlijn.
+				END:VCARD
+			</entity>
+			<date>
+				<dateTime>2007-12-31T13:31:45</dateTime>
+			</date>
+		</contribute>
+	</lifeCycle>
+
+	<!-- 3. -->
+	<metaMetadata>
+
+		<!-- 3.1 -->
+		<!-- Optioneel -->
+		<identifier>
+			<!-- 3.1.1 -->
+			<catalog>boek 1</catalog>
+			<!-- 3.1.2 -->
+			<entry>8765438201</entry>
+		</identifier>
+
+		<!-- 3.2 -->
+		<!-- Optioneel -->
+		<contribute>
+
+			<!-- 3.2.1 -->
+			<role>
+				<!-- Vaste waarde -->
+				<source>LOMv1.0</source>
+				<!-- creator, validator -->
+				<value>creator</value>
+			</role>
+
+			<!-- 3.2.2 -->
+			<!-- Vcard with custom validation -->
+			<entity>
+BEGIN:VCARD
+FN;parameter:Suilen, A.
+VERSION:3.0
+x;aap:mies
+END:VCARD
+			</entity>
+
+			<!-- 3.2.3 -->
+			<date>
+				<!-- format volgens voorbeeld, en/of -->
+				<dateTime>2007-01-01T08:32:16</dateTime>
+				<!-- een vrije string -->
+				<description>
+					<string>Gisteren</string>
+				</description>
+			</date>
+
+		</contribute>
+
+		<!-- 3.3 -->
+		<!-- Verplicht -->
+		<!-- lorelom -->
+		<metadataSchema>lorelomv2.2</metadataSchema>
+
+		<!-- 3.4 -->
+		<!-- Optioneel -->
+		<language>
+			cn
+		</language>
+
+	</metaMetadata>
+
+	<!-- 4. -->
+	<technical>
+
+		<!-- 4.1 -->
+		<!-- Aanbevolen -->
+		<!-- Mimetype: with custom validation! -->
+		<format>!3e#s$p&amp;l.a+n-k^j_e/a_a+p#</format>
+
+		<!-- 4.2 -->
+		<!-- Optioneel -->
+		<!-- positief geheel getal: size in bytes -->
+		<size>98748392</size>
+
+		<!-- 4.3 -->
+		<!-- Verplicht -->
+		<location>http://my.system.nl/hier/staat/het.zip</location>
+		<location>http://my.system.nl/hier/staat/nog.zip</location>
+		<location>http://my.system.nl/hier/staat/meer.zip</location>
+
+		<!-- 4.4 -->
+		<!-- Optioneel -->
+		<requirement>
+
+			<!-- 4.4.1 -->
+			<orComposite>
+
+				<!-- 4.4.1.1 -->
+				<type>
+					<!-- Vaste waarde -->
+					<source>LOMv1.0</source>
+					<!-- operating system, browser -->
+					<value>operating system</value>
+				</type>
+
+				<!-- 4.4.1.2 -->
+				<name>
+					<!-- Vaste waarde -->
+					<source>LOMv1.0</source>
+					<!-- pc-dos, ms-windows, macos, unix, multi-os, non, any, netscape communicator, ms-internet explorer, opera, amaya -->
+					<value>pc-dos</value>
+				</name>
+
+				<!-- 4.4.1.3 -->
+				<minimumVersion>1.0</minimumVersion>
+
+				<!-- 4.4.1.4 -->
+				<maximumVersion>2.0</maximumVersion>
+
+			</orComposite>
+
+		</requirement>
+
+		<!-- 4.5 -->
+		<!-- Optioneel -->
+		<installationRemarks>
+			<string>Diskette goed aandrukken</string>
+		</installationRemarks>
+
+		<!-- 4.6 -->
+		<!-- Optioneel -->
+		<otherPlatformRequirements>
+			<string>Veel koffie</string>
+		</otherPlatformRequirements>
+
+		<!-- 4.7 -->
+		<!-- Optioneel -->
+		<duration>
+			<!-- "P([0-9]{1,}Y){0,1} ([0-9]{1,}M){0,1} ([0-9]{1,}D){0,1} (T([0-9]{1,}H){0,1} ([0-9]{1,}M){0,1} ([0-9]{1,}(\.[0-9]{1,}){0,1}S){0,1}){0,1}" -->
+			<duration>P4Y3M2DT3H30M45.99S</duration>
+			<description>
+				<string>Te lang</string>
+			</description>
+		</duration>
+
+	</technical>
+
+	<!-- 5. -->
+	<educational>
+
+		<!-- 5.1 -->
+		<!-- Optioneel -->
+		<interactivityType>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- active, exposive, mixed -->
+			<value>active</value>
+		</interactivityType>
+
+		<!-- 5.2 -->
+		<!-- Verplicht -->
+		<learningResourceType>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- excercise, simulation, questionnaire, diagram, figure, graph, index, slide, table, narrative text, exam, experiment, problem statement, self assessment, lecture -->
+			<value>table</value>
+		</learningResourceType>
+
+		<!-- 5.3 -->
+		<!-- Optioneel -->
+		<interactivityLevel>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- low, medium, high -->
+			<value>medium</value>
+		</interactivityLevel>
+
+		<!-- 5.4 -->
+		<!-- Optioneel -->
+		<semanticDensity>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- low, medium, high -->
+			<value>high</value>
+		</semanticDensity>
+
+		<!-- 5.5 -->
+		<!-- Optioneel -->
+		<intendedEndUserRole>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- teacher, author, learner, manager -->
+			<value>learner</value>
+		</intendedEndUserRole>
+
+		<!-- 5.6 -->
+		<!-- Verplicht -->
+		<context>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- school, higher education, training, other -->
+			<value>higher education</value>
+		</context>
+
+		<!-- 5.7 -->
+		<!-- Optioneel -->
+		<typicalAgeRange>
+			<string>van 3 tot 99 jaar</string>
+		</typicalAgeRange>
+
+		<!-- 5.8 -->
+		<!-- Optioneel -->
+		<difficulty>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- easy, medium, difficult -->
+			<value>easy</value>
+		</difficulty>
+
+		<!-- 5.9 -->
+		<!-- Optioneel -->
+		<typicalLearningTime>
+			<!-- "P([0-9]{1,}Y){0,1} ([0-9]{1,}M){0,1} ([0-9]{1,}D){0,1} (T([0-9]{1,}H){0,1} ([0-9]{1,}M){0,1} ([0-9]{1,}(\.[0-9]{1,}){0,1}S){0,1}){0,1}" -->
+			<duration>P2Y9M1DT44H10M33.01S</duration>
+			<description>
+				<string>Meestal langer dan je wilt</string>
+			</description>
+		</typicalLearningTime>
+
+		<!-- 5.10 -->
+		<!-- Optioneel -->
+		<description>
+			<string>Ce ci n'est pas une description dans une langue d' Hollande</string>
+		</description>
+
+		<!-- 5.11 -->
+		<language>
+			fr
+		</language>
+
+	</educational>
+
+	<!-- 6. -->
+	<!-- Verplicht -->
+	<rights>
+
+		<!-- 6.1 -->
+		<cost>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- yes, no -->
+			<value>no</value>
+		</cost>
+
+		<!-- 6.2 -->
+		<copyrightAndOtherRestrictions>
+			<!-- Vaste waarde -->
+			<source>CCv2.5</source>
+			<!-- yes, no -->
+			<!-- by, by-nd, by-nc-nd, by-nc, by-nc-sa, by-sa -->
+			<value>by-nc-nd</value>
+		</copyrightAndOtherRestrictions>
+
+		<!-- 6.3 -->
+		<!-- EG: Optioneel -->
+		<description>
+			<!-- NO Vocabulairy ! -->
+			<string>share alike</string>
+		</description>
+
+	</rights>
+
+	<!-- 7. -->
+	<relation>
+
+		<!-- 7.1 -->
+		<!-- Aanbevolen  (makes no sense without 7.2)-->
+		<kind>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- ispartof, haspart, isversionof, hasversion, isformatof, hasformat, references, isreferencedby, isbasedon, isbasisfor, requires, isrequiredby -->
+			<value>ispartof</value>
+		</kind>
+
+		<!-- 7.2 -->
+		<!-- Optioneel (EG: Aanbevolen)-->
+		<resource>
+
+			<!-- 7.2.1 -->
+			<identifier>
+				<!-- 7.2.1.1 -->
+				<catalog>geheime bijlages</catalog>
+				<!-- 7.2.1.2 -->
+				<entry>6532-e</entry>
+			</identifier>
+
+			<!-- 7.2.2 -->
+			<description>
+				<string>Bijlage A</string>
+			</description>
+
+		</resource>
+
+	</relation>
+
+	<!-- 8. -->
+	<!-- Optioneel -->
+	<annotation>
+
+		<!-- 8.1 -->
+		<!-- Vcard: NO validation! -->
+		<entity>
+BEGIN:VCARD
+FN:Suilen, A.
+N:Suilen\, A.
+VERSION:3.0
+END:VCARD
+		</entity>
+
+		<!-- 8.2 -->
+		<date>
+			<!-- format volgens voorbeeld -->
+			<dateTime>2007-01-01T08:32:16</dateTime>
+			<description>
+				<string>Recentelijk</string>
+			</description>
+		</date>
+
+		<!-- 8.3 -->
+		<description>
+			<string>Dit gaat ergens over.</string>
+		</description>
+
+	</annotation>
+
+	<!-- 9. -->
+	<classification>
+
+		<!-- 9.1 -->
+		<!-- Verplicht -->
+		<purpose>
+			<!-- Vaste waarde -->
+			<source>LOMv1.0</source>
+			<!-- discipline, idea, prerequisite, educational objective, accessibility restrictions, educational level, skill levels, security level, competency -->
+			<!-- Vaste waarde -->
+			<value>discipline</value>
+		</purpose>
+
+		<!-- 9.2 -->
+		<!-- Verplicht -->
+		<taxonPath>
+
+			<!-- 9.2.1 -->
+			<!-- Optioneel -->
+			<source>
+				<!-- Alleen taxonPath's met NBC worden bekeken.-->
+				<string>NBC</string>
+			</source>
+
+			<!-- 9.2.2 -->
+			<!-- Verplicht EG: herhaling mogelijk met NBC?-->
+			<taxon>
+				<!-- 9.2.2.1 -->
+				<!-- Nummer van de hoofdcategorien uit NBC: 1-47	 Validatie is mogelijk, maar wenselijk?
+					 Idealiter alleen valideren als source=NBC, maar XSD kent geen cooccurence, zodat
+					 alle taxons worden beperkt, ook die uit andere sources of purpos'es-->
+				<id>
+					00047
+				</id>
+				<!-- EG: Optioneel -->
+				<entry>
+					<string>NBC groeps NAAM</string>
+				</entry>
+			</taxon>
+
+		</taxonPath>
+
+		<!-- 9.3 -->
+		<!-- Optioneel -->
+		<description>
+			<string>Vakgebied</string>
+		</description>
+
+		<!-- 9.4 -->
+		<!-- Optioneel -->
+		<keyword>
+			<string>vakgebied discipline onderwerp</string>
+		</keyword>
+
+	</classification>
+
+
+</lom>

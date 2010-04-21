@@ -1,0 +1,100 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+    <title>
+      <string language="nl">Func. website</string>
+    </title>
+    <language>nl</language>
+    <description>
+      <string language="nl">Func. website</string>
+    </description>
+     <keyword>
+      <string language="nl">Func. website</string>
+     </keyword>
+    <aggregationLevel>
+      <source>LOMv1.0</source>
+      <value>2</value>
+    </aggregationLevel>
+  </general>
+  <lifeCycle>
+    <version>
+      <string language="x-none">05042007 155410300</string>
+    </version>
+    <status>
+      <source>LOMv1.0</source>
+      <value>final</value>
+    </status>
+    <contribute>
+      <role>
+        <source>LOMv1.0</source>
+        <value>unknown</value>
+      </role>
+      <entity>BEGIN:VCARD
+VERSION:2.1
+N:Func. website
+END:VCARD</entity>
+    </contribute>
+  </lifeCycle>
+  <metaMetadata>
+    <metadataSchema>LOMv1.0</metadataSchema>
+  </metaMetadata>
+  <technical>
+    <format>text/html</format>
+  </technical>
+  <educational>
+    <learningResourceType>
+      <source>LOMv1.0</source>
+      <value>exercise</value>
+    </learningResourceType>
+    <learningResourceType>
+      <source>LOMv1.0</source>
+      <value>exercise</value>
+    </learningResourceType>
+    <context>
+      <source>LOMv1.0</source>
+      <value>SO</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>VVE</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>PO</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>VO</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>BVE</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>HBO</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>higher education</value>
+    </context>
+    <context>
+      <source>LOMv1.0</source>
+      <value>bedrijfsopleiding</value>
+    </context>
+  </educational>
+  <rights>
+    <cost>
+      <source>LOMv1.0</source>
+      <value>no</value>
+    </cost>
+    <copyrightAndOtherRestrictions>
+      <source>LOMv1.0</source>
+      <value>yes</value>
+    </copyrightAndOtherRestrictions>
+    <description>
+      <string language="nl">Rechten rusten bij auteurs</string>
+    </description>
+  </rights>
+  <classification/>
+</lom>
+

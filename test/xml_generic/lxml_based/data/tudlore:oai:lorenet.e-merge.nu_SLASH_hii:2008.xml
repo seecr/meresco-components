@@ -1,0 +1,69 @@
+<oai_dc:lom xmlns:oai_dc="fake_namespace_for_emerge">
+<general xmlns="http://www.openarchives.org/OAI/2.0/">
+<title>
+<langstring>1900-1920. Angkor Vat, Cambodia</langstring>
+</title>
+<catalogentry>
+<catalog>E-merge</catalog>
+<entry>
+<langstring>E-merge</langstring>
+</entry>
+</catalogentry>
+<language>en_NL</language>
+<description>
+<langstring>1900-1920. Angkor Vat, Cambodia.;Silver Gelatine Developing Out Paper (OGZ);Kern Institute, Leiden University</langstring>
+</description>
+</general>
+<metametadata xmlns="http://www.openarchives.org/OAI/2.0/">
+<metadatascheme>LORENET</metadatascheme>
+<language>en-AU</language>
+</metametadata>
+<technical xmlns="http://www.openarchives.org/OAI/2.0/">
+<format>image/jpeg</format>
+<location>http://lorenet.e-merge.nu/cgi-bin/hive/hive.cgi?HIVE_REQ=2001&amp;HIVE_RET=ORG&amp;HIVE_REF=hdi%3A2021</location>
+</technical>
+<educational xmlns="http://www.openarchives.org/OAI/2.0/">
+<learningresourcetype>
+<source>
+<langstring>LOMv1.0</langstring>
+</source>
+<value>
+<langstring>informatiebron</langstring>
+</value>
+</learningresourcetype>
+</educational>
+<rights xmlns="http://www.openarchives.org/OAI/2.0/">
+<cost>
+<source>
+<langstring>LOMv1.0</langstring>
+</source>
+<value>
+<langstring>no</langstring>
+</value>
+</cost>
+<copyrightandotherrestrictions>
+<source>
+<langstring>LOMv1.0</langstring>
+</source>
+<value>
+<langstring>no</langstring>
+</value>
+</copyrightandotherrestrictions>
+</rights>
+<classification xmlns="http://www.openarchives.org/OAI/2.0/">
+<purpose>
+<source>
+<langstring>LOMv1.0</langstring>
+</source>
+<value>
+<langstring>Vakgebied</langstring>
+</value>
+</purpose>
+<taxonpath>
+<taxon>
+<id>Taalwetenschappen, Geschiedenis en Kunst</id>
+<entry>Taalwetenschappen, geschiedenis en kunst</entry>
+</taxon>
+</taxonpath>
+</classification>
+</oai_dc:lom>

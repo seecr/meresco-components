@@ -1,0 +1,90 @@
+<imsmd:lom xmlns:imsmd="http://www.imsglobal.org/xsd/imsmd_v1p2">
+      <imsmd:general>
+        <imsmd:title>
+          <imsmd:langstring xml:lang="nl">Multimediale leermiddelen. Her ontwerpen en ontwikkelen van leer-, werk- &amp; doe-omgevingen. Inzichten, Concepten, Methoden en Technieken</imsmd:langstring>
+        </imsmd:title>
+<imsmd:catalogentry>
+<imsmd:catalog>arno</imsmd:catalog>
+<imsmd:entry>
+<imsmd:langstring xml:lang="none">ut-lo:408</imsmd:langstring>
+</imsmd:entry>
+</imsmd:catalogentry>
+        <imsmd:language>nl</imsmd:language>
+        <imsmd:description>
+          <imsmd:langstring xml:lang="nl">Interactief digitaal 'electronisch boek' op internet of multifunctioneel, 6 dimensionaal collegediktaat met interactieve 'dynamische' voorbeelden over multimedia en ontwerpen, in het bijzonder over interactieve, moderne methoden en technieken voor het ontwikkelen van multimediale leermiddelen.</imsmd:langstring>
+        </imsmd:description>
+      </imsmd:general>
+      <imsmd:lifecycle>
+        <imsmd:contribute>
+          <imsmd:role>
+            <imsmd:source>
+              <imsmd:langstring xml:lang="nl">LOMv1.0</imsmd:langstring>
+            </imsmd:source>
+            <imsmd:value>
+              <imsmd:langstring xml:lang="x-none">Author</imsmd:langstring>
+            </imsmd:value>
+          </imsmd:role>
+          <imsmd:centity>
+            <imsmd:vcard>Begin:VCARD
+FN: Min, F.B.M.
+End:VCARD</imsmd:vcard>
+          </imsmd:centity>
+          <imsmd:date>
+            <imsmd:datetime>2003</imsmd:datetime>
+          </imsmd:date>
+        </imsmd:contribute>
+      </imsmd:lifecycle>
+      <imsmd:metametadata>
+        <imsmd:metadatascheme>LOMLOREnetv1p0</imsmd:metadatascheme>
+      </imsmd:metametadata>
+      <imsmd:technical>
+<imsmd:location>/cgi-bin/arno/show.cgi?fid=613</imsmd:location>
+        <imsmd:format/>
+      </imsmd:technical>
+      <imsmd:educational>
+        <imsmd:learningresourcetype>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">TPPOVOv1.0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">informatiebron</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:learningresourcetype>
+      </imsmd:educational>
+      <imsmd:rights>
+        <imsmd:cost>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">LOMv1.0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">no</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:cost>
+        <imsmd:copyrightandotherrestrictions>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">LOMv1.0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">no</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:copyrightandotherrestrictions>
+      </imsmd:rights>
+      <imsmd:classification>
+        <imsmd:purpose>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">LOMLOREnetv1p0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">vakgebied</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:purpose>
+        <imsmd:taxonpath>
+          <imsmd:taxon>
+            <imsmd:id>81</imsmd:id>
+            <imsmd:entry>
+              <imsmd:langstring xml:lang="nl">81 Onderwijs</imsmd:langstring>
+            </imsmd:entry>
+          </imsmd:taxon>
+        </imsmd:taxonpath>
+      </imsmd:classification>
+    </imsmd:lom>

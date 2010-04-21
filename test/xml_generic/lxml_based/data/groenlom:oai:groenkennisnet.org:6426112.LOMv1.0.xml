@@ -1,0 +1,68 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+    <identifier>
+      <catalog>URI</catalog>
+      <entry>oai:library.wur.nl:gkn/1800334</entry>
+    </identifier>
+    <title>
+      <string language="nl">Cavia informatie</string>
+    </title>
+    <language>nl</language>
+    <description>
+      <string language="nl">Allerlei informatie over de cavia (trefwoorden: knaagdier,  eigenschappen, herkomst).</string>
+    </description>
+    <keyword>
+      <string language="nl">cavia's</string>
+    </keyword>
+    <keyword>
+      <string language="nl">cavia</string>
+    </keyword>
+    <keyword>
+      <string language="nl">gezelschapsdieren</string>
+    </keyword>
+    <aggregationLevel>
+      <source>LOMv1.0</source>
+      <value>2</value>
+    </aggregationLevel>
+  </general>
+  <lifeCycle>
+    <version>
+      <string language="x-none">unknown</string>
+    </version>
+    <contribute>
+      <role>
+        <source>LOMv1.0</source>
+        <value/>
+      </role>
+    </contribute>
+  </lifeCycle>
+  <metaMetadata>
+    <metadataSchema>LOMv1.0</metadataSchema>
+  </metaMetadata>
+  <technical>
+    <format>text/html</format>
+    <location>http://www.famlodder.nl/caviainfo.htm</location>
+  </technical>
+  <educational>
+    <learningResourceType>
+      <source>LOMv1.0</source>
+      <value>other</value>
+    </learningResourceType>
+    <context>
+      <source>LOMv1.0</source>
+      <value>BVE</value>
+    </context>
+  </educational>
+  <rights>
+    <cost>
+      <source>LOMv1.0</source>
+      <value>no</value>
+    </cost>
+    <copyrightAndOtherRestrictions>
+      <source>LOMv1.0</source>
+      <value>no</value>
+    </copyrightAndOtherRestrictions>
+  </rights>
+  <classification/>
+</lom>
+

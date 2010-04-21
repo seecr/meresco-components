@@ -1,0 +1,45 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+	    <identifier>
+		      <catalog>nl.wur.wurtv</catalog>
+		      <entry>02a7a352-907b-4f66-8d15-2c1d1ffbd4aa</entry>
+		    </identifier>
+	    <title>
+		      <string language="nl">Graduation de heer Girmay Tesfay Belay</string>
+		    </title>
+	    <language>nl</language>
+	    <description>
+		      <string language="nl">Agriculture, Resource Management and Institutions: A socioeconomic analysis of households in Tigray, Ethiopia
+</string>
+		    </description>
+	  </general>
+  <lifeCycle/>
+  <metaMetadata>
+	    <metadataSchema>LORENET</metadataSchema>
+	  </metaMetadata>
+  <technical>
+	    <format>text/html</format>
+	    <location>http://wurtv.wur.nl/wurtv/viewer.html?path=aulatv/2006/12/05/1/</location>
+	  </technical>
+  <educational>
+	    <learningResourceType>
+		      <source>LOMv1.0</source>
+		      <value>other</value>
+		    </learningResourceType>
+	    <context>
+		      <source>LOMv1.0</source>
+		      <value>higher education</value>
+		    </context>
+	  </educational>
+  <rights>
+	    <cost>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </cost>
+	    <copyrightAndOtherRestrictions>
+		      <source>CCv2.5</source>
+		      <value>by-nc-nd</value>
+		    </copyrightAndOtherRestrictions>
+	  </rights>
+  <classification/>
+</lom>

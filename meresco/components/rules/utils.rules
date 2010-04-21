@@ -1,0 +1,55 @@
+
+inputNamespace = 'http://www.cq2.nl/xmlrewrite/utils'
+
+normalizeDateRules = [(r'(\d{2,4}-\d{2})-(\d{2})[T ]?(\d{2})?[:;\.]?(\d{2})?', '%s-%sT%s:%s', (str, lambda x: max('01', x), lambda x: x or '23', lambda x: x or '59'))]
+
+normalizeVcardRules = [
+    ('(?s)(?i).*BEGIN:VCARD(.*)END:VCARD.*', 'BEGIN:VCARD\n%s\nEND:VCARD', (lambda s: s.replace('\\n', '\n').strip(),)),
+    ('(.*)', 'BEGIN:VCARD\nFN:%s\nEND:VCARD', (str,))
+]
+
+vocabDict = {
+'WO': 'higher education',
+'G01': '42',
+'G01.703': '38',
+
+'auteur': 'author',
+'bron': 'other',
+'evaluatie- en toetsmateriaal':  'exam',
+'gereedschap': 'other',
+'gesloten opdracht': 'exercise',
+'handleiding': 'other',
+'informatiebron': 'other',
+'open opdracht': 'exercise',
+'open opdracht': 'exercise',
+'ondersteunend': 'other',
+'overig': 'other',
+'vakgebied': 'discipline',
+'video': 'other',
+'verkennings- en onderzoeks materiaal': 'other',
+'verkennings- en onderzoeksmateriaal': 'other',
+'werkstuk': 'other',
+
+'ja': 'yes', 'nee': 'no',
+
+'LOMLOREnetv1p0': 'LORENET',
+
+# LOMv1.0 (source)
+'http://download.edustandaard.nl/xsd/vdex_context_czp_20060628.xml': 'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_learningresourcetype_czp_20060628.xml':'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_copyrightsandotherrestrictions_lomv1p0_20060628.xml':'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_cost_lomv1p0_20060628.xml':'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_context_czp_20060628.xml':'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_lifecycle_contribute_role_lomv1p0_20060628.xml':'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_aggregationlevel_czp_20060628.xml':'LOMv1.0',
+'http://download.edustandaard.nl/xsd/vdex_learningresourcetype_czp.xml': 'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_interactiontype_lomv1p0_20060628.xml': 'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_status_lomv1p0_20060628.xml': 'LOMv1.0',
+'http://download.edustandaard.nl/vdex/vdex_classification_purpose_czp_20060628.xml': 'LOMv1.0',
+'TPv1.0.2': 'LOMv1.0',
+'TPv1.0.2_anders': 'LOMv1.0',
+'TPPOVOv1.0': 'LOMv1.0',
+'LOREnet LOM v1.0': 'LOMv1.0',
+'CZP VO/PO v1.0.1':'LOMv1.0',
+
+}

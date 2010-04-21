@@ -1,0 +1,273 @@
+<oai_lom:lom xmlns:oai_lom="http://lorenet.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://lorenet.org/ http://lorenet.org/oai_lom.xsd">
+<lom:general xmlns:lom="http://lorenet.org">
+<lom:identifier>http://coo.lumc.nl/?lessonID=69</lom:identifier>
+<lom:title>
+<lom:langstring xml:lang="nl">ITEP Pulmonology 2</lom:langstring>
+</lom:title>
+<lom:catalogentry>
+<lom:catalog>URI</lom:catalog>
+<lom:entry>
+<lom:langstring xml:lang="x-none">http://coo.lumc.nl/?lessonID=69</lom:langstring>
+</lom:entry>
+</lom:catalogentry>
+<lom:language>nl</lom:language>
+<lom:description>
+<lom:langstring xml:lang="nl">Practice in writing an ITEP (therapeutic plan)  for a patient with an asthma exacerbation.</lom:langstring>
+</lom:description>
+<lom:aggregationlevel>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">2</lom:langstring>
+</lom:value>
+</lom:aggregationlevel>
+</lom:general>
+<lom:lifecycle xmlns:lom="http://lorenet.org">
+<lom:version>
+<lom:langstring xml:lang="x-none">2006</lom:langstring>
+</lom:version>
+<lom:status>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Final</lom:langstring>
+</lom:value>
+</lom:status>
+<lom:contribute>
+<lom:role>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Author</lom:langstring>
+</lom:value>
+</lom:role>
+<lom:centity>
+<lom:vcard>BEGIN:VCARD
+VERSION:2.1
+FN:Franson
+END:VCARD</lom:vcard>
+</lom:centity>
+</lom:contribute>
+<lom:contribute>
+<lom:role>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Author</lom:langstring>
+</lom:value>
+</lom:role>
+<lom:centity>
+<lom:vcard>BEGIN:VCARD
+VERSION:2.1
+FN:Dubois
+END:VCARD</lom:vcard>
+</lom:centity>
+</lom:contribute>
+<lom:contribute>
+<lom:role>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Author</lom:langstring>
+</lom:value>
+</lom:role>
+<lom:centity>
+<lom:vcard>BEGIN:VCARD
+VERSION:2.1
+FN:Meenhorst
+END:VCARD</lom:vcard>
+</lom:centity>
+</lom:contribute>
+<lom:contribute>
+<lom:role>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Publisher</lom:langstring>
+</lom:value>
+</lom:role>
+<lom:centity>
+<lom:vcard>BEGIN:VCARD
+VERSION:2.1
+ORG:LUMC
+END:VCARD</lom:vcard>
+</lom:centity>
+</lom:contribute>
+</lom:lifecycle>
+<lom:metametadata xmlns:lom="http://lorenet.org">
+<lom:contribute>
+<lom:role>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Creator</lom:langstring>
+</lom:value>
+</lom:role>
+<lom:centity>
+<lom:vcard>BEGIN:VCARD
+VERSION:2.1
+FN:E.A. Dubois
+EMAIL;INTERNET:E.A.Dubois@lumc.nl
+END:VCARD</lom:vcard>
+</lom:centity>
+<lom:date>
+<lom:datetime>2007-02-06T08:44:11Z</lom:datetime>
+</lom:date>
+</lom:contribute>
+<lom:metadatascheme>LOMLOREnetv1p0</lom:metadatascheme>
+</lom:metametadata>
+<lom:technical xmlns:lom="http://lorenet.org">
+<lom:format>text/html</lom:format>
+<lom:format>image/gif</lom:format>
+<lom:location>http://coo.lumc.nl/?lessonID=69</lom:location>
+</lom:technical>
+<lom:educational xmlns:lom="http://lorenet.org">
+<lom:interactivitytype>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Active</lom:langstring>
+</lom:value>
+</lom:interactivitytype>
+<lom:learningresourcetype>
+<lom:source>
+<lom:langstring xml:lang="x-none">TPPOVOv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="nl">evaluatie- en toetsmateriaal</lom:langstring>
+</lom:value>
+</lom:learningresourcetype>
+<lom:intendedenduserrole>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">Learner</lom:langstring>
+</lom:value>
+</lom:intendedenduserrole>
+<lom:typicalagerange>
+<lom:langstring xml:lang="x-none">18-80</lom:langstring>
+</lom:typicalagerange>
+<lom:typicallearningtime>01:00:00</lom:typicallearningtime>
+<lom:description>
+<lom:langstring xml:lang="nl">Self-study or small group session</lom:langstring>
+</lom:description>
+</lom:educational>
+<lom:rights xmlns:lom="http://lorenet.org">
+<lom:cost>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">no</lom:langstring>
+</lom:value>
+</lom:cost>
+<lom:copyrightandotherrestrictions>
+<lom:source>
+<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring xml:lang="x-none">no</lom:langstring>
+</lom:value>
+</lom:copyrightandotherrestrictions>
+</lom:rights>
+<lom:relation xmlns:lom="http://lorenet.org"/>
+<lom:annotation xmlns:lom="http://lorenet.org"/>
+<lom:classification xmlns:lom="http://lorenet.org">
+	<lom:purpose>
+		<lom:source>
+			<lom:langstring xml:lang="nl">LOMLOREnetv1p0</lom:langstring>
+		</lom:source>
+		<lom:value>
+			<lom:langstring xml:lang="nl">vakgebied</lom:langstring>
+		</lom:value>
+	</lom:purpose>
+	<lom:taxonpath>
+		<lom:source>
+		<lom:langstring xml:lang="nl">ISCED</lom:langstring>
+		</lom:source>
+		<lom:taxon>
+		<lom:id>7</lom:id>
+		<lom:entry>
+		<lom:langstring xml:lang="nl">Gezondheidszorg en welzijn</lom:langstring>
+		</lom:entry>
+		</lom:taxon>
+		<lom:taxon>
+		<lom:id>72</lom:id>
+		<lom:entry>
+		<lom:langstring xml:lang="nl">Gezondheidszorg</lom:langstring>
+		</lom:entry>
+		</lom:taxon>
+		<lom:taxon>
+		<lom:id>721</lom:id>
+		<lom:entry>
+		<lom:langstring xml:lang="nl">Geneeskunde</lom:langstring>
+		</lom:entry>
+		</lom:taxon>
+		</lom:taxonpath>
+	</lom:classification>
+	<lom:classification xmlns:lom="http://lorenet.org">
+		<lom:purpose>
+			<lom:source>
+				<lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+			</lom:source>
+			<lom:value>
+				<lom:langstring xml:lang="x-none">Discipline</lom:langstring>
+			</lom:value>
+		</lom:purpose>
+		<lom:taxonpath>
+			<lom:source>
+				<lom:langstring xml:lang="x-none">MESH</lom:langstring>
+			</lom:source>
+			<lom:taxon>
+				<lom:id>E</lom:id>
+				<lom:entry>
+				<lom:langstring xml:lang="en">Analytical, Diagnostic and Therapeutic Techniques and Equipment</lom:langstring>
+				</lom:entry>
+			</lom:taxon>
+			<lom:taxon>
+				<lom:id>E02</lom:id>
+				<lom:entry>
+				<lom:langstring xml:lang="en">Therapeutics</lom:langstring>
+				</lom:entry>
+			</lom:taxon>
+			<lom:taxon>
+				<lom:id>E02.319</lom:id>
+				<lom:entry>
+				<lom:langstring xml:lang="en">Drug Therapy</lom:langstring>
+				</lom:entry>
+			</lom:taxon>
+		</lom:taxonpath>
+	<lom:taxonpath>
+	<lom:source>
+	<lom:langstring xml:lang="x-none">MESH</lom:langstring>
+	</lom:source>
+	<lom:taxon>
+	<lom:id>G</lom:id>
+	<lom:entry>
+	<lom:langstring xml:lang="en">Biological Sciences</lom:langstring>
+	</lom:entry>
+	</lom:taxon>
+	<lom:taxon>
+	<lom:id>G01</lom:id>
+	<lom:entry>
+	<lom:langstring xml:lang="en">Biological Sciences</lom:langstring>
+	</lom:entry>
+	</lom:taxon>
+	<lom:taxon>
+	<lom:id>G01.703</lom:id>
+	<lom:entry>
+	<lom:langstring xml:lang="en">Pharmacology</lom:langstring>
+	</lom:entry>
+	</lom:taxon>
+	</lom:taxonpath>
+	</lom:classification>
+</oai_lom:lom>

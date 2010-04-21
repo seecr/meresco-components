@@ -1,0 +1,77 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+	    <identifier>
+		      <catalog>nl.uva.uba.triple-l</catalog>
+		      <entry>217134</entry>
+		    </identifier>
+	    <title>
+		      <string language="nl">Religie Nu (12) Kan theater zonder religie?</string>
+		    </title>
+	    <language>nl</language>
+	    <description>
+		      <string language="nl">Kunst zonder God is een verarming.
+	Religie - een wijder begrip &#8211; schenkt kleur en diepgang aan het leven in de kunst. In dramatisch opzicht geven goden de mogelijkheid aan de toneelschrijver de geest van de mens te projecteren. Grote schrijvers hebben &#226;&#128;&#147; ver voor het Christendom zijn intrede deed &#226;&#128;&#147; de mens in de kosmos geplaatst, van waaruit allerlei krachten hem bedreigen of te hulp schieten of hem uitdagen. Van Aischylos tot Sartre, van Shakespeare tot Beckett hebben goden het leven van dramatische figuren be&#195;&#175;nvloed. En zo zal het blijven. Het wachten is op Godot.</string>
+		    </description>
+	  </general>
+  <lifeCycle>
+	    <contribute>
+		      <role>
+			        <source>LOMv1.0</source>
+			        <value>speaker</value>
+			      </role>
+		      <entity>BEGIN:VCARD
+VERSION:2.1
+N:Vos;E.
+FN:E. Vos
+END:VCARD</entity>
+		      <date>
+			        <dateTime>2006-11-28T19:00</dateTime>
+			      </date>
+		    </contribute>
+	  </lifeCycle>
+  <metaMetadata>
+	    <metadataSchema>LORENET</metadataSchema>
+	  </metaMetadata>
+  <technical>
+	    <format>text/html</format>
+	    <location>http://www.iis-communities.nl/access/content/group/Religie/MAP%201/College%2012%20-%20Erik%20Vos%20-%2028-11-06</location>
+	  </technical>
+  <educational>
+	    <learningResourceType>
+		      <source>LOMv1.0</source>
+		      <value>other</value>
+		    </learningResourceType>
+	    <context>
+		      <source>LOMv1.0</source>
+		      <value>higher education</value>
+		    </context>
+	  </educational>
+  <rights>
+	    <cost>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </cost>
+	    <copyrightAndOtherRestrictions>
+		      <source>CCv2.5</source>
+		      <value>by-nc-sa</value>
+		    </copyrightAndOtherRestrictions>
+	  </rights>
+  <classification>
+	    <purpose>
+		      <source/>
+		      <value/>
+		    </purpose>
+	    <taxonPath>
+		      <source>
+			        <string language="x-none">NBC</string>
+			      </source>
+		      <taxon>
+			        <id>24</id>
+			        <entry>
+				          <string language="nl">Theaterwetenschap, muziekwetenschap</string>
+				          <string language="en">Dramaturgy, musicology</string>
+				        </entry>
+			      </taxon>
+		    </taxonPath>
+	  </classification>
+</lom>

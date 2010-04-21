@@ -1,0 +1,88 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+	<general>
+		<identifier>
+			<catalog>nl.uva.uba.triple-l</catalog>
+			<entry>217132</entry>
+		</identifier>
+		<title>
+			<string language="nl">Religie Nu (13) De Westermoskee in de Baarsjes</string>
+		</title>
+		<language>nl</language>
+		<description>
+			<string language="nl">Een vogelvlucht door de migratiegeschiedenis van de Turkse moslims in Nederland.H. Karacaer zijn gastcollege zal gaan over de verandering van de positie van de Turkse moslim in Nederland. Aan de hand van een historisch overzicht laat hij zien dat moslims in zijn algemeenheid er eigenlijk op achteruit zijn gegaan. De Turkse moslims hadden in de jaren 60 en 70 een veel beter contact met hun omgeving dan tegenwoordig. De Turken in Nederland leven nu veel gesoleerder. Ze zijn erg zelfvoorzienend - voor de nodige integratie mogelijk te veel</string>
+		</description>
+	</general>
+	<lifeCycle>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>speaker</value>
+			</role>
+			<entity>BEGIN:VCARD
+VERSION:2.1
+N:Karacaer;H.
+FN:H. Karacaer
+END:VCARD</entity>
+			<date>
+				<dateTime>2006-12-05T19:00</dateTime>
+			</date>
+		</contribute>
+	</lifeCycle>
+	<metaMetadata>
+		<metadataSchema>LORENET</metadataSchema>
+	</metaMetadata>
+	<technical>
+		<format>text/html</format>
+		<location>http://www.iis-communities.nl/access/content/group/Religie/MAP%201/Gastcollege%20-%20Haci%20Karacaer%20-%2005-12-06</location>
+	</technical>
+	<educational>
+		<learningResourceType>
+			<source>LOMv1.0</source>
+			<value>other</value>
+		</learningResourceType>
+		<context>
+			<source>LOMv1.0</source>
+			<value>higher education</value>
+		</context>
+	</educational>
+	<rights>
+		<cost>
+			<source>LOMv1.0</source>
+			<value>no</value>
+		</cost>
+		<copyrightAndOtherRestrictions>
+			<source>CCv2.5</source>
+			<value>by-nc-sa</value>
+		</copyrightAndOtherRestrictions>
+	</rights>
+	<classification>
+		<purpose>
+			<source/>
+			<value/>
+		</purpose>
+		<taxonPath>
+			<source>
+				<string language="x-none">NBC</string>
+			</source>
+			<taxon>
+				<id>02</id>
+				<entry>
+					<string language="nl">Wetenschap en cultuur in het algemeen</string>
+					<string language="en">Science and culture in general</string>
+				</entry>
+			</taxon>
+		</taxonPath>
+		<taxonPath>
+			<source>
+				<string language="x-none">NBC</string>
+			</source>
+			<taxon>
+				<id>71</id>
+				<entry>
+					<string language="nl">Sociologie</string>
+					<string language="en">Sociology</string>
+				</entry>
+			</taxon>
+		</taxonPath>
+	</classification>
+</lom>

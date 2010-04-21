@@ -1,0 +1,82 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+	    <identifier>
+		      <catalog>nl.uva.uba.triple-l</catalog>
+		      <entry>210219</entry>
+		    </identifier>
+	    <title>
+		      <string language="nl">Modules, genes and evolution: What has the study of developmental disorders taught us?</string>
+		      <string language="en">Modules, genes and evolution: What has the study of developmental disorders taught us?</string>
+		    </title>
+	    <language>en</language>
+	    <description>
+		      <string language="nl">Lezing in het kader van de lezingenserie van het Cognitive Science Center Amsterdam (CSCA). Each year the Cognitive Science Center Amsterdam organizes the CSCA Lecture Series. These CSCA lectures will be given by outstanding scholars from a variety of disciplines, including neurobiology, psychology, linguistics, computer science, and philosophy. The CSCA lectures series aims at communicating recent advances in Cognitive science to a broader audience interested in the structure and function of cognition, natural and artificial, and the relation of cognition to brain and machine.De Frijda lezing is een speciale lezing, voorafgaand aan het jaarlijks CSCA Symposium, gegeven door de houder van de Frijda leerstoel. Ieder jaar wordt een vooraanstaand vertegenwoordiger van cognitiewetenschap op de leerstoel benoemd, met als voornaamste taak het participeren in de internationale zomerschool van het CSCA en het houden van de Frijda lezing.
+
+http://www.cms.uva.nl/i2o/object.cfm/objectid=97FC1002-178C-49BC-B166F838E3C1A7A4/templateid=E2273188-721F-478A-A61D52230A10398A</string>
+		</description>
+		<description>
+	      <string language="en">If the atypical brain presented with a neat juxtaposition of parts intact and parts impaired, then developmental disorders might be a direct window on normal development, with clear-cut single and double dissociations. Such a view emanates from the model of adult neuropsychological patients whose brains were fully and normally developed until their brain insult.  The developing brain is very different.  It is neither localised nor specialised at birth, and many months and years are required for the progressive modularisation of the adult brain to occur.  Because development plays such a crucial role in normal and atypical development and early on brain regions are highly interconnected, a tiny impairment in the initial state of the brain of a child with a genetic disorder may affect several brain regions and have cascading effects over time on the phenotypic outcome.  This talk considers what we have learned from developmental disorders about modules, genes and evolution. The talk first looks at the Nativist claims found in the literature, and then re-evaluates these claims within a neuroconstructivist perspective. The final section considers what remains to be learned from developmental disorders.</string>
+	    </description>
+	 </general>
+  <lifeCycle>
+	    <contribute>
+		      <role>
+			        <source>LOMv1.0</source>
+			        <value>speaker</value>
+			      </role>
+		      <entity>BEGIN:VCARD
+VERSION:2.1
+N:Karmiloff-Smith;A. ;;prof.dr
+FN:prof.dr A. Karmiloff-Smith
+END:VCARD</entity>
+		      <date>
+			        <dateTime>2006-06-29T20:00</dateTime>
+			      </date>
+		    </contribute>
+	  </lifeCycle>
+  <metaMetadata>
+	    <metadataSchema>LORENET</metadataSchema>
+	  </metaMetadata>
+  <technical>
+	    <format>video/x-ms-wmv</format>
+	    <location>mms://haanstra-wm.ic.uva.nl/avc/csca/frijda_lecture_2006.wmv</location>
+	  </technical>
+  <educational>
+	    <learningResourceType>
+		      <source>LOMv1.0</source>
+		      <value>other</value>
+		    </learningResourceType>
+	    <context>
+		      <source>LOMv1.0</source>
+		      <value>higher education</value>
+		    </context>
+	  </educational>
+  <rights>
+	    <cost>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </cost>
+	    <copyrightAndOtherRestrictions>
+		      <source>CCv2.5</source>
+		      <value>by-nc-sa</value>
+		    </copyrightAndOtherRestrictions>
+	  </rights>
+  <classification>
+	    <purpose>
+		      <source/>
+		      <value/>
+		    </purpose>
+	    <taxonPath>
+		      <source>
+			        <string language="x-none">NBC</string>
+			      </source>
+		      <taxon>
+			        <id>77</id>
+			        <entry>
+				          <string language="nl">Psychologie</string>
+				          <string language="en">Psychology</string>
+				        </entry>
+			      </taxon>
+		    </taxonPath>
+	  </classification>
+</lom>

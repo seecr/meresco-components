@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<lom:lom xmlns:lom="http://dpc.uba.uva.nl/schema/lom/triplel" xsi:schemaLocation="http://dpc.uba.uva.nl/schema/lom/triplel http://dpc.uba.uva.nl/schema/lom/triplel/lom.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+    <general xmlns="">
+      <title xmlns="">
+        <langstring xmlns="">
+          <value xmlns="">Religie Nu (10) Kunst en Religie</value>
+          <language xmlns="">nl</language>
+        </langstring>
+      </title>
+      <catalogentry xmlns="">
+        <catalog xmlns="">nl.uva.uba.triple-l</catalog>
+        <entry xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">216938</value>
+            <language xmlns="">x-none</language>
+          </langstring>
+        </entry>
+      </catalogentry>
+      <grouplanguage xmlns="">nl</grouplanguage>
+      <description xmlns="">
+        <langstring xmlns="">
+          <value xmlns="">Religie- kunst- literatuur
+Wat maakt de relatie tussen religie en kunst zo gecompliceerd? Volgens sommigen bedreigt religie onvermijdelijk de vrijheid en authenticiteit van kunstenaars. Anderen halen juist verbindingslijnen naar voren. Volgens hen willen zowel de religie als de kunst, zij het ieder op zijn eigen manier, ontsnappen aan de terreur van wat normaal wordt gevonden. In dit college zullen ze als onberekenbare bondgenoten worden getypeerd: ze moeten elkaar vrijlaten en ze hebben elkaar nodig. Aan de orde komen onder andere: de kritiek op het beeld die veel religies kennen, met bijzondere aandacht voor het protestantisme; de noodzakelijke verbinding van ernst en spel, heiligheid en spot.</value>
+          <language xmlns="">nl</language>
+        </langstring>
+      </description>
+    </general>
+    <lifecycle xmlns="">
+      <contribute xmlns="">
+        <role xmlns="">
+          <source xmlns="">
+            <langstring xmlns="">
+              <value xmlns="">LOMv1.0</value>
+              <language xmlns="">x-none</language>
+            </langstring>
+          </source>
+          <value xmlns="">
+            <langstring xmlns="">
+              <value xmlns="">Speaker</value>
+              <language xmlns="">x-none</language>
+            </langstring>
+          </value>
+        </role>
+        <centity xmlns="">
+          <vcard xmlns="">
+BEGIN:VCARD
+VERSION:2.1
+N:Goud;J.F. ;;prof. dr
+FN:prof. dr J.F. Goud
+END:VCARD </vcard>
+        </centity>
+        <date xmlns="">
+			<!-- EG: FOUT: het origineel heeft geen 'T', dit wordt afgekeurd -->
+          <datetime xmlns="">2006-11-14T19:00</datetime>
+        </date>
+      </contribute>
+    </lifecycle>
+    <metametadata xmlns="">
+      <metadatascheme xmlns="">LORENET</metadatascheme>
+    </metametadata>
+    <technical xmlns="">
+      <format xmlns="">text/html</format>
+      <location xmlns="">
+        <value xmlns="">http://www.iis-communities.nl/access/content/group/Religie/MAP%201/College%2010%20-%20Johan%20Goud%20-%2014%20november%202006</value>
+        <type xmlns="">URI</type>
+      </location>
+    </technical>
+    <educational xmlns="">
+      <learningresourcetype xmlns="">
+        <source xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">TPPOVOv1.0</value>
+            <language xmlns="">nl</language>
+          </langstring>
+        </source>
+        <value xmlns="">
+          <langstring xmlns="">
+			  <!-- EG FOUT: informatiebron heeft geen equivalent in IEEE LOM -->
+            <value xmlns="">informatiebron</value>
+            <language xmlns="">nl</language>
+          </langstring>
+        </value>
+      </learningresourcetype>
+      <context xmlns="">
+        <source xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">TPPOVOv1.0</value>
+            <language xmlns="">nl</language>
+          </langstring>
+        </source>
+        <value xmlns="">
+          <langstring xmlns="">
+			  <!-- EG FOUT: WO is geen geldige waarde en heeft geen goede mapping-->
+            <value xmlns="">WO</value>
+            <language xmlns="">nl</language>
+          </langstring>
+        </value>
+      </context>
+    </educational>
+    <rights xmlns="">
+      <cost xmlns="">
+        <source xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">LOMv1.0</value>
+            <language xmlns="">x-none</language>
+          </langstring>
+        </source>
+        <value xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">nee</value>
+            <language xmlns="">nl</language>
+          </langstring>
+        </value>
+      </cost>
+      <copyrightandotherrestrictions xmlns="">
+        <source xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">CCv2.5</value>
+            <language xmlns="">x-none</language>
+          </langstring>
+        </source>
+        <value xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">http://creativecommons.org/licenses/by-nc-sa/2.5/nl/</value>
+            <language xmlns="">nl</language>
+          </langstring>
+        </value>
+      </copyrightandotherrestrictions>
+    </rights>
+    <classification xmlns="">
+      <purpose xmlns="">
+        <source xmlns="">
+          <langstring xmlns="">
+			  <!-- EG FOUT: lege source mag niet -->
+            <value xmlns="">LOMv1.0</value>
+            <language xmlns="">x-none</language>
+          </langstring>
+        </source>
+        <value xmlns="">
+          <langstring xmlns="">
+			  <!-- EG FOUT: lege pupose mag niet -->
+            <value xmlns="">discipline</value>
+            <language xmlns="">x-none</language>
+          </langstring>
+        </value>
+      </purpose>
+      <taxonpath xmlns="">
+        <source xmlns="">
+          <langstring xmlns="">
+            <value xmlns="">NBC</value>
+            <language xmlns="">x-none</language>
+          </langstring>
+        </source>
+        <taxon xmlns="">
+          <id xmlns="">20</id>
+          <entry xmlns="">
+            <langstring xmlns="">
+              <value xmlns="">Kunstwetenschappen</value>
+              <language xmlns="">nl</language>
+            </langstring>
+            <langstring xmlns="">
+              <value xmlns="">Art studies</value>
+              <language xmlns="">en</language>
+            </langstring>
+          </entry>
+        </taxon>
+      </taxonpath>
+    </classification>
+  </lom:lom>

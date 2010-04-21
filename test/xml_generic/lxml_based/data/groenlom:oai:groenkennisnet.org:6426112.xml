@@ -1,0 +1,173 @@
+<lom xmlns="http://www.imsglobal.org/xsd/imsmd_v1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/imsmd_v1p2 http://download.edustandaard.nl/xsd/czp_povobve_v1p2_pre-final.xsd">
+<general>
+<title>
+<langstring xml:lang="nl">Cavia informatie</langstring>
+</title>
+<catalogentry>
+<catalog>URI</catalog>
+<entry>
+<langstring xml:lang="x-none">oai:library.wur.nl:gkn/1800334</langstring>
+</entry>
+</catalogentry>
+<language>nl</language>
+<description>
+<langstring xml:lang="nl">Allerlei informatie over de cavia (trefwoorden: knaagdier,  eigenschappen, herkomst).</langstring>
+</description>
+<keyword>
+<langstring xml:lang="nl">cavia's</langstring>
+</keyword>
+<keyword>
+<langstring xml:lang="nl">cavia</langstring>
+</keyword>
+<keyword>
+<langstring xml:lang="nl">gezelschapsdieren</langstring>
+</keyword>
+<aggregationlevel>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_aggregationlevel_czp_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">2</langstring>
+</value>
+</aggregationlevel>
+</general>
+<lifecycle>
+<version>
+<langstring xml:lang="x-none">unknown</langstring>
+</version>
+<contribute>
+<role>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_lifecycle_contribute_role_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none"/>
+</value>
+</role>
+</contribute>
+</lifecycle>
+<metametadata>
+<metadatascheme>LOMv1.0</metadatascheme>
+<metadatascheme>czp_povobve_1p2</metadatascheme>
+</metametadata>
+<technical>
+<format>text/html</format>
+<location>http://www.famlodder.nl/caviainfo.htm</location>
+</technical>
+<educational>
+<interactivitytype>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_interactiontype_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">expositive</langstring>
+</value>
+</interactivitytype>
+<learningresourcetype>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_learningresourcetype_czp_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">informatiebron</langstring>
+</value>
+</learningresourcetype>
+<interactivitylevel>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_interactivitylevel_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">medium</langstring>
+</value>
+</interactivitylevel>
+<intendedenduserrole>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_intendedenduserrole_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">learner</langstring>
+</value>
+</intendedenduserrole>
+<context>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_context_czp_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">BVE</langstring>
+</value>
+</context>
+<typicalagerange>
+<langstring xml:lang="x-none">14-18</langstring>
+</typicalagerange>
+<typicalagerange>
+<langstring xml:lang="x-none">Volwassen</langstring>
+</typicalagerange>
+</educational>
+<rights>
+<cost>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_cost_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">no</langstring>
+</value>
+</cost>
+<copyrightandotherrestrictions>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_copyrightsandotherrestrictions_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">no</langstring>
+</value>
+</copyrightandotherrestrictions>
+</rights>
+<relation>
+<kind>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_relation_kind_lomv1p0_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">isreferencedby</langstring>
+</value>
+</kind>
+<resource>
+<catalogentry>
+<catalog>URI</catalog>
+<entry>
+<langstring xml:lang="x-none">http://library.wur.nl/WebQuery/gkn?wq_isn=1800334</langstring>
+</entry>
+</catalogentry>
+</resource>
+</relation>
+<classification>
+<purpose>
+<source>
+<langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_classification_purpose_czp_20060628.xml</langstring>
+</source>
+<value>
+<langstring xml:lang="x-none">discipline</langstring>
+</value>
+</purpose>
+<taxonpath>
+<source>
+<langstring xml:lang="x-none">http://library.wur.nl/vdex/uitvoercodes.xml</langstring>
+</source>
+<taxon>
+<id>GKOK</id>
+</taxon>
+<taxon>
+<id>URLKE</id>
+</taxon>
+<taxon>
+<id>GK05</id>
+</taxon>
+</taxonpath>
+<taxonpath>
+<source>
+<langstring xml:lang="x-none">http://library.wur.nl/WebQuery/rubriek/vdex?rubriek=*&amp;wq_max=2000</langstring>
+</source>
+<taxon>
+<id>608-M</id>
+</taxon>
+</taxonpath>
+</classification>
+</lom>

@@ -1,0 +1,104 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+	    <identifier>
+		      <catalog>nl.uva.uba.triple-l</catalog>
+		      <entry>209753</entry>
+		    </identifier>
+	    <title>
+		      <string language="nl">Wat is entropie?</string>
+		      <string language="en">What is entropy?</string>
+		    </title>
+	    <language>en</language>
+	    <description>
+		      <string language="nl">Een introductie op het concept entropie. Prof. Karel van Dam bespreekt allereerst verschillende vormen van energie en de wetten op de thermodynamica. Vervolgens komen voorbeelden uit fysica, chemie en biologie aan bod. Tenslotte legt hij een nauw verband tussen de concepten van entropie en evolutie.</string>
+		</description>
+		<description>
+		      <string language="en">An introduction to the concept of entropy. First, different forms of energy and the laws of thermodynamics are discussed. Then, examples are examined from the fields of physics, chemistry and biology. Finally, entropy is shown to be closely connected to the concept of evolution</string>
+		  </description>
+	  </general>
+  <lifeCycle>
+	    <contribute>
+		      <role>
+			        <source>LOMv1.0</source>
+			        <value>speaker</value>
+			      </role>
+		      <entity>BEGIN:VCARD
+VERSION:2.1
+N:Dam;K. van
+FN:K. van Dam
+END:VCARD</entity>
+		      <date>
+			        <dateTime>2005-05-01T23:59</dateTime>
+			      </date>
+		    </contribute>
+	  </lifeCycle>
+  <metaMetadata>
+	    <metadataSchema>LORENET</metadataSchema>
+	  </metaMetadata>
+  <technical>
+	    <format>video/x-ms-wmv</format>
+	    <location>http://streamingmedia.uva.nl/playlist/windowsmedia/64E5597E-0D6B-B90F-73AC-D264D704945C_/IIS_Karel_van_Dam_Entropie_normalized.asx</location>
+	  </technical>
+  <educational>
+	    <learningResourceType>
+		      <source>LOMv1.0</source>
+		      <value>other</value>
+		    </learningResourceType>
+	    <context>
+		      <source>LOMv1.0</source>
+		      <value>higher education</value>
+		    </context>
+	  </educational>
+  <rights>
+	    <cost>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </cost>
+	    <copyrightAndOtherRestrictions>
+		      <source>CCv2.5</source>
+		      <value>by-nc-sa</value>
+		    </copyrightAndOtherRestrictions>
+	  </rights>
+  <classification>
+	    <purpose>
+		      <source/>
+		      <value/>
+		    </purpose>
+	    <taxonPath>
+		      <source>
+			        <string language="x-none">NBC</string>
+			      </source>
+		      <taxon>
+			        <id>33</id>
+			        <entry>
+				          <string language="nl">Natuurkunde</string>
+				          <string language="en">Physics</string>
+				        </entry>
+			      </taxon>
+		    </taxonPath>
+	    <taxonPath>
+		      <source>
+			        <string language="x-none">NBC</string>
+			      </source>
+		      <taxon>
+			        <id>42</id>
+			        <entry>
+				          <string language="nl">Biologie</string>
+				          <string language="en">Biology</string>
+				        </entry>
+			      </taxon>
+		    </taxonPath>
+	    <taxonPath>
+		      <source>
+			        <string language="x-none">NBC</string>
+			      </source>
+		      <taxon>
+			        <id>35</id>
+			        <entry>
+				          <string language="nl">Scheikunde</string>
+				          <string language="en">Chemistry</string>
+				        </entry>
+			      </taxon>
+		    </taxonPath>
+	  </classification>
+</lom>

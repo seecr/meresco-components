@@ -1,0 +1,87 @@
+<imsmd:lom xmlns:imsmd="http://www.imsglobal.org/xsd/imsmd_v1p2">
+      <imsmd:general>
+        <imsmd:title>
+          <imsmd:langstring xml:lang="nl">VLSI System Design - VHDL Synthesis Survey</imsmd:langstring>
+		  <dc:aap xmlns:aap="http://aap.noot.nl">
+		  	<dc:mies>nee</dc:mies>
+		</dc:aap>
+        </imsmd:title>
+<imsmd:catalogentry>
+<imsmd:catalog>arno</imsmd:catalog>
+<imsmd:entry>
+<imsmd:langstring xml:lang="none">ut-lo:201</imsmd:langstring>
+</imsmd:entry>
+</imsmd:catalogentry>
+        <imsmd:language>en</imsmd:language>
+      </imsmd:general>
+      <imsmd:lifecycle>
+        <imsmd:contribute>
+          <imsmd:role>
+            <imsmd:source>
+              <imsmd:langstring xml:lang="nl">LOMv1.0</imsmd:langstring>
+            </imsmd:source>
+            <imsmd:value>
+              <imsmd:langstring xml:lang="x-none">Author</imsmd:langstring>
+            </imsmd:value>
+          </imsmd:role>
+          <imsmd:centity>
+            <imsmd:vcard>BEGIN:vCard
+FN:Sabih Gerez
+END:vCard</imsmd:vcard>
+          </imsmd:centity>
+        </imsmd:contribute>
+      </imsmd:lifecycle>
+      <imsmd:metametadata>
+        <imsmd:metadatascheme>LOMLOREnetv1p0</imsmd:metadatascheme>
+      </imsmd:metametadata>
+      <imsmd:technical>
+<imsmd:location>/cgi-bin/arno/show.cgi?fid=577</imsmd:location>
+        <imsmd:format>application/pdf</imsmd:format>
+      </imsmd:technical>
+      <imsmd:educational>
+        <imsmd:learningresourcetype>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">TPPOVOv1.0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">informatiebron</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:learningresourcetype>
+      </imsmd:educational>
+      <imsmd:rights>
+        <imsmd:cost>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">LOMv1.0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">no</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:cost>
+        <imsmd:copyrightandotherrestrictions>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">LOMv1.0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">no</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:copyrightandotherrestrictions>
+      </imsmd:rights>
+      <imsmd:classification>
+        <imsmd:purpose>
+          <imsmd:source>
+            <imsmd:langstring xml:lang="nl">LOMLOREnetv1p0</imsmd:langstring>
+          </imsmd:source>
+          <imsmd:value>
+            <imsmd:langstring xml:lang="x-none">vakgebied</imsmd:langstring>
+          </imsmd:value>
+        </imsmd:purpose>
+        <imsmd:taxonpath>
+          <imsmd:taxon>
+            <imsmd:id>53</imsmd:id>
+            <imsmd:entry>
+              <imsmd:langstring xml:lang="nl">53 Elektrotechniek</imsmd:langstring>
+            </imsmd:entry>
+          </imsmd:taxon>
+        </imsmd:taxonpath>
+      </imsmd:classification>
+    </imsmd:lom>

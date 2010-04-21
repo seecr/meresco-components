@@ -1,0 +1,6 @@
+extend('ims-generic')
+
+inputNamespace='http://dpc.uba.uva.nl/schema/lom/triplel'
+
+# Triple L uses a prefix only for the 'lom' tag.  All other tags have a default namespace
+rules = rewriteRules('imsmd:', '', rules)

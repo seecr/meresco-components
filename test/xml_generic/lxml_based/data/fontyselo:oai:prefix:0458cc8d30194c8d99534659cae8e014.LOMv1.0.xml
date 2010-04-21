@@ -1,0 +1,71 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+	<general>
+		<identifier>
+			<catalog>SURE</catalog>
+			<entry>oai:nl.SURFnet.sure:568</entry>
+		</identifier>
+		<title>
+			<string language="en">Fysica echografie 8</string>
+		</title>
+		<language>nl</language>
+		<description>
+			<string language="nl">Beeld processing</string>
+		</description>
+	</general>
+	<lifeCycle>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>author</value>
+			</role>
+			<entity>BEGIN:VCARD
+FN:onbekend
+ORG:Fonys/PABO
+END:VCARD</entity>
+			<date>
+				<dateTime>2005-12-14T00:00</dateTime>
+			</date>		
+		</contribute>
+	</lifeCycle>
+	<metaMetadata>
+		<metadataSchema>IEEE LOM 1.0</metadataSchema>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>creator</value>
+			</role>
+			<entity>BEGIN:VCARD
+FN:Aleks Veldhoen
+EMAIL:a.veldhoen@fontys.nl
+END:VCARD</entity>
+		<date>
+			<dateTime>2005-12-14T09:05</dateTime>
+		</date>
+		</contribute>
+	</metaMetadata>
+	<technical>
+		<format>application/vndms-powerpoint</format>
+		<location>http://elo.fontys.nl/Services/CMS.asmx/ExportPackage?packageId=3748173&amp;exportType=Preserved</location>
+	</technical>
+	<educational>
+		<learningResourceType>
+			<source>LOMv1.0</source>
+			<value>other</value>
+		</learningResourceType>
+	</educational>
+	<rights>
+		<cost>
+			<source>LOMv1.0</source>
+			<value>yes</value>
+		</cost>
+		<copyrightAndOtherRestrictions>
+			<source>LOMv1.0</source>
+			<value>yes</value>
+		</copyrightAndOtherRestrictions>
+        <description>
+            <string language="en">Copyright (c) 2007 Fontys University of Applied Science. All rights reserved</string>
+            <string language="nl">Copyright (c) 2007 Fontys Hogescholen. Alle rechten voorbehouden</string>
+        </description>
+	</rights>
+	<classification/>
+</lom>

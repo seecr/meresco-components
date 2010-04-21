@@ -1,0 +1,85 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+	<general>
+		<identifier>
+			<catalog>URI</catalog>
+			<entry>http://coo.lumc.nl/?lessonID=24</entry>
+		</identifier>
+		<title>
+			<string language="nl">HTML Acute buik</string>
+		</title>
+		<language>nl</language>
+		<description>
+			<string language="nl">Algemene zaken omtrent het verschijnsel acute buik.</string>
+		</description>
+    <aggregationLevel>
+      <source>LOMv1.0</source>
+      <value>2</value>
+    </aggregationLevel>
+	</general>
+	<lifeCycle>
+    <status>
+      <source>LOMv1.0</source>
+			<value>final</value>
+    </status>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>author</value>
+			</role>
+			<entity>BEGIN:VCARD
+VERSION:2.1
+FN:LUMC
+END:VCARD</entity>
+		</contribute>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>publisher</value>
+			</role>
+			<entity>BEGIN:VCARD
+VERSION:2.1
+ORG:LUMC
+END:VCARD</entity>
+		</contribute>
+	</lifeCycle>
+	<metaMetadata>
+		<metadataSchema>LORENET</metadataSchema>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>creator</value>
+			</role>
+			<entity>BEGIN:VCARD
+VERSION:2.1
+FN:P.M. Bloemendaal
+EMAIL;INTERNET:P.M.Bloemendaal@lumc.nl
+END:VCARD</entity>
+			<date>
+				<dateTime>2006-02-09T11:42</dateTime>
+			</date>
+		</contribute>
+	</metaMetadata>
+	<technical>
+		<format>text/html</format>
+		<format>image/jpeg</format>
+		<location>http://coo.lumc.nl/?lessonID=24</location>
+	</technical>
+	<educational>
+		<learningResourceType>
+			<source>LOMv1.0</source>
+			<value>other</value>
+		</learningResourceType>
+	</educational>
+	<rights>
+		<cost>
+			<source>LOMv1.0</source>
+			<value>no</value>
+		</cost>
+		<copyrightAndOtherRestrictions>
+			<source>LOMv1.0</source>
+			<value>no</value>
+		</copyrightAndOtherRestrictions>
+	</rights>
+	<classification/>
+	<classification/>
+</lom>

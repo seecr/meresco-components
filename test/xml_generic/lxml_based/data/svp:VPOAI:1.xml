@@ -1,0 +1,51 @@
+<lom:lom xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:lom="http://www.imsglobal.org/xsd/imsmd_v1p2" xsi:schemaLocation="http://www.imsglobal.org/xsd/imsmd_v1p2 http://www.imsglobal.org/xsd/imsmd_v1p2p4.xsd">
+<lom:general>
+<lom:identifier>oai:nl.SURFnet.SVP:1</lom:identifier>
+<lom:title>
+<lom:langstring>bijeenkomst mediatheken 10 maart</lom:langstring>
+</lom:title>
+<lom:catalogentry>
+<lom:catalog>SVP</lom:catalog>
+<lom:entry>
+<lom:langstring>oai:nl.SURFnet.SVP:1</lom:langstring>
+</lom:entry>
+</lom:catalogentry>
+<lom:language>NL</lom:language>
+<lom:description>
+<lom:langstring>De personeelsbijeenkomst voor alle medewerkers van de mediatheken stond in het teken van "De medewerker als partner in learning communities". Het doel was om de aanstaande veranderingen in de mediatheken in een strategisch perspectief te zetten.</lom:langstring>
+</lom:description>
+</lom:general>
+<lom:lifecycle>
+<lom:contribute>
+<lom:role>
+<lom:source>
+<lom:langstring>LOMv1.0</lom:langstring>
+</lom:source>
+<lom:value>
+<lom:langstring>author</lom:langstring>
+</lom:value>
+</lom:role>
+<lom:centity>
+<lom:vcard>BEGIN:vcard&#13;FN:g.bierens&#13;END:vcard</lom:vcard>
+</lom:centity>
+</lom:contribute>
+</lom:lifecycle>
+<lom:metametadata>
+<lom:metadatascheme>LOMv1.0</lom:metadatascheme>
+<lom:metadatascheme>czp_povobve_v1p2</lom:metadatascheme>
+</lom:metametadata>
+<lom:technical>
+<lom:format>text/html</lom:format>
+<lom:location>https://videotheek.surfnet.nl/asset-view/1/</lom:location>
+</lom:technical>
+<lom:rights>
+<lom:copyrightandotherrestrictions>
+	<lom:source>
+		<lom:langstring>LOMv1.0</lom:langstring>
+	</lom:source>
+	<lom:value>
+		<lom:langstring>no</lom:langstring>
+	</lom:value>
+</lom:copyrightandotherrestrictions>
+</lom:rights>
+</lom:lom>

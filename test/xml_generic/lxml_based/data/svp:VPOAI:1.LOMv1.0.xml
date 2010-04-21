@@ -1,0 +1,39 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+	    <identifier>
+		      <catalog>SVP</catalog>
+		      <entry>oai:nl.SURFnet.SVP:1</entry>
+		    </identifier>
+	<title>
+		<string language="x-none">bijeenkomst mediatheken 10 maart</string>
+	</title>
+	    <language>NL</language>
+		<description>
+			<string language="x-none">De personeelsbijeenkomst voor alle medewerkers van de mediatheken stond in het teken van "De medewerker als partner in learning communities". Het doel was om de aanstaande veranderingen in de mediatheken in een strategisch perspectief te zetten.</string>
+		</description>
+	  </general>
+  <lifeCycle>
+	    <contribute>
+		      <role>
+			        <source>LOMv1.0</source>
+			        <value>author</value>
+			      </role>
+		      <entity>BEGIN:VCARD
+FN:g.bierens
+END:VCARD</entity>
+		    </contribute>
+	  </lifeCycle>
+	  <metaMetadata>
+		  <metadataSchema>LOMv1.0</metadataSchema>
+	  </metaMetadata>
+	  <technical>
+	    <format>text/html</format>
+	    <location>https://videotheek.surfnet.nl/asset-view/1/</location>
+	  </technical>
+  <rights>
+	    <copyrightAndOtherRestrictions>
+		      <source>LOMv1.0</source>
+		      <value>no</value>
+		    </copyrightAndOtherRestrictions>
+	  </rights>
+</lom>

@@ -1,0 +1,108 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+	<general>
+			<identifier>
+					<catalog>URI</catalog>
+					<entry>http://coo.lumc.nl/?lessonID=69</entry>
+			</identifier>
+			<title>
+					<string language="nl">ITEP Pulmonology 2</string>
+			</title>
+			<language>nl</language>
+			<description>
+					<string language="nl">Practice in writing an ITEP (therapeutic plan)  for a patient with an asthma exacerbation.</string>
+				</description>
+    <aggregationLevel>
+      <source>LOMv1.0</source>
+      <value>2</value>
+    </aggregationLevel>
+		</general>
+	<lifeCycle>
+		<version>
+			<string language="x-none">2006</string>
+		</version>
+		<status>
+			<source>LOMv1.0</source>
+			<value>final</value>
+		</status>
+		<contribute>
+					<role>
+							<source>LOMv1.0</source>
+							<value>author</value>
+						</role>
+					<entity>BEGIN:VCARD
+VERSION:2.1
+FN:Franson
+END:VCARD</entity>
+				</contribute>
+			<contribute>
+					<role>
+							<source>LOMv1.0</source>
+							<value>author</value>
+						</role>
+					<entity>BEGIN:VCARD
+VERSION:2.1
+FN:Dubois
+END:VCARD</entity>
+				</contribute>
+			<contribute>
+					<role>
+							<source>LOMv1.0</source>
+							<value>author</value>
+						</role>
+					<entity>BEGIN:VCARD
+VERSION:2.1
+FN:Meenhorst
+END:VCARD</entity>
+				</contribute>
+			<contribute>
+					<role>
+							<source>LOMv1.0</source>
+							<value>publisher</value>
+						</role>
+					<entity>BEGIN:VCARD
+VERSION:2.1
+ORG:LUMC
+END:VCARD</entity>
+				</contribute>
+		</lifeCycle>
+	<metaMetadata>
+			<metadataSchema>LORENET</metadataSchema>
+			<contribute>
+					<role>
+							<source>LOMv1.0</source>
+							<value>creator</value>
+						</role>
+					<entity>BEGIN:VCARD
+VERSION:2.1
+FN:E.A. Dubois
+EMAIL;INTERNET:E.A.Dubois@lumc.nl
+END:VCARD</entity>
+					<date>
+							<dateTime>2007-02-06T08:44</dateTime>
+						</date>
+				</contribute>
+		</metaMetadata>
+	<technical>
+			<format>text/html</format>
+			<format>image/gif</format>
+			<location>http://coo.lumc.nl/?lessonID=69</location>
+		</technical>
+	<educational>
+			<learningResourceType>
+					<source>LOMv1.0</source>
+					<value>exam</value>
+				</learningResourceType>
+		</educational>
+	<rights>
+			<cost>
+					<source>LOMv1.0</source>
+					<value>no</value>
+				</cost>
+			<copyrightAndOtherRestrictions>
+					<source>LOMv1.0</source>
+					<value>no</value>
+				</copyrightAndOtherRestrictions>
+		</rights>
+	<classification/>
+	<classification/>
+</lom>

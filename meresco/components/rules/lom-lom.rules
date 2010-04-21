@@ -1,0 +1,110 @@
+extend('utils')
+
+inputNamespace = defaultNameSpace = 'http://ltsc.ieee.org/xsd/LOM'
+
+rootTagName='lom'
+
+# namespaces for use in XPath expressions in rules
+sourceNsMap = {
+    'lom': inputNamespace
+}
+
+newNsMap = {
+    'lom': inputNamespace
+}
+
+def two(xpath, *args):
+    return (xpath, xpath) + args
+
+rules = [
+two('lom:general/lom:identifier/lom:catalog', ('.',), '%s'),
+two('lom:general/lom:identifier/lom:entry', ('.',), '%s'),
+two('lom:general/lom:title', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:general/lom:title', ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>'),
+two('lom:general/lom:language', ('.',), '%s'),
+two('lom:general/lom:description', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:general/lom:description', ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>'),
+two('lom:general/lom:keyword', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:general/lom:aggregationLevel/lom:source', ('.',), '%s',),
+two('lom:general/lom:aggregationLevel/lom:value', ('.',), '%s',),
+
+two('lom:lifeCycle/lom:version', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:lifeCycle/lom:version', ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+two('lom:lifeCycle/lom:status/lom:source', ('.',), '%s',),
+two('lom:lifeCycle/lom:status/lom:value', ('.',), '%s',),
+
+two('lom:lifeCycle/lom:contribute/lom:role/lom:source', ('.',), '%s',),
+two('lom:lifeCycle/lom:contribute/lom:role/lom:value', ('.',), '%s',),
+
+two('lom:lifeCycle/lom:contribute/lom:entity', ('.',), '%s', [normalizeVcardRules]),
+two('lom:lifeCycle/lom:contribute/lom:date', ('lom:dateTime',), '<lom:dateTime>%s</lom:dateTime>', [normalizeDateRules]),
+
+two('lom:metaMetadata/lom:metadataSchema', ('.',), '%s'),
+two('lom:metaMetadata/lom:contribute/lom:role/lom:source', ('.',), '%s',),
+two('lom:metaMetadata/lom:contribute/lom:role/lom:value', ('.',), '%s'),
+two('lom:metaMetadata/lom:contribute/lom:entity', ('.',), '%s', [normalizeVcardRules]),
+two('lom:metaMetadata/lom:contribute/lom:date', ('lom:dateTime',), '<lom:dateTime>%s</lom:dateTime>', [normalizeDateRules]),
+
+two('lom:technical/lom:format', ('.',), '%s',  [
+    [('^$', 'application/octet-stream', (str,))]
+]),
+two('lom:technical/lom:location', ('.',), '%s'),
+
+two('lom:educational/lom:learningResourceType/lom:source', ('.',), '%s'),
+two('lom:educational/lom:learningResourceType/lom:value', ('.',), '%s'),
+two('lom:educational/lom:context/lom:source', ('.',), '%s'),
+two('lom:educational/lom:context/lom:value', ('.',), '%s'),
+
+two('lom:rights/lom:cost/lom:source', ('.',), '%s'),
+two('lom:rights/lom:cost/lom:value', ('.',), '%s'),
+
+two('lom:rights/lom:copyrightAndOtherRestrictions/lom:source', ('.',), '%s'),
+two('lom:rights/lom:copyrightAndOtherRestrictions/lom:value', ('.',), '%s',
+        [[('.*/(yes|no|by|by-nd|by-nc-nd|by-nc|by-nc-sa|by-sa)/.*', '%s')]]),
+two('lom:rights/lom:description', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+
+two('lom:annotation/lom:entity', ('.',), '%s', [normalizeVcardRules]),
+two('lom:annotation/lom:date', ('lom:dateTime',), '<lom:dateTime>%s</lom:dateTime>', [normalizeDateRules]),
+two('lom:annotation/lom:description', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:annotation/lom:description', ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+('lom:classification/lom:purpose/lom:source', 'lom:classification[lom:taxonPath/lom:source/lom:string="NBC"]/lom:purpose/lom:source', 	('.',), '%s'),
+('lom:classification/lom:purpose/lom:value', 'lom:classification[lom:taxonPath/lom:source/lom:string="NBC"]/lom:purpose/lom:value', 	('.',), '%s'),
+
+('lom:classification/lom:taxonPath/lom:source',
+    'lom:classification/lom:taxonPath[lom:source/lom:string="NBC"]/lom:source',
+    ('lom:langstring/lom:language', 'lom:langstring/lom:value'),
+    '<lom:string language="%s">%s</lom:string>'),
+
+('lom:classification/lom:taxonPath/lom:taxon/lom:id',
+    'lom:classification/lom:taxonPath[lom:source/lom:string="NBC"]/lom:taxon/lom:id',
+    ('.',), '%s', [
+        [('(?:NBC)?(\d+)', '%s', (int, '%02d',))]
+    ]),
+    
+('lom:classification/lom:taxonPath/lom:taxon/lom:entry',
+    'lom:classification/lom:taxonPath[lom:source/lom:string="NBC"]/lom:taxon/lom:entry',
+    ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>', [
+        [('\s*\d+\s*(\w+)', '%s', (str,))],
+        [('\s*\d+\s*(\w+)', '%s', (str,))]
+    ]),
+    
+('lom:classification/lom:taxonPath/lom:taxon/lom:entry',
+    'lom:classification/lom:taxonPath[lom:source/lom:string="NBC"]/lom:taxon/lom:entry',
+    ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>', [
+        [('\s*\d+\s*(\w+)', '%s', (str,))]
+    ]),
+
+two('lom:classification/lom:description', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:classification/lom:description', ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+two('lom:classification/lom:keyword', ('lom:string/@language', 'lom:string'), '<lom:string language="%s">%s</lom:string>'),
+two('lom:classification/lom:keyword', ('lom:string[not(@language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+]
+
+# delete imported stuff
+del normalizeDateRules
+del normalizeVcardRules
+del two

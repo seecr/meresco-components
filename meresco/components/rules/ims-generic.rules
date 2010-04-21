@@ -1,0 +1,232 @@
+extend('utils')
+
+inputNamespace = 'http://www.imsglobal.org/xsd/imsmd_v1p2'
+defaultNameSpace = 'http://ltsc.ieee.org/xsd/LOM'
+
+rootTagName='lom'
+
+# namespaces for use in XPath expressions in rules
+sourceNsMap = {
+'imsmd': inputNamespace
+}
+
+newNsMap = {
+ 'lom':'http://ltsc.ieee.org/xsd/LOM'
+}
+
+rules = [
+( 'lom:general/lom:identifier/lom:catalog',
+  'imsmd:general/imsmd:catalogentry/imsmd:catalog', ('.',), '%s'),
+
+( 'lom:general/lom:identifier/lom:entry',
+  'imsmd:general/imsmd:catalogentry/imsmd:entry', ('imsmd:langstring',), '%s'),
+
+( 'lom:general/lom:identifier/lom:entry',
+  'imsmd:general/imsmd:catalogentry/imsmd:entry', ('imsmd:langstring/imsmd:value',), '%s'),
+
+( 'lom:general/lom:title',
+  'imsmd:general/imsmd:title', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<lom:string language="%s">%s</lom:string>'),
+
+( 'lom:general/lom:title',
+  'imsmd:general/imsmd:title', ('imsmd:langstring[not(@xml:lang) and not(imsmd:language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+( 'lom:general/lom:title',
+  'imsmd:general/imsmd:title', ('imsmd:langstring/imsmd:language', 'imsmd:langstring/imsmd:value'), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:general/lom:language', 'imsmd:general/imsmd:grouplanguage', ('.',), '%s'),
+('lom:general/lom:language', 'imsmd:general/imsmd:language', ('.',), '%s'),
+
+('lom:general/lom:description',
+ 'imsmd:general/imsmd:description', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:general/lom:description',
+ 'imsmd:general/imsmd:description', ('imsmd:langstring[not(@xml:lang) and not(imsmd:language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+('lom:general/lom:description',
+ 'imsmd:general/imsmd:description', ('imsmd:langstring/imsmd:language', 'imsmd:langstring/imsmd:value'), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:general/lom:keyword',
+ 'imsmd:general/imsmd:keyword', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:general/lom:keyword',
+ 'imsmd:general/imsmd:keyword', ('imsmd:langstring[not(@xml:lang) and not(imsmd:language)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+('lom:general/lom:keyword',
+ 'imsmd:general/imsmd:keyword', ('imsmd:langstring/imsmd:language', 'imsmd:langstring/imsmd:value'), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:general/lom:aggregationLevel/lom:source',
+ 'imsmd:general/imsmd:aggregationlevel/imsmd:source', ('imsmd:langstring',), '%s'),
+
+('lom:general/lom:aggregationLevel/lom:value',
+ 'imsmd:general/imsmd:aggregationlevel/imsmd:value', ('imsmd:langstring',), '%s', [
+    [('(.*)', '%s', (str.lower,))]
+  ]),
+
+('lom:lifeCycle/lom:version',
+ 'imsmd:lifecycle/imsmd:version', ('imsmd:langstring/@xml:lang', 'imsmd:langstring',), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:lifeCycle/lom:version', 'imsmd:lifecycle/imsmd:version', ('imsmd:langstring[not(@xml:lang)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+('lom:lifeCycle/lom:status/lom:source',
+ 'imsmd:lifecycle/imsmd:status/imsmd:source', ('imsmd:langstring',), '%s'),
+
+('lom:lifeCycle/lom:status/lom:value',
+ 'imsmd:lifecycle/imsmd:status/imsmd:value', ('imsmd:langstring',), '%s', [
+    [('(.*)', '%s', (str.lower,))]
+ ]),
+
+('lom:lifeCycle/lom:contribute/lom:role/lom:source',
+ 'imsmd:lifecycle/imsmd:contribute/imsmd:role/imsmd:source', ('imsmd:langstring',), '%s',),
+
+('lom:lifeCycle/lom:contribute/lom:role/lom:source',
+ 'imsmd:lifecycle/imsmd:contribute/imsmd:role/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s',),
+
+('lom:lifeCycle/lom:contribute/lom:role/lom:value',
+ 'imsmd:lifecycle/imsmd:contribute/imsmd:role/imsmd:value', ('imsmd:langstring',), '%s', [
+    [('(.*)', '%s', (str.lower,))]
+ ]),
+
+('lom:lifeCycle/lom:contribute/lom:role/lom:value',
+ 'imsmd:lifecycle/imsmd:contribute/imsmd:role/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s', [
+   [('(.*)', '%s', (str.lower,))]
+ ]),
+
+('lom:lifeCycle/lom:contribute/lom:entity',
+ 'imsmd:lifecycle/imsmd:contribute/imsmd:centity', ('imsmd:vcard',), '%s', [normalizeVcardRules]),
+
+('lom:lifeCycle/lom:contribute/lom:date/lom:dateTime',
+ 'imsmd:lifecycle/imsmd:contribute/imsmd:date/imsmd:datetime', ('.',), '%s', [normalizeDateRules]),
+
+('lom:metaMetadata/lom:metadataSchema', 'imsmd:metametadata[1]/imsmd:metadatascheme[1]', ('.',), '%s'),
+('lom:metaMetadata/lom:contribute/lom:role/lom:source',
+ 'imsmd:metametadata/imsmd:contribute/imsmd:role/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s',),
+
+('lom:metaMetadata/lom:contribute/lom:role/lom:source',
+ 'imsmd:metametadata/imsmd:contribute/imsmd:role/imsmd:source', ('imsmd:langstring[not(imsmd:value)]',), '%s',),
+
+('lom:metaMetadata/lom:contribute/lom:role/lom:value',
+ 'imsmd:metametadata/imsmd:contribute/imsmd:role/imsmd:value', ('imsmd:langstring',), '%s', [
+    [('(.*)', '%s', (str.lower,))]
+ ]),
+
+('lom:metaMetadata/lom:contribute/lom:role/lom:value',
+ 'imsmd:metametadata/imsmd:contribute/imsmd:role/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s', [
+   [('(.*)', '%s', (str.lower,))]
+ ]),
+
+('lom:metaMetadata/lom:contribute',
+ 'imsmd:metametadata/imsmd:contribute', ('imsmd:centity/imsmd:vcard',), '<lom:entity>%s</lom:entity>',
+ [normalizeVcardRules]),
+
+('lom:metaMetadata/lom:contribute/lom:date',
+ 'imsmd:metametadata/imsmd:contribute/imsmd:date', ('imsmd:datetime',), '<lom:dateTime>%s</lom:dateTime>',
+ [normalizeDateRules]),
+
+
+('lom:technical/lom:format',
+ 'imsmd:technical/imsmd:format', ('.',), '%s',	[
+    [('^$', 'application/octet-stream', (str,))]
+ ]),
+
+('lom:technical/lom:location', 'imsmd:technical/imsmd:location', ('.',), '%s'),
+('lom:technical/lom:location', 'imsmd:technical/imsmd:location', ('imsmd:value',), '%s'),
+
+('lom:educational/lom:learningResourceType/lom:source',
+ 'imsmd:educational/imsmd:learningresourcetype/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s'),
+# especially for some onderwijsrepository.nl repositories, the following hack was made.
+('lom:educational/lom:learningResourceType/lom:source',
+ 'imsmd:educational/imsmd:learningresourcetype/imsmd:source', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:educational/lom:learningResourceType/lom:value',
+ 'imsmd:educational/imsmd:learningresourcetype/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:educational/lom:learningResourceType/lom:value',
+ 'imsmd:educational/imsmd:learningresourcetype/imsmd:value', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+('lom:educational/lom:context/lom:source',
+ 'imsmd:educational/imsmd:context/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:educational/lom:context/lom:source',
+ 'imsmd:educational/imsmd:context/imsmd:source', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:educational/lom:context/lom:value',
+ 'imsmd:educational/imsmd:context/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:educational/lom:context/lom:value',
+ 'imsmd:educational/imsmd:context/imsmd:value', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:educational/lom:interactivityType/lom:source',
+ 'imsmd:educational/imsmd:interactivitytype/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:educational/lom:interactivityType/lom:source',
+ 'imsmd:educational/imsmd:interactivitytype/imsmd:source', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:educational/lom:interactivityType/lom:value',
+ 'imsmd:educational/imsmd:interactivitytype/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:educational/lom:interactivityType/lom:value',
+ 'imsmd:educational/imsmd:interactivitytype/imsmd:value', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:rights/lom:cost/lom:source',
+ 'imsmd:rights/imsmd:cost/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:rights/lom:cost/lom:source',
+ 'imsmd:rights/imsmd:cost/imsmd:source', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:rights/lom:cost/lom:value',
+ 'imsmd:rights/imsmd:cost/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:rights/lom:cost/lom:value',
+ 'imsmd:rights/imsmd:cost/imsmd:value', ('imsmd:langstring[not(imsmd:value)]',), '%s'),
+
+('lom:rights/lom:copyrightAndOtherRestrictions/lom:source',
+ 'imsmd:rights/imsmd:copyrightandotherrestrictions/imsmd:source', ('imsmd:langstring',), '%s'),
+
+('lom:rights/lom:copyrightAndOtherRestrictions/lom:source',
+ 'imsmd:rights/imsmd:copyrightandotherrestrictions/imsmd:source', ('imsmd:langstring/imsmd:value',), '%s'),
+
+('lom:rights/lom:copyrightAndOtherRestrictions/lom:value',
+ 'imsmd:rights/imsmd:copyrightandotherrestrictions/imsmd:value', ('imsmd:langstring',), '%s', [
+    [('.*/(yes|no|by|by-nd|by-nc-nd|by-nc|by-nc-sa|by-sa)/.*', '%s')]
+ ]),
+
+('lom:rights/lom:copyrightAndOtherRestrictions/lom:value',
+ 'imsmd:rights/imsmd:copyrightandotherrestrictions/imsmd:value', ('imsmd:langstring/imsmd:value',), '%s', [
+    [('.*/(yes|no|by|by-nd|by-nc-nd|by-nc|by-nc-sa|by-sa)/.*', '%s')]
+ ]),
+
+('lom:rights/lom:description',
+ 'imsmd:rights/imsmd:description[position()=1]', ('imsmd:langstring/@xml:lang', 'imsmd:langstring',), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:rights/lom:description',
+ 'imsmd:rights/imsmd:description[position()=1]', ('imsmd:langstring[not(@xml:lang)]',), '<lom:string language="x-none">%s</lom:string>'),
+
+('lom:classification/lom:purpose/lom:source',
+  'imsmd:classification/imsmd:purpose/imsmd:source',
+  ('imsmd:langstring',), '%s'),
+
+('lom:classification/lom:purpose/lom:value',
+ 'imsmd:classification/imsmd:purpose/imsmd:value',
+ ('imsmd:langstring',), '%s'),
+
+('lom:classification/lom:taxonPath/lom:source',
+ 'imsmd:classification/imsmd:taxonpath/imsmd:source',
+ ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<lom:string language="%s">%s</lom:string>'),
+
+('lom:classification/lom:taxonPath/lom:taxon/lom:id',
+ 'imsmd:classification/imsmd:taxonpath/imsmd:taxon/imsmd:id',
+ ('.',), '%s', [
+   [('(.*)', '%s', (lambda x: str(x).strip(),))]
+ ]),
+ 
+('lom:classification/lom:taxonPath/lom:taxon/lom:entry',
+    'imsmd:classification/imsmd:taxonpath/imsmd:taxon/imsmd:entry',
+    ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<lom:string language="%s">%s</lom:string>', [
+        [('(.*)', '%s', (lambda x: str(x).strip(),))],
+        [('(.*)', '%s', (lambda x: str(x).strip(),))],
+    ]
+    ),
+]
+
+# delete imported stuff
+del normalizeVcardRules
+del normalizeDateRules

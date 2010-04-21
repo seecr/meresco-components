@@ -1,0 +1,145 @@
+<lom:lom xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:lom="http://www.imsglobal.org/xsd/imsmd_v1p2" xsi:schemaLocation="http://www.imsglobal.org/xsd/imsmd_v1p2 http://www.imsglobal.org/xsd/imsmd_v1p2p4.xsd">
+  <lom:general>
+    <lom:title>
+      <lom:langstring xml:lang="nl">Nieuwbouw Zeevaart</lom:langstring>
+    </lom:title>
+    <lom:catalogentry>
+      <lom:catalog>URI</lom:catalog>
+      <lom:entry>
+        <lom:langstring xml:lang="x-none">http://www.onderwijsrepository.nl/fedora/get/id:75/DS1/2007-04-13T11:50:03.519Z</lom:langstring>
+      </lom:entry>
+    </lom:catalogentry>
+    <lom:language>nl</lom:language>
+    <lom:description>
+      <lom:langstring xml:lang="nl">Satirischefilm over gebrek aan ruimte in de nieuwbouw zeevaart</lom:langstring>
+    </lom:description>
+    <lom:keyword>
+      <lom:langstring xml:lang="nl">nieuwbouw</lom:langstring>
+    </lom:keyword>
+    <lom:keyword>
+      <lom:langstring xml:lang="nl">deltion</lom:langstring>
+    </lom:keyword>
+    <lom:aggregationlevel>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">2</lom:langstring>
+      </lom:value>
+    </lom:aggregationlevel>
+  </lom:general>
+  <lom:lifecycle>
+    <lom:version>
+      <lom:langstring xml:lang="x-none">13042007 115003519</lom:langstring>
+    </lom:version>
+    <lom:status>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">final</lom:langstring>
+      </lom:value>
+    </lom:status>
+    <lom:contribute>
+      <lom:role>
+        <lom:source>
+          <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+        </lom:source>
+        <lom:value>
+          <lom:langstring xml:lang="x-none">unknown</lom:langstring>
+        </lom:value>
+      </lom:role>
+      <lom:centity>
+        <lom:vcard>BEGIN:VCARD
+VERSION:2.1
+N:JJVroom
+END:VCARD</lom:vcard>
+      </lom:centity>
+    </lom:contribute>
+  </lom:lifecycle>
+  <lom:metametadata>
+    <lom:metadatascheme>LOMv1.0</lom:metadatascheme>
+    <lom:metadatascheme>SCORMv1.2</lom:metadatascheme>
+    <lom:metadatascheme>czp_povobve_v1p2</lom:metadatascheme>
+  </lom:metametadata>
+  <lom:technical>
+    <lom:format>video/x-msvideo</lom:format>
+    <lom:location>http://www.onderwijsrepository.nl/fedora/get/id:75/DS1/2007-04-13T11:50:03.519Z</lom:location>
+  </lom:technical>
+  <lom:educational>
+    <lom:learningresourcetype>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">http://download.edustandaard.nl/vdex/vdex_learningresourcetype_czp_20060628.xml</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">informatiebron</lom:langstring>
+      </lom:value>
+    </lom:learningresourcetype>
+    <lom:intendedenduserrole>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">teacher</lom:langstring>
+      </lom:value>
+    </lom:intendedenduserrole>
+    <lom:intendedenduserrole>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">learner</lom:langstring>
+      </lom:value>
+    </lom:intendedenduserrole>
+    <lom:context>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">http://download.edustandaard.nl/xsd/vdex_context_czp_20060628.xml</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">BVE</lom:langstring>
+      </lom:value>
+    </lom:context>
+    <lom:typicalagerange>
+      <lom:langstring xml:lang="x-none">16-*</lom:langstring>
+    </lom:typicalagerange>
+  </lom:educational>
+  <lom:rights>
+    <lom:cost>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">no</lom:langstring>
+      </lom:value>
+    </lom:cost>
+    <lom:copyrightandotherrestrictions>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">no</lom:langstring>
+      </lom:value>
+    </lom:copyrightandotherrestrictions>
+  </lom:rights>
+  <lom:classification>
+    <lom:purpose>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">LOMv1.0</lom:langstring>
+      </lom:source>
+      <lom:value>
+        <lom:langstring xml:lang="x-none">competency</lom:langstring>
+      </lom:value>
+    </lom:purpose>
+    <lom:taxonpath>
+      <lom:source>
+        <lom:langstring xml:lang="x-none">http://dummy_url.nl</lom:langstring>
+      </lom:source>
+      <lom:taxon>
+        <lom:id>w41aac19</lom:id>
+        <lom:entry>
+          <lom:langstring xml:lang="x-none">Verkeer en vervoer</lom:langstring>
+        </lom:entry>
+      </lom:taxon>
+    </lom:taxonpath>
+  </lom:classification>
+</lom:lom>

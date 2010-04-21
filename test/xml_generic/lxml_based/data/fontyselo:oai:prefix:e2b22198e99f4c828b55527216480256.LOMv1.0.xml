@@ -1,0 +1,11 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+	<general>
+		<title>
+			<string language="x-none">Socialsoftwarev2p0.pdf</string>
+		</title>
+	</general>
+	<technical>
+		<format>application/x-zip-compressed</format>
+		<location>http://elo.fontys.nl/Services/CMS.asmx/ExportPackage?packageId=3725289&amp;exportType=Preserved</location>
+	</technical>
+</lom>

@@ -1,0 +1,7 @@
+extend('ims-generic')
+
+inputNamespace='http://www.imsglobal.org/xsd/imsmd_rootv1p2p1'
+
+sourceNsMap = {
+'imsmd': inputNamespace
+}

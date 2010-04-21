@@ -1,0 +1,128 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+    <title>
+      <string language="nl">Pay Attention</string>
+    </title>
+    <language>en</language>
+    <description>
+      <string language="nl">Als de meeste van onze studenten tegenwoordig gezien kunnen worden als "Digital Learners", waarom zijn er dan zo veel docenten die weigeren het digitale tijdperk te betreden voor wat betreft de manier waarop ze onderwijs geven?
+Deze presentatie is een poging om docenten te stimuleren om effectiever gebruik te maken van technologie bij het leren.
+Zie ook http://t4.jordandistrict.org/payattention voor meer informatie over hoe je een betere docent kunt worden.</string>
+      <string language="en">Since most of today's students can appropriately be labeled as "Digital Learners", why do so many teachers refuse to enter the digital age with their teaching practices?
+This presentation was created in an effort to motivate teachers to more effectively use technology in their teaching.
+Please see http://t4.jordandistrict.org/payattention to learn how you can become a better teacher.</string>
+    </description>
+    <keyword>
+      <string language="nl">TeacherTube</string>
+    </keyword>
+    <keyword>
+      <string language="nl">Pay Attention</string>
+    </keyword>
+    <keyword>
+      <string language="nl">Video</string>
+    </keyword>
+    <keyword>
+      <string language="nl">Digital Learners</string>
+    </keyword>
+  </general>
+  <lifeCycle>
+    <version>
+      <string language="x-none">downloaded-2007-05-17</string>
+    </version>
+    <status>
+      <source>LOMv1.0</source>
+      <value>final</value>
+    </status>
+		<contribute>
+      <role>
+        <source>LOMv1.0</source>
+        <value>author</value>
+      </role>
+      <entity>BEGIN:VCARD
+FN:jsdt4
+END:VCARD</entity>
+      <date>
+        <dateTime>2007-05-17T10:16</dateTime>
+      </date>
+    </contribute>
+  </lifeCycle>
+  <metaMetadata>
+    <metadataSchema>LOMv1.0</metadataSchema>
+    <contribute>
+      <role>
+        <source>LOMv1.0</source>
+        <value>creator</value>
+      </role>
+      <entity>BEGIN:VCARD
+FN:LOM Package Script Version 0.1EMAIL;INTERNET:Pierre@gosoftonline.com
+END:VCARD</entity>
+      <date>
+        <dateTime>2007-05-17T00:00</dateTime>
+      </date>
+    </contribute>
+    <contribute>
+      <role>
+        <source>LOMv1.0</source>
+        <value>validator</value>
+      </role>
+      <entity>BEGIN:VCARD
+FN:Gorissen, P.J.B. (Pierre)
+END:VCARD</entity>
+      <date>
+        <dateTime>2007-05-17T00:00</dateTime>
+      </date>
+    </contribute>
+  </metaMetadata>
+  <technical>
+    <format>application/x-zip-compressed</format>
+    <format>application/x-shockwave-flash</format>
+    <format>text/html</format>
+    <location>http://elo.fontys.nl/Services/CMS.asmx/ExportPackage?packageId=3984724&amp;exportType=Preserved</location>
+  </technical>
+  <educational/>
+  <rights>
+    <cost>
+      <source>LOMv1.0</source>
+      <value>no</value>
+    </cost>
+    <copyrightAndOtherRestrictions>
+      <source>LOMv1.0</source>
+      <value>yes</value>
+    </copyrightAndOtherRestrictions>
+    <description>
+      <string language="nl">(c) 2007 http://www.youtube.com/user/jsdt4</string>
+    </description>
+  </rights>
+  <annotation>
+    <entity>BEGIN:VCARD
+FN:Gorissen, P.J.B. (Pierre)
+END:VCARD</entity>
+    <date>
+      <dateTime>2007-05-17T00:00</dateTime>
+    </date>
+    <description>
+      <string language="x-none">Erg mooie video. Ruim 7 minuten lang, geen gesproken tekst. De slides en overgangen passen mooi bij de muziek. Goede boodschap ook.</string>
+    </description>
+  </annotation>
+  <classification>
+    <purpose>
+      <source>LOMv1.0</source>
+      <value>discipline</value>
+    </purpose>
+    <taxonPath>
+      <source/>
+      <taxon>
+        <id>70</id>
+        <entry>
+          <string language="x-none">Sociale wetenschappen</string>
+        </entry>
+      </taxon>
+    </taxonPath>
+    <description>
+      <string language="x-none">Vakgebied</string>
+    </description>
+    <keyword>
+      <string language="x-none">Onderwijs</string>
+    </keyword>
+  </classification>
+</lom>

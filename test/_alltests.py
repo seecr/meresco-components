@@ -42,58 +42,106 @@ sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
 
 import unittest
 
-from sorteditertoolstest import SortedItertoolsTest
-from filelisttest import FileListTest
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
+from contextsettest import ContextSetTest
+from cqlconversiontest import CQLConversionTest
+from fieldletstest import FieldletsTest
+from fields2xmltest import Fields2XmlTest
+from filelisttest import FileListTest
+from inboxtest import InboxTest
+from logcomponenttest import LogComponentTest
+from logobservertest import LogObserverTest
 from packertest import PackerTest
+from parsecqltest import ParseCQLTest
+from reindextest import ReindexTest
+from renamecqlindextest import RenameCqlIndexTest
+from requestscopetest import RequestScopeTest
+from rssitemtest import RssItemTest
+from rsstest import RssTest
+from sorteditertoolstest import SortedItertoolsTest
+from statisticstest import StatisticsTest
+from statisticsxmltest import StatisticsXmlTest
+from storagecomponenttest import StorageComponentTest
+from tokenizefieldlettest import TokenizeFieldletTest
+from venturitest import VenturiTest
+from xml2fieldstest import Xml2FieldsTest
+from xmlpumptest import XmlPumpTest
+from xpath2fieldtest import XPath2FieldTest
 
-from facetindex.libfacetindextest import LibFacetIndexTest
-from facetindex.docsettest import DocSetTest
-from facetindex.docsetlisttest import DocSetListTest
-from facetindex.trietest import TrieTest
-from facetindex.pooltest import PoolTest
-from facetindex.cqlparsetreetolucenequerytest import CqlParseTreeToLuceneQueryTest
+from http.apacheloggertest import ApacheLoggerTest
+from http.argumentsinsessiontest import ArgumentsInSessionTest
+from http.basicauthenticationtest import BasicAuthenticationTest
+from http.fileservertest import FileServerTest
+from http.handlerequestfiltertest import HandleRequestFilterTest
+from http.ipfiltertest import IpFilterTest
+from http.observablehttpservertest import ObservableHttpServerTest
+from http.pathfiltertest import PathFilterTest
+from http.pathrenametest import PathRenameTest
+from http.sessionhandlertest import SessionHandlerTest
+from http.timeddictionarytest import TimedDictionaryTest
+from http.utilstest import UtilsTest
+
+from numeric.converttest import ConvertTest
+from numeric.numbercomparitorfieldlettest import NumberComparitorFieldletTest
+from numeric.numbercomparitormodifiertest import NumberComparitorModifierTest
+try:
+    from numeric.numbercomparitortest import NumberComparitorTest
+except ImportError:
+    print 'SKIPPING NumberComparitorTest due to missing dependency. (meresco-components)'
+
+from sru.srufielddrilldowntest import SRUFieldDrilldownTest
+from sru.sruhandlertest import SruHandlerTest
+from sru.sruparsertest import SruParserTest
+from sru.srurecordupdatetest import SRURecordUpdateTest
+from sru.srutermdrilldowntest import SRUTermDrilldownTest
+from sru.srwtest import SrwTest
+
+from xml_generic.lxml_based.crosswalktest import CrosswalkTest
+from xml_generic.lxml_based.xmlcomposetest import XmlComposeTest
+from xml_generic.lxml_based.xmlxpathtest import XmlXPathTest
+from xml_generic.lxml_based.xsltcrosswalktest import XsltCrosswalkTest
+from xml_generic.validatetest import ValidateTest
+
+from facetindex.clausecollectortest import ClauseCollectorTest
 from facetindex.cql2lucenequerytest import Cql2LuceneQueryTest
-from facetindex.triedicttest import TrieDictTest
-
+from facetindex.cqlparsetreetolucenequerytest import CqlParseTreeToLuceneQueryTest
+from facetindex.docsetlisttest import DocSetListTest
+from facetindex.docsettest import DocSetTest
 from facetindex.documenttest import DocumentTest
-from facetindex.lucenetest import LuceneTest
 from facetindex.drilldowntest import DrilldownTest
 from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
-
 from facetindex.incrementalindexingtest import IncrementalIndexingTest
 from facetindex.integerlisttest import IntegerListTest
-from facetindex.clausecollectortest import ClauseCollectorTest
+from facetindex.libfacetindextest import LibFacetIndexTest
+from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
+from facetindex.lucenetest import LuceneTest
+from facetindex.pooltest import PoolTest
+from facetindex.tools.lucenetoolstest import LuceneToolsTest
+from facetindex.triedicttest import TrieDictTest
+from facetindex.trietest import TrieTest
 
-from ngram.ngramtest import NGramTest
-from ngram.ngramquerytest import NGramQueryTest
-from ngram.ngramindextest import NGramIndexTest
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
-
-# incremental indexing
-from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
-
-from facetindex.tools.lucenetoolstest import LuceneToolsTest
+from ngram.ngramindextest import NGramIndexTest
+from ngram.ngramquerytest import NGramQueryTest
+from ngram.ngramtest import NGramTest
 
 from oai.fields2oairecordtest import Fields2OaiRecordTest
+from oai.oaiaddrecordtest import OaiAddRecordTest
 from oai.oaigetrecordtest import OaiGetRecordTest
+from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
+from oai.oaijazztest import OaiJazzTest
 from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
 from oai.oailistsetstest import OaiListSetsTest
 from oai.oailisttest import OaiListTest
-from oai.oaipmhtest import OaiPmhTest, OaiPmhWithIdentifierTest
 from oai.oaipmhjazztest import OaiPmhJazzTest
-from oai.oaitooltest import OaiToolTest
+from oai.oaipmhtest import OaiPmhTest, OaiPmhWithIdentifierTest
 from oai.oaiprovenancetest import OaiProvenanceTest
-from oai.resumptiontokentest import ResumptionTokenTest
 from oai.oaisetselecttest import OaiSetSelectTest
-from oai.oaijazztest import OaiJazzTest
-from oai.oaiaddrecordtest import OaiAddRecordTest
-from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
+from oai.oaitooltest import OaiToolTest
+from oai.resumptiontokentest import ResumptionTokenTest
 
 from web.webquerytest import WebQueryTest
-
-from inboxtest import InboxTest
 
 if __name__ == '__main__':
     unittest.main()

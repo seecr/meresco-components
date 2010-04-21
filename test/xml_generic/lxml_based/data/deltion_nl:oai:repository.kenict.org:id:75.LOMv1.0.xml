@@ -1,0 +1,72 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+  <general>
+    <identifier>
+      <catalog>URI</catalog>
+      <entry>http://www.onderwijsrepository.nl/fedora/get/id:75/DS1/2007-04-13T11:50:03.519Z</entry>
+    </identifier>
+    <title>
+      <string language="nl">Nieuwbouw Zeevaart</string>
+    </title>
+    <language>nl</language>
+    <description>
+      <string language="nl">Satirischefilm over gebrek aan ruimte in de nieuwbouw zeevaart</string>
+    </description>
+    <keyword>
+      <string language="nl">nieuwbouw</string>
+    </keyword>
+    <keyword>
+      <string language="nl">deltion</string>
+    </keyword>
+    <aggregationLevel>
+      <source>LOMv1.0</source>
+      <value>2</value>
+    </aggregationLevel>
+	</general>
+  <lifeCycle>
+    <version>
+      <string language="x-none">13042007 115003519</string>
+    </version>
+    <status>
+      <source>LOMv1.0</source>
+      <value>final</value>
+    </status>
+		<contribute>
+      <role>
+        <source>LOMv1.0</source>
+        <value>unknown</value>
+      </role>
+      <entity>BEGIN:VCARD
+VERSION:2.1
+N:JJVroom
+END:VCARD</entity>
+    </contribute>
+  </lifeCycle>
+  <metaMetadata>
+    <metadataSchema>LOMv1.0</metadataSchema>
+  </metaMetadata>
+  <technical>
+    <format>video/x-msvideo</format>
+    <location>http://www.onderwijsrepository.nl/fedora/get/id:75/DS1/2007-04-13T11:50:03.519Z</location>
+  </technical>
+  <educational>
+    <learningResourceType>
+      <source>LOMv1.0</source>
+      <value>other</value>
+    </learningResourceType>
+    <context>
+       <source>LOMv1.0</source>
+       <value>BVE</value>
+    </context>
+  </educational>
+  <rights>
+    <cost>
+      <source>LOMv1.0</source>
+      <value>no</value>
+    </cost>
+    <copyrightAndOtherRestrictions>
+      <source>LOMv1.0</source>
+      <value>no</value>
+    </copyrightAndOtherRestrictions>
+  </rights>
+  <classification/>
+</lom>

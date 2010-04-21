@@ -1,0 +1,19 @@
+<fields xmlns="http://cq2.org/teddy">
+	<identifier>Identificatiecode/identifier/etc, uniek binnen catalog</identifier>
+	<title>Een titel</title>
+	<language>nl</language>
+	<description>aap</description>
+	<discipline>00047</discipline>
+	<location>http://my.system.nl/hier/staat/het.zip</location>
+	<location>http://my.system.nl/hier/staat/nog.zip</location>
+	<location>http://my.system.nl/hier/staat/meer.zip</location>
+	<keywords>aap noot mies</keywords>
+	<author>Suilen, A.</author>
+	<creator>Suilen, A.</creator>
+	<publisher>Uni van Berlijn.</publisher>
+	<date>2007-12-31T13:31:45</date>
+	<format>!3e#s$p&amp;amp;l.a+n-k^j_e/a_a+p#</format>
+	<type>table</type>
+	<rights>by-nc-nd</rights>
+	<relation>Bijlage A</relation>
+</fields>

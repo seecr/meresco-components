@@ -1,0 +1,124 @@
+<xsd:schema
+           targetNamespace="http://www.loc.gov/zing/srw/"
+           xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/"
+           xmlns="http://www.loc.gov/zing/srw/"
+           xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+    <xsd:import namespace="http://www.loc.gov/zing/srw/diagnostic/" schemaLocation="http://www.loc.gov/standards/sru/xml-files/diagnostics.xsd"/>
+    <xsd:complexType name="requestType">
+        <xsd:sequence>
+            <xsd:element ref="version"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="responseType">
+        <xsd:sequence>
+            <xsd:element ref="version"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="searchRetrieveRequest" type="searchRetrieveRequestType" nillable="false"/>
+    <xsd:complexType name="searchRetrieveRequestType">
+        <xsd:complexContent>
+            <xsd:extension base="requestType">
+                <xsd:sequence>
+                    <xsd:element ref="query"/>
+                    <xsd:element ref="startRecord" minOccurs="0"/>
+                    <xsd:element ref="maximumRecords" minOccurs="0"/>
+                    <xsd:element ref="recordPacking" minOccurs="0"/>
+                    <xsd:element ref="recordSchema" minOccurs="0"/>
+                    <xsd:element ref="sortKeys" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:element name="searchRetrieveResponse" type="searchRetrieveResponseType" nillable="false"/>
+    <xsd:complexType name="searchRetrieveResponseType">
+        <xsd:complexContent>
+            <xsd:extension base="responseType">
+                <xsd:sequence>
+                    <xsd:element ref="numberOfRecords"/>
+                    <xsd:element ref="records" minOccurs="0"/>
+                    <xsd:element ref="nextRecordPosition" minOccurs="0"/>
+                    <xsd:element ref="echoedSearchRetrieveRequest" minOccurs="0"/>
+                    <xsd:element ref="diagnostics" minOccurs="0"/>
+                    <xsd:element ref="extraResponseData" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:element name="version" type="xsd:string" nillable="false"/>
+    <xsd:element name="query" type="xsd:string" nillable="false"/>
+    <xsd:element name="startRecord" type="xsd:positiveInteger" default="1" nillable="false"/>
+    <xsd:element name="maximumRecords" type="xsd:nonNegativeInteger" nillable="false"/>
+    <xsd:element name="recordPacking" type="xsd:string" nillable="false"/>
+    <xsd:element name="recordSchema" type="xsd:string" nillable="false"/>
+    <xsd:element name="sortKeys" type="xsd:string" nillable="false"/>
+    <xsd:element name="extraRequestData" type="extraDataType" nillable="false"/>
+    <xsd:element name="numberOfRecords" type="xsd:nonNegativeInteger" nillable="false"/>
+    <xsd:element name="records" type="recordsType" nillable="false"/>
+    <xsd:complexType name="recordsType">
+        <xsd:sequence>
+            <xsd:element ref="record" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="record" type="recordType" nillable="false"/>
+    <xsd:complexType name="recordType">
+        <xsd:sequence>
+            <xsd:element ref="recordSchema"/>
+            <xsd:element ref="recordPacking"/>
+            <xsd:element ref="recordData"/>
+            <xsd:element ref="recordPosition" minOccurs="0"/>
+            <xsd:element ref="extraRecordData" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="recordData" type="stringOrXmlFragment" nillable="false"/>
+    <xsd:element name="recordPosition" type="xsd:positiveInteger" nillable="false"/>
+    <xsd:element name="extraRecordData" type="extraDataType" nillable="false"/>
+    <xsd:element name="nextRecordPosition" type="xsd:positiveInteger" nillable="false"/>
+    <xsd:element name="diagnostics" type="diagnosticsType" nillable="false"/>
+    <xsd:complexType name="diagnosticsType">
+        <xsd:sequence>
+            <xsd:element ref="diag:diagnostic" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="extraResponseData" type="extraDataType" nillable="false"/>
+    <xsd:element name="echoedSearchRetrieveRequest" type="echoedSearchRetrieveRequestType" nillable="false"/>
+    <xsd:complexType name="echoedSearchRetrieveRequestType">
+        <xsd:complexContent>
+            <xsd:extension base="requestType">
+                <xsd:sequence>
+                    <xsd:element ref="query"/>
+                    <xsd:element ref="startRecord" minOccurs="0"/>
+                    <xsd:element ref="maximumRecords" minOccurs="0"/>
+                    <xsd:element ref="recordPacking" minOccurs="0"/>
+                    <xsd:element ref="recordSchema" minOccurs="0"/>
+                    <xsd:element ref="sortKeys" minOccurs="0"/>
+                    <xsd:element ref="extraRequestData" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:element name="path" type="xsd:string" nillable="false"/>
+    <xsd:element name="schema" type="xsd:string" nillable="false"/>
+    <xsd:element name="ascending" type="xsd:boolean" nillable="false"/>
+    <xsd:element name="caseSensitive" type="xsd:boolean" nillable="false"/>
+    <xsd:element name="missingValue" type="xsd:string" nillable="false"/>
+    <xsd:complexType name="extraDataType">
+        <xsd:sequence>
+            <xsd:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="xmlFragment" mixed="false">
+        <xsd:sequence>
+            <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="stringOrXmlFragment" mixed="true">
+        <xsd:sequence>
+            <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="x-term-drilldown" type="xsd:string" nillable="false"/>
+    <xsd:element name="x-field-drilldown" type="xsd:string" nillable="false"/>
+    <xsd:element name="x-field-drilldown-fields" type="xsd:string" nillable="false"/>
+</xsd:schema>

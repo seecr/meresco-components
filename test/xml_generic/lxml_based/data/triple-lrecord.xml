@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lom:lom xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:lom="http://dpc.uba.uva.nl/schema/lom/triplel" xsi:schemaLocation="http://dpc.uba.uva.nl/schema/lom/triplel http://dpc.uba.uva.nl/schema/lom/triplel/lom.xsd">
+	<general xmlns=""><title><langstring><value>Religie Nu (12) Kan theater zonder religie?</value><language>nl</language></langstring></title><catalogentry><catalog>nl.uva.uba.triple-l</catalog><entry><langstring><value>217134</value><language>x-none</language></langstring></entry></catalogentry><grouplanguage>nl</grouplanguage><description><langstring><value>Kunst zonder God is een verarming.
+
+Religie - een wijder begrip schenkt kleur en diepgang aan het leven in de kunst. In dramatisch opzicht geven goden de mogelijkheid aan de toneelschrijver de geest van de mens te projecteren. Grote schrijvers hebben ver voor het Christendom zijn intrede deed de mens in de kosmos geplaatst, van waaruit allerlei krachten hem bedreigen of te hulp schieten of hem uitdagen. Van Aischylos tot Sartre, van Shakespeare tot Beckett hebben goden het leven van dramatische figuren bnvloed. En zo zal het blijven. Het wachten is op Godot.</value><language>nl</language></langstring></description>
+</general>
+<lifecycle xmlns="">
+	<contribute>
+		<role>
+			<source>
+				<langstring>
+					<value>LOMv1.0</value>
+					<language>x-none</language>
+				</langstring>
+			</source>
+			<value>
+				<langstring>
+					<value>Speaker</value>
+					<language>x-none</language>
+				</langstring>
+			</value>
+		</role>
+		<centity>
+			<vcard>
+BEGIN:VCARD
+VERSION:2.1
+N:Vos;E.
+FN:E. Vos
+END:VCARD
+			</vcard>
+		</centity>
+		<date>
+			<datetime>2006-11-28 19:00</datetime>
+		</date>
+	</contribute>
+</lifecycle>
+<metametadata xmlns=""><metadatascheme>LORENET</metadatascheme></metametadata><technical xmlns=""><format>text/html</format><location><value>http://www.iis-communities.nl/access/content/group/Religie/MAP%201/College%2012%20-%20Erik%20Vos%20-%2028-11-06</value><type>URI</type></location></technical><educational xmlns=""><learningresourcetype><source><langstring><value>TPPOVOv1.0</value><language>nl</language></langstring></source><value><langstring><value>informatiebron</value><language>nl</language></langstring></value></learningresourcetype><context><source><langstring><value>TPPOVOv1.0</value><language>nl</language></langstring></source><value><langstring><value>WO</value><language>nl</language></langstring></value></context></educational><rights xmlns=""><cost><source><langstring><value>LOMv1.0</value><language>x-none</language></langstring></source><value><langstring><value>nee</value><language>nl</language></langstring></value></cost><copyrightandotherrestrictions><source><langstring><value>CCv2.5</value><language>x-none</language></langstring></source><value><langstring><value>http://creativecommons.org/licenses/by-nc-sa/2.5/nl/</value><language>nl</language></langstring></value></copyrightandotherrestrictions></rights><classification xmlns="">
+<purpose>
+	<source>
+		<langstring>
+			<value/>
+			<language>x-none</language>
+		</langstring>
+	</source>
+	<value>
+		<langstring>
+			<value/>
+			<language>x-none</language>
+		</langstring>
+	</value>
+</purpose>
+<taxonpath><source><langstring><value>NBC</value><language>x-none</language></langstring></source><taxon><id>24</id><entry><langstring><value>Theaterwetenschap, muziekwetenschap</value><language>nl</language></langstring><langstring><value>Dramaturgy, musicology</value><language>en</language></langstring></entry></taxon></taxonpath></classification></lom:lom>

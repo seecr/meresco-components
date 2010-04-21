@@ -1,0 +1,47 @@
+<lom xmlns="http://ltsc.ieee.org/xsd/LOM">
+	<general>
+		<identifier>
+			<catalog>arno</catalog>
+			<entry>ut-lo:201</entry>
+		</identifier>
+		<title>
+			<string language="nl">VLSI System Design - VHDL Synthesis Survey</string>
+		</title>
+		<language>en</language>
+	</general>
+	<lifeCycle>
+		<contribute>
+			<role>
+				<source>LOMv1.0</source>
+				<value>author</value>
+			</role>
+			<entity>BEGIN:VCARD
+FN:Sabih Gerez
+END:VCARD</entity>
+		</contribute>
+	</lifeCycle>
+	<metaMetadata>
+		<metadataSchema>LORENET</metadataSchema>
+	</metaMetadata>
+	<technical>
+		<format>application/pdf</format>
+		<location>/cgi-bin/arno/show.cgi?fid=577</location>
+	</technical>
+	<educational>
+		<learningResourceType>
+			<source>LOMv1.0</source>
+			<value>other</value>
+		</learningResourceType>
+	</educational>
+	<rights>
+		<cost>
+			<source>LOMv1.0</source>
+			<value>no</value>
+		</cost>
+		<copyrightAndOtherRestrictions>
+			<source>LOMv1.0</source>
+			<value>no</value>
+		</copyrightAndOtherRestrictions>
+	</rights>
+	<classification/>
+</lom>

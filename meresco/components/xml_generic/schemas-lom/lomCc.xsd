@@ -1,0 +1,64 @@
+<xs:schema targetNamespace="http://ltsc.ieee.org/xsd/LOM"
+			xmlns="http://ltsc.ieee.org/xsd/LOM"
+			xmlns:xs="http://www.w3.org/2001/XMLSchema"
+			elementFormDefault="qualified"
+			version="IEEE LTSC LOM XML 1.0">
+
+	<xs:annotation>
+		<xs:documentation>
+			This work is licensed under the Creative Commons Attribution-ShareAlike
+			License.  To view a copy of this license, see the file license.txt,
+			visit http://creativecommons.org/licenses/by-sa/2.0 or send a letter to
+			Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
+		</xs:documentation>
+		<xs:documentation>
+			This file represents a composite schema for validating
+			LOM XML Instances with Creative Commons and Nederlands Basisclassificatie.
+		</xs:documentation>
+		<xs:documentation>
+			Created Feb 14, 2007 by E.J. Groeneveld erik@cq2.org for Surf, http://www.surf.nl.
+		</xs:documentation>
+	</xs:annotation>
+
+	<xs:include schemaLocation="common/anyElement.xsd"/>
+
+	<xs:import namespace="http://ltsc.ieee.org/xsd/LOM/unique"
+			   schemaLocation="unique/strict.xsd"/>
+
+	<xs:import namespace="http://ltsc.ieee.org/xsd/LOM/vocab"
+				schemaLocation="vocab/custom.xsd"/>
+
+	<xs:import namespace="http://ltsc.ieee.org/xsd/LOM/extend"
+				schemaLocation="extend/strict.xsd"/>
+
+	<xs:include schemaLocation="common/dataTypes.xsd"/>
+	<xs:include schemaLocation="common/elementNames.xsd"/>
+	<xs:include schemaLocation="common/elementTypes.xsd"/>
+	<xs:include schemaLocation="common/rootElement.xsd"/>
+	<xs:include schemaLocation="common/vocabValues.xsd"/>
+	<xs:include schemaLocation="common/vocabTypes.xsd"/>
+
+	<xs:import namespace="http://ltsc.ieee.org/xsd/LOM/custom"
+				schemaLocation="vocab/cc25.xsd"/>
+
+	<!-- General VCard validation -->
+	<xs:redefine schemaLocation="common/dataTypes.xsd">
+		<xs:complexType name="VCard">
+			<xs:simpleContent>
+				<xs:restriction base="VCard">
+					<xs:pattern value="\s*BEGIN:VCARD\s*([\i\-]+(;\i+(=[\i,]+)?)?:.*\n)+\s*END:VCARD\s*"/>
+				</xs:restriction>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:redefine>
+
+	<!-- General MimeType validation -->
+	<xs:redefine schemaLocation="common/dataTypes.xsd">
+		<xs:simpleType name="MimeType">
+			<xs:restriction base="MimeType">
+				<xs:pattern value="\s*[\w\d!#$&amp;\.\+\-\^_]+/[\w\d!#$&amp;\.\+\-\^_]+\s*"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:redefine>
+
+</xs:schema>
