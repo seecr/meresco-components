@@ -55,3 +55,4 @@ from statisticsxml import StatisticsXml
 from requestscope import RequestScope
 from filelist import SortedFileList, FileList
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
+from inbox import Inbox

@@ -42,6 +42,7 @@ sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
 
 import unittest
 
+from autocompletetest import AutocompleteTest
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from contextsettest import ContextSetTest
 from cqlconversiontest import CQLConversionTest

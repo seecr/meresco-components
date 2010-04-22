@@ -61,6 +61,10 @@ value TrieDict::getValue(char* term) {
     return value;
 }
 
+void TrieDict::valuesForPrefix(char* prefix, guint32 maxResults, IntegerList* result) {
+    TrieNode_getValues(termIndex, prefix, maxResults, result, this->termPool);
+}
+
 char* TrieDict::getTerm(termid termId) {
     return this->termPool->get(termId);
 }
@@ -92,4 +96,9 @@ void TrieDict_delete(TrieDict* trieDict) {
 void TrieDict_printit(TrieDict* trieDict) {
     trieDict->printit();
 }
+
+void TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, IntegerList* result) {
+    self->valuesForPrefix(prefix, maxResults, result);
+}
+
 

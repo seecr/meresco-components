@@ -159,6 +159,9 @@ class Drilldown(object):
     def intersect(self, fieldname, docset):
         return self._docsetlists[fieldname].intersect(docset)
 
+    def prefixSearch(self, fieldname, prefix, maxresults=None):
+        return self._docsetlists[fieldname].prefixSearch(prefix=prefix, maxresults=maxresults)
+
     def measure(self):
         totalBytes = 0
         terms = 0

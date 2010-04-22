@@ -83,8 +83,9 @@ def trackerBisect(a, x, lo=0, hi=None):
         mid = midKeep = (lo+hi)//2
         while a[mid] == -1 and mid > lo:
             mid -= 1
-        if a[mid] == -1: lo = midKeep+1
-        elif a[mid] < x: lo = mid+1
+        amid = a[mid]
+        if amid == -1: lo = midKeep+1
+        elif amid < x: lo = mid+1
         else: hi = mid
     return lo
 

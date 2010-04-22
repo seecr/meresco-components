@@ -98,15 +98,16 @@ class IntegerList(object):
         return IntegerList_size(self)
 
     def __getitem__(self, i):
+        length = len(self)
         if type(i) == slice:
             start = i.start if i.start else 0
             step = i.step if i.step else 1
-            stop = i.stop if i.stop else len(self)
+            stop = i.stop if i.stop else length
             if start < 0:
-                start = len(self) - -start
+                start = length - -start
             islice = IntegerList_slice(self, start, stop, step)
             return list(IntegerList(cobj=islice))
-        if i >= len(self) or -i > len(self):
+        if i >= length or -i > length:
             raise IndexError(i)
         return IntegerList_get(self, i)
 
