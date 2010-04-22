@@ -24,4 +24,4 @@
 ## end license ##
 
 export PYTHONPATH=.
-python2.5 _alltests.py
+python2.5 _alltests.py $@

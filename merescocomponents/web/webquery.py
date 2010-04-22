@@ -49,8 +49,13 @@ class WebQuery(object):
         boolean = _feelsLikeBooleanQuery(aString)
         self._needsHelp = boolean and plusminus
         if plusminus and not boolean:
-            self._kind = PLUSMINUS_KIND
-            self.ast = parseString(_plusminus2Cql(aString, antiUnaryClause))
+            try:
+                self._kind = PLUSMINUS_KIND
+                self.ast = parseString(_plusminus2Cql(aString, antiUnaryClause))
+            except CQLParseException:
+                self._needsHelp = True
+                self._kind = DEFAULT_KIND
+                self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
         elif boolean and not plusminus:
             try:
                 self._kind = BOOLEAN_KIND
