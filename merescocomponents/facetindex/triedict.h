@@ -33,6 +33,7 @@
 #include <string>
 #include <glib.h>
 #include "stringpool.h"
+#include "integerlist.h"
 
 extern "C" {
     #include "fwpool.h"
@@ -53,6 +54,7 @@ class TrieDict {
         }
         termid             add(char* term, value value);
         value              getValue(char* term);
+        void               valuesForPrefix(char* prefix, guint32 maxResults, IntegerList* result);
         char*              getTerm(termid termId);
         void               printit();
         void               nodecount(void);
@@ -62,6 +64,7 @@ extern "C" {
     value                  TrieDict_getValue(TrieDict*, char* term);
     TrieDict*              TrieDict_create(int uselocalpool = 0);
     void                   TrieDict_delete(TrieDict*);
+    void                   TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, IntegerList* result);
     int                    TrieDict_measureall(void);
     void                   TrieDict_printit(TrieDict*);
 }

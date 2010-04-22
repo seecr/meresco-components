@@ -150,6 +150,7 @@ void DocSetList::removeDoc(guint32 docId) {
 
 fwPtr DocSetList::forTerm(char* term) {
     guint32 docsetptr = dictionary.getValue(term);
+
     if ( docsetptr == 0xFFFFFFFF )
         return fwNONE;
     fwPtr docset = {0, docsetptr};
@@ -365,6 +366,22 @@ void DocSetList::nodecount(void) {
     dictionary.nodecount();
 }
 
+CardinalityList* DocSetList::filterByPrefix(char* prefix, guint32 maxResults) {
+    CardinalityList* results = new CardinalityList();
+
+    IntegerList* docSetFws = IntegerList_create(0);
+    dictionary.valuesForPrefix(prefix, maxResults, docSetFws);
+
+    for (IntegerList::iterator it = docSetFws->begin(); it < docSetFws->end(); it++) {
+        fwPtr docset =  {0, (*it)};
+        cardinality_t cardinality = {getTermForDocset(pDS(docset)), pDS(docset)->size()};
+        results->push_back(cardinality);
+    }
+    IntegerList_delete(docSetFws);
+
+    return results;
+}
+
 /////////////// C Interface to CardinalityList ////////////////
 
 cardinality_t* CardinalityList_at(CardinalityList* vector, int i) {
@@ -375,6 +392,9 @@ int CardinalityList_size(CardinalityList* vector) {
 }
 void CardinalityList_free(CardinalityList* vector) {
     delete vector;
+}
+void CardinalityList_sortOnCardinality(CardinalityList* vector) {
+    sort(vector->begin(), vector->end(), cmpCardinalityResults);
 }
 
 /////////////// C Interface to DocSetList ////////////////
@@ -494,8 +514,16 @@ char* DocSetList_getTermForDocset(DocSetList *list, fwPtr docset) {
     return list->getTermForDocset(pDS(docset));
 }
 
+char* DocSetList_getTermForId(DocSetList* list, guint32 termId) {
+    return list->getTermForId(termId);
+}
+
 void DocSetList_docId2terms_add(DocSetList *list, guint32 docId, fwPtr docset) {
     list->docId2terms_add(docId, docset);
+}
+
+CardinalityList* DocSetList_filterByPrefix(DocSetList* list, char* term, guint32 maxResults) {
+    return list->filterByPrefix(term, maxResults);
 }
 
 int DocSetList_measure(DocSetList* list) {

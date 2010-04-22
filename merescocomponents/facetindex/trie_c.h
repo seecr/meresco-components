@@ -32,16 +32,16 @@
 #include <glib.h>
 #include "fwpool.h"
 #include "stringpool.h"
+#include "integerlist.h"
 
 #include <vector>
 
 typedef guint32 stringNr;
 
-
 typedef struct {
     void (*addValue)(fwPtr self, guint32 value, stringNr term, StringPool* pool);
     guint32 (*getValue)(fwPtr self, char* term, StringPool* pool);
-    void (*getValues)(fwPtr self, char *prefix, std::vector<guint32>* result,  int caseSensitive);
+    void (*getValues)(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool);
     void (*free)(fwPtr self);
     void (*printit)(fwPtr self, int indent, StringPool* pool);
 } INode;
@@ -55,7 +55,7 @@ extern "C" {
     void TrieNode_free(fwPtr self);
     void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool);
     guint32 TrieNode_getValue(fwPtr self, char* term, StringPool* pool);
-    void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive);
+    void TrieNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool);
     int TrieNode_memory(void);
     void TrieNode_printit(fwPtr self, int indent, StringPool* pool);
     int measureall(void);

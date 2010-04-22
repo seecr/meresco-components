@@ -41,9 +41,14 @@ extern "C" {
 
 /************** for TESTING ****************/
 extern "C" {
+#include "integerlist.h"
+
     StringPool stringPoolForTesting;
     guint32 TrieNode_getValue2(fwPtr node, char *str) {
         return TrieNode_getValue(node, str, &stringPoolForTesting);
+    }
+    void TrieNode_getValues2(fwPtr node, char *str, guint32 maxResults, IntegerList *result) {
+        TrieNode_getValues(node, str, maxResults, result, &stringPoolForTesting);
     }
     void TrieNode_addValue2(fwPtr node, guint32 value, char* str) {
         int n = stringPoolForTesting.add(str);
@@ -102,7 +107,7 @@ inline int isList(fwPtr ptr) {
 /************** LISTNode ******************************/
 inline void ListNode_addValue(fwPtr node, guint32 value, stringNr term, StringPool* pool);
 inline guint32 ListNode_getValue(fwPtr node, char* term, StringPool* pool);
-void ListNode_getValues(fwPtr node, char* prefix, std::vector<guint32>* result, int caseSensitive);
+void ListNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool);
 void ListNode_free(fwPtr node);
 void ListNode_printit(fwPtr node, int indent, StringPool* pool);
 
@@ -182,28 +187,28 @@ inline void ListNode_addValue(fwPtr self, guint32 value, stringNr term, StringPo
     }
 
     ListNodeState* me = ListNode_state(self);
-    if ( me->size > LISTSIZE ) {
+    if (me->size > LISTSIZE) {
         return;
     }
-    if ( isNone( me->first ) ) {
-        me->first = ListItem_create(value, term);
-        me->size++;
-        return;
-    }
-    fwPtr last = me->first;
-    fwPtr prev = last;
-    while ( ! isNone(last) ) {
-        prev = last;
-        last = ListItem_state(last)->next;
-    }
-    fwPtr item = prev;
-    fwPtr tmp =
-        ListItem_create(
-            value,
-            term
-        );
-    ListItem_state(item)->next = tmp;
+
+    fwPtr newItem = ListItem_create(value, term);
     me->size++;
+
+    if ( isNone(me->first) || strcasecmp(pool->get(term), pool->get(ListItem_state(me->first)->aString)) < 0 ) {
+        ListItem_state(newItem)->next = me->first;
+        me->first = newItem;
+        return;
+    }
+    ListItem* currentItem = ListItem_state(me->first);
+    while ( ! isNone(currentItem->next) ) {
+        if (strcasecmp(pool->get(term),
+                       pool->get(ListItem_state(currentItem->next)->aString)) < 0) {
+            ListItem_state(newItem)->next = currentItem->next;
+            break;
+        }
+        currentItem = ListItem_state(currentItem->next);
+    }
+    currentItem->next = newItem;
 }
 
 inline guint32 ListNode_getValue(fwPtr self, char* term, StringPool* pool) {
@@ -223,6 +228,24 @@ inline guint32 ListNode_getValue(fwPtr self, char* term, StringPool* pool) {
     return fwValueNone;
 }
 
+void ListNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool) {
+    ListNodeState* me = ListNode_state(self);
+    if (*term == '\0') {
+        if (me->value != fwValueNone) {
+            result->append(me->value);
+        }
+    }
+    fwPtr last = me->first;
+    while (!isNone(last) && result->size() < maxResults) {
+        ListItem* plast = ListItem_state(last);
+        char* string = pool->get(plast->aString);
+        if (strncasecmp(term, string, strlen(term)) == 0) {
+            result->append(plast->value);
+        }
+        last = plast->next;
+    }
+}
+
 bool ListNode_hasRoom(fwPtr self) {
     return ListNode_state(self)->size < LISTSIZE;
 }
@@ -235,23 +258,6 @@ void ListNode_addTo(fwPtr self, fwPtr other, StringPool* pool) {
         interface(other)->addValue(other, plast->value, plast->aString, pool);
         last = ListItem_state(last)->next;
     }
-}
-
-void ListNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive) {
-/*
-    char *aString = fwString_get(StringNode_state(self)->aString);
-    if (caseSensitive) {
-        while (*aString != '\0' && *prefix != '\0' && *aString++ == *prefix++)
-            ;
-    } else {
-        while (*aString != '\0' && *prefix != '\0' && tolower(*aString++) == tolower(*prefix++))
-            ;
-    }
-
-    if (*prefix == '\0') {
-        result->push_back(StringNode_state(self)->value);
-    }
-*/
 }
 
 void ListNode_free(fwPtr self) {
@@ -297,8 +303,8 @@ typedef struct {
 }  TrieNodeState ;
 
 guint32 TrieNode_getValue(fwPtr self, char* term);
+void TrieNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool);
 void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool);
-void TrieNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive);
 void TrieNode_free(fwPtr self);
 void TrieNode_printit(fwPtr self, int indent, StringPool* pool);
 
@@ -388,44 +394,42 @@ guint32 TrieNode_getValue(fwPtr self, char* term, StringPool* pool) {
     return interface(link.child)->getValue(link.child, ++term, pool);
 }
 
-void TrieNode_getValues(fwPtr self, char* prefix, std::vector<guint32>* result, int caseSensitive) {
-    char character;
-    if (*prefix == '\0') {
-        guint32 value = TrieNode_state(self)->value;
-        if (value != fwValueNone) {
-            result->push_back(value);
+void TrieNode_getAllValues(fwPtr self, guint32 maxResults, IntegerList* result, StringPool* pool, int depth) {
+    if (TrieNode_state(self)->value != fwValueNone)
+        result->append(TrieNode_state(self)->value);
+
+    int i;
+    for (i = 0; i < (0x01 << ALPHABET_IN_BITS); i++) {
+        if (result->size() >= maxResults) {
+            return;
         }
-        int i;
-        fwPtr child;
-        for (i = 0; i < 0x01<<ALPHABET_IN_BITS; i++) {
-            child = TrieNode_state(self)->child[i];
-            if (! isNone(child)) {
-                interface(child)->getValues(child, prefix, result, caseSensitive);
-            }
+        fwPtr child = TrieNode_state(self)->child[i];
+        if (isNone(child)) {
+            continue;
         }
+        if (depth > 0) {
+            TrieNode_getAllValues(child, maxResults, result, pool, depth - 1);
+        } else {
+            interface(child)->getValues(child, "\0", maxResults, result, pool);
+        }
+    }
+}
+
+void TrieNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool) {
+    if (*term == '\0') {
+        TrieNode_getAllValues(self, maxResults, result, pool, 8 / ALPHABET_IN_BITS - 1);
         return;
     }
 
-    character = prefix[0];
-    Link link = TrieNode__findLink(self, character, DoNotCreate);
-
-    prefix++;
-
-    if (! isNone(link.child)) {
-        interface(link.child)->getValues(link.child, prefix, result, caseSensitive);
-    }
-
-    if (! caseSensitive  && isalpha(character)) {
-        if (islower(character)) {
-            character = toupper(character);
-        } else {
-            character = tolower(character);
-        }
-        link = TrieNode__findLink(self, character, DoNotCreate);
-
+    if (tolower(term[0]) != toupper(term[0])) {
+        Link link = TrieNode__findLink(self, tolower(term[0]), DoNotCreate);
         if (! isNone(link.child)) {
-            interface(link.child)->getValues(link.child, prefix, result, caseSensitive);
+            interface(link.child)->getValues(link.child, term + 1, maxResults, result, pool);
         }
+    }
+    Link link = TrieNode__findLink(self, toupper(term[0]), DoNotCreate);
+    if (! isNone(link.child)) {
+        interface(link.child)->getValues(link.child, term + 1, maxResults, result, pool);
     }
 
 }
@@ -516,8 +520,8 @@ typedef struct {
 } LeafNodeState;
 
 guint32 LeafNode_getValue(fwPtr self, char* term, StringPool* pool);
-void LeafNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive);
 inline void LeafNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool);
+void LeafNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool);
 void LeafNode_free(fwPtr self);
 void LeafNode_printit(fwPtr self, int indent, StringPool* pool);
 
@@ -561,9 +565,12 @@ inline guint32 LeafNode_getValue(fwPtr self, char* term, StringPool* pool) {
     return fwValueNone;
 }
 
-void LeafNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive) {
-    if (*prefix == '\0') {
-        result->push_back(LeafNode_state(self)->value);
+void LeafNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool) {
+    if (*term != '\0') {
+        return;
+    }
+    if (LeafNode_state(self)->value != fwValueNone) {
+        result->append(LeafNode_state(self)->value);
     }
 }
 
@@ -583,7 +590,7 @@ void LeafNode_printit(fwPtr self, int indent, StringPool* pool) {
 
 inline void StringNode_addValue(fwPtr node, guint32 value, stringNr term, StringPool* pool);
 inline guint32 StringNode_getValue(fwPtr node, char* term, StringPool* pool);
-void StringNode_getValues(fwPtr node, char* prefix, std::vector<guint32>* result, int caseSensitive);
+void StringNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool);
 void StringNode_free(fwPtr node);
 void StringNode_printit(fwPtr node, int indent, StringPool* pool);
 
@@ -630,19 +637,10 @@ inline guint32 StringNode_getValue(fwPtr self, char* term, StringPool* pool) {
     return fwValueNone;
 }
 
-void StringNode_getValues(fwPtr self, char *prefix, std::vector<guint32>* result, int caseSensitive) {
-/*    char *aString = fwString_get(StringNode_state(self)->aString);
-    if (caseSensitive) {
-        while (*aString != '\0' && *prefix != '\0' && *aString++ == *prefix++)
-            ;
-    } else {
-        while (*aString != '\0' && *prefix != '\0' && tolower(*aString++) == tolower(*prefix++))
-            ;
+void StringNode_getValues(fwPtr self, char* term, guint32 maxResults, IntegerList* result, StringPool* pool) {
+    if (strncasecmp(term, pool->get(StringNode_state(self)->aString), strlen(term)) == 0) {
+        result->append(StringNode_state(self)->value);
     }
-
-    if (*prefix == '\0') {
-        result->push_back(StringNode_state(self)->value);
-    }*/
 }
 
 void StringNode_free(fwPtr self) {

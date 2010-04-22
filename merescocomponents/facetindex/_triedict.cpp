@@ -61,6 +61,11 @@ value TrieDict::getValue(char* term) {
     return value;
 }
 
+void TrieDict::valuesForPrefix(char* prefix, guint32 maxResults, IntegerList* result) {
+    TrieNode_getValues(termIndex, prefix, maxResults, result, this->termPool);
+}
+
+
 char* TrieDict::getTerm(termid termId) {
     return this->termPool->get(termId);
 }
@@ -69,11 +74,11 @@ void TrieDict::printit() {
     TrieNode_printit(termIndex, 0, termPool);
 }
 
-
 void TrieDict::nodecount(void) {
     nodecount();
 }
 
+// ########### C Wrappers #############
 guint32 TrieDict_add(TrieDict* trieDict, char* term, value value) {
     return trieDict->add(term, value);
 }
@@ -88,6 +93,10 @@ TrieDict* TrieDict_create(int uselocalpool) {
 
 void TrieDict_delete(TrieDict* trieDict) {
     delete trieDict;
+}
+
+void TrieDict_valuesForPrefix(TrieDict* self, char* prefix, guint32 maxResults, IntegerList* result) {
+    self->valuesForPrefix(prefix, maxResults, result);
 }
 
 void TrieDict_printit(TrieDict* trieDict) {
