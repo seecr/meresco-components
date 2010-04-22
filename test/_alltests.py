@@ -42,7 +42,6 @@ sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
 
 import unittest
 
-from autocompletetest import AutocompleteTest
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from contextsettest import ContextSetTest
 from cqlconversiontest import CQLConversionTest
@@ -69,6 +68,8 @@ from xml2fieldstest import Xml2FieldsTest
 from xmlpumptest import XmlPumpTest
 from xpath2fieldtest import XPath2FieldTest
 
+from autocomplete.autocompletetest import AutocompleteTest
+
 from http.apacheloggertest import ApacheLoggerTest
 from http.argumentsinsessiontest import ArgumentsInSessionTest
 from http.basicauthenticationtest import BasicAuthenticationTest
@@ -85,10 +86,7 @@ from http.utilstest import UtilsTest
 from numeric.converttest import ConvertTest
 from numeric.numbercomparitorfieldlettest import NumberComparitorFieldletTest
 from numeric.numbercomparitormodifiertest import NumberComparitorModifierTest
-try:
-    from numeric.numbercomparitortest import NumberComparitorTest
-except ImportError:
-    print 'SKIPPING NumberComparitorTest due to missing dependency. (meresco-components)'
+from numeric.numbercomparitortest import NumberComparitorTest
 
 from sru.srufielddrilldowntest import SRUFieldDrilldownTest
 from sru.sruhandlertest import SruHandlerTest
