@@ -5,9 +5,9 @@
  *     Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
  *     Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
  *        http://www.kennisnetictopschool.nl
- *     Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ *     Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
  *     Copyright (C) 2009 Tilburg University http://www.uvt.nl
- *     Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+ *     Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
  *
  *     This file is part of Meresco Components.
  *
@@ -46,7 +46,7 @@ class TrieDict {
         fwPtr termIndex;
         StringPool* termPool;
     public:
-        TrieDict(void);
+        TrieDict(int uselocalpool = 0);
         ~TrieDict(void);
         int                measure(void) {
             return sizeof(this); // excluding global termPool and TrieNodes, use TrieNode_measureall()
@@ -54,11 +54,15 @@ class TrieDict {
         termid             add(char* term, value value);
         value              getValue(char* term);
         char*              getTerm(termid termId);
+        void               printit();
         void               nodecount(void);
 };
 extern "C" {
-    TrieDict*              TrieDict_create(void);
+    termid                 TrieDict_add(TrieDict*, char* term, value value);
+    value                  TrieDict_getValue(TrieDict*, char* term);
+    TrieDict*              TrieDict_create(int uselocalpool = 0);
     void                   TrieDict_delete(TrieDict*);
     int                    TrieDict_measureall(void);
+    void                   TrieDict_printit(TrieDict*);
 }
 #endif

@@ -5,9 +5,9 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -28,13 +28,13 @@
 ## end license ##
 
 from libfacetindex import libFacetIndex
-from ctypes import POINTER
+from ctypes import POINTER, c_char_p, c_uint32, c_int
 from cq2utils import deallocator
 
 TRIEDICT = POINTER(None)
 
 TrieDict_create = libFacetIndex.TrieDict_create
-TrieDict_create.argtypes = []
+TrieDict_create.argtypes = [c_int]
 TrieDict_create.restype = TRIEDICT
 
 TrieDict_delete = libFacetIndex.TrieDict_delete
@@ -45,13 +45,35 @@ TrieDict_measureall = libFacetIndex.TrieDict_measureall
 TrieDict_measureall.argtypes = None
 TrieDict_measureall.restype = int
 
+TrieDict_add = libFacetIndex.TrieDict_add
+TrieDict_add.argtypes = [TRIEDICT, c_char_p, c_uint32]
+TrieDict_add.restype = c_uint32
+
+TrieDict_getValue = libFacetIndex.TrieDict_getValue
+TrieDict_getValue.argtypes = [TRIEDICT, c_char_p]
+TrieDict_getValue.restype = c_uint32
+
+TrieDict_printit = libFacetIndex.TrieDict_printit
+TrieDict_printit.argtypes = [TRIEDICT]
+TrieDict_printit.restype = None
+
 class TrieDict(object):
 
     @classmethod
     def measureall(clazz):
         return TrieDict_measureall()
 
-    def __init__(self):
-        self._cobj = TrieDict_create()
+    def __init__(self, uselocalpool=0):
+        self._cobj = TrieDict_create(uselocalpool)
         self._dealloc = deallocator(TrieDict_delete, self._cobj)
         self._as_parameter_ = self._cobj
+
+    def add(self, term, value):
+        return TrieDict_add(self, term, value)
+    
+    def getValue(self, term):
+        return TrieDict_getValue(self, term)
+
+    def printit(self):
+        return TrieDict_printit(self)
+

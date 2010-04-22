@@ -5,9 +5,9 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -34,4 +34,33 @@ from merescocomponents.facetindex.triedict import TrieDict
 class TrieDictTest(TestCase):
     def testConstructor(self):
         t = TrieDict()
-    
+        
+    def testAddWords(self):
+        t = TrieDict(uselocalpool=1)
+        termId1 = t.add('xy', 1)
+        termId2 = t.add('y', 1)
+        self.assertEquals(termId1, t.add('xy', 1))
+        self.assertEquals(termId2, t.add('y', 1))
+
+    def testAddWords2(self):
+        t = TrieDict(uselocalpool=1)
+        termId1 = t.add('xy', 8)
+        termId2 = t.add('x', 6)
+        self.assertEquals(8, t.getValue('xy'))
+        self.assertEquals(6, t.getValue('x'))
+        self.assertEquals(termId1, t.add('xy', 1))
+        self.assertEquals(termId2, t.add('x', 1))
+        
+    def testAddWords3(self):
+        t = TrieDict(uselocalpool=1)
+        termId1 = t.add('x', 1)
+        termId2 = t.add('xy', 1)
+        
+        self.assertEquals(termId1, t.add('x', 1))
+        self.assertEquals(termId2, t.add('xy', 1))
+        
+    def testAddAndGet(self):
+        t = TrieDict(uselocalpool=1)
+        self.assertEquals(0xffffffff, t.getValue('q'))
+        t.add('q', 1)
+        self.assertEquals(1, t.getValue('q'))        

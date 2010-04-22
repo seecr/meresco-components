@@ -5,9 +5,9 @@
  *     Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
  *     Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
  *        http://www.kennisnetictopschool.nl
- *     Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ *     Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
  *     Copyright (C) 2009 Tilburg University http://www.uvt.nl
- *     Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+ *     Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
  *
  *     This file is part of Meresco Components.
  *
@@ -36,12 +36,16 @@ int TrieDict_measureall(void) {
     return globalStringPool.measure() + measureall() /* from TrieNode */;
 }
 
-TrieDict::TrieDict(): termPool(&globalStringPool) {
+TrieDict::TrieDict(int uselocalpool): termPool(&globalStringPool) {
+    if (uselocalpool)
+        this->termPool = new StringPool();
     termIndex = TrieNode_create(fwValueNone);
 }
 
 TrieDict::~TrieDict() {
     TrieNode_free(termIndex);
+    if (termPool != &globalStringPool)
+        delete termPool;
 }
 
 termid TrieDict::add(char* term, value value) {
@@ -61,15 +65,31 @@ char* TrieDict::getTerm(termid termId) {
     return this->termPool->get(termId);
 }
 
+void TrieDict::printit() {
+    TrieNode_printit(termIndex, 0, termPool);
+}
+
+
 void TrieDict::nodecount(void) {
     nodecount();
 }
 
-TrieDict* TrieDict_create(void) {
-    return new TrieDict();
+guint32 TrieDict_add(TrieDict* trieDict, char* term, value value) {
+    return trieDict->add(term, value);
 }
+
+value TrieDict_getValue(TrieDict* trieDict, char* term) {
+    return trieDict->getValue(term);
+}
+
+TrieDict* TrieDict_create(int uselocalpool) {
+    return new TrieDict(uselocalpool);
+ }
 
 void TrieDict_delete(TrieDict* trieDict) {
     delete trieDict;
 }
 
+void TrieDict_printit(TrieDict* trieDict) {
+    trieDict->printit();
+}

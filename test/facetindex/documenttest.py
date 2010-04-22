@@ -6,9 +6,9 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -101,3 +101,15 @@ class DocumentTest(unittest.TestCase):
         d.addIndexedField('field', 'value1')
         d.addIndexedField('field', 'value2')
         self.assertEquals({'__id__': ['1234'], 'field': ['value1', 'value2']}, d.asDict())
+        
+    def testTokenizedFields(self):
+        d = Document('1234')
+        self.assertEquals([], d.tokenizedFields())
+        
+        d.addIndexedField('field1', 'value1')
+        d.addIndexedField('field2', 'value2.1')
+        self.assertEquals(['field1', 'field2'], d.tokenizedFields())
+        
+        d.addIndexedField('field2', 'value2.2')
+        self.assertEquals(['field1', 'field2'], d.tokenizedFields())
+        

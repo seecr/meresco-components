@@ -5,9 +5,9 @@
  *     Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
  *     Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
  *        http://www.kennisnetictopschool.nl
- *     Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ *     Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
  *     Copyright (C) 2009 Tilburg University http://www.uvt.nl
- *     Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+ *     Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
  *
  *     This file is part of Meresco Components.
  *
@@ -54,7 +54,6 @@ extern "C" {
     }
 }
 /*********** End for Testing ******************/
-
 
 void TrieNode_init(void);
 void LeafNode_init(void);
@@ -177,9 +176,13 @@ fwPtr ListNode_create(guint32 value) {
 }
 
 inline void ListNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* pool) {
+    if (*pool->get(term) == '\0') { 
+        ListNode_state(self)->value = value;
+        return;
+    }
+
     ListNodeState* me = ListNode_state(self);
     if ( me->size > LISTSIZE ) {
-        printf("ListNode_addValue(): Ignoring new string '%s'\n", pool->get(term));
         return;
     }
     if ( isNone( me->first ) ) {
@@ -270,8 +273,16 @@ void ListNode_printit(fwPtr self, int indent, StringPool* pool) {
     fwPtr last = me->first;
     while ( ! isNone(last) ) {
         ListItem* plast = ListItem_state(last);
+        printf("plast = %p\n", plast);
         for(int i=0;i<indent; i++) printf(" ");
+        printf("begin plats->aString=%d \n", plast->aString);
+        printf("pool: %p\n", pool->get(0));
+        printf("pool: %p\n", pool->get(1));
+        printf("pool: %p\n", pool->get(2));
+        printf("pool: %p\n", pool->get(3));
+        printf("begin pool-get(plats->aString=%d)=%p \n", plast->aString, pool->get(plast->aString));
         printf("  %s:%d\n", pool->get(plast->aString), plast->value);
+        printf("klaar\n");
         last = ListItem_state(last)->next;
     }
 }
@@ -446,8 +457,7 @@ void TrieNode_addValue(fwPtr self, guint32 value, stringNr term, StringPool* poo
             interface(child)->free(child);
             child = ListNode_create(fwValueNone);
             ListNode_addValue(child, value, string, pool);
-        }
-        else if (isList(child)) {
+        } else if (isList(child)) {
             if ( ! ListNode_hasRoom(child) ) {
                 guint32 value = ListNode_getValue(child, (char*) "", pool);
                 fwPtr newNode = TrieNode_create(value);

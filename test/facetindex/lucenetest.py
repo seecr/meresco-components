@@ -7,9 +7,9 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -45,6 +45,8 @@ from cqlparser import parseString
 
 from weightless import Reactor
 
+from merescocomponents.facetindex.lucene import tokenize
+
 class LuceneTest(CQ2TestCase):
 
     def setUp(self):
@@ -58,6 +60,17 @@ class LuceneTest(CQ2TestCase):
     def testCreation(self):
         self.assertEquals(os.path.isdir(self.tempdir), True)
         self.assertTrue(IndexReader.indexExists(self.tempdir))
+
+    def testTokenize(self):
+        self.assertEquals([], tokenize(''))
+        self.assertEquals(['token'], tokenize('token'))
+        self.assertEquals(['token'], tokenize('TOKEN'))
+        self.assertEquals(['token'], tokenize('token.'))
+        self.assertEquals(['token'], tokenize("token's"))
+        self.assertEquals(['token'], tokenize('t.o.k.e.n.'))
+        self.assertEquals(['this', 'is', 'a', 'text'], tokenize('This is a text.'))
+        
+        
 
     def testAddToIndex(self):
         myDocument = Document('0123456789')

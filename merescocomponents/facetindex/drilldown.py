@@ -6,9 +6,9 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -38,6 +38,7 @@ from collections import defaultdict
 
 IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 
+from lucene import tokenize
 
 class NoFacetIndexException(Exception):
 
@@ -50,7 +51,7 @@ class NoFacetIndexException(Exception):
 
 class Drilldown(object):
 
-    def __init__(self, staticDrilldownFieldnames=None, transactionName=None):
+    def __init__(self, staticDrilldownFieldnames=None, transactionName=None, tokenize=None):
         self._staticDrilldownFieldnames = staticDrilldownFieldnames
         self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
         self._docsetlists = {}
@@ -58,6 +59,7 @@ class Drilldown(object):
             self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
         self._commandQueue = []
         self._transactionName = transactionName
+        self._tokenize = tokenize if tokenize else []
 
     def _add(self, docId, docDict):
         keys = docDict.keys()
@@ -65,15 +67,24 @@ class Drilldown(object):
             for fieldname in keys
                 if fieldname in self._actualDrilldownFieldnames)
         for fieldname in fieldnames:
-            self._docsetlists[fieldname].addDocument(docId, docDict[fieldname])
+            values = docDict[fieldname]
+            if fieldname in self._tokenize:
+                values = tokenize(docDict[fieldname])
+            self._docsetlists[fieldname].addDocument(docId, values)
 
         compoundFields = (field for field in self._actualDrilldownFieldnames if type(field) == tuple)
         values = defaultdict(set)
         for field in compoundFields:
             for fieldname in field:
-                if fieldname in keys:
-                    for i in docDict[fieldname]:
-                        values[field].add(i)
+                if not fieldname in keys:
+                    continue
+                
+                for value in docDict[fieldname]:
+                    if field in self._tokenize:
+                        for token in tokenize(value):
+                            values[field].add(token)
+                    else:
+                        values[field].add(value)
         for field, value in values.items():
             self._docsetlists[field].addDocument(docId, value)
 
@@ -117,7 +128,8 @@ class Drilldown(object):
             if type(fieldname) == tuple:
                 self._docsetlists[fieldname] = DocSetList()
                 for field in fieldname:
-                    self._docsetlists[fieldname].merge(self._docSetListFromTermEnumForField(field, indexReader, docIdMapping))
+                    dsl = self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
+                    self._docsetlists[fieldname].merge(dsl)
             else:
                 self._docsetlists[fieldname] = self._docSetListFromTermEnumForField(fieldname, indexReader, docIdMapping)
 

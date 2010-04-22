@@ -5,9 +5,9 @@
 #    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -93,7 +93,6 @@ class TrieTest(TestCase):
         trie.add(5, "z1-meer")
         trie.add(6, "z2-spul")
         trie.add(7, "z3-enzo")
-        #trie.printit()
         self.assertEquals(range(8), trie.getValues(""))
         self.assertEquals(range(4), trie.getValues("prefix"))
         self.assertEquals([0], trie.getValues("prefix-0"))
@@ -155,3 +154,9 @@ class TrieTest(TestCase):
         self.assertEquals(2, trie.getValue('aaa'))
         self.assertEquals(1, trie.getValue('aa'))
         self.assertEquals(0, trie.getValue('a'))
+        
+    def testOneCharacter(self):
+        trie = Trie()
+        trie.add(42, 'aa')
+        trie.add(87, 'a')
+        self.assertEquals(87, trie.getValue('a'))
