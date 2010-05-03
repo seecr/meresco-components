@@ -127,6 +127,7 @@ setup(
     name = 'merescocomponents',
     packages = [
         'merescocomponents',
+        'merescocomponents.autocomplete',        
         'merescocomponents.facetindex',
         'merescocomponents.facetindex.tools',
         'merescocomponents.oai',
@@ -135,6 +136,9 @@ setup(
         'merescocomponents.examples',
         'merescocomponents.examples.dna',
     ],
+    package_data={
+        'merescocomponents.autocomplete': ['js/*.js']
+    },
     ext_modules = [
         Extension("merescocomponents.facetindex._facetindex", [
                       'merescocomponents/facetindex/zipper.c',
