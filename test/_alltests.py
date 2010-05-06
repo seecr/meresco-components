@@ -108,6 +108,7 @@ from facetindex.docsetlisttest import DocSetListTest
 from facetindex.docsettest import DocSetTest
 from facetindex.documenttest import DocumentTest
 from facetindex.drilldowntest import DrilldownTest
+from facetindex.drilldownfieldnamestest import DrilldownFieldnamesTest
 from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
 from facetindex.incrementalindexingtest import IncrementalIndexingTest
 from facetindex.integerlisttest import IntegerListTest

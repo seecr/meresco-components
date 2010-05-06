@@ -9,6 +9,7 @@
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -36,7 +37,6 @@ from java.lang import Object, String
 
 from time import time
 from itertools import ifilter, islice
-from StringIO import StringIO
 
 from document import IDFIELD
 from meresco.core import Observable
@@ -47,21 +47,8 @@ from lucenedocidtracker import LuceneDocIdTracker
 
 IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 
-from java.io import StringReader
-from java.io import Reader
-
 class LuceneException(Exception):
     pass
-
-def tokenize(aString):
-    ts = merescoStandardAnalyzer.tokenStream('ignored fieldname', StringReader(unicode(aString)) % Reader)
-    tokens = []
-    
-    token = ts.next()
-    while token != None:
-        tokens.append(token.termText())
-        token = ts.next()
-    return tokens
 
 class _Logger(object):
     def comment(self, *strings):
@@ -135,7 +122,7 @@ class LuceneIndex(Observable):
         self._existingFieldNames = self._reader.getFieldNames(IndexReader_FieldOption_ALL)
 
     def observer_init(self):
-        self.do.indexStarted(self._reader, docIdMapping=self._lucene2docId)
+        self.do.indexStarted(self)
 
     def docsetFromQuery(self, pyLuceneQuery, **kwargs):
         return DocSet.fromQuery(self._searcher, pyLuceneQuery, self._lucene2docId)
@@ -237,10 +224,6 @@ class LuceneIndex(Observable):
 
     def __del__(self):
         self.close()
-
-    def start(self):
-        self._reopenIndex()
-        self.do.indexStarted(self._reader)
 
     def isOptimized(self):
         return self.docCount() == 0 or self._reader.isOptimized()

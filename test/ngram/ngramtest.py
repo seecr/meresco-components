@@ -3,12 +3,9 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2008 Delft University of Technology http://www.tudelft.nl
-#    Copyright (C) 2008 Tilburg University http://www.uvt.nl
+#    Copyright (C) 2008-2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2008-2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2008-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
-#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -81,6 +78,7 @@ class NGramTest(CQ2TestCase):
                 )
             )
         ))
+        self.indexingDna.once.observer_init()
         suggesterDna = be((Observable(),
             (NoOpSuggester(),
                 (NGramQuery(2, samples=50, fieldnames=['field0', 'field1'], fieldForSorting='allfields'),
@@ -162,8 +160,8 @@ class NGramTest(CQ2TestCase):
 
         inclusive, suggestions = self.suggestionsFor('puch')
         firstletters = ''.join(word[0] for word in suggestions)
-        self.assertEquals('ccccc', firstletters[:5])
-        self.assertFalse('c' in firstletters[5:], firstletters)
+        self.assertEquals('ccccccc', firstletters[:7])
+        self.assertFalse('c' in firstletters[7:], firstletters)
 
     def testUseMostFrequentlyAppearingWordForFields(self):
         puch_words_with_p = [p for p in PUCH_WORDS if p.lower().startswith('p')]
@@ -175,10 +173,8 @@ class NGramTest(CQ2TestCase):
             self.addWord(word)
             self.addWord(word, 'field0')
         inclusive, suggestions = self.suggestionsFor('puch', fieldname='field0')
-        threeletterwords = [word[:3] for word in suggestions]
-        self.assertTrue('puc' not in threeletterwords[:5])
-        self.assertEquals(['puc']*20, threeletterwords[5:])
 
+        self.assertEquals(['punch', 'pampuch', 'pouch', 'puck', 'pupuluca', 'puccini', 'praepuce', 'prepuce', 'prepuces', 'puchera'], suggestions[:10])
 
     def testNGramForSpecificField(self):
         for i in range(3):

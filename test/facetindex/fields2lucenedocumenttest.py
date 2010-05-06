@@ -9,6 +9,7 @@
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -30,7 +31,7 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from meresco.core import be, Transparant, Observable
-from meresco.core import TransactionScope, ResourceManager
+from meresco.core import TransactionScope, ResourceManager, Transaction
 
 from meresco.components.facetindex import Fields2LuceneDocumentTx, Document
 from meresco.components.facetindex.merescolucene import iterJ
@@ -83,13 +84,19 @@ class Fields2LuceneDocumentTest(TestCase):
         self.assertEquals([Document], [type(arg) for arg in self.observert.calledMethods[1].args])
 
         document = self.observert.calledMethods[1].args[0]
-        self.assertEquals([u'TermOne', u'TermTwo'], list(iterJ(document._document.getValues('a'))))
+        indexwriter = CallTrace('IndexWriter')
+        document.addToIndexWith(indexwriter)
+        luceneDocument = indexwriter.calledMethods[0].args[0]
+        self.assertEquals([u'TermOne', u'TermTwo'], list(iterJ(luceneDocument.getValues('a'))))
 
     def testTokenizedIsNotForgotten(self):
         list(self.body.all.addFields([('a', '1'), ('a', 'termone termtwo'), ('b', 'termone termtwo')]))
         document = self.observert.calledMethods[1].args[0]
-        self.assertTrue(document._document.getField('a').isTokenized())
-        self.assertFalse(document._document.getField('b').isTokenized())
+        indexwriter = CallTrace('IndexWriter')
+        document.addToIndexWith(indexwriter)
+        luceneDocument = indexwriter.calledMethods[0].args[0]
+        self.assertTrue(luceneDocument.getField('a').isTokenized())
+        self.assertFalse(luceneDocument.getField('b').isTokenized())
 
     def testRollback(self):
         fields = Fields2LuceneDocumentTx(CallTrace('Transaction'), [])
@@ -100,3 +107,23 @@ class Fields2LuceneDocumentTest(TestCase):
         self.body.do.addFields([('a', 'TermOne'), ('a', 'TermTwo'), ('b', '3')], 'theIdentifier')
         doc = self.observert.calledMethods[1].args[0]
         self.assertEquals('theIdentifier', doc.identifier)
+
+    def testUntokenizedSupportsPrefixes(self):
+        __callstack_var_tx__ = Transaction('transaction')
+        __callstack_var_tx__.locals['id'] = 'id'
+        resourceMgr = ResourceManager('transaction', 'ignored')
+        observer = CallTrace('observer')
+        resourceMgr.addObserver(observer)
+        f2doc = Fields2LuceneDocumentTx(resourceMgr, untokenized=['prefix.*', 'fieldname'])
+        f2doc.addField('fieldname', 'value1 value2')
+        f2doc.addField('tokenized', 'value1 value2')
+        f2doc.addField('prefix.field', 'value1 value2')
+        f2doc.commit()
+
+        document = observer.calledMethods[0].args[0]
+        d = document.asDict()
+        self.assertEquals(['value1 value2'], d['fieldname'])
+        self.assertEquals(['value1', 'value2'], d['tokenized'])
+        self.assertEquals(['value1 value2'], d['prefix.field'])
+
+

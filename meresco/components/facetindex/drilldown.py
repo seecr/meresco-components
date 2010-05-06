@@ -9,6 +9,7 @@
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -28,7 +29,7 @@
 #
 ## end license ##
 from .docsetlist import DocSetList, JACCARD_MI
-from merescolucene import Term, IndexReader, iterJ  # hmm, maybe we don't want this dependency?
+from merescolucene import Term, IndexReader, iterJ  
 from time import time
 from sys import maxint
 from functioncommand import FunctionCommand
@@ -38,49 +39,48 @@ from collections import defaultdict
 
 IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 
-from lucene import tokenize
 
 class NoFacetIndexException(Exception):
     def __init__(self, field, fields):
         Exception.__init__(self, "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields)))
 
 class Drilldown(object):
-    def __init__(self, staticDrilldownFieldnames=None, transactionName=None, tokenize=None):
-        self._staticDrilldownFieldnames = staticDrilldownFieldnames
-        self._actualDrilldownFieldnames = self._staticDrilldownFieldnames
-        self._docsetlists = {}
-        if self._staticDrilldownFieldnames:
-            self._docsetlists = dict((fieldname, DocSetList()) for fieldname in self._staticDrilldownFieldnames)
+
+    def __init__(self, drilldownFields=None, transactionName=None):
+        drilldownFields = drilldownFields or ['*']
+        self._drilldownFields = []
+        self._prefixes = []
+        self._compoundFields = []
+        for field in drilldownFields:
+            if type(field) == tuple:
+                self._compoundFields.append(field)
+            elif field.endswith('*'):
+                self._prefixes.append(field.rstrip('*'))
+            else:
+                self._drilldownFields.append(field)
+        self._docsetlists = defaultdict(DocSetList)
         self._commandQueue = []
         self._transactionName = transactionName
-        self._tokenize = tokenize if tokenize else []
 
     def _add(self, docId, docDict):
-        keys = docDict.keys()
-        fieldnames = (fieldname
-            for fieldname in keys
-                if fieldname in self._actualDrilldownFieldnames)
-        for fieldname in fieldnames:
-            values = docDict[fieldname]
-            if fieldname in self._tokenize:
-                values = tokenize(docDict[fieldname])
-            self._docsetlists[fieldname].addDocument(docId, values)
+        for field in docDict.keys():
+            if self._isDrilldownField(field):
+                self._docsetlists[field].addDocument(docId, docDict[field])
 
-        compoundFields = (field for field in self._actualDrilldownFieldnames if type(field) == tuple)
-        values = defaultdict(set)
-        for field in compoundFields:
-            for fieldname in field:
-                if not fieldname in keys:
-                    continue
-                
-                for value in docDict[fieldname]:
-                    if field in self._tokenize:
-                        for token in tokenize(value):
-                            values[field].add(token)
-                    else:
-                        values[field].add(value)
-        for field, value in values.items():
-            self._docsetlists[field].addDocument(docId, value)
+        for compoundField in self._compoundFields:
+            terms = set(term for field in compoundField \
+                            for term in docDict.get(field, []))
+            self._docsetlists[compoundField].addDocument(docId, terms)
+
+    def _isDrilldownField(self, field):
+        if field.startswith('__'):
+            return False
+        if field in self._drilldownFields:
+            return True
+        for prefix in self._prefixes:
+            if field.startswith(prefix):
+                return True
+        return False
 
     def addDocument(self, docId, docDict):
         self.deleteDocument(docId)
@@ -102,34 +102,33 @@ class Drilldown(object):
         pass
 
     def begin(self):
-        tx = callstackscope('__callstack_var_tx__') # rather derive from Observable oid and use self.tx
+        tx = callstackscope('__callstack_var_tx__')
         if tx.name == self._transactionName:
             tx.join(self)
 
     def deleteDocument(self, docId):
         self._commandQueue.append(FunctionCommand(self._delete, docId=docId))
 
-    def indexStarted(self, indexReader, docIdMapping=None):
+    def indexStarted(self, index):
         t0 = time()
+        indexReader = index.getIndexReader()
+        docIdMapping = index.getDocIdMapping()
+        self._index = index
+        for field in self._determineDrilldownFields(indexReader):
+            self._docsetlists[field] = self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
+        for compoundField in self._compoundFields:
+            for field in compoundField:
+                self._docsetlists[compoundField].merge(self._docSetListFromTermEnumForField(field, indexReader, docIdMapping))
 
-        self._totaldocs = indexReader.numDocs()
-        fieldNames = self._staticDrilldownFieldnames
-        if not fieldNames:
-            fieldNames = [fieldname
-                for fieldname in iterJ(indexReader.getFieldNames(IndexReader_FieldOption_ALL))
-                    if not fieldname.startswith('__')]
-        for fieldname in fieldNames:
-            if type(fieldname) == tuple:
-                self._docsetlists[fieldname] = DocSetList()
-                for field in fieldname:
-                    dsl = self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
-                    self._docsetlists[fieldname].merge(dsl)
-            else:
-                self._docsetlists[fieldname] = self._docSetListFromTermEnumForField(fieldname, indexReader, docIdMapping)
-
-        self._actualDrilldownFieldnames = fieldNames
         #print 'indexStarted (ms)', (time()-t0)*1000
         #print self.measure()
+
+    def _determineDrilldownFields(self, indexReader):
+        result = set(self._drilldownFields)
+        result.update(fieldname for fieldname in \
+            iterJ(indexReader.getFieldNames(IndexReader_FieldOption_ALL)) \
+                if self._isDrilldownField(fieldname))
+        return result
 
     def _docSetListFromTermEnumForField(self, field, indexReader, docIdMapping):
         return DocSetList.forField(indexReader, field, docIdMapping)
@@ -138,20 +137,21 @@ class Drilldown(object):
         return self._docsetlists[field]
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
+        allActualFields = self._docsetlists.keys()
         if not drilldownFieldnamesAndMaximumResults:
             drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)
-                for fieldname in self._actualDrilldownFieldnames]
+                for fieldname in allActualFields]
         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
-            if fieldname not in self._actualDrilldownFieldnames:
-                raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
+            if fieldname not in allActualFields:
+                raise NoFacetIndexException(fieldname, allActualFields)
             yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
 
     def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI, maxTermFreqPercentage=100):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:
             if fieldname not in self._docsetlists:
-                raise NoFacetIndexException(fieldname, self._actualDrilldownFieldnames)
+                raise NoFacetIndexException(fieldname, self._docsetlists.keys())
             yield fieldname, self._docsetlists[fieldname].jaccards(docset, minimum, maximum,
-                    self._totaldocs, algorithm=algorithm, maxTermFreqPercentage=maxTermFreqPercentage)
+                    self._index.docCount(), algorithm=algorithm, maxTermFreqPercentage=maxTermFreqPercentage)
 
     def queueLength(self):
         return len(self._commandQueue)

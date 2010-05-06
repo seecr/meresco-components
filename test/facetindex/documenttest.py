@@ -30,7 +30,7 @@
 
 import unittest
 from cq2utils import CallTrace
-from meresco.components.facetindex.document import IDFIELD, Document, DocumentException
+from meresco.components.facetindex.document import IDFIELD, Document, DocumentException, tokenize
 
 class DocumentTest(unittest.TestCase):
 
@@ -101,15 +101,60 @@ class DocumentTest(unittest.TestCase):
         d.addIndexedField('field', 'value1')
         d.addIndexedField('field', 'value2')
         self.assertEquals({'__id__': ['1234'], 'field': ['value1', 'value2']}, d.asDict())
-        
-    def testTokenizedFields(self):
-        d = Document('1234')
-        self.assertEquals([], d.tokenizedFields())
-        
-        d.addIndexedField('field1', 'value1')
-        d.addIndexedField('field2', 'value2.1')
-        self.assertEquals(['field1', 'field2'], d.tokenizedFields())
-        
-        d.addIndexedField('field2', 'value2.2')
-        self.assertEquals(['field1', 'field2'], d.tokenizedFields())
+
+    def testTokenize(self):
+        self.assertEquals([], tokenize(''))
+        self.assertEquals(['token'], tokenize('token'))
+        self.assertEquals(['token'], tokenize('TOKEN'))
+        self.assertEquals(['token'], tokenize('token.'))
+        self.assertEquals(['token'], tokenize("token's"))
+        self.assertEquals(['token'], tokenize('t.o.k.e.n.'))
+        self.assertEquals(['this', 'is', 'a', 'text'], tokenize('This is a text.'))
+
+    def testDictWithTokenizedFields(self):
+        d = Document('id')
+        d.addIndexedField('tokenized', 'value1 value2', tokenize=True)
+        d.addIndexedField('untokenized', 'value1 value2', tokenize=False)
+        self.assertEquals({
+            '__id__': ['id'],
+            'tokenized': ['value1', 'value2'],
+            'untokenized': ['value1 value2']
+            }, d.asDict())
+
+    def testDictWithSometimesTokenizedFields(self):
+        d = Document('id')
+        d.addIndexedField('fieldname', 'value1 value2', tokenize=True)
+        d.addIndexedField('fieldname', 'value1 value2', tokenize=False)
+        self.assertEquals({
+            '__id__': ['id'],
+            'fieldname': ['value1', 'value2', 'value1 value2']
+            }, d.asDict())
+
+
+    def testDictHasLazyTokenization(self):
+        tokenizer = CallTrace('tokenizer', methods={'tokenize': lambda x:x.split()})
+        d = Document('id')
+        d._tokenize = tokenizer.tokenize
+        d.addIndexedField('field1', 'value1 value2', tokenize=True)
+        d.addIndexedField('field2', 'value3 value4', tokenize=True)
+        docDict = d.asDict()
+        self.assertEquals(['value1', 'value2'], docDict['field1'])
+        self.assertEquals(1, len(tokenizer.calledMethods))
+
+    def testDictKeys(self):
+        d = Document('id')
+        d.addIndexedField('field1', 'value1 value2', tokenize=True)
+        d.addIndexedField('field1', 'value3 value4', tokenize=True)
+        d.addIndexedField('field2', 'value5 value6', tokenize=True)
+        self.assertEquals(set([IDFIELD, 'field1', 'field2']), d.asDict().keys())
+
+    def testDictGet(self):
+        d = Document('id')
+        d.addIndexedField('field1', 'value1 value2', tokenize=True)
+        d.addIndexedField('field2', 'value3 value4', tokenize=True)
+        self.assertEquals(['value1', 'value2'], d.asDict().get('field1'))
+        self.assertEquals(['nothing'], d.asDict().get('doesnotexist', ['nothing']))
+
+#def testDictUniqueKeysElements(self):
+
         

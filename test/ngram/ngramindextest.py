@@ -2,12 +2,9 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2008 Delft University of Technology http://www.tudelft.nl
-#    Copyright (C) 2008 Tilburg University http://www.uvt.nl
+#    Copyright (C) 2008-2009 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2008-2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2008-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
-#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -50,7 +47,7 @@ class NGramIndexTest(CQ2TestCase):
         self.assertEquals(['addDocument'], [m.name for m in index.calledMethods])
         doc = index.calledMethods[0].args[0]
         self.assertEquals('value$', doc.identifier)
-        self.assertEquals(['va al lu ue'], doc.asDict()['ngrams'])
+        self.assertEquals(['va', 'al', 'lu', 'ue'], doc.asDict()['ngrams'])
         
     def testIndexMultipleField(self):
         __callstack_var_tx__ = Transaction('record')
@@ -87,7 +84,7 @@ class NGramIndexTest(CQ2TestCase):
         ngramindex.commit()
 
         self.assertEquals(['addDocument', 'addDocument', 'addDocument'], [m.name for m in index.calledMethods])
-        docs = [(doc.identifier, doc.asDict()[NGRAMS_FIELD][0], doc.asDict()[NAME_FIELD][0]) for doc in (m.args[0] for m in index.calledMethods)]
+        docs = [(doc.identifier, ' '.join(doc.asDict()[NGRAMS_FIELD]), doc.asDict()[NAME_FIELD][0]) for doc in (m.args[0] for m in index.calledMethods)]
         docs.sort()
         self.assertEquals(('value$', 'va al lu ue', 'ngrams$'), docs[0])
         self.assertEquals(('value3$', 'va al lu ue e3', 'ngrams$'), docs[1])

@@ -9,6 +9,7 @@
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -39,7 +40,7 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.index = LuceneIndex(self.tempdir)
         self.drilldown = Drilldown(['field0'])
         self.index.addObserver(self.drilldown)
-        self.index.start()
+        self.index.observer_init()
 
     def addDocument(self, identifier, **fields):
         doc = Document(identifier)
@@ -99,10 +100,9 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.assertEquals(1, self.index.queueLength())     # add
         self.assertEquals(['_add'], [command.methodName() for command in self.index._commandQueue])
         self.assertEquals(2, self.drilldown.queueLength()) # delete, add
-        self.assertEquals([
-            '_delete(docId=0)',
-            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
-            ], list(repr(command) for command in self.drilldown._commandQueue))
+        self.assertEquals(['_delete', '_add'], [command.methodName() for command in self.drilldown._commandQueue])
+        self.assertEquals([0, 0], [command._kwargs['docId'] for command in self.drilldown._commandQueue])
+        self.assertEquals({'field0': [u'term0'], u'__id__': [u'1']}, self.drilldown._commandQueue[1]._kwargs['docDict'])
 
     def testAddDocumentAndThenDeleteIt(self):
         self.assertEquals(0, self.index.queueLength())
@@ -111,11 +111,10 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.index.delete('1')                # internally: delete, delegated to drilldown
         self.assertEquals(2, self.index.queueLength())     # add, delete
         self.assertEquals(['_add', '_delete'], [command.methodName() for command in self.index._commandQueue])
-        #self.assertEquals(2, self.drilldown.queueLength()) # add, delete
-        self.assertEquals([
-            '_delete(docId=0)',
-            "_add(docDict={u'field0': [u'term0'], u'__id__': [u'1']}, docId=0)",
-            '_delete(docId=0)'], list(repr(command) for command in self.drilldown._commandQueue))
+        self.assertEquals(3, self.drilldown.queueLength()) # add, delete
+        self.assertEquals(['_delete', '_add', '_delete'], [command.methodName() for command in self.drilldown._commandQueue])
+        self.assertEquals([0, 0, 0], [command._kwargs['docId'] for command in self.drilldown._commandQueue])
+        self.assertEquals({'field0': [u'term0'], u'__id__': [u'1']}, self.drilldown._commandQueue[1]._kwargs['docDict'])
 
     def testDeleteDocumentAndThenAddIt(self):
         self.addDocument('1', field0='term0')  # add docId=0

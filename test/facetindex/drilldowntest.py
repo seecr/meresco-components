@@ -9,6 +9,7 @@
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -34,7 +35,6 @@ from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.components.facetindex.document import Document
 from meresco.components.facetindex.drilldown import Drilldown, NoFacetIndexException
-from meresco.components.facetindex.drilldownfieldnames import DrilldownFieldnames
 from meresco.components.facetindex.lucene import LuceneIndex
 
 from meresco.components.facetindex.docset import DocSet
@@ -51,6 +51,11 @@ class DrilldownTest(CQ2TestCase):
     def tearDown(self):
         self.index.close()
         CQ2TestCase.tearDown(self)
+
+    def createDrilldown(self, *args, **kwargs):
+        self.drilldown = Drilldown(*args, **kwargs)
+        self.index.addObserver(self.drilldown)
+        self.index.observer_init()
 
     #Helper functions:
     def addUntokenized(self, documents, index=None):
@@ -69,35 +74,30 @@ class DrilldownTest(CQ2TestCase):
                 myDocument.addIndexedField(field, value, tokenize = tokenize)
             index.addDocument(myDocument)
         index.commit()
+        if hasattr(self, 'drilldown'):
+            self.drilldown.commit()
 
     def testIndexStarted(self):
+        self.createDrilldown(['field_0'])
         self.addUntokenized([('id', {'field_0': 'this is term_0'})])
 
-        drilldown = Drilldown(['field_0'])
-        reader = IndexReader.open(self.tempdir)
-
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
-        field, results = drilldown.drilldown(DocSet(data=[0]), [('field_0', 10, False)]).next()
+        field, results = self.drilldown.drilldown(DocSet(data=[0]), [('field_0', 10, False)]).next()
         self.assertEquals('field_0', field)
         self.assertEquals([('this is term_0', 1)], list(results))
 
     def testDrilldown(self):
+        self.createDrilldown(['field_0', 'field_1'])
         self.addUntokenized([
             ('0', {'field_0': 'this is term_0', 'field_1': 'inquery'}),
             ('1', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('3', {'field_0': 'this is term_2', 'field_1': 'cannotbefound'})])
-        self.index._writer.flush()
-        reader = IndexReader.open(self.tempdir)
-        #convertor = LuceneRawDocSets(reader, ['field_0', 'field_1'])
-        drilldown = Drilldown(['field_0', 'field_1'])
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
         query = TermQuery(Term("field_1", "inquery"))
         total, queryResults = self.index.executeQuery(query)
         self.assertEquals(3, total)
         self.assertEquals(['0', '1', '2'], queryResults)
         queryDocset = self.index.docsetFromQuery(query)
-        drilldownResult = list(drilldown.drilldown(queryDocset, [('field_0', 0, False), ('field_1', 0, False)]))
+        drilldownResult = list(self.drilldown.drilldown(queryDocset, [('field_0', 0, False), ('field_1', 0, False)]))
         self.assertEquals(2, len(drilldownResult))
         result = dict(drilldownResult)
         self.assertEquals(['field_0', 'field_1'], result.keys())
@@ -105,113 +105,73 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([("inquery", 3)], list(result['field_1']))
 
     def testSortingOnCardinality(self):
+        self.createDrilldown(['field0'])
         self.addUntokenized([
             ('0', {'field0': 'term1'}),
             ('1', {'field0': 'term1'}),
             ('2', {'field0': 'term2'}),
             ('3', {'field0': 'term0'})])
-        reader = IndexReader.open(self.tempdir)
-        drilldown = Drilldown(['field0'])
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
         hits = self.index.docsetFromQuery(MatchAllDocsQuery())
-        ddData = list(drilldown.drilldown(hits, [('field0', 0, False)]))
+        ddData = list(self.drilldown.drilldown(hits, [('field0', 0, False)]))
         self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
-        result = list(drilldown.drilldown(hits, [('field0', 0, True)]))
+        result = list(self.drilldown.drilldown(hits, [('field0', 0, True)]))
         self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
 
-
-    def testAppendToRow(self):
-        docsetlist = DocSetList()
-        docsetlist.addDocument(0, ['term0', 'term1'])
-        self.assertEquals(set(['term0', 'term1']), set(docsetlist.termForDocset(docsetlist[i]) for i in range(2)))
-        self.assertEquals([('term0', 1), ('term1', 1)], list(docsetlist.termCardinalities(DocSet([0, 1]))))
-        docsetlist.addDocument(1, ['term0', 'term1'])
-        self.assertEquals('term0', docsetlist.termForDocset(docsetlist[0]))
-        self.assertEquals('term1', docsetlist.termForDocset(docsetlist[1]))
-        self.assertEquals([('term0', 2), ('term1', 2)], list(docsetlist.termCardinalities(DocSet([0, 1]))))
-        docsetlist.addDocument(2, ['term0', 'term2'])
-        self.assertEquals([('term0', 3), ('term1', 2), ('term2', 1)], list(docsetlist.termCardinalities(DocSet([0, 1, 2]))))
-        try:
-            docsetlist.addDocument(2, ['term0', 'term2'])
-        except Exception, e:
-            self.assertTrue("non-increasing" in str(e))
-
     def testDynamicDrilldownFields(self):
+        self.createDrilldown(['*'])
         self.addUntokenized([
             ('0', {'field_0': 'this is term_0', 'field_1': 'inquery'}),
             ('1', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('3', {'__private_field': 'this is term_2', 'field_1': 'cannotbefound'})])
-        reader = IndexReader.open(self.tempdir)
-        drilldown = Drilldown()
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        results = list(drilldown.drilldown(docset, [('field_0', 0, False)]))
+        results = list(self.drilldown.drilldown(docset, [('field_0', 0, False)]))
         self.assertEquals('field_0', results[0][0])
-        results = list(drilldown.drilldown(docset))
+        results = list(self.drilldown.drilldown(docset))
         self.assertEquals('field_0', results[0][0])
         self.assertEquals('field_1', results[1][0])
         self.assertEquals(2, len(results))
 
     def testFieldGetAdded(self):
+        self.createDrilldown(['*'])
         self.addUntokenized([
             ('0', {'field_0': 'this is term_0'})
         ])
-        drilldown = Drilldown()
-        drilldown.indexStarted(self.index.getIndexReader(), docIdMapping=self.index.getDocIdMapping())
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        results = list(drilldown.drilldown(docset))
+        results = list(self.drilldown.drilldown(docset))
         self.assertEquals('field_0', results[0][0])
         self.assertEquals(1, len(results))
         self.addUntokenized([
             ('1', {'field_0': 'this is term_0', 'field_1': 'inquery'})
         ])
-        drilldown.indexStarted(self.index.getIndexReader(), docIdMapping=self.index.getDocIdMapping())
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        results = list(drilldown.drilldown(docset))
+        results = list(self.drilldown.drilldown(docset))
         self.assertEquals(2, len(results))
         self.assertEquals('field_0', results[0][0])
         self.assertEquals('field_1', results[1][0])
 
-    def testDrilldownFieldnames(self):
-        d = DrilldownFieldnames(
-            lookup=lambda name: 'drilldown.'+name,
-            reverse=lambda name: name[len('drilldown.'):])
-        observer = CallTrace('drilldown')
-        observer.returnValues['drilldown'] = [('drilldown.field1', [('term1',1)]),('drilldown.field2', [('term2', 2)])]
-        d.addObserver(observer)
-        hits = CallTrace('Hits')
-
-        result = list(d.drilldown(hits, [('field1', 0, True),('field2', 3, False)]))
-
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals([('drilldown.field1', 0, True),('drilldown.field2', 3, False)], list(observer.calledMethods[0].args[1]))
-
-        self.assertEquals([('field1', [('term1',1)]),('field2', [('term2', 2)])], result)
-
     def testJaccardIndex(self):
+        self.createDrilldown(['title'])
         self.addTokenized([
             ('0', {'title': 'cats dogs mice'}),
             ('1', {'title': 'cats dogs'}),
             ('2', {'title': 'cats'}),
             ('3', {'title': 'dogs mice'})])
-        self.index._writer.flush()
-        reader = IndexReader.open(self.tempdir)
+        # The following line fixes test, but in the wrong way
+        #self.drilldown.indexStarted(self.index)
 
-        drilldown = Drilldown(['title'])
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
         query = TermQuery(Term("title", "dogs"))
         total, queryResults = self.index.executeQuery(query)
         queryDocset = self.index.docsetFromQuery(query)
-        jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 0, 100)], algorithm=JACCARD_ONLY))
+        jaccardIndices = list(self.drilldown.jaccard(queryDocset, [("title", 0, 100)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('dogs',100),('mice', 66),('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
 
-        jaccardIndices = list(drilldown.jaccard(queryDocset, [("title", 45, 55)], algorithm=JACCARD_ONLY))
+        jaccardIndices = list(self.drilldown.jaccard(queryDocset, [("title", 45, 55)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
 
     def testJaccardPassMaxTermFreqPercentage(self):
         drilldown = Drilldown([])
-        drilldown._totaldocs = 78
+        drilldown._index = CallTrace('index', returnValues={'docCount':78})
         docSetList_for_title = CallTrace('DocSetList')
         drilldown._docsetlists['title'] = docSetList_for_title
         list(drilldown.jaccard(None, [("title", 17, 67)], maxTermFreqPercentage=80))
@@ -219,9 +179,9 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals("[jaccards(None, 17, 67, 78, algorithm=%s, maxTermFreqPercentage=80)]" % algorithm, str(docSetList_for_title.calledMethods))
 
     def testJaccardIndexChecksFields(self):
-        drilldown = Drilldown(['title'])
+        self.createDrilldown(['title'])
         try:
-            jaccardIndex = list(drilldown.jaccard(None, [("name", 0, 100)]))
+            jaccardIndex = list(self.drilldown.jaccard(None, [("name", 0, 100)]))
             self.fail()
         except NoFacetIndexException, e:
             self.assertEquals("No facetindex for field 'name'. Available fields: 'title'", str(e))
@@ -258,9 +218,7 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(0, drilldown.queueLength())
 
     def testCommit(self):
-        reader = IndexReader.open(self.tempdir)
         drilldown = Drilldown(['title'])
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
         drilldown.addDocument(0, {'title': ['value']})
         drilldown.addDocument(1, {'title': ['value2']})
 
@@ -277,21 +235,18 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([('value', 0), ('value2', 1)], list(drilldown._docsetlists['title'].allCardinalities()))
 
     def testMapLuceneIdsOnStartup(self):
-        drilldown = Drilldown(['field_0'])
-        self.index.addObserver(drilldown)
         documents = []
         for i in range(8):
             recordId = 'id:%0.3d' % i
             data = {'field_0': 'value%0.3d' % i}
             documents.append((recordId, data))
         self.addUntokenized(documents)
-        drilldown.commit()
         self.index.close()
 
         #print "---- 1 ----"
         index = LuceneIndex(self.tempdir)
         drilldown = Drilldown(['field_0'])
-        drilldown.indexStarted(index._reader, docIdMapping=index.getDocIdMapping())
+        drilldown.indexStarted(index)
 
         index.delete('id:003')
         index.delete('id:006')
@@ -302,7 +257,7 @@ class DrilldownTest(CQ2TestCase):
         #print "---- 2 ----"
         index2 = LuceneIndex(self.tempdir)
         drilldown2 = Drilldown(['field_0'])
-        drilldown2.indexStarted(index2._reader, docIdMapping=index2.getDocIdMapping())
+        drilldown2.indexStarted(index2)
         documents = []
         for i in range(8,89):
             recordId = 'id:%0.3d' % i
@@ -316,7 +271,7 @@ class DrilldownTest(CQ2TestCase):
         #print "---- 3 ----"
         index3 = LuceneIndex(self.tempdir)
         drilldown3 = Drilldown(['field_0'])
-        drilldown3.indexStarted(index3._reader, docIdMapping=index3.getDocIdMapping())
+        drilldown3.indexStarted(index3)
         drilldownDocIds = [x[0] for x in list(drilldown3._docsetlists['field_0'])]
 
         self.assertEquals([0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88], drilldownDocIds)
@@ -378,30 +333,49 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1)]), set(resultTerms))
 
     def testIndexStartedWithCompoundField(self):
+        self.createDrilldown(['field_0', ('field_0', 'field_1')])
         self.addUntokenized([('id0', {'field_0': 'this is term_0'})])
         self.addUntokenized([('id1', {'field_1': 'this is term_1'})])
 
-        drilldown = Drilldown(['field_0', ('field_0', 'field_1')])
-        reader = IndexReader.open(self.tempdir)
-
-        drilldown.indexStarted(reader, docIdMapping=self.index.getDocIdMapping())
-        field, results = drilldown.drilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)]).next()
+        field, results = self.drilldown.drilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)]).next()
         self.assertEquals(('field_0', 'field_1'), field)
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
+
+    def testDetermineDrilldownFieldnamesWithoutStars(self):
+        self.addUntokenized([('id0', {
+            'prefix.field_0': 'this is term_0',
+            'prefix.field_1': 'this is term_1',
+            'field_2': 'this is term_2'})])
+        drilldown = Drilldown(['field_2'])
+        fields = drilldown._determineDrilldownFields(self.index.getIndexReader())
+        self.assertEquals(set(['field_2']), fields)
+
+    def testDetermineDrilldownFieldnamesWithAllstars(self):
+        self.addUntokenized([('id0', {
+            'prefix.field_0': 'this is term_0',
+            'prefix.field_1': 'this is term_1',
+            'field_2': 'this is term_2'})])
+        drilldown = Drilldown(['*'])
+        fields = drilldown._determineDrilldownFields(self.index.getIndexReader())
+        self.assertEquals(set(['field_2', 'prefix.field_0', 'prefix.field_1']) , fields)
+
+    def testDetermineDrilldownFieldnamesWithPrefixStar(self):
+        self.addUntokenized([('id0', {
+            'prefix.field_0': 'this is term_0',
+            'prefix.field_1': 'this is term_1',
+            'field_2': 'this is term_2'})])
+        drilldown = Drilldown(['prefix.*'])
+        fields = drilldown._determineDrilldownFields(self.index.getIndexReader())
+        self.assertEquals(set(['prefix.field_0', 'prefix.field_1']) , fields)
+    def testDrilldownFieldnamesWithPrefixStar(self):
+        self.createDrilldown(['prefix.*'])
+        self.addUntokenized([('id0', {
+            'prefix.field_0': 'this is term_0',
+            'prefix.field_1': 'this is term_1',
+            'field_2': 'this is term_2'})])
+        field, results = self.drilldown.drilldown(DocSet(data=[0]), [('prefix.field_0', 10, False)]).next()
+        self.assertEquals([('this is term_0', 1)], list(results))
 
     def testCompoundFieldWithSameTermInDifferentFields(self):
         drilldown = Drilldown([('field_0', 'field_1')])
         drilldown._add(0, {'field_0': ['value'], 'field_1': ['value']}) # had a bug causing: "non-increasing docid" error
-
-    def testTokenize(self):
-        drilldown = Drilldown(['tokenized', 'untokenized', ('tokenized', 'untokenized')], tokenize=['tokenized', ('tokenized', 'untokenized')])
-        drilldown.addDocument(0, {'tokenized': ['token one'], 'untokenized': ['token two']})
-        drilldown.addDocument(1, {'tokenized': ['token two'], 'untokenized': ['token two']})
-        drilldown.commit()
-        self.assertEquals([('token', 2), ('one', 1), ('two', 1)], list(drilldown._docsetlists['tokenized'].allCardinalities()))
-        self.assertEquals(
-            [('token two', 2)], 
-            list(drilldown._docsetlists['untokenized'].allCardinalities()))
-        self.assertEquals(
-            set([('token', 2), ('one', 1), ('two', 2)]), 
-            set(drilldown._docsetlists[('tokenized','untokenized')].allCardinalities()))

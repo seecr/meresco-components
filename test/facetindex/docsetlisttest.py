@@ -224,7 +224,6 @@ class DocSetListTest(LuceneTestCase):
         self.createBigIndex(4, 5)
         self.assertEquals(0, len(DocSetList.forField(self.reader, 'field')))
 
-    #def testAppendToRow(self):
     def testAppendDocument(self):
         docsetlist = DocSetList()
         self.assertEquals(0, len(docsetlist))

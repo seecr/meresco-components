@@ -1,4 +1,3 @@
-#!/bin/bash
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -22,6 +21,25 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-export LANG=en_US.UTF-8
-export PYTHONPATH=.:"$PYTHONPATH"
-python2.5 _alltests.py "$@"
+
+from cq2utils import CQ2TestCase, CallTrace
+from meresco.components.facetindex.drilldownfieldnames import DrilldownFieldnames
+
+class DrilldownFieldnamesTest(CQ2TestCase):
+
+    def testDrilldownFieldnames(self):
+        d = DrilldownFieldnames(
+            lookup=lambda name: 'drilldown.'+name,
+            reverse=lambda name: name[len('drilldown.'):])
+        observer = CallTrace('drilldown')
+        observer.returnValues['drilldown'] = [('drilldown.field1', [('term1',1)]),('drilldown.field2', [('term2', 2)])]
+        d.addObserver(observer)
+        hits = CallTrace('Hits')
+
+        result = list(d.drilldown(hits, [('field1', 0, True),('field2', 3, False)]))
+
+        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEquals([('drilldown.field1', 0, True),('drilldown.field2', 3, False)], list(observer.calledMethods[0].args[1]))
+
+        self.assertEquals([('field1', [('term1',1)]),('field2', [('term2', 2)])], result)
+

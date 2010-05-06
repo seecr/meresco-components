@@ -10,6 +10,7 @@
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -45,8 +46,6 @@ from cqlparser import parseString
 
 from weightless import Reactor
 
-from meresco.components.facetindex.lucene import tokenize
-
 class LuceneTest(CQ2TestCase):
 
     def setUp(self):
@@ -60,17 +59,6 @@ class LuceneTest(CQ2TestCase):
     def testCreation(self):
         self.assertEquals(os.path.isdir(self.tempdir), True)
         self.assertTrue(IndexReader.indexExists(self.tempdir))
-
-    def testTokenize(self):
-        self.assertEquals([], tokenize(''))
-        self.assertEquals(['token'], tokenize('token'))
-        self.assertEquals(['token'], tokenize('TOKEN'))
-        self.assertEquals(['token'], tokenize('token.'))
-        self.assertEquals(['token'], tokenize("token's"))
-        self.assertEquals(['token'], tokenize('t.o.k.e.n.'))
-        self.assertEquals(['this', 'is', 'a', 'text'], tokenize('This is a text.'))
-        
-        
 
     def testAddToIndex(self):
         myDocument = Document('0123456789')
@@ -239,12 +227,11 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(['0123456789'], hits1)
         self.assertEquals(['0123456789'], hits2)
 
-
-    def testStart(self):
+    def testObserverInit(self):
         intercept = CallTrace('Interceptor')
         self._luceneIndex.addObserver(intercept)
 
-        self._luceneIndex.start()
+        self._luceneIndex.observer_init()
 
         self.assertEquals(1, len(intercept.calledMethods))
         self.assertEquals('indexStarted', intercept.calledMethods[0].name)
@@ -461,14 +448,16 @@ class LuceneTest(CQ2TestCase):
         self.addDocument('2', field1='nut')
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals(1, len(self._luceneIndex._commandQueue))
-        self.assertEquals("addDocument(docDict={u'field1': [u'nut'], u'__id__': [u'2']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals("addDocument", observer.calledMethods[0].name)
+        self.assertEquals({'docDict': {u'field1': [u'nut'], u'__id__': [u'2']}, 'docId': 0}, observer.calledMethods[0].kwargs)
 
     def testPassOnDeleteDocument(self):
         observer = CallTrace('observer')
         self._luceneIndex.addObserver(observer)
         self.addDocument('identifier', field0='term0') # 0
         self._luceneIndex.delete('identifier')
-        self.assertEquals("addDocument(docDict={u'field0': [u'term0'], u'__id__': [u'identifier']}, docId=0)", str(observer.calledMethods[0]))
+        self.assertEquals("addDocument", observer.calledMethods[0].name)
+        self.assertEquals({'docDict':{u'field0': [u'term0'], u'__id__': [u'identifier']}, 'docId':0}, observer.calledMethods[0].kwargs)
         self.assertEquals('deleteDocument(docId=0)', str(observer.calledMethods[1]))
 
     def testDocIdTrackerIntegration(self):
