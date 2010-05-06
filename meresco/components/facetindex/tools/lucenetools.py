@@ -46,13 +46,13 @@ def _assertNoFilesOpenInPath(path, lsofFunc=None):
     lsofFunc = lsofFunc if lsofFunc else _lsof
     if isdir(path):
         cmdline, out, err, exitcode = lsofFunc(path)
-        if exitcode != 0 and not 'WARNING' in err:
+        if err:
             raise Exception("'%s' failed:\n%s" % (cmdline, err))
-        if out and len(out.split("\n")) > 0:
-            raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
+        if out:
+            raise Exception("Refusing to remove lock because index is in use by PIDs: %s" % out.strip())
 
 def _lsof(path):
-    cmdline = "lsof +D %s" % path
+    cmdline = "lsof -t +D %s" % path # -t output only pid's, +D scan directory recursively
     process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
     (out, err) = process.communicate()
     return cmdline, out, err, process.poll()

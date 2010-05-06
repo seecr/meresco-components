@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from os.path import join, isfile
+from os import system, getpid
 
 from cq2utils import CQ2TestCase
 from meresco.components.facetindex.tools import unlock
@@ -29,12 +30,11 @@ class LuceneToolsTest(CQ2TestCase):
         open(lockFile, "w").close()
         afile = join(self.tempdir, "afile")
         openFile = open(afile, "w")
-
         try:
             unlock(self.tempdir)
+            self.fail('unlock must fail')
         except Exception, e:
-            self.assertTrue(str(e).startswith("Refusing to remove Lucene lock"))
-            self.assertTrue("/afile" in str(e))
+            self.assertEquals("Refusing to remove lock because index is in use by PIDs: %d" % getpid(), str(e))
         finally:
             openFile.close()
         self.assertTrue(isfile(lockFile))
@@ -49,8 +49,8 @@ class LuceneToolsTest(CQ2TestCase):
         except Exception, e:
             self.assertEquals("'dummy cmdline' failed:\nSome Error", str(e))
 
-    def testAssertNoFilesOpenInPathLsofWarning(self):
-        _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "WARNING: some warning", 1))
+    def testAssertNoFilesOpenInPathLsof(self):
+        _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "", 1))
 
     def testAssertNoFilesOpenInPathLsofNotCalledInCaseDirDoesntExist(self):
         def lsofFunc(path):
