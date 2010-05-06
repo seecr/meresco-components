@@ -1,0 +1,67 @@
+Changeset created on Wed May  5 15:22:06 CEST 2010 by Seek You Too
+
+Description: Fix for lucenetools/unlock to work on non-reiserfs file systems.
+
+    Unlock uses 'lsof' to check for users of an index and only removes the lock when there are no users. The 'lsof' command issued a warning on reiserfs file systems which was not properly dealt with. This caused errors on non reiserfs file systems.  This has been fixed.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.0-beta-10-RDF/version_0
+From
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/tools/lucenetools.py version_0-asynchronous-inbox/meresco/components/facetindex/tools/lucenetools.py
+--- version_0/meresco/components/facetindex/tools/lucenetools.py	2010-05-05 12:20:49.000000000 +0200
++++ version_0-asynchronous-inbox/meresco/components/facetindex/tools/lucenetools.py	2010-05-05 14:55:49.000000000 +0200
+@@ -46,13 +46,13 @@
+     lsofFunc = lsofFunc if lsofFunc else _lsof
+     if isdir(path):
+         cmdline, out, err, exitcode = lsofFunc(path)
+-        if exitcode != 0 and not 'WARNING' in err:
++        if err:
+             raise Exception("'%s' failed:\n%s" % (cmdline, err))
+-        if out and len(out.split("\n")) > 0:
+-            raise Exception("Refusing to remove Lucene lock because index is already in use by another process:\n" + out)
++        if out:
++            raise Exception("Refusing to remove lock because index is in use by PIDs: %s" % out.strip())
+ 
+ def _lsof(path):
+-    cmdline = "lsof +D %s" % path
++    cmdline = "lsof -t +D %s" % path # -t output only pid's, +D scan directory recursively
+     process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
+     (out, err) = process.communicate()
+     return cmdline, out, err, process.poll()
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/facetindex/tools/lucenetoolstest.py version_0-asynchronous-inbox/test/facetindex/tools/lucenetoolstest.py
+--- version_0/test/facetindex/tools/lucenetoolstest.py	2010-05-05 12:20:49.000000000 +0200
++++ version_0-asynchronous-inbox/test/facetindex/tools/lucenetoolstest.py	2010-05-05 14:55:01.000000000 +0200
+@@ -1,6 +1,7 @@
+ # -*- coding: utf-8 -*-
+ 
+ from os.path import join, isfile
++from os import system, getpid
+ 
+ from cq2utils import CQ2TestCase
+ from meresco.components.facetindex.tools import unlock
+@@ -29,12 +30,11 @@
+         open(lockFile, "w").close()
+         afile = join(self.tempdir, "afile")
+         openFile = open(afile, "w")
+-
+         try:
+             unlock(self.tempdir)
++            self.fail('unlock must fail')
+         except Exception, e:
+-            self.assertTrue(str(e).startswith("Refusing to remove Lucene lock"))
+-            self.assertTrue("/afile" in str(e))
++            self.assertEquals("Refusing to remove lock because index is in use by PIDs: %d" % getpid(), str(e))
+         finally:
+             openFile.close()
+         self.assertTrue(isfile(lockFile))
+@@ -49,8 +49,8 @@
+         except Exception, e:
+             self.assertEquals("'dummy cmdline' failed:\nSome Error", str(e))
+ 
+-    def testAssertNoFilesOpenInPathLsofWarning(self):
+-        _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "WARNING: some warning", 1))
++    def testAssertNoFilesOpenInPathLsof(self):
++        _assertNoFilesOpenInPath(self.tempdir, lsofFunc=lambda path: ("dummy cmdline", "", "", 1))
+ 
+     def testAssertNoFilesOpenInPathLsofNotCalledInCaseDirDoesntExist(self):
+         def lsofFunc(path):
