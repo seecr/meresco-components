@@ -127,6 +127,7 @@ setup(
     name = 'meresco-components',
     packages = [
         'meresco.components',
+        'meresco.components.autocomplete',
         'meresco.components.drilldown',
         'meresco.components.http',
         'meresco.components.numeric',
@@ -141,6 +142,7 @@ setup(
     ],
     package_data={
         'meresco.components': ['rules/*.rules'],
+        'meresco.components.autocomplete': ['js/*.js'],
         'meresco.components.xml_generic': [
             'schemas/*',
             'schemas-lom/*.xsd',
@@ -178,8 +180,8 @@ setup(
     url = 'http://www.cq2.nl',
     author = 'Seek You Too',
     author_email = 'info@cq2.nl',
-    description = 'Meresco Components are components to build and archives, based on Meresco Core. based on Meresco Core.',
-    long_description = 'Meresco Components are components to build and archives, based on Meresco Core. based on Meresco Core.',
+    description = 'Meresco Components are components to build and archives, based on Meresco Core.',
+    long_description = 'Meresco Components are components to build and archives, based on Meresco Core.',
     license = 'GPL',
     platforms='all',
 )
