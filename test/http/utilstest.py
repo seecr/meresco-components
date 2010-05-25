@@ -45,7 +45,7 @@ class UtilsTest(TestCase):
         headerParts = header.split(utils.CRLF)
         self.assertEquals("HTTP/1.0 200 OK", headerParts[0])
         self.assertTrue(newHeader in headerParts)
-        self.assertTrue(utils.ContentTypeHtml in headerParts)
+        self.assertTrue(utils.ContentTypeHeader + utils.ContentTypeHtml in headerParts)
 
     def testInsertHeaderWithEmptyLines(self):
         def handleRequest(*args, **kwargs):

@@ -30,48 +30,49 @@
 ## end license ##
 
 CRLF = "\r\n"
-ContentTypeXml = "Content-Type: text/xml; charset=utf-8"
-ContentTypeRss = "Content-Type: application/rss+xml"
-ContentTypeHtml = "Content-Type: text/html; charset=utf-8"
-ContentTypePlainText = "Content-Type: text/plain; charset=utf-8"
+ContentTypeXml = "text/xml; charset=utf-8"
+ContentTypeRss = "application/rss+xml"
+ContentTypeHtml = "text/html; charset=utf-8"
+ContentTypePlainText = "text/plain; charset=utf-8"
+ContentTypeHeader = "Content-Type: "
 
 Ok = "HTTP/1.0 200 Ok" + CRLF
 
 #200
 okXml = "HTTP/1.0 200 OK" + CRLF + \
-        ContentTypeXml + CRLF + \
+        ContentTypeHeader + ContentTypeXml + CRLF + \
         CRLF
 
 okRss = "HTTP/1.0 200 OK" + CRLF + \
-        ContentTypeRss + CRLF + \
+        ContentTypeHeader + ContentTypeRss + CRLF + \
         CRLF
 
 okHtml = "HTTP/1.0 200 OK" + CRLF + \
-        ContentTypeHtml + CRLF + \
+        ContentTypeHeader + ContentTypeHtml + CRLF + \
         CRLF
 
 okPlainText = "HTTP/1.0 200 OK" + CRLF + \
-        ContentTypePlainText + CRLF + \
+        ContentTypeHeader + ContentTypePlainText + CRLF + \
         CRLF
 
 #403
 forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
-               ContentTypeHtml + CRLF + \
+               ContentTypeHeader + ContentTypeHtml + CRLF + \
                CRLF
 
 #404
 notFoundHtml = "HTTP/1.0 404 Not Found" + CRLF + \
-               ContentTypeHtml + CRLF + \
+               ContentTypeHeader + ContentTypeHtml + CRLF + \
                CRLF
 
 #500
 serverErrorXml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
-                 ContentTypeXml + CRLF + \
+                 ContentTypeHeader + ContentTypeXml + CRLF + \
                  CRLF
 
 #503
 serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
-                        ContentTypeHtml + CRLF +\
+                        ContentTypeHeader + ContentTypeHtml + CRLF +\
                         CRLF 
 
 def insertHeader(httpResponse, extraHeader):
