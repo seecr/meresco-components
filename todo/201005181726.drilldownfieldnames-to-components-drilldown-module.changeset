@@ -1,0 +1,22 @@
+Changeset created on Tue May 18 17:26:27 CEST 2010 by Seek You Too
+
+Description: Removed duplicate DrilldownFieldnames
+
+    DrilldownFieldnames was duplicated, but is now only in components/
+    drilldown
+
+Baseline version: meresco-components/workingsets/2.23.5-EduRep/version_5
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/test/_alltests.py version_6/test/_alltests.py
+--- version_5/test/_alltests.py	2010-05-06 22:50:48.000000000 +0200
++++ version_6/test/_alltests.py	2010-05-18 17:26:17.000000000 +0200
+@@ -59,7 +59,6 @@
+ from facetindex.documenttest import DocumentTest
+ from facetindex.lucenetest import LuceneTest
+ from facetindex.drilldowntest import DrilldownTest
+-from facetindex.drilldownfieldnamestest import DrilldownFieldnamesTest
+ from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
+ 
+ from facetindex.incrementalindexingtest import IncrementalIndexingTest
+Only in version_5/test/facetindex: drilldownfieldnamestest.py
+Only in version_5/merescocomponents/facetindex: drilldownfieldnames.py
