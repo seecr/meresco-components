@@ -217,6 +217,9 @@ class LuceneIndex(Observable):
             return Sort(sortBy, bool(sortDescending))
         return None
 
+    def listFields(self):
+        return iterJ(self._existingFieldNames)
+
     def close(self):
         self._writer and self._writer.close()
         self._reader = None

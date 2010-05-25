@@ -43,6 +43,8 @@ IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 class NoFacetIndexException(Exception):
     def __init__(self, field, fields):
         Exception.__init__(self, "No facetindex for field '%s'. Available fields: %s" % (field, ', '.join("'%s'" % field for field in fields)))
+        self.field = field
+        self.fields = fields
 
 class Drilldown(object):
 
@@ -135,6 +137,9 @@ class Drilldown(object):
 
     def docsetlist(self, field):
         return self._docsetlists[field]
+
+    def listFields(self):
+        return self._docsetlists.keys()
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
         allActualFields = self._docsetlists.keys()

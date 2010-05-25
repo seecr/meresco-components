@@ -88,7 +88,6 @@ from numeric.numbercomparitorfieldlettest import NumberComparitorFieldletTest
 from numeric.numbercomparitormodifiertest import NumberComparitorModifierTest
 from numeric.numbercomparitortest import NumberComparitorTest
 
-from drilldown.drilldownfieldnamestest import DrilldownFieldnamesTest
 from sru.srufielddrilldowntest import SRUFieldDrilldownTest
 from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest

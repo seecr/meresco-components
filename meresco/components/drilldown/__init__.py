@@ -25,7 +25,6 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from drilldownfieldnames import DrilldownFieldnames
 from srufielddrilldown import SRUFieldDrilldown
 from srutermdrilldown import SRUTermDrilldown
 from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS

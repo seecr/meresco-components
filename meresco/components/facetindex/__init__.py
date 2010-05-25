@@ -38,6 +38,7 @@ if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
 
 from lucene import LuceneIndex
 from drilldown import Drilldown
+from drilldownfieldnames import DrilldownFieldnames
 from document import Document, IDFIELD, DocumentException
 from docset import DocSet
 from docsetlist import DocSetList

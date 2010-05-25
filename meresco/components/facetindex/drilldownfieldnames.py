@@ -8,6 +8,7 @@
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
 #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -27,16 +28,24 @@
 #
 ## end license ##
 from meresco.core.observable import Observable
+from drilldown import NoFacetIndexException
 
 class DrilldownFieldnames(Observable):
-    def __init__(self, lookup, reverse):
+    def __init__(self, lookup):
         Observable.__init__(self)
         self.lookup = lookup
-        self.reverse = reverse
 
     def drilldown(self, docNumbers, fieldsAndMaximums):
-        translatedFields = ((self.lookup(field), maximum, sort)
-            for (field, maximum, sort) in fieldsAndMaximums)
-        drilldownResults = self.any.drilldown(docNumbers, translatedFields)
-        return [(self.reverse(field), termCounts)
-            for field, termCounts in drilldownResults]
+        reverseLookup = {}
+        translatedFields = []
+        for field, maximum, sort in fieldsAndMaximums:
+            translated = self.lookup(field)
+            translatedFields.append((translated, maximum, sort))
+            reverseLookup[translated] = field
+        try:
+            drilldownResults = self.any.drilldown(docNumbers, translatedFields)
+            return [(reverseLookup[field], termCounts)
+                for field, termCounts in drilldownResults]
+        except NoFacetIndexException, e:
+            raise NoFacetIndexException(reverseLookup[e.field], e.fields)
+            
