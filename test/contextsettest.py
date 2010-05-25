@@ -54,12 +54,6 @@ field2    actualotherfield2
         self.assertEquals('test.nosuchfield', self.set.lookup('test.nosuchfield'))
         self.assertEquals('otherset.field', self.set.lookup('otherset.field'))
 
-    def testReverseLookup(self):
-        self.assertEquals('test.query.field1', self.set.reverseLookup('actualfield1'))
-        self.assertEquals('test.field2', self.set.reverseLookup('actualfield2'))
-        self.assertEquals('test.field2', self.set.reverseLookup('actualotherfield2'))
-        self.assertEquals('nosuchfield', self.set.reverseLookup('nosuchfield'))
-
     def testLookupInList(self):
         setlist = ContextSetList()
         setlist.add(ContextSet('set1', StringIO("field\tactualfield\nfield1\tactualfield1")))
@@ -67,11 +61,6 @@ field2    actualotherfield2
         self.assertEquals('actualfield', setlist.lookup('set1.field'))
         self.assertEquals('actualfield', setlist.lookup('set2.field'))
         self.assertEquals('actualfield2', setlist.lookup('set2.field2'))
-        self.assertEquals('set2.field2', setlist.reverseLookup('actualfield2'))
-        self.assertEquals('set1.field1', setlist.reverseLookup('actualfield1'))
-        self.assertEquals('set1.field', setlist.reverseLookup('actualfield'))
-        self.assertEquals('set1.thisDoesNotExist', setlist.reverseLookup('set1.thisDoesNotExist'))
-        self.assertEquals('noreversefield', setlist.reverseLookup('noreversefield'))
         self.assertEquals('unsupportedset.field3', setlist.lookup('unsupportedset.field3'))
 
 

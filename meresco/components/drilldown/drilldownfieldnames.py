@@ -28,14 +28,17 @@
 from meresco.core.observable import Observable
 
 class DrilldownFieldnames(Observable):
-    def __init__(self, lookup, reverse):
+    def __init__(self, lookup):
         Observable.__init__(self)
         self.lookup = lookup
-        self.reverse = reverse
 
     def drilldown(self, docNumbers, fieldsAndMaximums):
-        translatedFields = ((self.lookup(field), maximum, sort)
-            for (field, maximum, sort) in fieldsAndMaximums)
+        reverseLookup = {}
+        translatedFields = []
+        for field, maximum, sort in fieldsAndMaximums:
+            translated = self.lookup(field)
+            translatedFields.append((translated, maximum, sort))
+            reverseLookup[translated] = field
         drilldownResults = self.any.drilldown(docNumbers, translatedFields)
-        return [(self.reverse(field), termCounts)
+        return [(reverseLookup[field], termCounts)
             for field, termCounts in drilldownResults]
