@@ -7,9 +7,9 @@ Description: DrilldownFieldnames back in meresco components with Exception Handl
 
 Baseline version: meresco/meresco-components/workingsets/2.23.5-EduRep/version_6
 
-diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_6/merescocomponents/examples/dna/server.py version_7/merescocomponents/examples/dna/server.py
---- version_6/merescocomponents/examples/dna/server.py	2010-05-20 15:15:22.000000000 +0200
-+++ version_7/merescocomponents/examples/dna/server.py	2010-05-20 15:16:35.000000000 +0200
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_6/meresco/components/examples/dna/server.py version_7/meresco/components/examples/dna/server.py
+--- version_6/meresco/components/examples/dna/server.py	2010-05-20 15:15:22.000000000 +0200
++++ version_7/meresco/components/examples/dna/server.py	2010-05-20 15:16:35.000000000 +0200
 @@ -7,7 +7,8 @@
  #       http://www.kennisnetictopschool.nl
  #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
@@ -21,17 +21,17 @@ diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn'
  #    This file is part of Meresco Components.
  #
 @@ -34,9 +35,9 @@
- from merescocore.framework import be, Observable, TransactionScope, ResourceManager, Transparant
+ from meresco.core import be, Observable, TransactionScope, ResourceManager, Transparant
  
- from merescocore.components import StorageComponent, FilterField, RenameField, XmlParseLxml, XmlXPath, XmlPrintLxml, Xml2Fields, Venturi, FilterMessages, Amara2Lxml, RewritePartname, Rss, RssItem, Lxml2Amara
--from merescocomponents.facetindex import Drilldown, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
-+from merescocomponents.facetindex import Drilldown, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx, DrilldownFieldnames
- from merescocomponents.facetindex.tools import unlock
--from merescocore.components.drilldown import SRUTermDrilldown, DrilldownFieldnames
-+from merescocore.components.drilldown import SRUTermDrilldown
- from merescocore.components.http import PathFilter, ObservableHttpServer
- from merescocore.components.http.webrequestserver import WebRequestServer
- from merescocore.components.sru import SruParser, SruHandler, SRURecordUpdate
+ from meresco.components import StorageComponent, FilterField, RenameField, XmlParseLxml, XmlXPath, XmlPrintLxml, Xml2Fields, Venturi, FilterMessages, Amara2Lxml, RewritePartname, Rss, RssItem, Lxml2Amara
+-from meresco.components.facetindex import Drilldown, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx
++from meresco.components.facetindex import Drilldown, LuceneIndex, CQL2LuceneQuery, Fields2LuceneDocumentTx, DrilldownFieldnames
+ from meresco.components.facetindex.tools import unlock
+-from meresco.components.drilldown import SRUTermDrilldown, DrilldownFieldnames
++from meresco.components.drilldown import SRUTermDrilldown
+ from meresco.components.http import PathFilter, ObservableHttpServer
+ from meresco.components.http.webrequestserver import WebRequestServer
+ from meresco.components.sru import SruParser, SruHandler, SRURecordUpdate
 @@ -134,8 +135,7 @@
                              (storageComponent,),
                              (SRUTermDrilldown(),
@@ -42,9 +42,9 @@ diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn'
                                          (drilldownComponent,)
                                  ),
                                  (CQL2LuceneQuery(unqualifiedTermFields),
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/merescocomponents/facetindex/drilldownfieldnames.py version_7/merescocomponents/facetindex/drilldownfieldnames.py
---- version_6/merescocomponents/facetindex/drilldownfieldnames.py	1970-01-01 01:00:00.000000000 +0100
-+++ version_7/merescocomponents/facetindex/drilldownfieldnames.py	2010-05-20 10:51:29.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/facetindex/drilldownfieldnames.py version_7/meresco/components/facetindex/drilldownfieldnames.py
+--- version_6/meresco/components/facetindex/drilldownfieldnames.py	1970-01-01 01:00:00.000000000 +0100
++++ version_7/meresco/components/facetindex/drilldownfieldnames.py	2010-05-20 10:51:29.000000000 +0200
 @@ -0,0 +1,51 @@
 +## begin license ##
 +#
@@ -75,7 +75,7 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#
 +## end license ##
-+from merescocore.framework.observable import Observable
++from meresco.core.observable import Observable
 +from drilldown import NoFacetIndexException
 +
 +class DrilldownFieldnames(Observable):
@@ -97,9 +97,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +        except NoFacetIndexException, e:
 +            raise NoFacetIndexException(reverseLookup[e.field], e.fields)
 +            
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/merescocomponents/facetindex/drilldown.py version_7/merescocomponents/facetindex/drilldown.py
---- version_6/merescocomponents/facetindex/drilldown.py	2010-05-18 17:26:17.000000000 +0200
-+++ version_7/merescocomponents/facetindex/drilldown.py	2010-05-20 10:51:29.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/facetindex/drilldown.py version_7/meresco/components/facetindex/drilldown.py
+--- version_6/meresco/components/facetindex/drilldown.py	2010-05-18 17:26:17.000000000 +0200
++++ version_7/meresco/components/facetindex/drilldown.py	2010-05-20 10:51:29.000000000 +0200
 @@ -41,12 +41,10 @@
  
  
@@ -126,9 +126,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
      def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
          allActualFields = self._docsetlists.keys()
          if not drilldownFieldnamesAndMaximumResults:
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/merescocomponents/facetindex/__init__.py version_7/merescocomponents/facetindex/__init__.py
---- version_6/merescocomponents/facetindex/__init__.py	2010-05-18 17:26:17.000000000 +0200
-+++ version_7/merescocomponents/facetindex/__init__.py	2010-05-20 10:51:29.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/facetindex/__init__.py version_7/meresco/components/facetindex/__init__.py
+--- version_6/meresco/components/facetindex/__init__.py	2010-05-18 17:26:17.000000000 +0200
++++ version_7/meresco/components/facetindex/__init__.py	2010-05-20 10:51:29.000000000 +0200
 @@ -38,6 +38,7 @@
  
  from lucene import LuceneIndex
@@ -137,9 +137,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  from document import Document, IDFIELD, DocumentException
  from docset import DocSet
  from docsetlist import DocSetList
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/merescocomponents/facetindex/lucene.py version_7/merescocomponents/facetindex/lucene.py
---- version_6/merescocomponents/facetindex/lucene.py	2010-05-18 17:26:17.000000000 +0200
-+++ version_7/merescocomponents/facetindex/lucene.py	2010-05-20 10:51:29.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/facetindex/lucene.py version_7/meresco/components/facetindex/lucene.py
+--- version_6/meresco/components/facetindex/lucene.py	2010-05-18 17:26:17.000000000 +0200
++++ version_7/meresco/components/facetindex/lucene.py	2010-05-20 10:51:29.000000000 +0200
 @@ -217,6 +217,9 @@
              return Sort(sortBy, bool(sortDescending))
          return None
@@ -196,8 +196,8 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +## end license ##
 +
 +from cq2utils import CQ2TestCase, CallTrace
-+from merescocomponents.facetindex import DrilldownFieldnames
-+from merescocomponents.facetindex.drilldown import NoFacetIndexException
++from meresco.components.facetindex import DrilldownFieldnames
++from meresco.components.facetindex.drilldown import NoFacetIndexException
 +
 +class DrilldownFieldnamesTest(CQ2TestCase):
 +

@@ -19,4 +19,4 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
  from facetindex.incrementalindexingtest import IncrementalIndexingTest
 Only in version_5/test/facetindex: drilldownfieldnamestest.py
-Only in version_5/merescocomponents/facetindex: drilldownfieldnames.py
+Only in version_5/meresco/components/facetindex: drilldownfieldnames.py

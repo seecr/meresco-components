@@ -10,9 +10,9 @@ Description: Removed unnecessary reverse lookup in DrilldownFieldnames
 
 Baseline version: meresco-core/workingsets/2.22.9-EduRep/version_5
 
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/merescocore/components/contextset.py version_6/merescocore/components/contextset.py
---- version_5/merescocore/components/contextset.py	2010-04-26 10:38:43.000000000 +0200
-+++ version_6/merescocore/components/contextset.py	2010-05-18 17:30:09.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/meresco/components/contextset.py version_6/meresco/components/contextset.py
+--- version_5/meresco/components/contextset.py	2010-04-26 10:38:43.000000000 +0200
++++ version_6/meresco/components/contextset.py	2010-05-18 17:30:09.000000000 +0200
 @@ -30,32 +30,21 @@
      def __init__(self, name, aStream):
          self.name = name
@@ -58,11 +58,11 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 -
      def add(self, contextSet):
          self._contextsets[contextSet.name] = contextSet
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/merescocore/components/drilldown/drilldownfieldnames.py version_6/merescocore/components/drilldown/drilldownfieldnames.py
---- version_5/merescocore/components/drilldown/drilldownfieldnames.py	2010-04-26 10:38:43.000000000 +0200
-+++ version_6/merescocore/components/drilldown/drilldownfieldnames.py	2010-05-18 17:30:09.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/meresco/components/drilldown/drilldownfieldnames.py version_6/meresco/components/drilldown/drilldownfieldnames.py
+--- version_5/meresco/components/drilldown/drilldownfieldnames.py	2010-04-26 10:38:43.000000000 +0200
++++ version_6/meresco/components/drilldown/drilldownfieldnames.py	2010-05-18 17:30:09.000000000 +0200
 @@ -28,14 +28,17 @@
- from merescocore.framework.observable import Observable
+ from meresco.core.observable import Observable
  
  class DrilldownFieldnames(Observable):
 -    def __init__(self, lookup, reverse):
@@ -153,7 +153,7 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +## end license ##
 +
 +from cq2utils import CQ2TestCase, CallTrace
-+from merescocore.components.drilldown import DrilldownFieldnames
++from meresco.components.drilldown import DrilldownFieldnames
 +
 +class DrilldownFieldnamesTest(CQ2TestCase):
 +

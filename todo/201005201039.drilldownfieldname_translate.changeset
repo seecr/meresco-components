@@ -4,9 +4,9 @@ Description: DrilldownFieldnames removed from meresco-core
 
 Baseline version: meresco/meresco-core/workingsets/2.22.9-EduRep/version_6
 
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/merescocore/components/drilldown/__init__.py version_7/merescocore/components/drilldown/__init__.py
---- version_6/merescocore/components/drilldown/__init__.py	2010-05-18 17:30:09.000000000 +0200
-+++ version_7/merescocore/components/drilldown/__init__.py	2010-05-20 10:39:04.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/drilldown/__init__.py version_7/meresco/components/drilldown/__init__.py
+--- version_6/meresco/components/drilldown/__init__.py	2010-05-18 17:30:09.000000000 +0200
++++ version_7/meresco/components/drilldown/__init__.py	2010-05-20 10:39:04.000000000 +0200
 @@ -25,7 +25,6 @@
  #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  #
@@ -27,4 +27,4 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  from sru.srutermdrilldowntest import SRUTermDrilldownTest
  from sru.srurecordupdatetest import SRURecordUpdateTest
 Only in version_6/test/drilldown: drilldownfieldnamestest.py
-Only in version_6/merescocore/components/drilldown: drilldownfieldnames.py
+Only in version_6/meresco/components/drilldown: drilldownfieldnames.py

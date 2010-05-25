@@ -4,9 +4,9 @@ Description: Renamed http-utils variables.
 
 Baseline version: meresco/meresco-core/workingsets/2.22.9-EduRep/version_6
 
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/merescocore/components/http/utils.py version_7/merescocore/components/http/utils.py
---- version_6/merescocore/components/http/utils.py	2010-05-18 17:30:09.000000000 +0200
-+++ version_7/merescocore/components/http/utils.py	2010-05-20 10:39:04.000000000 +0200
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/http/utils.py version_7/meresco/components/http/utils.py
+--- version_6/meresco/components/http/utils.py	2010-05-18 17:30:09.000000000 +0200
++++ version_7/meresco/components/http/utils.py	2010-05-20 10:39:04.000000000 +0200
 @@ -30,48 +30,49 @@
  ## end license ##
  
