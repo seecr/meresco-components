@@ -148,12 +148,10 @@ void intersect_generic(
             ForwardIterator lhs = lhs_from; // Reassign slow iterator to faster one (pointer)
             ForwardIterator rhs = rhs_from;
             while ( 1 ) {
-                while (*rhs++ < *lhs); // terminates without boundary checks
-                rhs--;
+                while ( rhs < rhs_till && *rhs < *lhs ) rhs++;
                 if ( rhs >= rhs_till )
                     return;
-                while (*lhs++ < *rhs); // terminates without boundary checks
-                lhs--;
+                while ( lhs < lhs_till && *lhs < *rhs ) lhs++;
                 if ( lhs >= lhs_till )
                     return;
                 if ( *lhs == *rhs ) {
