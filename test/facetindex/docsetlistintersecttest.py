@@ -265,6 +265,3 @@ def createEdurepDocsetList():
     dsl0.add(DocSet([103L]), "oai:www.ontwikkelcentrum.nl:gkn/OCHB-00005")
     dsl0.add(DocSet([102L]), "oai:www.ontwikkelcentrum.nl:gkn/OCHB-00006")
     return dsl0
-
-if __name__ == '__main__':
-    main()
