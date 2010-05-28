@@ -105,6 +105,7 @@ from facetindex.clausecollectortest import ClauseCollectorTest
 from facetindex.cql2lucenequerytest import Cql2LuceneQueryTest
 from facetindex.cqlparsetreetolucenequerytest import CqlParseTreeToLuceneQueryTest
 from facetindex.docsetlisttest import DocSetListTest
+from facetindex.docsetlistintersecttest import DocSetListIntersectTest
 from facetindex.docsettest import DocSetTest
 from facetindex.documenttest import DocumentTest
 from facetindex.drilldowntest import DrilldownTest
