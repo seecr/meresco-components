@@ -127,21 +127,6 @@ from ngram.ngramindextest import NGramIndexTest
 from ngram.ngramquerytest import NGramQueryTest
 from ngram.ngramtest import NGramTest
 
-from oai.fields2oairecordtest import Fields2OaiRecordTest
-from oai.oaiaddrecordtest import OaiAddRecordTest
-from oai.oaigetrecordtest import OaiGetRecordTest
-from oai.oaijazzimplementationstest import OaiJazzImplementationsTest
-from oai.oaijazztest import OaiJazzTest
-from oai.oailistmetadataformatstest import OaiListMetadataFormatsTest
-from oai.oailistsetstest import OaiListSetsTest
-from oai.oailisttest import OaiListTest
-from oai.oaipmhjazztest import OaiPmhJazzTest
-from oai.oaipmhtest import OaiPmhTest, OaiPmhWithIdentifierTest
-from oai.oaiprovenancetest import OaiProvenanceTest
-from oai.oaisetselecttest import OaiSetSelectTest
-from oai.oaitooltest import OaiToolTest
-from oai.resumptiontokentest import ResumptionTokenTest
-
 from web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':
