@@ -136,7 +136,6 @@ setup(
         'meresco.components',
         'meresco.components.facetindex',
         'meresco.components.facetindex.tools',
-        'meresco.components.oai',
         'meresco.components.ngram',
         'meresco.components.web',
     ],
