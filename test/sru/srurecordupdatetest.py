@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -30,6 +31,7 @@ from cq2utils import CallTrace, CQ2TestCase
 
 from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
+from weightless import compose
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -62,13 +64,6 @@ class SRURecordUpdateTest(CQ2TestCase):
         self.sruRecordUpdate = SRURecordUpdate()
         self.observer = CallTrace("Observer")
         self.sruRecordUpdate.addObserver(self.observer)
-        self.requestData = {
-            "action": CREATE,
-            "recordIdentifier": "defaultId",
-            "recordPacking": "defaultPacking",
-            "recordSchema": "defaultSchema",
-            "recordData": "<defaultXml/>"
-            }
 
     def createRequestBody(self, action=CREATE, recordData="<dc>empty</dc>"):
         return XML % {
@@ -80,7 +75,7 @@ class SRURecordUpdateTest(CQ2TestCase):
         }
 
     def performRequest(self, requestBody):
-        result = ''.join(self.sruRecordUpdate.handleRequest(Body=requestBody))
+        result = ''.join(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         return result.split('\r\n\r\n')
 
     def testAddXML(self):
@@ -126,6 +121,37 @@ class SRURecordUpdateTest(CQ2TestCase):
 
         method = self.observer.calledMethods[0]
         self.assertEquals("add", method.name)
+
+    def testPassCallableObjectForAdd(self):
+        def callable():
+            pass
+        self.observer.returnValues['add'] = (f for f in ['a', callable, 'b'])
+        requestBody = self.createRequestBody(action=REPLACE)
+        result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
+        self.assertTrue(callable in result)
+        result.remove(callable)
+        header,body = (''.join(result)).split('\r\n\r\n')
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+<srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+    <srw:version>1.0</srw:version>
+    <ucp:operationStatus>success</ucp:operationStatus>
+</srw:updateResponse>""", body)
+
+    def testPassCallableObjectForDelete(self):
+        def callable():
+            pass
+        self.observer.returnValues['delete'] = (f for f in ['a', callable, 'b'])
+        requestBody = self.createRequestBody(action=DELETE)
+        result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
+        self.assertTrue(callable in result)
+        result.remove(callable)
+        header,body = (''.join(result)).split('\r\n\r\n')
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+<srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+    <srw:version>1.0</srw:version>
+    <ucp:operationStatus>success</ucp:operationStatus>
+</srw:updateResponse>""", body)
+
 
     def testNotCorrectXml(self):
         headers, result = self.performRequest("not_xml")

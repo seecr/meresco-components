@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -43,9 +44,9 @@ class SRURecordUpdate(Observable):
             if action == prefix + "replace" or action == prefix + "create":
                 record = updateRequest.record
                 recordSchema = str(record.recordSchema)
-                self.do.add(recordId, recordSchema, record.recordData.childNodes[0])
+                yield self.asyncdo.add(recordId, recordSchema, record.recordData.childNodes[0])
             elif action == prefix + "delete":
-                self.do.delete(recordId)
+                yield self.asyncdo.delete(recordId)
             else:
                 raise Exception("Unknown action: " + action)
             answer = RESPONSE_XML % {
