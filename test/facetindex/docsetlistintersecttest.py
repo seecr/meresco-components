@@ -24,7 +24,6 @@
 ## end license ##
 from unittest import TestCase
 from meresco.components.facetindex import DocSet, DocSetList, __file__ as facetindexinitfile
-print facetindexinitfile
 
 class DocSetListIntersectTest(TestCase):
     def testTermIntersect(self):
