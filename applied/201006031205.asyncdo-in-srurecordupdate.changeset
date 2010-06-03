@@ -1,0 +1,120 @@
+Changeset created on Thu Jun  3 12:05:36 CEST 2010 by Seek You Too
+
+Description: SRURecordUpdate with asyncdo
+
+    SRURecordUpdate will now use asyncdo instead of do message.
+
+Baseline version: meresco-components/workingsets/3.0-Edurep/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/deps.txt version_1/deps.txt
+--- version_0/deps.txt	2010-06-02 10:44:35.000000000 +0200
++++ version_1/deps.txt	2010-06-03 12:04:41.000000000 +0200
+@@ -1,4 +1,4 @@
+-python-meresco-core3.0
++python-meresco-core-3.0-edurep (>= 1)
+ python-cqlparser (>=1.5.2)
+ python-cqlparser (<<1.6)
+ python-storage (>=5.1.7)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/sru/srurecordupdate.py version_1/meresco/components/sru/srurecordupdate.py
+--- version_0/meresco/components/sru/srurecordupdate.py	2010-06-02 10:44:32.000000000 +0200
++++ version_1/meresco/components/sru/srurecordupdate.py	2010-06-03 12:04:41.000000000 +0200
+@@ -7,6 +7,7 @@
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -43,9 +44,9 @@
+             if action == prefix + "replace" or action == prefix + "create":
+                 record = updateRequest.record
+                 recordSchema = str(record.recordSchema)
+-                self.do.add(recordId, recordSchema, record.recordData.childNodes[0])
++                yield self.asyncdo.add(recordId, recordSchema, record.recordData.childNodes[0])
+             elif action == prefix + "delete":
+-                self.do.delete(recordId)
++                yield self.asyncdo.delete(recordId)
+             else:
+                 raise Exception("Unknown action: " + action)
+             answer = RESPONSE_XML % {
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/sru/srurecordupdatetest.py version_1/test/sru/srurecordupdatetest.py
+--- version_0/test/sru/srurecordupdatetest.py	2010-06-02 10:44:30.000000000 +0200
++++ version_1/test/sru/srurecordupdatetest.py	2010-06-03 12:04:41.000000000 +0200
+@@ -7,6 +7,7 @@
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -30,6 +31,7 @@
+ 
+ from meresco.components.sru.srurecordupdate import SRURecordUpdate
+ from amara.binderytools import bind_string
++from weightless import compose
+ 
+ 
+ XML = """<?xml version="1.0" encoding="UTF-8"?>
+@@ -62,13 +64,6 @@
+         self.sruRecordUpdate = SRURecordUpdate()
+         self.observer = CallTrace("Observer")
+         self.sruRecordUpdate.addObserver(self.observer)
+-        self.requestData = {
+-            "action": CREATE,
+-            "recordIdentifier": "defaultId",
+-            "recordPacking": "defaultPacking",
+-            "recordSchema": "defaultSchema",
+-            "recordData": "<defaultXml/>"
+-            }
+ 
+     def createRequestBody(self, action=CREATE, recordData="<dc>empty</dc>"):
+         return XML % {
+@@ -80,7 +75,7 @@
+         }
+ 
+     def performRequest(self, requestBody):
+-        result = ''.join(self.sruRecordUpdate.handleRequest(Body=requestBody))
++        result = ''.join(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
+         return result.split('\r\n\r\n')
+ 
+     def testAddXML(self):
+@@ -127,6 +122,37 @@
+         method = self.observer.calledMethods[0]
+         self.assertEquals("add", method.name)
+ 
++    def testPassCallableObjectForAdd(self):
++        def callable():
++            pass
++        self.observer.returnValues['add'] = (f for f in ['a', callable, 'b'])
++        requestBody = self.createRequestBody(action=REPLACE)
++        result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
++        self.assertTrue(callable in result)
++        result.remove(callable)
++        header,body = (''.join(result)).split('\r\n\r\n')
++        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
++<srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
++    <srw:version>1.0</srw:version>
++    <ucp:operationStatus>success</ucp:operationStatus>
++</srw:updateResponse>""", body)
++
++    def testPassCallableObjectForDelete(self):
++        def callable():
++            pass
++        self.observer.returnValues['delete'] = (f for f in ['a', callable, 'b'])
++        requestBody = self.createRequestBody(action=DELETE)
++        result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
++        self.assertTrue(callable in result)
++        result.remove(callable)
++        header,body = (''.join(result)).split('\r\n\r\n')
++        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
++<srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
++    <srw:version>1.0</srw:version>
++    <ucp:operationStatus>success</ucp:operationStatus>
++</srw:updateResponse>""", body)
++
++
+     def testNotCorrectXml(self):
+         headers, result = self.performRequest("not_xml")
+         self.assertTrue('<ucp:operationStatus>fail</ucp:operationStatus>' in result, result)
