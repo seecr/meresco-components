@@ -107,6 +107,7 @@ class MsgboxTest(CQ2TestCase):
     def testProcessFileErrorHandling(self):
         self.observer.add = failingAddMock
         self.createMsgbox()
+        self.msgbox._logError = lambda m: None
 
         filename = 'repository:some:identifier:1.record'
         self.moveInRecord(filename=filename)
@@ -121,6 +122,7 @@ class MsgboxTest(CQ2TestCase):
     def testErrorHandlingWithReactorStep(self):
         self.observer.add = failingAddMock
         self.createMsgbox()
+        self.msgbox._logError = lambda m: None
 
         filename = 'repo:identifier:1.record'
         self.moveInRecord(filename=filename)
@@ -153,6 +155,7 @@ class MsgboxTest(CQ2TestCase):
     def testErrorHandlingAsynchronousMsgbox(self):
         self.observer.add = failingAddMock
         self.createMsgbox(asynchronous=True)
+        self.msgbox._logError = lambda m: None
 
         filename = 'repo:identifier:1.record'
         self.moveInRecord(filename=filename)

@@ -107,7 +107,7 @@ class Msgbox(Observable):
             if not self._asynchronous and not self._isAckOrError(filename):
                 self._ack(filename)
         except Exception, e:
-            stderr.write(format_exc())
+            self._logError(format_exc())
             if not self._isAckOrError(filename):
                 self._error(filename, format_exc())
         self._forgivingRemove(filepath)
@@ -120,6 +120,10 @@ class Msgbox(Observable):
 
     def _isAckOrError(self, filename):
         return filename.endswith('.ack') or filename.endswith('.error')
+
+    def _logError(self, errorMessage):
+        stderr.write(errorMessage)
+        stderr.flush()
 
     def add(self, filename, filedata, **kwargs):
         """Adds a file to the outDirectory. 
