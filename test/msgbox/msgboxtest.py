@@ -137,7 +137,7 @@ class MsgboxTest(CQ2TestCase):
 
     def testCreateAsynchronousMsgbox(self):
         self.createMsgbox(asynchronous=True)
-        self.assertTrue(self.msgbox._asynchronous)
+        self.assertFalse(self.msgbox._synchronous)
 
     def testProcessFileInAsynchronousMsgbox(self):
         self.createMsgbox(asynchronous=True)

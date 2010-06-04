@@ -84,7 +84,7 @@ class Msgbox(Observable):
         if isdir(self._tmpDirectory):
             rmtree(self._tmpDirectory)
         makedirs(self._tmpDirectory)
-        self._asynchronous = asynchronous
+        self._synchronous = not asynchronous
         self._reactor = reactor
 
     def observer_init(self):
@@ -102,14 +102,20 @@ class Msgbox(Observable):
 
     def processFile(self, filename):
         filepath = join(self._inDirectory, filename)
-        try:
-            self.do.add(filename=filename, filedata=File(filepath))
-            if not self._asynchronous and not self._isAckOrError(filename):
-                self._ack(filename)
-        except Exception, e:
-            self._logError(format_exc())
-            if not self._isAckOrError(filename):
+        isMessage = not self._isAckOrError(filename)
+        if isMessage:
+            try:
+                self.do.add(filename=filename, filedata=File(filepath))
+                if self._synchronous:
+                    self._ack(filename)
+            except Exception:
+                self._logError(format_exc())
                 self._error(filename, format_exc())
+        else:
+            try:
+                self.do.add(filename=filename, filedata=File(filepath))
+            except Exception:
+                self._logError(format_exc())
         self._forgivingRemove(filepath)
 
     def _ack(self, filename):
