@@ -24,16 +24,17 @@
 ## end license ##
 
 from __future__ import with_statement
-from meresco.core import Observable
-
-from cq2utils import DirectoryWatcher
-from lxml.etree import parse
 
 from os.path import join, isdir, isfile, basename, abspath
 from os import rename, listdir, remove, makedirs, link
 from shutil import rmtree
 from traceback import format_exc
 from sys import stderr
+
+from meresco.core import Observable
+from cq2utils import DirectoryWatcher
+from lxml.etree import parse
+from weightless import Suspend
 
 class Msgbox(Observable):
     """
@@ -85,7 +86,9 @@ class Msgbox(Observable):
             rmtree(self._tmpDirectory)
         makedirs(self._tmpDirectory)
         self._synchronous = not asynchronous
+        self._asynchronous = asynchronous
         self._reactor = reactor
+        self._suspended = {}
 
     def observer_init(self):
         self.processInDirectory()
@@ -102,8 +105,7 @@ class Msgbox(Observable):
 
     def processFile(self, filename):
         filepath = join(self._inDirectory, filename)
-        isMessage = not self._isAckOrError(filename)
-        if isMessage:
+        if not self._isAckOrError(filename):
             try:
                 self.do.add(filename=filename, filedata=File(filepath))
                 if self._synchronous:
@@ -116,13 +118,18 @@ class Msgbox(Observable):
                 self.do.add(filename=filename, filedata=File(filepath))
             except Exception:
                 self._logError(format_exc())
+            if self._asynchronous:
+                strippedFilename, result = filename.rsplit('.',1)
+                suspend = self._suspended[strippedFilename]
+                message = '' if result == 'ack' else open(filepath).read()
+                suspend.resumeWriter(state=(result, message))
         self._forgivingRemove(filepath)
 
     def _ack(self, filename):
-        self.add(filename + ".ack", "")
+        self._add(filename + ".ack", "")
 
     def _error(self, filename, errormessage):
-        self.add(filename + ".error", errormessage)
+        self._add(filename + ".error", errormessage)
 
     def _isAckOrError(self, filename):
         return filename.endswith('.ack') or filename.endswith('.error')
@@ -132,6 +139,17 @@ class Msgbox(Observable):
         stderr.flush()
 
     def add(self, filename, filedata, **kwargs):
+        self._add(filename, filedata, **kwargs)
+        if self._asynchronous:
+            suspend = Suspend()
+            self._suspended[filename] = suspend
+            yield suspend
+            del self._suspended[filename]
+            result, message = suspend.state
+            if result == 'error':
+                raise Exception(message)
+
+    def _add(self, filename, filedata, **kwargs):
         """Adds a file to the outDirectory. 
            'filedata' can be one of:
            * a file object

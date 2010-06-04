@@ -202,7 +202,7 @@ class MsgboxTest(CQ2TestCase):
         self.createMsgbox()
         filename = "testfile"
         filedata = DATA
-        self.msgbox.add(filename, filedata)
+        list(self.msgbox.add(filename, filedata))
         outFiles = self.listfiles(self.outDirectory)
         tmpFiles = self.listfiles(self.msgbox._tmpDirectory)
         self.assertEquals(1, len(outFiles))
@@ -216,7 +216,7 @@ class MsgboxTest(CQ2TestCase):
         filename = "testfile"
         filepath = join(self.tempdir, filename)
         open(filepath, "w").write(DATA)
-        self.msgbox.add(filename, File(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering")
+        list(self.msgbox.add(filename, File(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEquals(filename, outFiles[0])
         with open(join(self.outDirectory, outFiles[0]), 'r') as f:
@@ -227,7 +227,7 @@ class MsgboxTest(CQ2TestCase):
         filename = "testfile"
         filepath = join(self.tempdir, filename)
         open(filepath, "w").write(DATA)
-        self.msgbox.add(filename, open(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering")
+        list(self.msgbox.add(filename, open(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEquals(basename(filepath), outFiles[0])
         with open(join(self.outDirectory, outFiles[0]), 'r') as f:
@@ -236,9 +236,9 @@ class MsgboxTest(CQ2TestCase):
     def testDuplicateReplacesOriginal(self):
         self.createMsgbox()
         filename = "testfile"
-        self.msgbox.add(filename, DATA)
+        list(self.msgbox.add(filename, DATA))
         data2 = "<a>something</a>"
-        self.msgbox.add(filename, data2)
+        list(self.msgbox.add(filename, data2))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEquals([filename], outFiles)
         self.assertEquals(data2, open(join(self.outDirectory, filename)).read())
@@ -261,7 +261,7 @@ class MsgboxTest(CQ2TestCase):
         filedata = DATA
         try:
             chmod(self.outDirectory, S_IRUSR | S_IXUSR)
-            self.assertRaises(OSError, lambda: self.msgbox.add(filename, filedata))
+            self.assertRaises(OSError, lambda: list(self.msgbox.add(filename, filedata)))
             tmpFiles = self.listfiles(self.msgbox._tmpDirectory)
             self.assertEquals(0, len(tmpFiles))
         finally:
@@ -274,7 +274,7 @@ class MsgboxTest(CQ2TestCase):
         msgbox2.observer_init()
         filename = "test"
         filedata = DATA
-        self.msgbox.add(filename, filedata) 
+        list(self.msgbox.add(filename, filedata))
         reactor2.step()
         self.assertEquals(['%s.ack' % filename], self.listfiles(self.inDirectory))
         self.assertEquals(0, len(self.observer.calledMethods))
@@ -318,6 +318,68 @@ class MsgboxTest(CQ2TestCase):
             self.fail("Remove a directory should raise an error and not being ignored.")
         except OSError:
             pass
+    
+    def testAddSynchronousIsEmptyGenerator(self):
+        self.createMsgbox()
+
+        result = self.msgbox.add('filename', 'data')
+        
+        self.assertFalse(isfile(join(self.outDirectory, 'filename')))
+        self.assertRaises(StopIteration, result.next)
+        self.assertTrue(isfile(join(self.outDirectory, 'filename')))
+
+    def testAddAsynchronousYieldsSuspendAndReceivesAck(self):
+        self.createMsgbox(asynchronous=True)
+        myreactor = CallTrace('reactor')
+        myreactor.returnValues['suspend'] = 'handle'
+
+        result = self.msgbox.add('filename', 'data')
+        
+        self.assertFalse(isfile(join(self.outDirectory, 'filename')))
+        suspend = result.next()
+        suspend(myreactor)
+
+        self.assertTrue(isfile(join(self.outDirectory, 'filename')))
+
+        self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
+       
+        self.moveInRecord('filename.ack', '')
+        self.reactor.step()
+
+        self.assertEquals(['suspend', 'resumeWriter'], [m.name for m in myreactor.calledMethods])
+
+        self.assertRaises(StopIteration, result.next)
+
+    def testAddAsynchronousYieldsSuspendAndReceivesError(self):
+        self.createMsgbox(asynchronous=True)
+        myreactor = CallTrace('reactor')
+        myreactor.returnValues['suspend'] = 'handle'
+
+        result = self.msgbox.add('filename', 'data')
+        
+        self.assertFalse(isfile(join(self.outDirectory, 'filename')))
+        suspend = result.next()
+        suspend(myreactor)
+
+        self.assertTrue(isfile(join(self.outDirectory, 'filename')))
+
+        self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
+       
+        self.moveInRecord('filename.error', 'Stacktrace')
+        self.reactor.step()
+
+        self.assertEquals(['suspend', 'resumeWriter'], [m.name for m in myreactor.calledMethods])
+
+        try:
+            result.next()
+            self.fail('Expected an exception.')
+        except Exception, e:
+            self.assertEquals('Stacktrace', str(e))
+        self.assertRaises(StopIteration, result.next)
+
+
+
+    # helper methods
 
     def createMsgbox(self, asynchronous=False):
         self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory, asynchronous=asynchronous)
