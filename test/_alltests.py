@@ -127,6 +127,8 @@ from ngram.ngramindextest import NGramIndexTest
 from ngram.ngramquerytest import NGramQueryTest
 from ngram.ngramtest import NGramTest
 
+from msgbox.msgboxtest import MsgboxTest
+
 from web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':
