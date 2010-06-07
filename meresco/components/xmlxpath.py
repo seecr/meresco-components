@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -68,8 +69,11 @@ class XmlXPath(Observable):
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:
             for element in elementTree.xpath(xpath, namespaces=self._namespacesMap):
-                #to fix root element:
-                buffer = StringIO()
-                ElementTree(element).write(buffer)
-                buffer.seek(0)
-                yield parse(buffer)
+                if type(element) in [str, unicode]:
+                    yield element
+                else:
+                    #to fix root element:
+                    buffer = StringIO()
+                    ElementTree(element).write(buffer)
+                    buffer.seek(0)
+                    yield parse(buffer)

@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -198,3 +199,17 @@ class XmlXPathTest(CQ2TestCase):
         for method in self.observer.calledMethods:
             allResults.append(method.args[0])
         self.assertEqualsWS('<d>two</d>', allResults[0])
+
+    def testXPathReturnsString(self):
+        xpath = XmlXPath(['/a/t/text()'])
+        inputNode = parse(StringIO('<a><t>some text &amp; some &lt;entities&gt;</t></a>'))
+
+        observable = Observable()
+        observer = CallTrace('observer')
+        observable.addObserver(xpath)
+        xpath.addObserver(observer)
+
+        observable.do.aMethod(inputNode)
+        self.assertEquals(1, len(observer.calledMethods))
+        result = observer.calledMethods[0].args
+        self.assertEquals(('some text & some <entities>',), result)
