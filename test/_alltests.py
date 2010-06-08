@@ -128,8 +128,7 @@ from ngram.ngramquerytest import NGramQueryTest
 from ngram.ngramtest import NGramTest
 
 from msgbox.msgboxtest import MsgboxTest
-from msgbox.updateadapterfrommsgboxtest import UpdateAdapterFromMsgboxTest
-from msgbox.updateadaptertomsgboxtest import UpdateAdapterToMsgboxTest
+from msgbox.updateadaptertest import UpdateAdapterTest
 
 from web.webquerytest import WebQueryTest
 

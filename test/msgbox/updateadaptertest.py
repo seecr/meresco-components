@@ -23,22 +23,44 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
-from meresco.components.msgbox import UpdateAdapterFromMsgbox
-
+from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox
+from cq2utils import CallTrace, CQ2TestCase
 from lxml.etree import parse, tostring
 from StringIO import StringIO
 from os.path import basename, join
 
-class UpdateAdapterFromMsgboxTest(CQ2TestCase):
+class UpdateAdapterTest(CQ2TestCase):
+    def testAddToMsgbox(self):
+        adapter = UpdateAdapterToMsgbox()
+        msgbox = CallTrace('msgbox')
+        adapter.addObserver(msgbox)
 
-    def setUp(self):
-        CQ2TestCase.setUp(self)
+        list(adapter.add('identifier', 'partName', 'data'))
+
+        self.assertEquals(1, len(msgbox.calledMethods))
+        m = msgbox.calledMethods[0]
+        self.assertEquals('add', m.name)
+        self.assertEquals((), m.args)
+        self.assertEquals({'filename': 'identifier.add', 'filedata': 'data'}, m.kwargs)
+
+    def testDeleteToMsgbox(self):
+        adapter = UpdateAdapterToMsgbox()
+        msgbox = CallTrace('msgbox')
+        adapter.addObserver(msgbox)
+
+        list(adapter.delete('identifier'))
+
+        self.assertEquals(1, len(msgbox.calledMethods))
+        m = msgbox.calledMethods[0]
+        self.assertEquals('add', m.name)
+        self.assertEquals((), m.args)
+        self.assertEquals({'filename': 'identifier.delete', 'filedata': ''}, m.kwargs)
+
+
+    def testAddFromMsgbox(self):
         self._observer = CallTrace("Observer")
         self._updateAdapter = UpdateAdapterFromMsgbox()
         self._updateAdapter.addObserver(self._observer)
-
-    def testAdd(self):
         filename = "testFile"
         filepath = join(self.tempdir, filename)
         xml = "<x>testRecord</x>"
@@ -49,7 +71,10 @@ class UpdateAdapterFromMsgboxTest(CQ2TestCase):
         self.assertEquals("add(identifier='%s', lxmlNode=<etree._ElementTree>)" % basename(filepath), str(self._observer.calledMethods[0]))
         self.assertEquals(xml, tostring(self._observer.calledMethods[0].kwargs['lxmlNode']))
 
-    def testDelete(self):
+    def testDeleteFromMsgbox(self):
+        self._observer = CallTrace("Observer")
+        self._updateAdapter = UpdateAdapterFromMsgbox()
+        self._updateAdapter.addObserver(self._observer)
         filename = "testFile"
         filepath = join(self.tempdir, filename)
         xml = '<delete id="someId"/>'
@@ -59,4 +84,3 @@ class UpdateAdapterFromMsgboxTest(CQ2TestCase):
         self.assertEquals(1, len(self._observer.calledMethods))
         self.assertEquals("delete(identifier='%s', lxmlNode=<etree._ElementTree>)" % basename(filepath), str(self._observer.calledMethods[0]))
         self.assertEquals(xml, tostring(self._observer.calledMethods[0].kwargs['lxmlNode']))
-
