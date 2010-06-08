@@ -31,11 +31,11 @@ from xml.sax.saxutils import escape as xmlEscape
 class UpdateAdapterFromMsgbox(Observable):
 
     def add(self, filename, filedata):
-        lxmlNode = parse(filedata)
-        if len(lxmlNode.xpath("/delete")) > 0:
-            self.do.delete(identifier=filename, lxmlNode=lxmlNode)
+        identifier, extension = filename.rsplit('.', 1)
+        if extension == "delete":
+            self.do.delete(identifier=identifier)
         else:
-            self.do.add(identifier=filename, lxmlNode=lxmlNode)
+            self.do.add(identifier=identifier, partName='', data=filedata)
 
 class UpdateAdapterToMsgbox(Observable):
 

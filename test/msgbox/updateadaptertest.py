@@ -58,29 +58,33 @@ class UpdateAdapterTest(CQ2TestCase):
 
 
     def testAddFromMsgbox(self):
-        self._observer = CallTrace("Observer")
-        self._updateAdapter = UpdateAdapterFromMsgbox()
-        self._updateAdapter.addObserver(self._observer)
-        filename = "testFile"
+        observer = CallTrace("Observer")
+        adapter = UpdateAdapterFromMsgbox()
+        adapter.addObserver(observer)
+        filename = "identifier.add"
         filepath = join(self.tempdir, filename)
         xml = "<x>testRecord</x>"
         open(filepath, 'w').write(xml)
-        file = open(filepath)
-        self._updateAdapter.add(filename, file)
-        self.assertEquals(1, len(self._observer.calledMethods))
-        self.assertEquals("add(identifier='%s', lxmlNode=<etree._ElementTree>)" % basename(filepath), str(self._observer.calledMethods[0]))
-        self.assertEquals(xml, tostring(self._observer.calledMethods[0].kwargs['lxmlNode']))
+        filedata = open(filepath)
+
+        adapter.add(filename, filedata)
+
+        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+        method = observer.calledMethods[0]
+        self.assertEquals('identifier', method.kwargs['identifier'])
+        self.assertEquals('', method.kwargs['partName'])
+        self.assertTrue(filedata is method.kwargs['data'])
 
     def testDeleteFromMsgbox(self):
-        self._observer = CallTrace("Observer")
-        self._updateAdapter = UpdateAdapterFromMsgbox()
-        self._updateAdapter.addObserver(self._observer)
-        filename = "testFile"
+        observer = CallTrace("Observer")
+        adapter = UpdateAdapterFromMsgbox()
+        adapter.addObserver(observer)
+        filename = "identifier.delete"
         filepath = join(self.tempdir, filename)
-        xml = '<delete id="someId"/>'
-        open(filepath, 'w').write(xml)
+        open(filepath, 'w').close()
         file = open(filepath)
-        self._updateAdapter.add(filename, file)
-        self.assertEquals(1, len(self._observer.calledMethods))
-        self.assertEquals("delete(identifier='%s', lxmlNode=<etree._ElementTree>)" % basename(filepath), str(self._observer.calledMethods[0]))
-        self.assertEquals(xml, tostring(self._observer.calledMethods[0].kwargs['lxmlNode']))
+
+        adapter.add(filename, file)
+
+        self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
