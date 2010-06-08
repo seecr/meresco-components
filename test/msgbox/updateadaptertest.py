@@ -88,3 +88,8 @@ class UpdateAdapterTest(CQ2TestCase):
 
         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
         self.assertEquals({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
+
+    def testWrongExtension(self):
+        adapter = UpdateAdapterFromMsgbox()
+
+        self.assertRaises(Exception, adapter.add, 'filename.extension', 'data')
