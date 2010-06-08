@@ -42,7 +42,7 @@ from meresco.components.msgbox.msgbox import File
 
 DATA = "<record/>"
 
-def failingAddMock(filename=None, filedata=None):
+def failingAddMock(identifier=None, filedata=None):
     result = 1/0
 
 class MsgboxTest(CQ2TestCase):
@@ -77,7 +77,7 @@ class MsgboxTest(CQ2TestCase):
         self.reactor.step()
         calledMethod = self.observer.calledMethods[0]
         self.assertEquals('add', calledMethod.name)
-        self.assertEquals(filename, calledMethod.kwargs['filename'])
+        self.assertEquals(filename, calledMethod.kwargs['identifier'])
         self.assertEquals(join(self.inDirectory, filename), calledMethod.kwargs['filedata'].name)
 
     def testAckWrittenToOutOnSuccessfulProcessing(self):
@@ -96,11 +96,9 @@ class MsgboxTest(CQ2TestCase):
     def testProcessRecordsOnCommand(self):
         self.moveInRecord(filename='repo:ident:1.record')
         self.moveInRecord(filename='repo:ident:2.record')
-        self.moveInRecord(filename='repo:ident:3.record.ack')
-        self.moveInRecord(filename='repo:ident:4.record.error')
         self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory)
         self.msgbox.addObserver(self.observer)
-        self.assertEquals(set(['repo:ident:1.record', 'repo:ident:2.record', 'repo:ident:3.record.ack', 'repo:ident:4.record.error']), set(self.listfiles(self.inDirectory)))
+        self.assertEquals(set(['repo:ident:1.record', 'repo:ident:2.record']), set(self.listfiles(self.inDirectory)))
         self.msgbox.processInDirectory()
         self.assertEquals(set(['repo:ident:1.record.ack', 'repo:ident:2.record.ack']), set(self.listfiles(self.outDirectory)))
 
@@ -267,42 +265,6 @@ class MsgboxTest(CQ2TestCase):
         finally:
             chmod(self.outDirectory, S_IRUSR | S_IWUSR | S_IXUSR)
 
-    def testTwoJoinedMsgboxes(self):
-        self.createMsgbox()
-        reactor2 = Reactor()
-        msgbox2 = Msgbox(reactor2, inDirectory=self.outDirectory, outDirectory=self.inDirectory)
-        msgbox2.observer_init()
-        filename = "test"
-        filedata = DATA
-        list(self.msgbox.add(filename, filedata))
-        reactor2.step()
-        self.assertEquals(['%s.ack' % filename], self.listfiles(self.inDirectory))
-        self.assertEquals(0, len(self.observer.calledMethods))
-        self.reactor.step()
-        self.assertEquals(['add'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals("%s.ack" % filename, self.observer.calledMethods[0].kwargs["filename"])
-        self.assertEquals("%s.ack" % join(self.inDirectory, filename), self.observer.calledMethods[0].kwargs["filedata"].name)
-        self.assertEquals([], self.listfiles(self.inDirectory))
-        self.assertEquals([], self.listfiles(self.outDirectory))
-
-    def testInToOutMsgbox(self):
-        self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory)
-        inDirectory2 = join(self.tempdir, "in2")
-        outDirectory2 = join(self.tempdir, "out2")
-        system("mkdir --parents %s %s" % (inDirectory2, outDirectory2))
-        msgbox2 = Msgbox(self.reactor, inDirectory=inDirectory2, outDirectory=outDirectory2)
-        msgbox2.observer_init()
-        self.msgbox.addObserver(msgbox2)
-        self.msgbox.observer_init()
-        filename = "test"
-        filedata = DATA
-        self.moveInRecord(filename, data=filedata)
-        self.assertEquals([], self.listfiles(outDirectory2))
-        self.reactor.step()
-        self.assertEquals([filename + ".ack"], self.listfiles(self.outDirectory))
-        self.assertEquals([filename], self.listfiles(outDirectory2))
-        self.assertEquals(filedata, open(join(outDirectory2, filename)).read())
-
     def testIgnoreFailedRemoveWhenNoExistsFromIn(self):
         self.createMsgbox()
         try:
@@ -377,7 +339,31 @@ class MsgboxTest(CQ2TestCase):
             self.assertEquals('Stacktrace', str(e))
         self.assertRaises(StopIteration, result.next)
 
+    def testEscapeIdentifiersWhenUsedAsOutFilenames(self):
+        msgbox = Msgbox(inDirectory=self.inDirectory, outDirectory=self.outDirectory)
+        list(msgbox.add('.idwith.strange/char', 'data'))
+        self.assertEquals(['%2Eidwith.strange%2Fchar'], self.listfiles(self.outDirectory))
 
+    def testUnEscapeIdentifiersWhenUsedAsInFilenames(self):
+        msgbox = Msgbox(inDirectory=self.inDirectory, outDirectory=self.outDirectory)
+        interceptor = CallTrace()
+        msgbox.addObserver(interceptor)
+        open(join(self.inDirectory, '%2Eidwith.strange%2Fchar'), 'w').close()
+        msgbox.processFile('%2Eidwith.strange%2Fchar')
+        self.assertEquals('.idwith.strange/char', interceptor.calledMethods[0].kwargs['identifier'])
+
+    def testUnEscapeIdentifiersForAck(self):
+        msgbox = Msgbox(asynchronous=True, inDirectory=self.inDirectory, outDirectory=self.outDirectory)
+        interceptor = CallTrace()
+        interceptor.exceptions['add'] = Exception('hell!')
+        msgbox.addObserver(interceptor)
+        g = msgbox.add('.idwith.strange/char', 'data')
+        suspend = g.next()
+        suspend(CallTrace())
+        filename = '%2Eidwith.strange%2Fchar.ack'
+        open(join(self.inDirectory, filename), 'w').close()
+        msgbox.processFile(filename)
+        self.assertEquals(('ack', ''), suspend.state)
 
     # helper methods
 

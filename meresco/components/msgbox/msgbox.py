@@ -35,6 +35,7 @@ from meresco.core import Observable
 from cq2utils import DirectoryWatcher
 from lxml.etree import parse
 from weightless import Suspend
+from escaping import escapeFilename, unescapeFilename
 
 class Msgbox(Observable):
     """
@@ -105,24 +106,21 @@ class Msgbox(Observable):
 
     def processFile(self, filename):
         filepath = join(self._inDirectory, filename)
-        if not self._isAckOrError(filename):
+        if self._isAckOrError(filename):
+            basename, result = filename.rsplit('.',1)
+            identifier = unescapeFilename(basename)
+            suspend = self._suspended[identifier]
+            message = '' if result == 'ack' else open(filepath).read()
+            suspend.resumeWriter(state=(result, message))
+        else:
+            identifier = unescapeFilename(filename)
             try:
-                self.do.add(filename=filename, filedata=File(filepath))
+                self.do.add(identifier=identifier, filedata=File(filepath)) # asyncdo !!
                 if self._synchronous:
                     self._ack(filename)
             except Exception:
                 self._logError(format_exc())
                 self._error(filename, format_exc())
-        else:
-            try:
-                self.do.add(filename=filename, filedata=File(filepath))
-            except Exception:
-                self._logError(format_exc())
-            if self._asynchronous:
-                strippedFilename, result = filename.rsplit('.',1)
-                suspend = self._suspended[strippedFilename]
-                message = '' if result == 'ack' else open(filepath).read()
-                suspend.resumeWriter(state=(result, message))
         self._forgivingRemove(filepath)
 
     def _ack(self, filename):
@@ -138,13 +136,14 @@ class Msgbox(Observable):
         stderr.write(errorMessage)
         stderr.flush()
 
-    def add(self, filename, filedata, **kwargs):
+    def add(self, identifier, filedata, **kwargs):
+        filename = escapeFilename(identifier)
         self._add(filename, filedata, **kwargs)
         if self._asynchronous:
             suspend = Suspend()
-            self._suspended[filename] = suspend
+            self._suspended[identifier] = suspend
             yield suspend
-            del self._suspended[filename]
+            del self._suspended[identifier]
             result, message = suspend.state
             if result == 'error':
                 raise Exception(message)
