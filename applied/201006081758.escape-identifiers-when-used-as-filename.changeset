@@ -1,0 +1,189 @@
+Changeset created on Tue Jun  8 17:58:57 CEST 2010 by Seek You Too
+
+Description: Removed asynchronous behaviour and added transparent escaping of identifiers used as filenames.
+
+    The msgbox protocol uses .ack and .error files to communicate the result of requests, and leaked those files to observers of the Msgbox component.  The latter received add() calls for .ack and .error files.  This has been removed.  Furthermore, when identifiers are used as filenames, the filenames are escaped as to become valid filenames in Linux. The names are also unescaped when needed, making the Msgbox component more transparent.
+
+Baseline version: meresco-components/workingsets/3.0-Edurep/version_4
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_4/deps.txt version_6/deps.txt
+--- version_4/deps.txt	2010-06-08 12:49:56.000000000 +0200
++++ version_6/deps.txt	2010-06-08 17:58:00.000000000 +0200
+@@ -19,3 +19,4 @@
+ liblucene-core2-gcj9 (< 2.4.0)
+ libgcj9-0 (= 4.3.2-2.CQ2)
+ lsof
++escaping
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_4/meresco/components/msgbox/msgbox.py version_6/meresco/components/msgbox/msgbox.py
+--- version_4/meresco/components/msgbox/msgbox.py	2010-06-08 12:49:56.000000000 +0200
++++ version_6/meresco/components/msgbox/msgbox.py	2010-06-08 17:58:00.000000000 +0200
+@@ -35,6 +35,7 @@
+ from cq2utils import DirectoryWatcher
+ from lxml.etree import parse
+ from weightless import Suspend
++from escaping import escapeFilename, unescapeFilename
+ 
+ class Msgbox(Observable):
+     """
+@@ -105,24 +106,21 @@
+ 
+     def processFile(self, filename):
+         filepath = join(self._inDirectory, filename)
+-        if not self._isAckOrError(filename):
++        if self._isAckOrError(filename):
++            basename, result = filename.rsplit('.',1)
++            identifier = unescapeFilename(basename)
++            suspend = self._suspended[identifier]
++            message = '' if result == 'ack' else open(filepath).read()
++            suspend.resumeWriter(state=(result, message))
++        else:
++            identifier = unescapeFilename(filename)
+             try:
+-                self.do.add(filename=filename, filedata=File(filepath))
++                self.do.add(identifier=identifier, filedata=File(filepath)) # asyncdo !!
+                 if self._synchronous:
+                     self._ack(filename)
+             except Exception:
+                 self._logError(format_exc())
+                 self._error(filename, format_exc())
+-        else:
+-            try:
+-                self.do.add(filename=filename, filedata=File(filepath))
+-            except Exception:
+-                self._logError(format_exc())
+-            if self._asynchronous:
+-                strippedFilename, result = filename.rsplit('.',1)
+-                suspend = self._suspended[strippedFilename]
+-                message = '' if result == 'ack' else open(filepath).read()
+-                suspend.resumeWriter(state=(result, message))
+         self._forgivingRemove(filepath)
+ 
+     def _ack(self, filename):
+@@ -138,13 +136,14 @@
+         stderr.write(errorMessage)
+         stderr.flush()
+ 
+-    def add(self, filename, filedata, **kwargs):
++    def add(self, identifier, filedata, **kwargs):
++        filename = escapeFilename(identifier)
+         self._add(filename, filedata, **kwargs)
+         if self._asynchronous:
+             suspend = Suspend()
+-            self._suspended[filename] = suspend
++            self._suspended[identifier] = suspend
+             yield suspend
+-            del self._suspended[filename]
++            del self._suspended[identifier]
+             result, message = suspend.state
+             if result == 'error':
+                 raise Exception(message)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_4/test/msgbox/msgboxtest.py version_6/test/msgbox/msgboxtest.py
+--- version_4/test/msgbox/msgboxtest.py	2010-06-08 12:49:56.000000000 +0200
++++ version_6/test/msgbox/msgboxtest.py	2010-06-08 17:57:59.000000000 +0200
+@@ -42,7 +42,7 @@
+ 
+ DATA = "<record/>"
+ 
+-def failingAddMock(filename=None, filedata=None):
++def failingAddMock(identifier=None, filedata=None):
+     result = 1/0
+ 
+ class MsgboxTest(CQ2TestCase):
+@@ -77,7 +77,7 @@
+         self.reactor.step()
+         calledMethod = self.observer.calledMethods[0]
+         self.assertEquals('add', calledMethod.name)
+-        self.assertEquals(filename, calledMethod.kwargs['filename'])
++        self.assertEquals(filename, calledMethod.kwargs['identifier'])
+         self.assertEquals(join(self.inDirectory, filename), calledMethod.kwargs['filedata'].name)
+ 
+     def testAckWrittenToOutOnSuccessfulProcessing(self):
+@@ -96,11 +96,9 @@
+     def testProcessRecordsOnCommand(self):
+         self.moveInRecord(filename='repo:ident:1.record')
+         self.moveInRecord(filename='repo:ident:2.record')
+-        self.moveInRecord(filename='repo:ident:3.record.ack')
+-        self.moveInRecord(filename='repo:ident:4.record.error')
+         self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory)
+         self.msgbox.addObserver(self.observer)
+-        self.assertEquals(set(['repo:ident:1.record', 'repo:ident:2.record', 'repo:ident:3.record.ack', 'repo:ident:4.record.error']), set(self.listfiles(self.inDirectory)))
++        self.assertEquals(set(['repo:ident:1.record', 'repo:ident:2.record']), set(self.listfiles(self.inDirectory)))
+         self.msgbox.processInDirectory()
+         self.assertEquals(set(['repo:ident:1.record.ack', 'repo:ident:2.record.ack']), set(self.listfiles(self.outDirectory)))
+ 
+@@ -267,42 +265,6 @@
+         finally:
+             chmod(self.outDirectory, S_IRUSR | S_IWUSR | S_IXUSR)
+ 
+-    def testTwoJoinedMsgboxes(self):
+-        self.createMsgbox()
+-        reactor2 = Reactor()
+-        msgbox2 = Msgbox(reactor2, inDirectory=self.outDirectory, outDirectory=self.inDirectory)
+-        msgbox2.observer_init()
+-        filename = "test"
+-        filedata = DATA
+-        list(self.msgbox.add(filename, filedata))
+-        reactor2.step()
+-        self.assertEquals(['%s.ack' % filename], self.listfiles(self.inDirectory))
+-        self.assertEquals(0, len(self.observer.calledMethods))
+-        self.reactor.step()
+-        self.assertEquals(['add'], [m.name for m in self.observer.calledMethods])
+-        self.assertEquals("%s.ack" % filename, self.observer.calledMethods[0].kwargs["filename"])
+-        self.assertEquals("%s.ack" % join(self.inDirectory, filename), self.observer.calledMethods[0].kwargs["filedata"].name)
+-        self.assertEquals([], self.listfiles(self.inDirectory))
+-        self.assertEquals([], self.listfiles(self.outDirectory))
+-
+-    def testInToOutMsgbox(self):
+-        self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory)
+-        inDirectory2 = join(self.tempdir, "in2")
+-        outDirectory2 = join(self.tempdir, "out2")
+-        system("mkdir --parents %s %s" % (inDirectory2, outDirectory2))
+-        msgbox2 = Msgbox(self.reactor, inDirectory=inDirectory2, outDirectory=outDirectory2)
+-        msgbox2.observer_init()
+-        self.msgbox.addObserver(msgbox2)
+-        self.msgbox.observer_init()
+-        filename = "test"
+-        filedata = DATA
+-        self.moveInRecord(filename, data=filedata)
+-        self.assertEquals([], self.listfiles(outDirectory2))
+-        self.reactor.step()
+-        self.assertEquals([filename + ".ack"], self.listfiles(self.outDirectory))
+-        self.assertEquals([filename], self.listfiles(outDirectory2))
+-        self.assertEquals(filedata, open(join(outDirectory2, filename)).read())
+-
+     def testIgnoreFailedRemoveWhenNoExistsFromIn(self):
+         self.createMsgbox()
+         try:
+@@ -377,7 +339,31 @@
+             self.assertEquals('Stacktrace', str(e))
+         self.assertRaises(StopIteration, result.next)
+ 
+-
++    def testEscapeIdentifiersWhenUsedAsOutFilenames(self):
++        msgbox = Msgbox(inDirectory=self.inDirectory, outDirectory=self.outDirectory)
++        list(msgbox.add('.idwith.strange/char', 'data'))
++        self.assertEquals(['%2Eidwith.strange%2Fchar'], self.listfiles(self.outDirectory))
++
++    def testUnEscapeIdentifiersWhenUsedAsInFilenames(self):
++        msgbox = Msgbox(inDirectory=self.inDirectory, outDirectory=self.outDirectory)
++        interceptor = CallTrace()
++        msgbox.addObserver(interceptor)
++        open(join(self.inDirectory, '%2Eidwith.strange%2Fchar'), 'w').close()
++        msgbox.processFile('%2Eidwith.strange%2Fchar')
++        self.assertEquals('.idwith.strange/char', interceptor.calledMethods[0].kwargs['identifier'])
++
++    def testUnEscapeIdentifiersForAck(self):
++        msgbox = Msgbox(asynchronous=True, inDirectory=self.inDirectory, outDirectory=self.outDirectory)
++        interceptor = CallTrace()
++        interceptor.exceptions['add'] = Exception('hell!')
++        msgbox.addObserver(interceptor)
++        g = msgbox.add('.idwith.strange/char', 'data')
++        suspend = g.next()
++        suspend(CallTrace())
++        filename = '%2Eidwith.strange%2Fchar.ack'
++        open(join(self.inDirectory, filename), 'w').close()
++        msgbox.processFile(filename)
++        self.assertEquals(('ack', ''), suspend.state)
+ 
+     # helper methods
+ 
