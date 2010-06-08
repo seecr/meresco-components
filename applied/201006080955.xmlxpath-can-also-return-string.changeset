@@ -1,0 +1,66 @@
+Changeset created on Tue Jun  8 09:55:31 CEST 2010 by Seek You Too
+
+Description: XmlXPath can now also return a string
+
+    This changeset adds the possibility to have strings (unicode) as 
+    a result of an xpath.
+
+Baseline version: meresco-components/workingsets/3.0-Edurep/version_2
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/xmlxpath.py version_3/meresco/components/xmlxpath.py
+--- version_2/meresco/components/xmlxpath.py	2010-06-04 10:31:53.000000000 +0200
++++ version_3/meresco/components/xmlxpath.py	2010-06-08 09:54:56.000000000 +0200
+@@ -7,6 +7,7 @@
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -68,8 +69,11 @@
+     def _findNewTree(self, elementTree):
+         for xpath in self._xpaths:
+             for element in elementTree.xpath(xpath, namespaces=self._namespacesMap):
+-                #to fix root element:
+-                buffer = StringIO()
+-                ElementTree(element).write(buffer)
+-                buffer.seek(0)
+-                yield parse(buffer)
++                if type(element) in [str, unicode]:
++                    yield element
++                else:
++                    #to fix root element:
++                    buffer = StringIO()
++                    ElementTree(element).write(buffer)
++                    buffer.seek(0)
++                    yield parse(buffer)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/test/xml_generic/lxml_based/xmlxpathtest.py version_3/test/xml_generic/lxml_based/xmlxpathtest.py
+--- version_2/test/xml_generic/lxml_based/xmlxpathtest.py	2010-06-04 10:31:53.000000000 +0200
++++ version_3/test/xml_generic/lxml_based/xmlxpathtest.py	2010-06-08 09:54:56.000000000 +0200
+@@ -7,6 +7,7 @@
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -198,3 +199,17 @@
+         for method in self.observer.calledMethods:
+             allResults.append(method.args[0])
+         self.assertEqualsWS('<d>two</d>', allResults[0])
++
++    def testXPathReturnsString(self):
++        xpath = XmlXPath(['/a/t/text()'])
++        inputNode = parse(StringIO('<a><t>some text &amp; some &lt;entities&gt;</t></a>'))
++
++        observable = Observable()
++        observer = CallTrace('observer')
++        observable.addObserver(xpath)
++        xpath.addObserver(observer)
++
++        observable.do.aMethod(inputNode)
++        self.assertEquals(1, len(observer.calledMethods))
++        result = observer.calledMethods[0].args
++        self.assertEquals(('some text & some <entities>',), result)
