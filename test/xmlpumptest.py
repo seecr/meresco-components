@@ -8,6 +8,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -33,7 +34,7 @@ from cq2utils import CallTrace, CQ2TestCase
 from amara import binderytools
 from lxml.etree import _ElementTree, tostring, parse
 
-from meresco.components import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml
+from meresco.components import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 
 class XmlPumpTest(CQ2TestCase):
 
@@ -144,5 +145,22 @@ class XmlPumpTest(CQ2TestCase):
         self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].args[2])
         self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].args[2])
 
+    def testFileParseLxml(self):
+        observable = Observable()
+        observer = CallTrace('observer')
+        p = FileParseLxml()
+        observable.addObserver(p)
+        p.addObserver(observer)
+        a = StringIO('<a>aaa</a>')
+        f = open(self.tempfile, 'w')
+        f.write('<b>bbb</b>')
+        f.close()
+        b = open(self.tempfile)
 
+        observable.do.someMessage(a, b=b)
+
+        lxmlA = observer.calledMethods[0].args[0]
+        lxmlB = observer.calledMethods[0].kwargs['b']
+        self.assertEquals('<a>aaa</a>', tostring(lxmlA))
+        self.assertEquals('<b>bbb</b>', tostring(lxmlB))
 

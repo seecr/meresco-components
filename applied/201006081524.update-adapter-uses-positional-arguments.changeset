@@ -1,0 +1,46 @@
+Changeset created on Tue Jun  8 15:24:40 CEST 2010 by Seek You Too
+
+Description: UpdateAdapterFromMsgbox uses positional arguments
+
+Baseline version: meresco-components/workingsets/3.0-Edurep/version_4
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_4/meresco/components/msgbox/updateadapter.py version_5/meresco/components/msgbox/updateadapter.py
+--- version_4/meresco/components/msgbox/updateadapter.py	2010-06-08 12:49:56.000000000 +0200
++++ version_5/meresco/components/msgbox/updateadapter.py	2010-06-08 15:24:23.000000000 +0200
+@@ -33,9 +33,9 @@
+     def add(self, filename, filedata):
+         identifier, extension = filename.rsplit('.', 1)
+         if extension == "delete":
+-            self.do.delete(identifier=identifier)
++            self.do.delete(identifier)
+         elif extension == "add":
+-            self.do.add(identifier=identifier, partName='', data=filedata)
++            self.do.add(identifier, '', filedata)
+         else:
+             raise Exception('Expected add or delete as file extension')
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_4/test/msgbox/updateadaptertest.py version_5/test/msgbox/updateadaptertest.py
+--- version_4/test/msgbox/updateadaptertest.py	2010-06-08 12:49:56.000000000 +0200
++++ version_5/test/msgbox/updateadaptertest.py	2010-06-08 15:24:22.000000000 +0200
+@@ -71,9 +71,9 @@
+ 
+         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+         method = observer.calledMethods[0]
+-        self.assertEquals('identifier', method.kwargs['identifier'])
+-        self.assertEquals('', method.kwargs['partName'])
+-        self.assertTrue(filedata is method.kwargs['data'])
++        args = method.args
++        self.assertEquals(('identifier',''), args[:2])
++        self.assertTrue(filedata is args[2])
+ 
+     def testDeleteFromMsgbox(self):
+         observer = CallTrace("Observer")
+@@ -87,7 +87,7 @@
+         adapter.add(filename, file)
+ 
+         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
+-        self.assertEquals({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
++        self.assertEquals(('identifier',), observer.calledMethods[0].args)
+ 
+     def testWrongExtension(self):
+         adapter = UpdateAdapterFromMsgbox()

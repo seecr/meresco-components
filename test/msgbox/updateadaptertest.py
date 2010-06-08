@@ -41,7 +41,7 @@ class UpdateAdapterTest(CQ2TestCase):
         m = msgbox.calledMethods[0]
         self.assertEquals('add', m.name)
         self.assertEquals((), m.args)
-        self.assertEquals({'filename': 'identifier.add', 'filedata': 'data'}, m.kwargs)
+        self.assertEquals({'identifier': 'identifier.add', 'filedata': 'data'}, m.kwargs)
 
     def testDeleteToMsgbox(self):
         adapter = UpdateAdapterToMsgbox()
@@ -54,7 +54,7 @@ class UpdateAdapterTest(CQ2TestCase):
         m = msgbox.calledMethods[0]
         self.assertEquals('add', m.name)
         self.assertEquals((), m.args)
-        self.assertEquals({'filename': 'identifier.delete', 'filedata': ''}, m.kwargs)
+        self.assertEquals({'identifier': 'identifier.delete', 'filedata': ''}, m.kwargs)
 
 
     def testAddFromMsgbox(self):
@@ -71,9 +71,9 @@ class UpdateAdapterTest(CQ2TestCase):
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         method = observer.calledMethods[0]
-        self.assertEquals('identifier', method.kwargs['identifier'])
-        self.assertEquals('', method.kwargs['partName'])
-        self.assertTrue(filedata is method.kwargs['data'])
+        args = method.args
+        self.assertEquals(('identifier',''), args[:2])
+        self.assertTrue(filedata is args[2])
 
     def testDeleteFromMsgbox(self):
         observer = CallTrace("Observer")
@@ -87,7 +87,7 @@ class UpdateAdapterTest(CQ2TestCase):
         adapter.add(filename, file)
 
         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
+        self.assertEquals(('identifier',), observer.calledMethods[0].args)
 
     def testWrongExtension(self):
         adapter = UpdateAdapterFromMsgbox()

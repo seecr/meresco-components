@@ -8,6 +8,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -69,6 +70,13 @@ class XmlPrintAmara(Converter):
 
     def _convert(self, anObject):
         return anObject.xml()
+
+class FileParseLxml(Converter):
+    def _canConvert(self, anObject):
+        return hasattr(anObject, 'read') and hasattr(anObject, 'readline')
+
+    def _convert(self, anObject):
+        return parse(anObject)
 
 class XmlParseLxml(Converter):
     def _canConvert(self, anObject):

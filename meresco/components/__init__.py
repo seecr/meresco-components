@@ -30,7 +30,7 @@
 from timeddictionary import TimedDictionary
 from logobserver import LogObserver
 from storagecomponent import StorageComponent, defaultSplit, defaultJoin
-from xmlpump import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml
+from xmlpump import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 from contextset import ContextSetList, ContextSet
 
 from fieldlets import RenameField, TransformFieldValue, FilterField, AddField
