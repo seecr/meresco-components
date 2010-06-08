@@ -23,5 +23,15 @@
 #
 ## end license ##
 
-from msgbox import Msgbox
-from updateadapter import UpdateAdapterFromMsgbox
+from meresco.core import Observable
+from lxml.etree import parse
+from os.path import basename
+
+class UpdateAdapterFromMsgbox(Observable):
+
+    def add(self, filename, filedata):
+        lxmlNode = parse(filedata)
+        if len(lxmlNode.xpath("/delete")) > 0:
+            self.do.delete(identifier=filename, lxmlNode=lxmlNode)
+        else:
+            self.do.add(identifier=filename, lxmlNode=lxmlNode)
