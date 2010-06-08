@@ -26,6 +26,7 @@
 from meresco.core import Observable
 from lxml.etree import parse
 from os.path import basename
+from xml.sax.saxutils import escape as xmlEscape
 
 class UpdateAdapterFromMsgbox(Observable):
 
@@ -35,3 +36,12 @@ class UpdateAdapterFromMsgbox(Observable):
             self.do.delete(identifier=filename, lxmlNode=lxmlNode)
         else:
             self.do.add(identifier=filename, lxmlNode=lxmlNode)
+
+class UpdateAdapterToMsgbox(Observable):
+
+    def add(self, identifier, partName, data):
+        return self.all.add(filename='%s.add' % identifier, filedata=data)
+
+    def delete(self, identifier):
+        return self.all.add(filename='%s.delete' % identifier, filedata='')
+

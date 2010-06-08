@@ -129,6 +129,7 @@ from ngram.ngramtest import NGramTest
 
 from msgbox.msgboxtest import MsgboxTest
 from msgbox.updateadapterfrommsgboxtest import UpdateAdapterFromMsgboxTest
+from msgbox.updateadaptertomsgboxtest import UpdateAdapterToMsgboxTest
 
 from web.webquerytest import WebQueryTest
 

@@ -24,4 +24,4 @@
 ## end license ##
 
 from msgbox import Msgbox
-from updateadapter import UpdateAdapterFromMsgbox
+from updateadapter import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox
