@@ -23,73 +23,77 @@
 #
 ## end license ##
 
-from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox
+from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox, Msgbox
 from cq2utils import CallTrace, CQ2TestCase
 from lxml.etree import parse, tostring
 from StringIO import StringIO
 from os.path import basename, join
+from os import makedirs
 
 class UpdateAdapterTest(CQ2TestCase):
-    def testAddToMsgbox(self):
+    def setUp(self):
+        CQ2TestCase.setUp(self)
+        self.indir = join(self.tempdir, 'in')
+        self.outdir = join(self.tempdir, 'out')
+        makedirs(self.indir)
+        makedirs(self.outdir)
+        self.msgbox = Msgbox('reactor', self.indir, self.outdir)
+
+    def testToAdapterAndMsgboxAdd(self):
         adapter = UpdateAdapterToMsgbox()
-        msgbox = CallTrace('msgbox')
-        adapter.addObserver(msgbox)
+        adapter.addObserver(self.msgbox)
+        
+        list(adapter.add('identifier', 'ignored-partName', 'data'))
+        
+        self.assertEquals('data', open(join(self.outdir, 'identifier.add')).read()) 
 
-        list(adapter.add('identifier', 'partName', 'data'))
-
-        self.assertEquals(1, len(msgbox.calledMethods))
-        m = msgbox.calledMethods[0]
-        self.assertEquals('add', m.name)
-        self.assertEquals((), m.args)
-        self.assertEquals({'identifier': 'identifier.add', 'filedata': 'data'}, m.kwargs)
-
-    def testDeleteToMsgbox(self):
+    def testToAdapterAndMsgboxDelete(self):
         adapter = UpdateAdapterToMsgbox()
-        msgbox = CallTrace('msgbox')
-        adapter.addObserver(msgbox)
-
+        adapter.addObserver(self.msgbox)
+        
         list(adapter.delete('identifier'))
+        
+        self.assertEquals('', open(join(self.outdir, 'identifier.delete')).read()) 
 
-        self.assertEquals(1, len(msgbox.calledMethods))
-        m = msgbox.calledMethods[0]
-        self.assertEquals('add', m.name)
-        self.assertEquals((), m.args)
-        self.assertEquals({'identifier': 'identifier.delete', 'filedata': ''}, m.kwargs)
-
-
-    def testAddFromMsgbox(self):
-        observer = CallTrace("Observer")
+    def testWrongExtension(self):
         adapter = UpdateAdapterFromMsgbox()
-        adapter.addObserver(observer)
-        filename = "identifier.add"
-        filepath = join(self.tempdir, filename)
-        xml = "<x>testRecord</x>"
-        open(filepath, 'w').write(xml)
-        filedata = open(filepath)
+        self.msgbox.addObserver(adapter)
+        self.msgbox._logError = lambda *args: None
+        open(join(self.indir, 'filename.extension'), 'w').close()
 
-        adapter.add(filename, filedata)
+        self.msgbox.processFile('filename.extension')
 
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        method = observer.calledMethods[0]
-        args = method.args
-        self.assertEquals(('identifier',''), args[:2])
-        self.assertTrue(filedata is args[2])
+        errorContents = open(join(self.outdir, 'filename.extension.error')).read()
+        self.assertTrue('Expected add or delete as file extension' in errorContents, errorContents)
 
-    def testDeleteFromMsgbox(self):
-        observer = CallTrace("Observer")
+    def testMsgboxAndFromAdapterDelete(self):
         adapter = UpdateAdapterFromMsgbox()
+        observer = CallTrace('observer')
+        self.msgbox.addObserver(adapter)
         adapter.addObserver(observer)
-        filename = "identifier.delete"
-        filepath = join(self.tempdir, filename)
-        open(filepath, 'w').close()
-        file = open(filepath)
+        open(join(self.indir, 'identifier.delete'), 'w').close()
 
-        adapter.add(filename, file)
+        self.msgbox.processFile('identifier.delete')
 
         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
         self.assertEquals(('identifier',), observer.calledMethods[0].args)
 
-    def testWrongExtension(self):
+    def testMsgboxAndFromAdapterAdd(self):
         adapter = UpdateAdapterFromMsgbox()
+        observer = CallTrace('observer')
+        processAddArgs = []
+        def processAdd(identifier, partName, data):
+            processAddArgs.append((identifier, partName, data.read()))
+        observer.methods['add'] = processAdd
+        self.msgbox.addObserver(adapter)
+        adapter.addObserver(observer)
+        f = open(join(self.indir, 'identifier.add'), 'w')
+        f.write('data')
+        f.close()
 
-        self.assertRaises(Exception, adapter.add, 'filename.extension', 'data')
+        self.msgbox.processFile('identifier.add')
+
+        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+        self.assertEquals([('identifier', '', 'data')], processAddArgs)
+
+

@@ -30,8 +30,8 @@ from xml.sax.saxutils import escape as xmlEscape
 
 class UpdateAdapterFromMsgbox(Observable):
 
-    def add(self, filename, filedata):
-        identifier, extension = filename.rsplit('.', 1)
+    def add(self, identifier, filedata):
+        identifier, extension = identifier.rsplit('.', 1)
         if extension == "delete":
             self.do.delete(identifier)
         elif extension == "add":
