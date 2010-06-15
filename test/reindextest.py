@@ -33,6 +33,7 @@ from meresco.core import be, Observable
 
 from os.path import join, isdir
 from os import listdir
+from weightless import compose
 
 class ReindexTest(CQ2TestCase):
     def _path(self, subdir):
@@ -59,7 +60,7 @@ class ReindexTest(CQ2TestCase):
     def testArguments(self):
         reindex, observer = self.setupDna(CallTrace('Storage'))
         def assertError(message, arguments):
-            result = list(reindex.handleRequest(arguments=arguments))
+            result = list(compose(reindex.handleRequest(arguments=arguments)))
             self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', message], result)
         assertError('!error: session missing', {})
         assertError('!error: session missing', {'session': []})
@@ -72,7 +73,7 @@ class ReindexTest(CQ2TestCase):
         reindex, observer = self.setupDna(CallTrace('Storage', returnValues={'listIdentifiers': []}))
         directory = join(self._path('reindex'), 'testcase')
         self.assertFalse(isdir(directory))
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertFalse(isdir(directory))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', "!error: no identifiers"], result)
 
@@ -83,7 +84,7 @@ class ReindexTest(CQ2TestCase):
             ('id:3', 'part', 'data3'),
         ])
         reindex, observer = self.setupDna(storage)
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         directory = join(self._path('reindex'), 'testcase')
         self.assertTrue(isdir(directory))
         files = listdir(directory)
@@ -98,7 +99,7 @@ class ReindexTest(CQ2TestCase):
             ('id:3', 'part', 'data3'),
         ])
         reindex, observer = self.setupDna(storage)
-        result = list(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
         directory = join(self._path('reindex'), 'testcase')
         self.assertTrue(isdir(directory))
         files = listdir(directory)
@@ -111,7 +112,7 @@ class ReindexTest(CQ2TestCase):
             ('id:3', 'part', 'data3'),
         ])
         reindex, observer = self.setupDna(storage)
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
 
@@ -122,10 +123,10 @@ class ReindexTest(CQ2TestCase):
             ('id:3', 'part', 'data3'),
         ])
         reindex, observer = self.setupDna(storage)
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '+id:2\n', '+id:3\n', '=batches left: 0'], result)
 
         methods = [str(m) for m in observer.calledMethods]
@@ -143,21 +144,21 @@ class ReindexTest(CQ2TestCase):
         reindex, observer = self.setupDna(storage)
         directory = join(self._path('reindex'), 'testcase')
 
-        result = list(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
         self.assertEquals(3, len(listdir(directory)))
         self.assertTrue(isdir(directory))
 
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertEquals(2, len(listdir(directory)))
         self.assertTrue(isdir(directory))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '=batches left: 2'], result)
 
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertEquals(1, len(listdir(directory)))
         self.assertTrue(isdir(directory))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:2\n', '=batches left: 1'], result)
 
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertFalse(isdir(directory))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:3\n','=batches left: 0'], result)
 
@@ -169,10 +170,10 @@ class ReindexTest(CQ2TestCase):
         ])
         reindex, observer = self.setupDna(storage)
         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
 
     def testNotOffByOneIfNoRemainder(self):
@@ -180,6 +181,17 @@ class ReindexTest(CQ2TestCase):
         storage = self.setupStorage(records)
         reindex, observer = self.setupDna(storage)
         directory = join(self._path('reindex'), 'testcase')
-        result = list(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['5']}))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['5']})))
         self.assertEquals(16, len(listdir(directory)))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '\n=batches: 16'], result)
+
+    def testProcessingBatchesIsAsynchronous(self):
+        storage = self.setupStorage([
+            ('id:1', 'part', 'data1'),
+        ])
+        reindex, observer = self.setupDna(storage)
+        observer.returnValues['addDocumentPart'] = (f for f in [str])
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        self.assertTrue(str in result, result)
+

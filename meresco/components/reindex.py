@@ -64,13 +64,9 @@ class Reindex(Observable):
 
         sessionDirectory = join(self._filelistPath, session)
         if not isdir(sessionDirectory):
-            results = self._createBatches(sessionDirectory, batchSize)
+            yield self._createBatches(sessionDirectory, batchSize)
         else:
-            results = self._processBatches(sessionDirectory)
-
-        for result in results:
-            yield result
-
+            yield self._processBatches(sessionDirectory)
 
     def _createBatches(self, sessionDirectory, batchSize):
         currentBatch = 0
@@ -107,7 +103,7 @@ class Reindex(Observable):
 
         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
             try:
-                self.do.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
+                yield self.asyncdo.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
             except Exception, e:
                 yield '\n!error processing "%s": %s' % (identifier, str(e))
                 return
