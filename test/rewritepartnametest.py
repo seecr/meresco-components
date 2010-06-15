@@ -1,12 +1,10 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
-#       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -25,13 +23,26 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from meresco.core import Transparant
 
-class RewritePartname(Transparant):
+from cq2utils import CallTrace
+from unittest import TestCase
+from meresco.core import Observable
 
-    def __init__(self, partname):
-        Transparant.__init__(self)
-        self._partname = partname
+from meresco.components import RewritePartname
 
-    def add(self, id, partname, document):
-        yield self.asyncdo.add(id, self._partname, document)
+class RewritePartnameTest(TestCase):
+    def testAddPartname(self):
+        observable = Observable()
+        observer = CallTrace('observer')
+        callable = lambda: 42
+        observer.returnValues['add'] = callable
+        rewrite = RewritePartname('newPartname')
+        rewrite.addObserver(observer)
+        observable.addObserver(rewrite)
+
+        result = list(observable.all.add('identifier', 'oldPartname', 'data'))
+
+        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+        self.assertEquals(('identifier', 'newPartname', 'data'), observer.calledMethods[0].args)
+        self.assertEquals([callable], result)
+        
