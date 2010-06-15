@@ -71,3 +71,12 @@ class ApacheLoggerTest(TestCase):
         self.assertEquals(['logHttpError'], [m.name for m in observer.calledMethods])
         self.assertEquals([dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value')], [m.kwargs for m in observer.calledMethods])
 
+    def testHandleRequestAsynchronous(self):
+        logger = ApacheLogger(StringIO())
+        observer = CallTrace('handler')
+        observer.returnValues['handleRequest'] = (f for f in [str, okPlainText, 'text', int])
+        logger.addObserver(observer)
+        
+        result = list(compose(logger.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={}, otherKwarg='value'))) 
+
+        self.assertEquals([str, okPlainText, 'text', int], result)

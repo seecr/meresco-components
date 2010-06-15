@@ -47,6 +47,9 @@ class ApacheLogger(Transparant):
     def handleRequest(self, *args, **kwargs):
         status = 0
         for line in self.all.handleRequest(*args, **kwargs):
+            if callable(line):
+                yield line
+                continue
             if not status and line.startswith('HTTP/1.0'):
                 status = line[len('HTTP/1.0 '):][:3]
                 self._log(status, **kwargs)
