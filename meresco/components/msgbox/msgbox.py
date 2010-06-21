@@ -110,8 +110,10 @@ class Msgbox(Observable):
             basename, result = filename.rsplit('.',1)
             identifier = unescapeFilename(basename)
             suspend = self._suspended[identifier]
-            message = '' if result == 'ack' else open(filepath).read()
-            suspend.resumeWriter(state=(result, message))
+            if result == 'ack':
+                suspend.resume()
+            else:
+                suspend.throw(Exception(open(filepath).read()))
         else:
             identifier = unescapeFilename(filename)
             try:
@@ -144,9 +146,7 @@ class Msgbox(Observable):
             self._suspended[identifier] = suspend
             yield suspend
             del self._suspended[identifier]
-            result, message = suspend.state
-            if result == 'error':
-                raise Exception(message)
+            suspend.getResult()
 
     def _add(self, filename, filedata, **kwargs):
         """Adds a file to the outDirectory. 

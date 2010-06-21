@@ -1,5 +1,5 @@
 python-meresco-core-3.0-edurep (>= 1)
-python-weightless (>= 0.4.11)
+python-weightless (>= 0.4.12)
 python-weightless (<< 0.5)
 python-cqlparser (>=1.5.2)
 python-cqlparser (<<1.6)

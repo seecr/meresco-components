@@ -299,7 +299,7 @@ class MsgboxTest(CQ2TestCase):
         
         self.assertFalse(isfile(join(self.outDirectory, 'filename')))
         suspend = result.next()
-        suspend(myreactor)
+        suspend(myreactor, lambda: None)
 
         self.assertTrue(isfile(join(self.outDirectory, 'filename')))
 
@@ -308,7 +308,7 @@ class MsgboxTest(CQ2TestCase):
         self.moveInRecord('filename.ack', '')
         self.reactor.step()
 
-        self.assertEquals(['suspend', 'resumeWriter'], [m.name for m in myreactor.calledMethods])
+        self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
 
         self.assertRaises(StopIteration, result.next)
 
@@ -321,7 +321,7 @@ class MsgboxTest(CQ2TestCase):
         
         self.assertFalse(isfile(join(self.outDirectory, 'filename')))
         suspend = result.next()
-        suspend(myreactor)
+        suspend(myreactor, lambda: None)
 
         self.assertTrue(isfile(join(self.outDirectory, 'filename')))
 
@@ -330,7 +330,7 @@ class MsgboxTest(CQ2TestCase):
         self.moveInRecord('filename.error', 'Stacktrace')
         self.reactor.step()
 
-        self.assertEquals(['suspend', 'resumeWriter'], [m.name for m in myreactor.calledMethods])
+        self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
 
         try:
             result.next()
@@ -359,11 +359,11 @@ class MsgboxTest(CQ2TestCase):
         msgbox.addObserver(interceptor)
         g = msgbox.add('.idwith.strange/char', 'data')
         suspend = g.next()
-        suspend(CallTrace())
+        suspend(CallTrace(), lambda: None)
         filename = '%2Eidwith.strange%2Fchar.ack'
         open(join(self.inDirectory, filename), 'w').close()
         msgbox.processFile(filename)
-        self.assertEquals(('ack', ''), suspend.state)
+        suspend.getResult() # does not raise an Exception
 
     # helper methods
 
