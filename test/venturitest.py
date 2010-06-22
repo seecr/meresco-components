@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -150,7 +151,7 @@ class VenturiTest(CQ2TestCase):
         __callstack_var_tx__ = CallTrace('Transaction')
         __callstack_var_tx__.locals={}
         v = Venturi(should=[('PARTNAME', '/document')],could=[])
-        v.delete('identifier')
+        list(v.delete('identifier'))
         self.assertEquals('identifier', __callstack_var_tx__.locals['id'])
 
     def testPartInShouldDoesNotExist(self):
@@ -166,6 +167,20 @@ class VenturiTest(CQ2TestCase):
             pass
         self.assertEquals([], [m.name for m in interceptor.calledMethods])
         self.assertEquals(['isAvailable'], [m.name for m in storage.calledMethods])
+
+    def testDeleteIsAsynchronous(self):
+        __callstack_var_tx__ = CallTrace('Transaction')
+        __callstack_var_tx__.locals={}
+        observer = CallTrace('observer')
+        callable = lambda: None
+        observer.returnValues['delete'] = (f for f in [callable])
+        v = Venturi()
+        v.addObserver(observer)
+
+        result = list(compose(v.delete('identifier')))
+
+        self.assertEquals([callable], result)
+        self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
 
     def testAddDocumentPartCallsAdd(self):
         v = Venturi()

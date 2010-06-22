@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -75,7 +76,7 @@ class Venturi(Observable):
 
     def delete(self, id):
         self.ctx.tx.locals['id'] = id
-        self.do.delete(id)
+        yield self.asyncdo.delete(id)
 
 class VenturiException(Exception):
     pass
