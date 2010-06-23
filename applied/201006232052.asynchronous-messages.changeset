@@ -1,0 +1,461 @@
+Changeset created on Wed Jun 23 20:52:52 CEST 2010 by Seek You Too
+
+Description: More support for asynchronous messages.
+
+    As of weightless 0.4.11 there is support to suspend generators by yielding
+    Suspend objects. (See e.g. Msgbox) In order for these objects to work they
+    must be yielded to the HttpServer. Some objects needed to be changed to 
+    support this new behavior. Changes are e.g. using asyncdo like:
+        'yield self.asyncdo....' i.s.o. self.do....
+
+    The Msgbox component changed to match the updates of the Suspend protocol
+    in weightless 0.4.12
+
+Baseline version: meresco-components/workingsets/3.0-Edurep/version_8
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/deps.txt version_9/deps.txt
+--- version_8/deps.txt	2010-06-15 08:21:58.000000000 +0200
++++ version_9/deps.txt	2010-06-23 20:52:25.000000000 +0200
+@@ -1,22 +1,23 @@
+-python-meresco-core-3.0-edurep (>= 1)
+-python-weightless (>= 0.4.11)
+-python-weightless (<< 0.5)
+-python-cqlparser (>=1.5.2)
+-python-cqlparser (<<1.6)
+-python-storage (>=5.1.7)
+-python-storage (<<5.2)
+ python-amara (>=1.2a2)
+ python-amara (<<1.3)
+-python-lxml (>=1.2)
+-python-lxml (<<2.0)
+-python-magic
+-python-levenshtein
+ python-callstackscope (>=0.1)
+ python-callstackscope (<<0.2)
++python-cqlparser (>=1.5.2)
++python-cqlparser (<<1.6)
++python-escaping (>= 0.1)
++python-escaping (<< 0.2)
+ python-jtool (>= 0.4)
+ python-jtool (<< 0.6)
++python-levenshtein
++python-lxml (>=1.2)
++python-lxml (<<2.0)
++python-magic
++python-meresco-core-3.0-edurep (>= 1)
++python-storage (>=5.1.7)
++python-storage (<<5.2)
++python-weightless (>= 0.4.12)
++python-weightless (<< 0.5)
+ liblucene-core2-gcj9 (>= 2.2.0)
+ liblucene-core2-gcj9 (< 2.4.0)
+ libgcj9-0 (= 4.3.2-2.CQ2)
+ lsof
+-escaping
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/meresco/components/http/apachelogger.py version_9/meresco/components/http/apachelogger.py
+--- version_8/meresco/components/http/apachelogger.py	2010-06-15 08:21:57.000000000 +0200
++++ version_9/meresco/components/http/apachelogger.py	2010-06-23 20:52:24.000000000 +0200
+@@ -47,6 +47,9 @@
+     def handleRequest(self, *args, **kwargs):
+         status = 0
+         for line in self.all.handleRequest(*args, **kwargs):
++            if callable(line):
++                yield line
++                continue
+             if not status and line.startswith('HTTP/1.0'):
+                 status = line[len('HTTP/1.0 '):][:3]
+                 self._log(status, **kwargs)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/meresco/components/msgbox/msgbox.py version_9/meresco/components/msgbox/msgbox.py
+--- version_8/meresco/components/msgbox/msgbox.py	2010-06-15 08:21:58.000000000 +0200
++++ version_9/meresco/components/msgbox/msgbox.py	2010-06-23 20:52:24.000000000 +0200
+@@ -110,8 +110,10 @@
+             basename, result = filename.rsplit('.',1)
+             identifier = unescapeFilename(basename)
+             suspend = self._suspended[identifier]
+-            message = '' if result == 'ack' else open(filepath).read()
+-            suspend.resumeWriter(state=(result, message))
++            if result == 'ack':
++                suspend.resume()
++            else:
++                suspend.throw(Exception(open(filepath).read()))
+         else:
+             identifier = unescapeFilename(filename)
+             try:
+@@ -144,9 +146,7 @@
+             self._suspended[identifier] = suspend
+             yield suspend
+             del self._suspended[identifier]
+-            result, message = suspend.state
+-            if result == 'error':
+-                raise Exception(message)
++            suspend.getResult()
+ 
+     def _add(self, filename, filedata, **kwargs):
+         """Adds a file to the outDirectory. 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/meresco/components/reindex.py version_9/meresco/components/reindex.py
+--- version_8/meresco/components/reindex.py	2010-06-15 08:21:58.000000000 +0200
++++ version_9/meresco/components/reindex.py	2010-06-23 20:52:24.000000000 +0200
+@@ -64,13 +64,9 @@
+ 
+         sessionDirectory = join(self._filelistPath, session)
+         if not isdir(sessionDirectory):
+-            results = self._createBatches(sessionDirectory, batchSize)
++            yield self._createBatches(sessionDirectory, batchSize)
+         else:
+-            results = self._processBatches(sessionDirectory)
+-
+-        for result in results:
+-            yield result
+-
++            yield self._processBatches(sessionDirectory)
+ 
+     def _createBatches(self, sessionDirectory, batchSize):
+         currentBatch = 0
+@@ -107,7 +103,7 @@
+ 
+         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
+             try:
+-                self.do.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
++                yield self.asyncdo.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
+             except Exception, e:
+                 yield '\n!error processing "%s": %s' % (identifier, str(e))
+                 return
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/meresco/components/rewritepartname.py version_9/meresco/components/rewritepartname.py
+--- version_8/meresco/components/rewritepartname.py	2010-06-15 08:21:58.000000000 +0200
++++ version_9/meresco/components/rewritepartname.py	2010-06-23 20:52:25.000000000 +0200
+@@ -34,4 +34,4 @@
+         self._partname = partname
+ 
+     def add(self, id, partname, document):
+-        self.do.add(id, self._partname, document)
++        yield self.asyncdo.add(id, self._partname, document)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/meresco/components/venturi.py version_9/meresco/components/venturi.py
+--- version_8/meresco/components/venturi.py	2010-06-15 08:21:58.000000000 +0200
++++ version_9/meresco/components/venturi.py	2010-06-23 20:52:24.000000000 +0200
+@@ -7,6 +7,7 @@
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -75,7 +76,7 @@
+ 
+     def delete(self, id):
+         self.ctx.tx.locals['id'] = id
+-        self.do.delete(id)
++        yield self.asyncdo.delete(id)
+ 
+ class VenturiException(Exception):
+-    pass
+\ No newline at end of file
++    pass
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/test/_alltests.py version_9/test/_alltests.py
+--- version_8/test/_alltests.py	2010-06-15 08:21:57.000000000 +0200
++++ version_9/test/_alltests.py	2010-06-23 20:52:24.000000000 +0200
+@@ -9,6 +9,7 @@
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+ #    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -56,6 +57,7 @@
+ from reindextest import ReindexTest
+ from renamecqlindextest import RenameCqlIndexTest
+ from requestscopetest import RequestScopeTest
++from rewritepartnametest import RewritePartnameTest
+ from rssitemtest import RssItemTest
+ from rsstest import RssTest
+ from sorteditertoolstest import SortedItertoolsTest
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/test/http/apacheloggertest.py version_9/test/http/apacheloggertest.py
+--- version_8/test/http/apacheloggertest.py	2010-06-15 08:21:56.000000000 +0200
++++ version_9/test/http/apacheloggertest.py	2010-06-23 20:52:24.000000000 +0200
+@@ -71,3 +71,12 @@
+         self.assertEquals(['logHttpError'], [m.name for m in observer.calledMethods])
+         self.assertEquals([dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value')], [m.kwargs for m in observer.calledMethods])
+ 
++    def testHandleRequestAsynchronous(self):
++        logger = ApacheLogger(StringIO())
++        observer = CallTrace('handler')
++        observer.returnValues['handleRequest'] = (f for f in [str, okPlainText, 'text', int])
++        logger.addObserver(observer)
++        
++        result = list(compose(logger.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={}, otherKwarg='value'))) 
++
++        self.assertEquals([str, okPlainText, 'text', int], result)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/test/msgbox/msgboxtest.py version_9/test/msgbox/msgboxtest.py
+--- version_8/test/msgbox/msgboxtest.py	2010-06-15 08:21:57.000000000 +0200
++++ version_9/test/msgbox/msgboxtest.py	2010-06-23 20:52:24.000000000 +0200
+@@ -299,7 +299,7 @@
+         
+         self.assertFalse(isfile(join(self.outDirectory, 'filename')))
+         suspend = result.next()
+-        suspend(myreactor)
++        suspend(myreactor, lambda: None)
+ 
+         self.assertTrue(isfile(join(self.outDirectory, 'filename')))
+ 
+@@ -308,7 +308,7 @@
+         self.moveInRecord('filename.ack', '')
+         self.reactor.step()
+ 
+-        self.assertEquals(['suspend', 'resumeWriter'], [m.name for m in myreactor.calledMethods])
++        self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
+ 
+         self.assertRaises(StopIteration, result.next)
+ 
+@@ -321,7 +321,7 @@
+         
+         self.assertFalse(isfile(join(self.outDirectory, 'filename')))
+         suspend = result.next()
+-        suspend(myreactor)
++        suspend(myreactor, lambda: None)
+ 
+         self.assertTrue(isfile(join(self.outDirectory, 'filename')))
+ 
+@@ -330,7 +330,7 @@
+         self.moveInRecord('filename.error', 'Stacktrace')
+         self.reactor.step()
+ 
+-        self.assertEquals(['suspend', 'resumeWriter'], [m.name for m in myreactor.calledMethods])
++        self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
+ 
+         try:
+             result.next()
+@@ -359,11 +359,11 @@
+         msgbox.addObserver(interceptor)
+         g = msgbox.add('.idwith.strange/char', 'data')
+         suspend = g.next()
+-        suspend(CallTrace())
++        suspend(CallTrace(), lambda: None)
+         filename = '%2Eidwith.strange%2Fchar.ack'
+         open(join(self.inDirectory, filename), 'w').close()
+         msgbox.processFile(filename)
+-        self.assertEquals(('ack', ''), suspend.state)
++        suspend.getResult() # does not raise an Exception
+ 
+     # helper methods
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/test/reindextest.py version_9/test/reindextest.py
+--- version_8/test/reindextest.py	2010-06-15 08:21:57.000000000 +0200
++++ version_9/test/reindextest.py	2010-06-23 20:52:24.000000000 +0200
+@@ -33,6 +33,7 @@
+ 
+ from os.path import join, isdir
+ from os import listdir
++from weightless import compose
+ 
+ class ReindexTest(CQ2TestCase):
+     def _path(self, subdir):
+@@ -59,7 +60,7 @@
+     def testArguments(self):
+         reindex, observer = self.setupDna(CallTrace('Storage'))
+         def assertError(message, arguments):
+-            result = list(reindex.handleRequest(arguments=arguments))
++            result = list(compose(reindex.handleRequest(arguments=arguments)))
+             self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', message], result)
+         assertError('!error: session missing', {})
+         assertError('!error: session missing', {'session': []})
+@@ -72,7 +73,7 @@
+         reindex, observer = self.setupDna(CallTrace('Storage', returnValues={'listIdentifiers': []}))
+         directory = join(self._path('reindex'), 'testcase')
+         self.assertFalse(isdir(directory))
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         self.assertFalse(isdir(directory))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', "!error: no identifiers"], result)
+ 
+@@ -83,7 +84,7 @@
+             ('id:3', 'part', 'data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         directory = join(self._path('reindex'), 'testcase')
+         self.assertTrue(isdir(directory))
+         files = listdir(directory)
+@@ -98,7 +99,7 @@
+             ('id:3', 'part', 'data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
+         directory = join(self._path('reindex'), 'testcase')
+         self.assertTrue(isdir(directory))
+         files = listdir(directory)
+@@ -111,7 +112,7 @@
+             ('id:3', 'part', 'data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+ 
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+ 
+@@ -122,10 +123,10 @@
+             ('id:3', 'part', 'data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+ 
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '+id:2\n', '+id:3\n', '=batches left: 0'], result)
+ 
+         methods = [str(m) for m in observer.calledMethods]
+@@ -143,21 +144,21 @@
+         reindex, observer = self.setupDna(storage)
+         directory = join(self._path('reindex'), 'testcase')
+ 
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
+         self.assertEquals(3, len(listdir(directory)))
+         self.assertTrue(isdir(directory))
+ 
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         self.assertEquals(2, len(listdir(directory)))
+         self.assertTrue(isdir(directory))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '=batches left: 2'], result)
+ 
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         self.assertEquals(1, len(listdir(directory)))
+         self.assertTrue(isdir(directory))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:2\n', '=batches left: 1'], result)
+ 
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         self.assertFalse(isdir(directory))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:3\n','=batches left: 0'], result)
+ 
+@@ -169,10 +170,10 @@
+         ])
+         reindex, observer = self.setupDna(storage)
+         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+ 
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
+ 
+     def testNotOffByOneIfNoRemainder(self):
+@@ -180,6 +181,17 @@
+         storage = self.setupStorage(records)
+         reindex, observer = self.setupDna(storage)
+         directory = join(self._path('reindex'), 'testcase')
+-        result = list(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['5']}))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['5']})))
+         self.assertEquals(16, len(listdir(directory)))
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '\n=batches: 16'], result)
++
++    def testProcessingBatchesIsAsynchronous(self):
++        storage = self.setupStorage([
++            ('id:1', 'part', 'data1'),
++        ])
++        reindex, observer = self.setupDna(storage)
++        observer.returnValues['addDocumentPart'] = (f for f in [str])
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        self.assertTrue(str in result, result)
++
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/test/rewritepartnametest.py version_9/test/rewritepartnametest.py
+--- version_8/test/rewritepartnametest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_9/test/rewritepartnametest.py	2010-06-23 20:52:24.000000000 +0200
+@@ -0,0 +1,48 @@
++# -*- coding: utf-8 -*-
++## begin license ##
++#
++#    Meresco Components are components to build searchengines, repositories
++#    and archives, based on Meresco Core.
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from cq2utils import CallTrace
++from unittest import TestCase
++from meresco.core import Observable
++
++from meresco.components import RewritePartname
++
++class RewritePartnameTest(TestCase):
++    def testAddPartname(self):
++        observable = Observable()
++        observer = CallTrace('observer')
++        callable = lambda: 42
++        observer.returnValues['add'] = callable
++        rewrite = RewritePartname('newPartname')
++        rewrite.addObserver(observer)
++        observable.addObserver(rewrite)
++
++        result = list(observable.all.add('identifier', 'oldPartname', 'data'))
++
++        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
++        self.assertEquals(('identifier', 'newPartname', 'data'), observer.calledMethods[0].args)
++        self.assertEquals([callable], result)
++        
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_8/test/venturitest.py version_9/test/venturitest.py
+--- version_8/test/venturitest.py	2010-06-15 08:21:57.000000000 +0200
++++ version_9/test/venturitest.py	2010-06-23 20:52:24.000000000 +0200
+@@ -7,6 +7,7 @@
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -150,7 +151,7 @@
+         __callstack_var_tx__ = CallTrace('Transaction')
+         __callstack_var_tx__.locals={}
+         v = Venturi(should=[('PARTNAME', '/document')],could=[])
+-        v.delete('identifier')
++        list(v.delete('identifier'))
+         self.assertEquals('identifier', __callstack_var_tx__.locals['id'])
+ 
+     def testPartInShouldDoesNotExist(self):
+@@ -167,6 +168,20 @@
+         self.assertEquals([], [m.name for m in interceptor.calledMethods])
+         self.assertEquals(['isAvailable'], [m.name for m in storage.calledMethods])
+ 
++    def testDeleteIsAsynchronous(self):
++        __callstack_var_tx__ = CallTrace('Transaction')
++        __callstack_var_tx__.locals={}
++        observer = CallTrace('observer')
++        callable = lambda: None
++        observer.returnValues['delete'] = (f for f in [callable])
++        v = Venturi()
++        v.addObserver(observer)
++
++        result = list(compose(v.delete('identifier')))
++
++        self.assertEquals([callable], result)
++        self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
++
+     def testAddDocumentPartCallsAdd(self):
+         v = Venturi()
+         addInvocations = []
