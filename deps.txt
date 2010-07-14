@@ -12,7 +12,7 @@ python-levenshtein
 python-lxml (>=1.2)
 python-lxml (<<2.0)
 python-magic
-python-meresco-core-3.0-edurep (>= 1)
+python-meresco-core3.1
 python-storage (>=5.1.7)
 python-storage (<<5.2)
 python-weightless (>= 0.4.12)
