@@ -135,13 +135,23 @@ class SessionHandlerTest(TestCase):
 
         result = ''.join(compose(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345))))
         firstSessionId = self.assertSessionCookie(result)
+        handler._sessions._now = lambda: currentTime + HALF_AN_HOUR - 1
+        result = ''.join(compose(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
+        sessionIdHalfAnHourMinusOne = self.assertSessionCookie(result)
+
+        self.assertEquals(firstSessionId, sessionIdHalfAnHourMinusOne)
 
         handler._sessions._now = lambda: currentTime + HALF_AN_HOUR + 1
+        result = ''.join(compose(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
+        sessionIdHalfAnHourPlusOne = self.assertSessionCookie(result)
 
-        result = ''.join(compose(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
-        sessionIdAfterHalfAnHour = self.assertSessionCookie(result)
+        self.assertEquals(firstSessionId, sessionIdHalfAnHourPlusOne)
 
-        self.assertNotEqual(firstSessionId, sessionIdAfterHalfAnHour)
+        handler._sessions._now = lambda: currentTime + (HALF_AN_HOUR * 2) + 2
+        result = ''.join(compose(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
+        sessionIdJustExpired = self.assertSessionCookie(result)
+
+        self.assertNotEqual(firstSessionId, sessionIdJustExpired)
 
     def assertSessionCookie(self, handleRequestOutput, nameSuffix=''):
         header, body = handleRequestOutput.split(utils.CRLF*2,1)

@@ -66,6 +66,8 @@ class SessionHandler(Observable):
             sessionid = md5('%s%s%s%s' % (time(), randint(0, 9999999999), clientaddress, self._secretSeed)).hexdigest()
             session = Session(sessionid)
             self._sessions[sessionid] = session
+        else:
+            self._sessions.touch(sessionid)
 
         extraHeader = 'Set-Cookie: session%s=%s; path=/' % (self._nameSuffix, sessionid)
 
