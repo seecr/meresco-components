@@ -89,6 +89,28 @@ class SRUTermDrilldownTest(CQ2TestCase):
         """ + DRILLDOWN_FOOTER
         self.assertEqualsWS(expected, result)
 
+
+    def testDrilldownNoResults(self):
+        sruTermDrilldown = SRUTermDrilldown()
+        observer = CallTrace("Drilldown")
+        drilldownResults = iter([
+                ('field0', iter([])),
+            ])
+        observer.returnValues["drilldown"] = drilldownResults
+        sruTermDrilldown.addObserver(observer)
+
+        cqlAbstractSyntaxTree = 'ignored'
+
+        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
+        result = "".join(composedGenerator)
+
+        expected = DRILLDOWN_HEADER + """
+            <dd:term-drilldown>
+                <dd:navigator name="field0"/>
+            </dd:term-drilldown>
+        """ + DRILLDOWN_FOOTER
+        self.assertEqualsWS(expected, result)
+
     def testDrilldownInternalRaisesExceptionNotTheFirst(self):
         sruTermDrilldown = SRUTermDrilldown()
         observer = CallTrace("Drilldown")
