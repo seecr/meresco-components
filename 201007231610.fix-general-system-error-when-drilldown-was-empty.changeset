@@ -1,0 +1,53 @@
+Changeset created on Fri Jul 23 16:10:00 CEST 2010 by Seek You Too
+
+Description: Fix for General System Error in drilldown bug.
+
+    General System Error is no longer returned when drilldown results is empty.
+
+Baseline version: meresco/meresco-components/workingsets/3.1-CQ2/version_1
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/drilldown/srutermdrilldown.py version_2/meresco/components/drilldown/srutermdrilldown.py
+--- version_1/meresco/components/drilldown/srutermdrilldown.py	2010-07-23 15:46:40.000000000 +0200
++++ version_2/meresco/components/drilldown/srutermdrilldown.py	2010-07-23 16:09:35.000000000 +0200
+@@ -76,6 +76,9 @@
+             for term, count in termCounts:
+                 yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(count)), xmlEscape(str(term)))
+             yield '</dd:navigator>'
++        except StopIteration:
++            yield '<dd:navigator name=%s/>' % quoteattr(fieldname)
++            return
+         except Exception, e:
+             yield generalSystemError(xmlEscape(e.message))
+             return
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/sru/srutermdrilldowntest.py version_2/test/sru/srutermdrilldowntest.py
+--- version_1/test/sru/srutermdrilldowntest.py	2010-07-23 15:46:37.000000000 +0200
++++ version_2/test/sru/srutermdrilldowntest.py	2010-07-23 16:09:35.000000000 +0200
+@@ -89,6 +89,28 @@
+         """ + DRILLDOWN_FOOTER
+         self.assertEqualsWS(expected, result)
+ 
++
++    def testDrilldownNoResults(self):
++        sruTermDrilldown = SRUTermDrilldown()
++        observer = CallTrace("Drilldown")
++        drilldownResults = iter([
++                ('field0', iter([])),
++            ])
++        observer.returnValues["drilldown"] = drilldownResults
++        sruTermDrilldown.addObserver(observer)
++
++        cqlAbstractSyntaxTree = 'ignored'
++
++        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
++        result = "".join(composedGenerator)
++
++        expected = DRILLDOWN_HEADER + """
++            <dd:term-drilldown>
++                <dd:navigator name="field0"/>
++            </dd:term-drilldown>
++        """ + DRILLDOWN_FOOTER
++        self.assertEqualsWS(expected, result)
++
+     def testDrilldownInternalRaisesExceptionNotTheFirst(self):
+         sruTermDrilldown = SRUTermDrilldown()
+         observer = CallTrace("Drilldown")

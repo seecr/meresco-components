@@ -76,6 +76,9 @@ class SRUTermDrilldown(Observable):
             for term, count in termCounts:
                 yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(count)), xmlEscape(str(term)))
             yield '</dd:navigator>'
+        except StopIteration:
+            yield '<dd:navigator name=%s/>' % quoteattr(fieldname)
+            return
         except Exception, e:
             yield generalSystemError(xmlEscape(e.message))
             return
