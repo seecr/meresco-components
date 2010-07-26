@@ -1,0 +1,45 @@
+Changeset created on Wed Jul 21 15:17:22 UTC 2010 by Seek You Too
+
+Description: Fixes problem with filelist slicing in case stop attribute is 0
+
+    Fixes problem with filelist slicing in case stop attribute is 0
+
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.6-BenG/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/merescocomponents/filelist.py version_0.fixSliceWithinRange/merescocomponents/filelist.py
+--- version_0/merescocomponents/filelist.py	2010-07-21 13:40:31.000000000 +0000
++++ version_0.fixSliceWithinRange/merescocomponents/filelist.py	2010-07-21 15:02:27.000000000 +0000
+@@ -180,14 +181,14 @@
+         if self._step < 0 and self._stop < index <= self._start:
+             return self._mainList[index]
+         raise IndexError('list index out of range')
+-        
++
+ 
+     def __len__(self):
+         return abs((self._start - self._stop)/self._step)
+ 
+ def _sliceWithinRange(aSlice, listLength):
+         start = aSlice.start or 0
+-        stop = aSlice.stop or listLength
++        stop = listLength if aSlice.stop is None else aSlice.stop
+         step = aSlice.step or 1
+         if stop < 0:
+             stop += listLength
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/filelisttest.py version_0.fixSliceWithinRange/test/filelisttest.py
+--- version_0/test/filelisttest.py	2010-07-21 13:40:30.000000000 +0000
++++ version_0.fixSliceWithinRange/test/filelisttest.py	2010-07-21 13:46:49.000000000 +0000
+@@ -1,3 +1,4 @@
++# -*- coding: utf-8 -*-
+ ## begin license ##
+ #
+ #    Meresco Components are components to build searchengines, repositories
+@@ -87,6 +88,7 @@
+         s = SortedFileList(join(self.tempdir, 'list'))
+         for i in range(6):
+             s.append(i)
++        self.assertEquals([], list(s[0:0]))
+         self.assertEquals([1,2], list(s[1:3]))
+         self.assertEquals([0,1,2,3], list(s[:-2]))
+         self.assertEquals([4,5], list(s[-2:]))
