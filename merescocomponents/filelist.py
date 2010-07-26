@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -115,7 +116,7 @@ class SortedFileList(object):
     def __iter__(self):
         for i in xrange(len(self)):
             yield self[i]
-        
+
     def __contains__(self, item):
         return self._position(item) > -1
 
@@ -129,7 +130,7 @@ class SortedFileList(object):
         if len(self) > 0 and item <= self[-1]:
             raise ValueError('%s should be greater than %s', (item, self[-1]))
         self._list.append(item)
-    
+
     def remove(self, item):
         position = self._position(item)
         if position == -1:
@@ -180,14 +181,14 @@ class FileListSeq(object):
         if self._step < 0 and self._stop < index <= self._start:
             return self._mainList[index]
         raise IndexError('list index out of range')
-        
+
 
     def __len__(self):
         return abs((self._start - self._stop)/self._step)
 
 def _sliceWithinRange(aSlice, listLength):
         start = aSlice.start or 0
-        stop = aSlice.stop or listLength
+        stop = listLength if aSlice.stop is None else aSlice.stop
         step = aSlice.step or 1
         if stop < 0:
             stop += listLength

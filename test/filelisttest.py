@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -87,6 +88,7 @@ class FileListTest(CQ2TestCase):
         s = SortedFileList(join(self.tempdir, 'list'))
         for i in range(6):
             s.append(i)
+        self.assertEquals([], list(s[0:0]))
         self.assertEquals([1,2], list(s[1:3]))
         self.assertEquals([0,1,2,3], list(s[:-2]))
         self.assertEquals([4,5], list(s[-2:]))
@@ -141,7 +143,7 @@ class FileListTest(CQ2TestCase):
         except ValueError:
             pass
         self.assertEquals([10], list(s))
-        
+
     def testAppendSucceedsEvenWhenUnsortedForFileList(self):
         s = FileList(join(self.tempdir, 'list'))
         s.append(10)
@@ -162,7 +164,7 @@ class FileListTest(CQ2TestCase):
             self.assertEquals(8, aList[4])
             self.assertEquals(8, aList[-2])
             self.assertEquals(10, aList[-1])
-            
+
             self.assertEquals([0,2,4,6,8,10], list(aList))
             self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
             self.assertEquals([0,2,4,6,8,10], list(aList[::-1][::-1]))
@@ -172,8 +174,8 @@ class FileListTest(CQ2TestCase):
             self.assertFalse(1 in aList)
             self.assertIndexError(aList, 20)
             self.assertIndexError(aList, -34567)
-                
-            
+
+
         s = SortedFileList(join(self.tempdir, 'list1'))
         for i in [0,2,4,6,8,10]:
             s.append(i)
@@ -222,7 +224,7 @@ class FileListTest(CQ2TestCase):
         for i in range(4):
             s.append(i)
         self.assertEquals(0, s.index(0))
-        
+
 
     def testMergeWhenNecessary(self):
         s = SortedFileList(join(self.tempdir, 'list'), mergeTrigger=10)
@@ -242,7 +244,7 @@ class FileListTest(CQ2TestCase):
         s._merge()
         s._merge()
         self.assertEquals([], list(s))
-        
+
     def testDeleteResultingInEmptyListWithMerging2(self):
         s = SortedFileList(join(self.tempdir, 'list'))
         s.append(1234)
@@ -251,7 +253,7 @@ class FileListTest(CQ2TestCase):
         self.assertEquals([1235], list(s))
         s._merge()
         self.assertEquals([1235], list(s))
-        
+
     def xtestPerformance(self):
         s = SortedFileList(join(self.tempdir, 'list'))
         t0 = time()
