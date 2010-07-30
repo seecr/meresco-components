@@ -1,0 +1,134 @@
+Changeset created on Wed Jul 14 12:08:28 UTC 2010 by Seek You Too
+
+Description: Minor changes to ensure full support on Redhat
+
+    Changes consist of:
+    * support for lsof in either /usr/bin or /usr/sbin
+    * different paths for compiler and libraries (redhat.setup.sh)
+    * fix in reindextest.py to allow for different file ordering
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.1-Emc/version_0
+
+Only in version_0: build
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/debian.setup.sh version_2/debian.setup.sh
+--- version_0/debian.setup.sh	1970-01-01 00:00:00.000000000 +0000
++++ version_2/debian.setup.sh	2010-07-14 12:03:59.000000000 +0000
+@@ -0,0 +1,8 @@
++#!/bin/bash
++MACHINE=`gcc -dumpmachine`
++GCCVERSION=`gcc -dumpversion`
++GCCVERSION_SHORT=$(echo $GCCVERSION | awk -F. '{print $1"."$2}')
++
++LIBRARY_PATH=/usr/lib/gcc/$MACHINE/${GCCVERSION} \
++CPLUS_INCLUDE_PATH=/usr/include/c++/${GCCVERSION}:/usr/lib/gcc/$MACHINE/${GCCVERSION}/include \
++CPP=cpp-${GCCVERSION_SHORT} CC=gcc-${GCCVERSION_SHORT} CXX=g++-${GCCVERSION_SHORT} python2.5 setup.py build_ext --inplace
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/tools/lucenetools.py version_2/meresco/components/facetindex/tools/lucenetools.py
+--- version_0/meresco/components/facetindex/tools/lucenetools.py	2010-07-14 07:52:17.000000000 +0000
++++ version_2/meresco/components/facetindex/tools/lucenetools.py	2010-07-14 12:03:56.000000000 +0000
+@@ -28,7 +28,7 @@
+ #
+ ## end license ##
+ 
+-from os.path import isdir
++from os.path import isdir, isfile
+ from subprocess import Popen, PIPE
+ 
+ from meresco.components.facetindex.merescolucene import FSDirectory, IndexReader, Directory
+@@ -52,7 +52,14 @@
+             raise Exception("Refusing to remove lock because index is in use by PIDs: %s" % out.strip())
+ 
+ def _lsof(path):
+-    cmdline = "lsof -t +D %s" % path # -t output only pid's, +D scan directory recursively
++    lsofcmd = None
++    for f in ['/usr/bin/lsof', '/usr/sbin/lsof']:
++        if isfile(f):
++            lsofcmd = f
++    if lsofcmd is None:
++        raise Exception("lsof command not found; please install!")
++
++    cmdline = "%s -t +D %s" % (lsofcmd, path)  # -t outputs only pids, +D scans directory recursively
+     process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
+     (out, err) = process.communicate()
+     return cmdline, out, err, process.poll()
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/redhat.setup.sh version_2/redhat.setup.sh
+--- version_0/redhat.setup.sh	1970-01-01 00:00:00.000000000 +0000
++++ version_2/redhat.setup.sh	2010-07-14 12:03:59.000000000 +0000
+@@ -0,0 +1,23 @@
++#!/bin/bash
++#MACHINE=`gcc -dumpmachine`
++#GCCVERSION=`gcc -dumpversion`
++#GCCVERSION_SHORT=$(echo $GCCVERSION | awk -F. '{print $1"."$2}')
++#
++#LIBRARY_PATH=/usr/lib/gcc/$MACHINE/${GCCVERSION} \
++#CPLUS_INCLUDE_PATH=/usr/include/c++/${GCCVERSION}:/usr/lib/gcc/$MACHINE/${GCCVERSION}/include \
++#CPP=cpp-${GCCVERSION_SHORT} CC=gcc-${GCCVERSION_SHORT} CXX=g++-${GCCVERSION_SHORT} python2.5 setup.py build_ext --inplace
++
++ARGS="$@"
++if [ -z "${ARGS}" ]; then
++    # For building a local checked-out code
++    ARGS="build_ext --inplace"
++fi
++
++GCCDIR=/opt/gcc-4.3.2
++MACHINE=`${GCCDIR}/bin/gcc -dumpmachine`
++GCCVERSION=`${GCCDIR}/bin/gcc -dumpversion`
++GCCVERSION_SHORT=$(echo $GCCVERSION | awk -F. '{print $1"."$2}')
++
++LIBRARY_PATH=${GCCDIR}/lib/gcc/$MACHINE/${GCCVERSION} \
++CPLUS_INCLUDE_PATH=${GCCDIR}/include/c++/${GCCVERSION}:${GCCDIR}/lib/gcc/$MACHINE/${GCCVERSION}/include \
++CPP=cpp-${GCCVERSION_SHORT} CC=gcc-${GCCVERSION_SHORT} CXX=g++-${GCCVERSION_SHORT} python2.5 setup.py ${ARGS}
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/setup.sh version_2/setup.sh
+--- version_0/setup.sh	2010-07-14 07:52:18.000000000 +0000
++++ version_2/setup.sh	2010-07-14 12:03:59.000000000 +0000
+@@ -1,8 +1,8 @@
+ #!/bin/bash
+-MACHINE=`gcc -dumpmachine`
+-GCCVERSION=`gcc -dumpversion`
+-GCCVERSION_SHORT=$(echo $GCCVERSION | awk -F. '{print $1"."$2}')
+-
+-LIBRARY_PATH=/usr/lib/gcc/$MACHINE/${GCCVERSION} \
+-CPLUS_INCLUDE_PATH=/usr/include/c++/${GCCVERSION}:/usr/lib/gcc/$MACHINE/${GCCVERSION}/include \
+-CPP=cpp-${GCCVERSION_SHORT} CC=gcc-${GCCVERSION_SHORT} CXX=g++-${GCCVERSION_SHORT} python2.5 setup.py build_ext --inplace
++if [ -f /etc/debian_version ]; then
++    ./debian.setup.sh
++elif [ -f /etc/redhat-release ]; then
++    ./redhat.setup.sh
++else
++    echo "Unsupported platform"
++fi
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/reindextest.py version_2/test/reindextest.py
+--- version_0/test/reindextest.py	2010-07-14 07:52:15.000000000 +0000
++++ version_2/test/reindextest.py	2010-07-14 12:03:36.000000000 +0000
+@@ -148,19 +148,26 @@
+         self.assertEquals(3, len(listdir(directory)))
+         self.assertTrue(isdir(directory))
+ 
+-        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        ids, batchesLeft = [], []
++        status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        ids.append(idPart)
++        batchesLeft.append(batchesLeftPart)
+         self.assertEquals(2, len(listdir(directory)))
+         self.assertTrue(isdir(directory))
+-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '=batches left: 2'], result)
+ 
+-        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        ids.append(idPart)
++        batchesLeft.append(batchesLeftPart)
+         self.assertEquals(1, len(listdir(directory)))
+         self.assertTrue(isdir(directory))
+-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:2\n', '=batches left: 1'], result)
+ 
+-        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
++        ids.append(idPart)
++        batchesLeft.append(batchesLeftPart)
+         self.assertFalse(isdir(directory))
+-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:3\n','=batches left: 0'], result)
++
++        self.assertEquals(['+id:1\n', '+id:2\n', '+id:3\n'], sorted(ids))
++        self.assertEquals(['=batches left: 0', '=batches left: 1', '=batches left: 2'], sorted(batchesLeft))
+ 
+     def testProcessGivesError(self):
+         storage = self.setupStorage([

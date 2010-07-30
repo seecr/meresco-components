@@ -1,0 +1,83 @@
+Changeset created on Fri Jul 30 11:00:00 UTC 2010 by Seek You Too
+
+Description: Added defaultMaximumResults and defaultSorting kwargs on drilldown method
+
+    Makes it possible to use a single default value for defaultMaximumResults and defaultSorting for all possible drilldown fields.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.1-Emc/version_3
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_3/meresco/components/facetindex/drilldown.py version_3-add_drilldown_support_for_default_maximumResults_and_sorted/meresco/components/facetindex/drilldown.py
+--- version_3/meresco/components/facetindex/drilldown.py	2010-07-20 03:16:00.000000000 +0000
++++ version_3-add_drilldown_support_for_default_maximumResults_and_sorted/meresco/components/facetindex/drilldown.py	2010-07-22 22:16:26.000000000 +0000
+@@ -29,7 +29,7 @@
+ #
+ ## end license ##
+ from .docsetlist import DocSetList, JACCARD_MI
+-from merescolucene import Term, IndexReader, iterJ
++from merescolucene import Term, IndexReader, iterJ
+ from time import time
+ from sys import maxint
+ from functioncommand import FunctionCommand
+@@ -141,10 +141,10 @@
+     def listFields(self):
+         return self._docsetlists.keys()
+
+-    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
++    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None, defaultMaximumResults=0, defaultSorting=False):
+         allActualFields = self._docsetlists.keys()
+         if not drilldownFieldnamesAndMaximumResults:
+-            drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)
++            drilldownFieldnamesAndMaximumResults = [(fieldname, defaultMaximumResults, defaultSorting)
+                 for fieldname in allActualFields]
+         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
+             if fieldname not in allActualFields:
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_3/test/facetindex/drilldowntest.py version_3-add_drilldown_support_for_default_maximumResults_and_sorted/test/facetindex/drilldowntest.py
+--- version_3/test/facetindex/drilldowntest.py	2010-07-20 03:16:00.000000000 +0000
++++ version_3-add_drilldown_support_for_default_maximumResults_and_sorted/test/facetindex/drilldowntest.py	2010-07-22 22:16:25.000000000 +0000
+@@ -117,6 +117,30 @@
+         result = list(self.drilldown.drilldown(hits, [('field0', 0, True)]))
+         self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
+
++    def testDefaultSorting(self):
++        self.createDrilldown(['field0'])
++        self.addUntokenized([
++            ('0', {'field0': 'term1'}),
++            ('1', {'field0': 'term1'}),
++            ('2', {'field0': 'term2'}),
++            ('3', {'field0': 'term0'})])
++        hits = self.index.docsetFromQuery(MatchAllDocsQuery())
++        ddData = list(self.drilldown.drilldown(hits, defaultSorting=False))
++        self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
++        result = list(self.drilldown.drilldown(hits, defaultSorting=True))
++        self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
++
++    def testDefaultMaximumResults(self):
++        self.createDrilldown(['field0'])
++        self.addUntokenized([
++            ('0', {'field0': 'term1'}),
++            ('1', {'field0': 'term1'}),
++            ('2', {'field0': 'term2'}),
++            ('3', {'field0': 'term0'})])
++        hits = self.index.docsetFromQuery(MatchAllDocsQuery())
++        ddData = list(self.drilldown.drilldown(hits, defaultMaximumResults=2))
++        self.assertEquals([('term0',1), ('term1',2)], list(ddData[0][1]))
++
+     def testDynamicDrilldownFields(self):
+         self.createDrilldown(['*'])
+         self.addUntokenized([
+@@ -316,7 +340,6 @@
+         resultTerms = list(results[0][1])
+         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
+
+-
+     def testMultiFieldDrilldownAfterDelete(self):
+         drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
+         drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+@@ -367,6 +390,7 @@
+         drilldown = Drilldown(['prefix.*'])
+         fields = drilldown._determineDrilldownFields(self.index.getIndexReader())
+         self.assertEquals(set(['prefix.field_0', 'prefix.field_1']) , fields)
++
+     def testDrilldownFieldnamesWithPrefixStar(self):
+         self.createDrilldown(['prefix.*'])
+         self.addUntokenized([('id0', {

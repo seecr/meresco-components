@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-from os.path import isdir
+from os.path import isdir, isfile
 from subprocess import Popen, PIPE
 
 from meresco.components.facetindex.merescolucene import FSDirectory, IndexReader, Directory
@@ -52,7 +52,14 @@ def _assertNoFilesOpenInPath(path, lsofFunc=None):
             raise Exception("Refusing to remove lock because index is in use by PIDs: %s" % out.strip())
 
 def _lsof(path):
-    cmdline = "lsof -t +D %s" % path # -t output only pid's, +D scan directory recursively
+    lsofcmd = None
+    for f in ['/usr/bin/lsof', '/usr/sbin/lsof']:
+        if isfile(f):
+            lsofcmd = f
+    if lsofcmd is None:
+        raise Exception("lsof command not found; please install!")
+
+    cmdline = "%s -t +D %s" % (lsofcmd, path)  # -t outputs only pids, +D scans directory recursively
     process = Popen(cmdline.split(" "), stdout=PIPE, stderr=PIPE)
     (out, err) = process.communicate()
     return cmdline, out, err, process.poll()

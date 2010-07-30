@@ -117,6 +117,30 @@ class DrilldownTest(CQ2TestCase):
         result = list(self.drilldown.drilldown(hits, [('field0', 0, True)]))
         self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
 
+    def testDefaultSorting(self):
+        self.createDrilldown(['field0'])
+        self.addUntokenized([
+            ('0', {'field0': 'term1'}),
+            ('1', {'field0': 'term1'}),
+            ('2', {'field0': 'term2'}),
+            ('3', {'field0': 'term0'})])
+        hits = self.index.docsetFromQuery(MatchAllDocsQuery())
+        ddData = list(self.drilldown.drilldown(hits, defaultSorting=False))
+        self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
+        result = list(self.drilldown.drilldown(hits, defaultSorting=True))
+        self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
+
+    def testDefaultMaximumResults(self):
+        self.createDrilldown(['field0'])
+        self.addUntokenized([
+            ('0', {'field0': 'term1'}),
+            ('1', {'field0': 'term1'}),
+            ('2', {'field0': 'term2'}),
+            ('3', {'field0': 'term0'})])
+        hits = self.index.docsetFromQuery(MatchAllDocsQuery())
+        ddData = list(self.drilldown.drilldown(hits, defaultMaximumResults=2))
+        self.assertEquals([('term0',1), ('term1',2)], list(ddData[0][1]))
+
     def testDynamicDrilldownFields(self):
         self.createDrilldown(['*'])
         self.addUntokenized([
@@ -316,7 +340,6 @@ class DrilldownTest(CQ2TestCase):
         resultTerms = list(results[0][1])
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
 
-
     def testMultiFieldDrilldownAfterDelete(self):
         drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
         drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
@@ -367,6 +390,7 @@ class DrilldownTest(CQ2TestCase):
         drilldown = Drilldown(['prefix.*'])
         fields = drilldown._determineDrilldownFields(self.index.getIndexReader())
         self.assertEquals(set(['prefix.field_0', 'prefix.field_1']) , fields)
+
     def testDrilldownFieldnamesWithPrefixStar(self):
         self.createDrilldown(['prefix.*'])
         self.addUntokenized([('id0', {

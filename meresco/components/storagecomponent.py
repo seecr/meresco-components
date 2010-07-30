@@ -42,10 +42,14 @@ def defaultJoin(parts):
     return id, partName
 
 class StorageComponent(object):
-    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[]):
+    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[], name=None):
         assert type(directory) == str, 'Please use directory as first parameter'
         self._storage = HierarchicalStorage(Storage(directory, revisionControl=revisionControl, ), split, join)
         self._partsRemovedOnDelete = partsRemovedOnDelete
+        self._name = name
+
+    def observable_name(self):
+        return self._name
 
     def store(self, *args, **kwargs):
         return self.add(*args, **kwargs)

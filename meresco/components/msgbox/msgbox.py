@@ -106,22 +106,25 @@ class Msgbox(Observable):
 
     def processFile(self, filename):
         filepath = join(self._inDirectory, filename)
-        if self._isAckOrError(filename):
-            basename, result = filename.rsplit('.',1)
+        suspend = None
+        ackOrError = self._isAckOrError(filename)
+        if ackOrError:
+            basename, extension = filename.rsplit('.', 1)
             identifier = unescapeFilename(basename)
-            suspend = self._suspended[identifier]
-            if result == 'ack':
-                suspend.resume()
-            else:
-                suspend.throw(Exception(open(filepath).read()))
-        else:
-            identifier = unescapeFilename(filename)
-            try:
+            suspend = self._suspended.get(identifier, None)
+        try:
+            if suspend is None:
+                identifier = unescapeFilename(filename)
                 self.do.add(identifier=identifier, filedata=File(filepath)) # asyncdo !!
-                if self._synchronous:
+                if self._synchronous and not ackOrError:
                     self._ack(filename)
-            except Exception:
-                self._logError(format_exc())
+            elif extension == 'error':
+                suspend.throw(Exception(open(filepath).read()))
+            else:
+                suspend.resume()
+        except Exception:
+            self._logError(format_exc())
+            if not ackOrError:
                 self._error(filename, format_exc())
         self._forgivingRemove(filepath)
 

@@ -148,19 +148,26 @@ class ReindexTest(CQ2TestCase):
         self.assertEquals(3, len(listdir(directory)))
         self.assertTrue(isdir(directory))
 
-        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        ids, batchesLeft = [], []
+        status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        ids.append(idPart)
+        batchesLeft.append(batchesLeftPart)
         self.assertEquals(2, len(listdir(directory)))
         self.assertTrue(isdir(directory))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '=batches left: 2'], result)
 
-        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        ids.append(idPart)
+        batchesLeft.append(batchesLeftPart)
         self.assertEquals(1, len(listdir(directory)))
         self.assertTrue(isdir(directory))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:2\n', '=batches left: 1'], result)
 
-        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        ids.append(idPart)
+        batchesLeft.append(batchesLeftPart)
         self.assertFalse(isdir(directory))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:3\n','=batches left: 0'], result)
+
+        self.assertEquals(['+id:1\n', '+id:2\n', '+id:3\n'], sorted(ids))
+        self.assertEquals(['=batches left: 0', '=batches left: 1', '=batches left: 2'], sorted(batchesLeft))
 
     def testProcessGivesError(self):
         storage = self.setupStorage([

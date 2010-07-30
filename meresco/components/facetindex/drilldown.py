@@ -141,10 +141,10 @@ class Drilldown(object):
     def listFields(self):
         return self._docsetlists.keys()
 
-    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None):
+    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None, defaultMaximumResults=0, defaultSorting=False):
         allActualFields = self._docsetlists.keys()
         if not drilldownFieldnamesAndMaximumResults:
-            drilldownFieldnamesAndMaximumResults = [(fieldname, 0, False)
+            drilldownFieldnamesAndMaximumResults = [(fieldname, defaultMaximumResults, defaultSorting)
                 for fieldname in allActualFields]
         for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
             if fieldname not in allActualFields:

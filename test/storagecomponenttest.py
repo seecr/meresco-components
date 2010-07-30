@@ -153,4 +153,13 @@ class StorageComponentTest(CQ2TestCase):
         s.addDocumentPart(identifier='x', name='y', someString='dummy')
         self.assertEquals([{'args':(), 'kwargs':dict(id='x', partName='y', someString='dummy')}], addInvocations)
 
+    def testObservableNameNotSet(self):
+        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
+        self.assertEquals(None, s.observable_name())
+
+    def testObservableNameSet(self):
+        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable, name="name")
+        self.assertEquals("name", s.observable_name())
+
+
 

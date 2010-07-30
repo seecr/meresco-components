@@ -31,7 +31,7 @@ from meresco.core import be, Transparant
 from weightless import Reactor
 
 from os.path import join, isfile, basename
-from os import makedirs, rename, listdir, system, chmod
+from os import makedirs, rename, listdir, system, chmod, remove
 from lxml.etree import tostring
 from shutil import rmtree
 from stat import S_IXUSR, S_IRUSR, S_IWUSR
@@ -84,11 +84,10 @@ class MsgboxTest(CQ2TestCase):
         self.createMsgbox()
         filename = 'repository:some:identifier:1.record'
         self.moveInRecord(filename=filename)
-
         self.assertEquals(0, len(self.observer.calledMethods))
         self.assertTrue(isfile(join(self.inDirectory, filename)))
         self.assertFalse(isfile(join(self.outDirectory, filename + '.ack')))
-        self.msgbox.processFile(filename)
+        self.reactor.step()
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertFalse(isfile(join(self.inDirectory, filename)))
         self.assertTrue(isfile(join(self.outDirectory, filename + '.ack')))
@@ -145,7 +144,7 @@ class MsgboxTest(CQ2TestCase):
         self.assertEquals(0, len(self.observer.calledMethods))
         self.assertTrue(isfile(join(self.inDirectory, filename)))
         self.assertFalse(isfile(join(self.outDirectory, filename)))
-        self.msgbox.processFile(filename)
+        self.reactor.step()
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertFalse(isfile(join(self.inDirectory, filename)))
         self.assertFalse(isfile(join(self.outDirectory, filename + '.ack')))
@@ -364,6 +363,35 @@ class MsgboxTest(CQ2TestCase):
         open(join(self.inDirectory, filename), 'w').close()
         msgbox.processFile(filename)
         suspend.getResult() # does not raise an Exception
+
+    def testAckAndErrorAcceptedAfterSendDoesNotBlockForAck(self):
+        self.createMsgbox()
+        errorLog = []
+        self.msgbox._logError = lambda error: errorLog.append(error)
+
+        identifier = 'a:b:c'
+        ''.join(self.msgbox.add(identifier, 'filedata'))
+        self.assertTrue(isfile(join(self.outDirectory, identifier)))
+
+        self.moveInRecord(identifier + '.ack', '')
+        remove(join(self.outDirectory, identifier))
+        self.reactor.step()
+        self.assertEquals([], errorLog)
+
+        self.assertEquals(1, len(self.observer.calledMethods))
+        calledMethod = self.observer.calledMethods[0]
+        self.assertEquals('add', calledMethod.name)
+        self.assertEquals(identifier + '.ack', calledMethod.kwargs['identifier'])
+
+        self.moveInRecord(identifier + '.error', 'Something bad happened.')
+        self.reactor.step()
+        self.assertEquals([], errorLog)
+
+        self.assertEquals(2, len(self.observer.calledMethods))
+        calledMethod = self.observer.calledMethods[1]
+        self.assertEquals('add', calledMethod.name)
+        self.assertEquals(identifier + '.error', calledMethod.kwargs['identifier'])
+
 
     # helper methods
 

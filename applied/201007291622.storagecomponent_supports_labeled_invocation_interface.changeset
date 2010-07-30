@@ -1,0 +1,46 @@
+Changeset created on Thu Jul 29 16:22:08 CEST 2010 by Seek You Too
+
+Description: Added support for LII in StorageComponent
+
+    The Labeled Invocation Interface introduced in Meresco Core 3.1.? is
+    now supported by the StorageComponent. It has an observable_name so it can 
+    act as an endpoint for a labeled message.
+
+Baseline version: meresco-components/workingsets/3.1.1-Edurep/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/storagecomponent.py version_1/meresco/components/storagecomponent.py
+--- version_0/meresco/components/storagecomponent.py	2010-07-29 09:32:30.000000000 +0200
++++ version_1/meresco/components/storagecomponent.py	2010-07-29 16:21:08.000000000 +0200
+@@ -42,10 +42,14 @@
+     return id, partName
+ 
+ class StorageComponent(object):
+-    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[]):
++    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[], name=None):
+         assert type(directory) == str, 'Please use directory as first parameter'
+         self._storage = HierarchicalStorage(Storage(directory, revisionControl=revisionControl, ), split, join)
+         self._partsRemovedOnDelete = partsRemovedOnDelete
++        self._name = name
++
++    def observable_name(self):
++        return self._name
+ 
+     def store(self, *args, **kwargs):
+         return self.add(*args, **kwargs)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/storagecomponenttest.py version_1/test/storagecomponenttest.py
+--- version_0/test/storagecomponenttest.py	2010-07-29 09:32:30.000000000 +0200
++++ version_1/test/storagecomponenttest.py	2010-07-29 16:21:08.000000000 +0200
+@@ -153,4 +153,13 @@
+         s.addDocumentPart(identifier='x', name='y', someString='dummy')
+         self.assertEquals([{'args':(), 'kwargs':dict(id='x', partName='y', someString='dummy')}], addInvocations)
+ 
++    def testObservableNameNotSet(self):
++        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
++        self.assertEquals(None, s.observable_name())
++
++    def testObservableNameSet(self):
++        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable, name="name")
++        self.assertEquals("name", s.observable_name())
++
++
+ 
