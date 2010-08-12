@@ -30,7 +30,7 @@ from unittest import TestCase
 from os.path import join
 from shutil import rmtree
 from tempfile import mkdtemp
-from os import remove
+from os import remove, makedirs
 
 from meresco.components.http.fileserver import FileServer
 
@@ -88,3 +88,17 @@ class FileServerTest(TestCase):
         self.assertTrue("Date: " in response)
         self.assertTrue("Last-Modified: " in response)
         self.assertTrue("Expires: " in response)
+
+    def testPathShouldBeInDocumentRoot(self):
+        documentRoot = join(self.directory, 'documentRoot')
+        makedirs(documentRoot)
+        notAllowedFile = join(self.directory, 'notAllowed.txt')
+        f = open(notAllowedFile, 'w')
+        f.write("DO NOT READ ME")
+        f.close()
+        fileServer = FileServer(documentRoot)
+
+        response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={}))
+
+        self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
+        self.assertTrue("<title>404 Not Found</title>" in response)
