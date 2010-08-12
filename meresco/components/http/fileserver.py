@@ -25,7 +25,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from os.path import isfile, join
+from os.path import isfile, join, normpath, commonprefix
 from rfc822 import formatdate
 from time import mktime, gmtime, timezone
 from stat import ST_MTIME
@@ -105,13 +105,17 @@ class FileServer(object):
             yield part
 
     def _filenameFor(self, filename):
-        while filename and filename[0] == '/':
-            filename = filename[1:]
-        filename = filename.replace('..', '')
-        return join(self._documentRoot, filename)
+        filename = '/'.join(part for part in filename.split('/') if part)
+        path = normpath(join(self._documentRoot, filename))
+        if commonprefix([self._documentRoot, path]) != self._documentRoot:
+            raise ValueError('Filename "%s" not inside documentRoot.' % filename)
+        return path
 
     def fileExists(self, filename):
-        return isfile(self._filenameFor(filename))
+        try:
+            return isfile(self._filenameFor(filename))
+        except ValueError:
+            return False
 
 
 class StringServer(object):
