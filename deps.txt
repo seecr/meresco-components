@@ -15,5 +15,5 @@ python-jtool (>= 0.4)
 python-jtool (<< 0.6)
 liblucene-core2-gcj9 (>= 2.2.0)
 liblucene-core2-gcj9 (< 2.4.0)
-libgcj9-0 (= 4.3.2-2.CQ2)
+libgcj9-0
 lsof
