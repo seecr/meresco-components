@@ -34,10 +34,14 @@ from time import time, sleep
 from random import random, randint, sample
 from os.path import join
 
+from cq2utils import CallTrace
+
+from lucenetestcase import LuceneTestCase
+
 from meresco.components.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
 from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
-from lucenetestcase import LuceneTestCase
-from cq2utils import CallTrace
+from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
+
 
 class PerformanceTuningTest(LuceneTestCase):
 
@@ -246,6 +250,19 @@ class PerformanceTuningTest(LuceneTestCase):
         tload = t2 - t1
         self.assertTiming(0.004, tsave, 0.020)
         self.assertTiming(0.10, tload, 0.50)
+
+    def testLuceneDocIdTrackerDeleteDocId(self):
+        tracker = LuceneDocIdTracker(10, directory=self.tempdir)
+        for i in xrange(8000):
+            docId = tracker.next()
+
+        t0 = time()
+        for i in xrange(2, 4000):
+            tracker.deleteDocId(i)
+        delta = time() - t0
+        self.assertTiming(0.4, delta, 0.6)
+
+
 
 
 # Some tests on Juicer with EduRep 8/2008:

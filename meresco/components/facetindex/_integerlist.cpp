@@ -103,7 +103,7 @@ IntegerList* IntegerList::slice(int start, int stop, int step) {
 
 int IntegerList::mergeFromOffset(int offset) {
     for(std::vector<guint32>::iterator it=end()-1; it != begin()+offset-1; it--) {
-        if (*it == 0xFFFFFFFF) {
+        if ((int)*it < 0) {
             erase(it);
         }
     }

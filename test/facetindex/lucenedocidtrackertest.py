@@ -281,11 +281,12 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         id4 = t.next() # creates a second segment, which must be saved properly on deletes
         id5 = t.next()
         t.deleteDocId(id0) # delete first document in already saved segement 0
+        t.deleteDocId(id1) # delete second document
 
-        self.assertEquals([-1,id1,id2,id3,id4,id5], t.getMap())
+        self.assertEquals([-1,-2,id2,id3,id4,id5], t.getMap())
         t.close()
         t2 = LuceneDocIdTracker(mergeFactor=2, directory=self.getTrackerDir())
-        self.assertEquals([-1,id1,id2,id3,id4,id5], t2.getMap())
+        self.assertEquals([-1,-2,id2,id3,id4,id5], t2.getMap())
 
     def testDeletesAreDeletedOnMerge(self):
         """i.e. Delete information is deleted on merge"""
@@ -349,6 +350,8 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.assertEquals(2, self.tracker.nrOfDocs())
         self.tracker.deleteDocId(0)
         self.assertEquals(1, self.tracker.nrOfDocs())
+        self.tracker.deleteDocId(1)
+        self.assertEquals(0, self.tracker.nrOfDocs())
 
     def testDeleteDocIdWithExplicitFlush(self):
         t = self.tracker
@@ -356,32 +359,33 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         id1 = t.next()
         t.flush()
         t.deleteDocId(id0)
-        self.assertEquals([-1,id1], t.getMap())
+        self.assertEquals([-1, id1], t.getMap())
         id2 = t.next()
         t.flush()
         t.deleteDocId(id2)
-        self.assertEquals([id1,-1], t.getMap())
+        self.assertEquals([id1, -3], t.getMap())
 
     def testDeleteDocIdWithImplicitFlush(self):
         t = self.tracker
         id0 = t.next()
         id1 = t.next()
         t.deleteDocId(id0)
-        self.assertEquals([-1,id1], t.getMap())
+        self.assertEquals([-1, id1], t.getMap())
         id2 = t.next()
         t.deleteDocId(id2)
-        self.assertEquals([-1, id1,-1], t.getMap())
+        self.assertEquals([-1, id1, -3], t.getMap())
 
     def testDeleteNonExistingDocIdHarmless(self):
         self.tracker.deleteDocId(4)
 
     def testTrackerBisect(self):
         self.assertEquals(1, trackerBisect([0,1,2,3], 1))
-        self.assertEquals(2, trackerBisect([-1,-1,2,3], 2))
-        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 3))
-        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 2))
-        self.assertEquals(0, trackerBisect([0,-1,-1,-1], 0))
-        self.assertEquals(0, trackerBisect([3,-1,-1,-1], 3))
+        self.assertEquals(2, trackerBisect([-1,-2,2,3], 2))
+        self.assertEquals(3, trackerBisect([-1,-2,-3,3], 3))
+        self.assertEquals(3, trackerBisect([-1,-2,-3,4], 3))
+        self.assertEquals(2, trackerBisect([-1,-2,-3,3], 2))
+        self.assertEquals(0, trackerBisect([0,-2,-3,-4], 0))
+        self.assertEquals(0, trackerBisect([3,-5,-6,-7], 3))
         self.assertEquals(1, trackerBisect([-1], 42))
         self.assertEquals(0, trackerBisect([], 42))
 

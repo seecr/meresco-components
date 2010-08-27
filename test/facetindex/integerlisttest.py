@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -128,25 +129,25 @@ class IntegerListTest(CQ2TestCase):
         self.assertEquals([0,1,2,3,4], list(l))
 
         l = IntegerList(5)
-        l[2] = -1
-        l[4] = -1
+        l[2] = -3
+        l[4] = -5
         l.mergeFromOffset(0)
         self.assertEquals([0,1,3], list(l))
 
         l = IntegerList(5)
-        l[2] = -1
-        l[4] = -1
+        l[2] = -3
+        l[4] = -5
         l.mergeFromOffset(3)
-        self.assertEquals([0,1,-1,3], list(l))
+        self.assertEquals([0,1,-3,3], list(l))
 
         l = IntegerList(5)
         for i in range(5):
-            l[i] = -1
+            l[i] = i ^ -1
         l.mergeFromOffset(0)
         self.assertEquals([], list(l))
 
         l = IntegerList(5)
-        l[2] = -1
+        l[2] = -3
         l.mergeFromOffset(2)
         self.assertEquals([0, 1, 3, 4], list(l))
 

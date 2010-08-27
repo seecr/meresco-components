@@ -23,5 +23,6 @@
 #
 ## end license ##
 
-export PYTHONPATH=.
-python2.5 _performancetests.py
+export LANG=en_US.UTF-8
+export PYTHONPATH=.:"$PYTHONPATH"
+python2.5 _performancetests.py "$@"

@@ -75,18 +75,19 @@ class LuceneDocIdTrackerException(Exception):
 
 def trackerBisect(a, x, lo=0, hi=None):
     """This bisect is based on bisect_left from the bisect module.
-    This implementation will take into account that elements in a
-    can be -1 and all other elements are sorted and >= 0"""
+    This implementation takes into account that elements can be marked
+    to be deleted (original value xor -1)"""
     if hi is None:
         hi = len(a)
     while lo < hi:
-        mid = midKeep = (lo+hi)//2
-        while a[mid] == -1 and mid > lo:
-            mid -= 1
+        mid = (lo + hi) // 2
         amid = a[mid]
-        if amid == -1: lo = midKeep+1
-        elif amid < x: lo = mid+1
-        else: hi = mid
+        if amid < 0:
+            amid ^= -1
+        if amid < x:
+            lo = mid + 1
+        else:
+            hi = mid
     return lo
 
 class LuceneDocIdTracker(object):
@@ -133,13 +134,13 @@ class LuceneDocIdTracker(object):
             self._merge(self._ramSegmentsInfo, self._ramSegmentsInfo[0].offset, 0, self._mergeFactor)
             self._segmentInfo.append(self._ramSegmentsInfo[0])
             self._ramSegmentsInfo = []
-            self._maybeMerge(self._segmentInfo, lower = 0, upper = self._mergeFactor)
+            self._maybeMerge(self._segmentInfo, lower=0, upper=self._mergeFactor)
         self._save()
 
     def _maybeMerge(self, segments, lower, upper):
         reversedSegments = reversed(segments)
         worthySegments = list(takewhile(lambda si: si.length <= upper,
-            dropwhile(lambda si: not lower < si.length <= upper , reversedSegments)))
+            dropwhile(lambda si: not lower < si.length <= upper, reversedSegments)))
         nrOfWorthySegments = len(worthySegments)
         if nrOfWorthySegments >= self._mergeFactor:
             self._merge(segments, worthySegments[-1].offset, lower, upper)
@@ -153,13 +154,14 @@ class LuceneDocIdTracker(object):
             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
 
     def deleteDocId(self, docId):
+        deleted = False
         position = trackerBisect(self._docIds, docId)
         if position < len(self._docIds) and self._docIds[position] == docId:
-            self._docIds[position] = -1
+            self._docIds[position] = docId ^ -1
             self._segmentForLuceneId(position).deleteLuceneId(position)
             #self._maybeFlushRamSegments()
-            return True
-        return False
+            deleted = True
+        return deleted
 
     def flush(self):
         self._flushRamSegments()
@@ -203,7 +205,8 @@ class LuceneDocIdTracker(object):
             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
 
             for deleted in segment.deletedLuceneIds():
-                self._docIds[deleted] = -1
+                if self._docIds[deleted] >= 0:
+                    self._docIds[deleted] ^= -1
 
     def __eq__(self, other):
         return type(other) == type(self) and \
@@ -230,4 +233,4 @@ class LuceneDocIdTracker(object):
         self.flush()
 
     def nrOfDocs(self):
-        return len([docId for docId in self._docIds if docId != -1])
+        return len([docId for docId in self._docIds if docId >= 0])
