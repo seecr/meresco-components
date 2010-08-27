@@ -1,0 +1,296 @@
+Changeset created on Fri Aug 27 13:09:10 UTC 2010 by Seek You Too
+
+Description: Optimization of LuceneDocIdTracker.deleteDocId
+
+    Deleted docIds are kept in the docIds IntegerList in an encoded form (xor -1) to be able to run trackerBisect in nlog(x) time (as it should).
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.1.3-CQ2/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/_integerlist.cpp version_1/meresco/components/facetindex/_integerlist.cpp
+--- version_0/meresco/components/facetindex/_integerlist.cpp	2010-08-27 09:02:13.000000000 +0000
++++ version_1/meresco/components/facetindex/_integerlist.cpp	2010-08-27 13:03:16.000000000 +0000
+@@ -103,7 +103,7 @@
+ 
+ int IntegerList::mergeFromOffset(int offset) {
+     for(std::vector<guint32>::iterator it=end()-1; it != begin()+offset-1; it--) {
+-        if (*it == 0xFFFFFFFF) {
++        if ((int)*it < 0) {
+             erase(it);
+         }
+     }
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/lucenedocidtracker.py version_1/meresco/components/facetindex/lucenedocidtracker.py
+--- version_0/meresco/components/facetindex/lucenedocidtracker.py	2010-08-27 09:02:13.000000000 +0000
++++ version_1/meresco/components/facetindex/lucenedocidtracker.py	2010-08-27 13:03:16.000000000 +0000
+@@ -75,18 +75,19 @@
+ 
+ def trackerBisect(a, x, lo=0, hi=None):
+     """This bisect is based on bisect_left from the bisect module.
+-    This implementation will take into account that elements in a
+-    can be -1 and all other elements are sorted and >= 0"""
++    This implementation takes into account that elements can be marked
++    to be deleted (original value xor -1)"""
+     if hi is None:
+         hi = len(a)
+     while lo < hi:
+-        mid = midKeep = (lo+hi)//2
+-        while a[mid] == -1 and mid > lo:
+-            mid -= 1
++        mid = (lo + hi) // 2
+         amid = a[mid]
+-        if amid == -1: lo = midKeep+1
+-        elif amid < x: lo = mid+1
+-        else: hi = mid
++        if amid < 0:
++            amid ^= -1
++        if amid < x:
++            lo = mid + 1
++        else:
++            hi = mid
+     return lo
+ 
+ class LuceneDocIdTracker(object):
+@@ -133,13 +134,13 @@
+             self._merge(self._ramSegmentsInfo, self._ramSegmentsInfo[0].offset, 0, self._mergeFactor)
+             self._segmentInfo.append(self._ramSegmentsInfo[0])
+             self._ramSegmentsInfo = []
+-            self._maybeMerge(self._segmentInfo, lower = 0, upper = self._mergeFactor)
++            self._maybeMerge(self._segmentInfo, lower=0, upper=self._mergeFactor)
+         self._save()
+ 
+     def _maybeMerge(self, segments, lower, upper):
+         reversedSegments = reversed(segments)
+         worthySegments = list(takewhile(lambda si: si.length <= upper,
+-            dropwhile(lambda si: not lower < si.length <= upper , reversedSegments)))
++            dropwhile(lambda si: not lower < si.length <= upper, reversedSegments)))
+         nrOfWorthySegments = len(worthySegments)
+         if nrOfWorthySegments >= self._mergeFactor:
+             self._merge(segments, worthySegments[-1].offset, lower, upper)
+@@ -153,13 +154,14 @@
+             self._maybeMerge(segments, lower=upper, upper=upper*self._mergeFactor)
+ 
+     def deleteDocId(self, docId):
++        deleted = False
+         position = trackerBisect(self._docIds, docId)
+         if position < len(self._docIds) and self._docIds[position] == docId:
+-            self._docIds[position] = -1
++            self._docIds[position] = docId ^ -1
+             self._segmentForLuceneId(position).deleteLuceneId(position)
+             #self._maybeFlushRamSegments()
+-            return True
+-        return False
++            deleted = True
++        return deleted
+ 
+     def flush(self):
+         self._flushRamSegments()
+@@ -203,7 +205,8 @@
+             self._docIds.extendFrom(join(self._directory, str(i) + '.docids'))
+ 
+             for deleted in segment.deletedLuceneIds():
+-                self._docIds[deleted] = -1
++                if self._docIds[deleted] >= 0:
++                    self._docIds[deleted] ^= -1
+ 
+     def __eq__(self, other):
+         return type(other) == type(self) and \
+@@ -230,4 +233,4 @@
+         self.flush()
+ 
+     def nrOfDocs(self):
+-        return len([docId for docId in self._docIds if docId != -1])
++        return len([docId for docId in self._docIds if docId >= 0])
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/web/webquery.py version_1/meresco/components/web/webquery.py
+--- version_0/meresco/components/web/webquery.py	2010-08-27 09:02:13.000000000 +0000
++++ version_1/meresco/components/web/webquery.py	2010-08-27 13:03:16.000000000 +0000
+@@ -144,8 +144,8 @@
+ 
+ def _feelsLikePlusMinusQuery(aString):
+     for part in (_valueFromGroupdict(m.groupdict()).lower() for m in SPLITTED_STRINGS.finditer(aString)):
+-        if part[0] in ['-', '+']:
+-            return True
++        if part[0] in ['-', '+'] and len(part) > 1:
++            return part[1] not in ['-', '+']
+     return False
+ 
+ def _feelsLikeBooleanQuery(aString):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/facetindex/integerlisttest.py version_1/test/facetindex/integerlisttest.py
+--- version_0/test/facetindex/integerlisttest.py	2010-08-27 09:02:13.000000000 +0000
++++ version_1/test/facetindex/integerlisttest.py	2010-08-27 13:03:16.000000000 +0000
+@@ -1,3 +1,4 @@
++# -*- coding: utf-8 -*-
+ ## begin license ##
+ #
+ #    Meresco Components are components to build searchengines, repositories
+@@ -128,25 +129,25 @@
+         self.assertEquals([0,1,2,3,4], list(l))
+ 
+         l = IntegerList(5)
+-        l[2] = -1
+-        l[4] = -1
++        l[2] = -3
++        l[4] = -5
+         l.mergeFromOffset(0)
+         self.assertEquals([0,1,3], list(l))
+ 
+         l = IntegerList(5)
+-        l[2] = -1
+-        l[4] = -1
++        l[2] = -3
++        l[4] = -5
+         l.mergeFromOffset(3)
+-        self.assertEquals([0,1,-1,3], list(l))
++        self.assertEquals([0,1,-3,3], list(l))
+ 
+         l = IntegerList(5)
+         for i in range(5):
+-            l[i] = -1
++            l[i] = i ^ -1
+         l.mergeFromOffset(0)
+         self.assertEquals([], list(l))
+ 
+         l = IntegerList(5)
+-        l[2] = -1
++        l[2] = -3
+         l.mergeFromOffset(2)
+         self.assertEquals([0, 1, 3, 4], list(l))
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/facetindex/lucenedocidtrackertest.py version_1/test/facetindex/lucenedocidtrackertest.py
+--- version_0/test/facetindex/lucenedocidtrackertest.py	2010-08-27 09:02:13.000000000 +0000
++++ version_1/test/facetindex/lucenedocidtrackertest.py	2010-08-27 13:03:16.000000000 +0000
+@@ -281,11 +281,12 @@
+         id4 = t.next() # creates a second segment, which must be saved properly on deletes
+         id5 = t.next()
+         t.deleteDocId(id0) # delete first document in already saved segement 0
++        t.deleteDocId(id1) # delete second document
+ 
+-        self.assertEquals([-1,id1,id2,id3,id4,id5], t.getMap())
++        self.assertEquals([-1,-2,id2,id3,id4,id5], t.getMap())
+         t.close()
+         t2 = LuceneDocIdTracker(mergeFactor=2, directory=self.getTrackerDir())
+-        self.assertEquals([-1,id1,id2,id3,id4,id5], t2.getMap())
++        self.assertEquals([-1,-2,id2,id3,id4,id5], t2.getMap())
+ 
+     def testDeletesAreDeletedOnMerge(self):
+         """i.e. Delete information is deleted on merge"""
+@@ -349,6 +350,8 @@
+         self.assertEquals(2, self.tracker.nrOfDocs())
+         self.tracker.deleteDocId(0)
+         self.assertEquals(1, self.tracker.nrOfDocs())
++        self.tracker.deleteDocId(1)
++        self.assertEquals(0, self.tracker.nrOfDocs())
+ 
+     def testDeleteDocIdWithExplicitFlush(self):
+         t = self.tracker
+@@ -356,32 +359,33 @@
+         id1 = t.next()
+         t.flush()
+         t.deleteDocId(id0)
+-        self.assertEquals([-1,id1], t.getMap())
++        self.assertEquals([-1, id1], t.getMap())
+         id2 = t.next()
+         t.flush()
+         t.deleteDocId(id2)
+-        self.assertEquals([id1,-1], t.getMap())
++        self.assertEquals([id1, -3], t.getMap())
+ 
+     def testDeleteDocIdWithImplicitFlush(self):
+         t = self.tracker
+         id0 = t.next()
+         id1 = t.next()
+         t.deleteDocId(id0)
+-        self.assertEquals([-1,id1], t.getMap())
++        self.assertEquals([-1, id1], t.getMap())
+         id2 = t.next()
+         t.deleteDocId(id2)
+-        self.assertEquals([-1, id1,-1], t.getMap())
++        self.assertEquals([-1, id1, -3], t.getMap())
+ 
+     def testDeleteNonExistingDocIdHarmless(self):
+         self.tracker.deleteDocId(4)
+ 
+     def testTrackerBisect(self):
+         self.assertEquals(1, trackerBisect([0,1,2,3], 1))
+-        self.assertEquals(2, trackerBisect([-1,-1,2,3], 2))
+-        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 3))
+-        self.assertEquals(3, trackerBisect([-1,-1,-1,3], 2))
+-        self.assertEquals(0, trackerBisect([0,-1,-1,-1], 0))
+-        self.assertEquals(0, trackerBisect([3,-1,-1,-1], 3))
++        self.assertEquals(2, trackerBisect([-1,-2,2,3], 2))
++        self.assertEquals(3, trackerBisect([-1,-2,-3,3], 3))
++        self.assertEquals(3, trackerBisect([-1,-2,-3,4], 3))
++        self.assertEquals(2, trackerBisect([-1,-2,-3,3], 2))
++        self.assertEquals(0, trackerBisect([0,-2,-3,-4], 0))
++        self.assertEquals(0, trackerBisect([3,-5,-6,-7], 3))
+         self.assertEquals(1, trackerBisect([-1], 42))
+         self.assertEquals(0, trackerBisect([], 42))
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/facetindex/performancetuningtest.py version_1/test/facetindex/performancetuningtest.py
+--- version_0/test/facetindex/performancetuningtest.py	2010-08-27 09:02:13.000000000 +0000
++++ version_1/test/facetindex/performancetuningtest.py	2010-08-27 13:03:16.000000000 +0000
+@@ -34,10 +34,14 @@
+ from random import random, randint, sample
+ from os.path import join
+ 
++from cq2utils import CallTrace
++
++from lucenetestcase import LuceneTestCase
++
+ from meresco.components.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
+ from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
+-from lucenetestcase import LuceneTestCase
+-from cq2utils import CallTrace
++from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
++
+ 
+ class PerformanceTuningTest(LuceneTestCase):
+ 
+@@ -247,6 +251,19 @@
+         self.assertTiming(0.004, tsave, 0.020)
+         self.assertTiming(0.10, tload, 0.50)
+ 
++    def testLuceneDocIdTrackerDeleteDocId(self):
++        tracker = LuceneDocIdTracker(10, directory=self.tempdir)
++        for i in xrange(8000):
++            docId = tracker.next()
++
++        t0 = time()
++        for i in xrange(2, 4000):
++            tracker.deleteDocId(i)
++        delta = time() - t0
++        self.assertTiming(0.4, delta, 0.6)
++
++
++
+ 
+ # Some tests on Juicer with EduRep 8/2008:
+ # (1st time)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/performancetests.sh version_1/test/performancetests.sh
+--- version_0/test/performancetests.sh	2010-08-27 09:02:13.000000000 +0000
++++ version_1/test/performancetests.sh	2010-08-27 13:03:16.000000000 +0000
+@@ -23,5 +23,6 @@
+ #
+ ## end license ##
+ 
+-export PYTHONPATH=.
+-python2.5 _performancetests.py
++export LANG=en_US.UTF-8
++export PYTHONPATH=.:"$PYTHONPATH"
++python2.5 _performancetests.py "$@"
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/web/webquerytest.py version_1/test/web/webquerytest.py
+--- version_0/test/web/webquerytest.py	2010-08-27 09:02:13.000000000 +0000
++++ version_1/test/web/webquerytest.py	2010-08-27 13:03:16.000000000 +0000
+@@ -70,6 +70,14 @@
+         self.assertDefaultQuery('label="value value"')
+         self.assertDefaultQuery('water AND "+(rain" AND "-snow)"', 'water +(rain -snow)', needsBooleanHelp=True)
+         self.assertDefaultQuery('water AND "+(rain" AND or AND "snow)"', 'water +(rain or snow)', needsBooleanHelp=True)
++        
++    def testParseErrorsWithMinusSign(self):
++        self.assertDefaultQuery('-')    
++        self.assertDefaultQuery('- AND -', '- -')
++        self.assertDefaultQuery('- AND +', '- +')
++        self.assertDefaultQuery('-+-')
++        
++        self.assertDefaultQuery('cats AND - AND dogs', 'cats - dogs')
+ 
+     def testBooleanQuery(self):
+         self.assertBooleanQuery('cats AND dogs')
