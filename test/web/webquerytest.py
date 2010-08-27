@@ -70,6 +70,14 @@ class WebQueryTest(TestCase):
         self.assertDefaultQuery('label="value value"')
         self.assertDefaultQuery('water AND "+(rain" AND "-snow)"', 'water +(rain -snow)', needsBooleanHelp=True)
         self.assertDefaultQuery('water AND "+(rain" AND or AND "snow)"', 'water +(rain or snow)', needsBooleanHelp=True)
+        
+    def testParseErrorsWithMinusSign(self):
+        self.assertDefaultQuery('-')    
+        self.assertDefaultQuery('- AND -', '- -')
+        self.assertDefaultQuery('- AND +', '- +')
+        self.assertDefaultQuery('-+-')
+        
+        self.assertDefaultQuery('cats AND - AND dogs', 'cats - dogs')
 
     def testBooleanQuery(self):
         self.assertBooleanQuery('cats AND dogs')

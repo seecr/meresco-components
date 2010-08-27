@@ -144,8 +144,8 @@ class CqlReplaceTerm(CqlIdentityVisitor):
 
 def _feelsLikePlusMinusQuery(aString):
     for part in (_valueFromGroupdict(m.groupdict()).lower() for m in SPLITTED_STRINGS.finditer(aString)):
-        if part[0] in ['-', '+']:
-            return True
+        if part[0] in ['-', '+'] and len(part) > 1:
+            return part[1] not in ['-', '+']
     return False
 
 def _feelsLikeBooleanQuery(aString):
