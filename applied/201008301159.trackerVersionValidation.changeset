@@ -1,0 +1,161 @@
+Changeset created on Mon Aug 30 11:59:07 UTC 2010 by Seek You Too
+
+Description: Format of tracker files now versioned; Old/wrong version tracker files will not load.
+
+    On initialization LuceneDocIdTracker will throw an exception in case pre-existing tracker files are not of the same version (in which case the index first needs to be optimized).
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.1.3-CQ2/version_1
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/facetindex/lucenedocidtracker.py version_1-versionTracker/meresco/components/facetindex/lucenedocidtracker.py
+--- version_1/meresco/components/facetindex/lucenedocidtracker.py	2010-08-27 13:03:16.000000000 +0000
++++ version_1-versionTracker/meresco/components/facetindex/lucenedocidtracker.py	2010-08-30 11:46:30.000000000 +0000
+@@ -27,6 +27,9 @@
+ #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ #
+ ## end license ##
++
++from __future__ import with_statement
++
+ from itertools import takewhile, dropwhile
+ from os.path import join, isfile
+
+@@ -95,6 +99,9 @@
+         This class tracks docids for Lucene version 2.2.0
+                                                     =====
+     """
++
++    version = '1'
++
+     def __init__(self, mergeFactor, directory=None, maxDoc=0):
+         assert directory != None
+         self._directory = directory
+@@ -167,14 +174,16 @@
+         self._flushRamSegments()
+
+     def _save(self):
+-        filename = join(self._directory, 'tracker.segments')
+-        f = open(filename, 'w')
+-        f.write(str(self._mergeFactor))
+-        f.write('\n')
+-        f.write(str(self._nextDocId))
+-        f.write('\n')
+-        f.write(str(self._segmentInfo))
+-        f.close()
++        versionFile = join(self._directory, 'tracker.version')
++        if not isfile(versionFile):
++            with open(versionFile, 'w') as f:
++                f.write(self.version)
++        with open(join(self._directory, 'tracker.segments'), 'w') as f:
++            f.write(str(self._mergeFactor))
++            f.write('\n')
++            f.write(str(self._nextDocId))
++            f.write('\n')
++            f.write(str(self._segmentInfo))
+         if self._segmentInfo:
+             segmentNr = len(self._segmentInfo) - 1
+             self._segmentInfo[-1].openIfNew(join(self._directory, str(segmentNr) + '.deleted'))
+@@ -190,10 +199,18 @@
+     def _load(self):
+         if len(self._docIds) != 0:
+             raise LuceneDocIdTrackerException('DocIdList not empty on load')
+-        f = open(join(self._directory, 'tracker.segments'))
+-        self._mergeFactor = int(f.next().strip())
+-        self._nextDocId = int(f.next().strip())
+-        segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
++        versionFile = join(self._directory, 'tracker.version')
++        versionFound = None
++        if isfile(versionFile):
++            versionFound = open(versionFile).read().strip()
++        if versionFound != self.version:
++            raise LuceneDocIdTrackerException("""Version mismatch for %s files (%s.version: %s, files have version: %s).
++Please optimize the index to take care of this.""" % (self.__class__.__name__, self.__class__.__name__, self.version, versionFound))
++
++        with open(join(self._directory, 'tracker.segments')) as f:
++            self._mergeFactor = int(f.next().strip())
++            self._nextDocId = int(f.next().strip())
++            segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
+         for i, segmentData in enumerate(segments):
+             length, offset = int(segmentData[0]), int(segmentData[1])
+             segment = SegmentInfo(length, offset)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/facetindex/lucenedocidtrackertest.py version_1-versionTracker/test/facetindex/lucenedocidtrackertest.py
+--- version_1/test/facetindex/lucenedocidtrackertest.py	2010-08-27 13:03:16.000000000 +0000
++++ version_1-versionTracker/test/facetindex/lucenedocidtrackertest.py	2010-08-30 10:03:45.000000000 +0000
+@@ -27,21 +27,23 @@
+ #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ #
+ ## end license ##
+-from cq2utils import CQ2TestCase, CallTrace
+-from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
+-from meresco.components.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
+-                                                       IndexSearcher, TermQuery, MatchAllDocsQuery, Term, iterJ
+-from random import randint
+-from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
++
++from __future__ import with_statement
++
+ from glob import glob
+ from time import time
+-from cq2utils.profileit import profile
+-from os import mkdir, listdir
++from os import mkdir, listdir, remove
+ from os.path import join, isdir
+ from shutil import rmtree
++from random import randint
++
++from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
++from meresco.components.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
++                                                       IndexSearcher, TermQuery, MatchAllDocsQuery, Term, iterJ
++from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
++
++from cq2utils import CQ2TestCase, CallTrace
+
+-#import sys, os
+-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
+ def randomSequence(length):
+     docs = []
+@@ -54,7 +56,6 @@
+             del docs[i]
+
+ class LuceneDocIdTrackerTest(CQ2TestCase):
+-
+     def setUp(self):
+         CQ2TestCase.setUp(self)
+         self.writer = IndexWriter(self.tempdir, StandardAnalyzer(), True)
+@@ -188,7 +189,7 @@
+         self.writer.optimize()
+         self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), maxDoc=self.writer.docCount(), directory=self.createTrackerDir())
+         self.processDocs([102])
+-        self.assertEquals(['0.deleted', '0.docids', 'tracker.segments'], sorted(listdir(join(self.tempdir, 'tracker'))))
++        self.assertEquals(['0.deleted', '0.docids', 'tracker.segments', 'tracker.version'], sorted(listdir(join(self.tempdir, 'tracker'))))
+
+     def testPickupStateWhereLuceneLeftItOnBiggerScale(self):
+         s0 = range(100, 200)
+@@ -399,3 +400,27 @@
+         self.addDoc(300)
+         self.assertEquals(([0],[300]),self.findAll())
+         self.assertEquals(2, self.tracker.getMap()[0])
++
++    def testVersionWritten(self):
++        tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
++        tracker.next()
++        tracker.flush()
++        version = open(self.tempdir + "/tracker/tracker.version").read().strip()
++        self.assertEquals(LuceneDocIdTracker.version, version)
++        tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
++        self.assertEquals(tracker, tracker2)
++
++    def testRefuseInitInCaseOfTrackerFilesWithoutVersion(self):
++        tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
++        tracker.next()
++        tracker.flush()
++        remove(self.tempdir + "/tracker/tracker.version")
++        self.assertRaises(LuceneDocIdTrackerException, lambda: LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker"))
++
++    def testRefuseInitInCaseOfTrackerFilesForDifferentVersion(self):
++        tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
++        tracker.next()
++        tracker.flush()
++        with open(self.tempdir + "/tracker/tracker.version", "w") as f:
++            f.write("some_older_version")
++        self.assertRaises(LuceneDocIdTrackerException, lambda: LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker"))
