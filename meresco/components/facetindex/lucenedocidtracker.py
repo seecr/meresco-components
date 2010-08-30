@@ -94,19 +94,13 @@ def trackerBisect(a, x, lo=0, hi=None):
             hi = mid
     return lo
 
-
-def _fileHash():
-    from hashlib import md5
-    m = md5()
-    m.update(open(__file__).read())
-    return m.hexdigest()
-
 class LuceneDocIdTracker(object):
     """
         This class tracks docids for Lucene version 2.2.0
                                                     =====
     """
-    version = _fileHash()
+
+    version = '1'
 
     def __init__(self, mergeFactor, directory=None, maxDoc=0):
         assert directory != None
