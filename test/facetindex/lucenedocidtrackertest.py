@@ -406,8 +406,9 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         tracker.next()
         tracker.flush()
         version = open(self.tempdir + "/tracker/tracker.version").read().strip()
-        print version
         self.assertEquals(LuceneDocIdTracker.version, version)
+        tracker2 = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
+        self.assertEquals(tracker, tracker2)
 
     def testRefuseInitInCaseOfTrackerFilesWithoutVersion(self):
         tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
