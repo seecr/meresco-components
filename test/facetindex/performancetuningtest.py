@@ -258,7 +258,7 @@ class PerformanceTuningTest(LuceneTestCase):
 
         t0 = time()
         for i in xrange(2, 4000):
-            tracker.deleteDocId(i)
+            tracker.deleteDocId(8000 - i)
         delta = time() - t0
         self.assertTiming(0.4, delta, 0.6)
 
