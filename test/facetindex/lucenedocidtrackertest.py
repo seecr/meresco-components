@@ -27,21 +27,23 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
+
+from __future__ import with_statement
+
+from glob import glob
+from time import time
+from os import mkdir, listdir, remove
+from os.path import join, isdir
+from shutil import rmtree
+from random import randint
+
 from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException
 from meresco.components.facetindex.merescolucene import StandardAnalyzer, IndexWriter, Document, Field, \
                                                        IndexSearcher, TermQuery, MatchAllDocsQuery, Term, iterJ
-from random import randint
 from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
-from glob import glob
-from time import time
-from cq2utils.profileit import profile
-from os import mkdir, listdir
-from os.path import join, isdir
-from shutil import rmtree
 
-#import sys, os
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+from cq2utils import CQ2TestCase, CallTrace
+
 
 def randomSequence(length):
     docs = []
@@ -54,7 +56,6 @@ def randomSequence(length):
             del docs[i]
 
 class LuceneDocIdTrackerTest(CQ2TestCase):
-
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.writer = IndexWriter(self.tempdir, StandardAnalyzer(), True)
@@ -188,7 +189,7 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.writer.optimize()
         self.tracker = LuceneDocIdTracker(self.writer.getMergeFactor(), maxDoc=self.writer.docCount(), directory=self.createTrackerDir())
         self.processDocs([102])
-        self.assertEquals(['0.deleted', '0.docids', 'tracker.segments'], sorted(listdir(join(self.tempdir, 'tracker'))))
+        self.assertEquals(['0.deleted', '0.docids', 'tracker.segments', 'tracker.version'], sorted(listdir(join(self.tempdir, 'tracker'))))
 
     def testPickupStateWhereLuceneLeftItOnBiggerScale(self):
         s0 = range(100, 200)
@@ -399,3 +400,26 @@ class LuceneDocIdTrackerTest(CQ2TestCase):
         self.addDoc(300)
         self.assertEquals(([0],[300]),self.findAll())
         self.assertEquals(2, self.tracker.getMap()[0])
+
+    def testVersionWritten(self):
+        tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
+        tracker.next()
+        tracker.flush()
+        version = open(self.tempdir + "/tracker/tracker.version").read().strip()
+        print version
+        self.assertEquals(LuceneDocIdTracker.version, version)
+
+    def testRefuseInitInCaseOfTrackerFilesWithoutVersion(self):
+        tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
+        tracker.next()
+        tracker.flush()
+        remove(self.tempdir + "/tracker/tracker.version")
+        self.assertRaises(LuceneDocIdTrackerException, lambda: LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker"))
+
+    def testRefuseInitInCaseOfTrackerFilesForDifferentVersion(self):
+        tracker = LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker")
+        tracker.next()
+        tracker.flush()
+        with open(self.tempdir + "/tracker/tracker.version", "w") as f:
+            f.write("some_older_version")
+        self.assertRaises(LuceneDocIdTrackerException, lambda: LuceneDocIdTracker(mergeFactor=10, directory=self.tempdir + "/tracker"))

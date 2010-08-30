@@ -27,6 +27,9 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
+from __future__ import with_statement
+
 from itertools import takewhile, dropwhile
 from os.path import join, isfile
 
@@ -70,6 +73,7 @@ class SegmentInfo(object):
         self._deleted.extendTo(self._filename)
         self._deleted = IntegerList()
 
+
 class LuceneDocIdTrackerException(Exception):
     pass
 
@@ -90,11 +94,20 @@ def trackerBisect(a, x, lo=0, hi=None):
             hi = mid
     return lo
 
+
+def _fileHash():
+    from hashlib import md5
+    m = md5()
+    m.update(open(__file__).read())
+    return m.hexdigest()
+
 class LuceneDocIdTracker(object):
     """
         This class tracks docids for Lucene version 2.2.0
                                                     =====
     """
+    version = _fileHash()
+
     def __init__(self, mergeFactor, directory=None, maxDoc=0):
         assert directory != None
         self._directory = directory
@@ -167,14 +180,16 @@ class LuceneDocIdTracker(object):
         self._flushRamSegments()
 
     def _save(self):
-        filename = join(self._directory, 'tracker.segments')
-        f = open(filename, 'w')
-        f.write(str(self._mergeFactor))
-        f.write('\n')
-        f.write(str(self._nextDocId))
-        f.write('\n')
-        f.write(str(self._segmentInfo))
-        f.close()
+        versionFile = join(self._directory, 'tracker.version')
+        if not isfile(versionFile):
+            with open(versionFile, 'w') as f:
+                f.write(self.version)
+        with open(join(self._directory, 'tracker.segments'), 'w') as f:
+            f.write(str(self._mergeFactor))
+            f.write('\n')
+            f.write(str(self._nextDocId))
+            f.write('\n')
+            f.write(str(self._segmentInfo))
         if self._segmentInfo:
             segmentNr = len(self._segmentInfo) - 1
             self._segmentInfo[-1].openIfNew(join(self._directory, str(segmentNr) + '.deleted'))
@@ -190,10 +205,18 @@ class LuceneDocIdTracker(object):
     def _load(self):
         if len(self._docIds) != 0:
             raise LuceneDocIdTrackerException('DocIdList not empty on load')
-        f = open(join(self._directory, 'tracker.segments'))
-        self._mergeFactor = int(f.next().strip())
-        self._nextDocId = int(f.next().strip())
-        segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
+        versionFile = join(self._directory, 'tracker.version')
+        versionFound = None
+        if isfile(versionFile):
+            versionFound = open(versionFile).read().strip()
+        if versionFound != self.version:
+            raise LuceneDocIdTrackerException("""Version mismatch for %s files (%s.version: %s, files have version: %s).
+Please optimize the index to take care of this.""" % (self.__class__.__name__, self.__class__.__name__, self.version, versionFound))
+
+        with open(join(self._directory, 'tracker.segments')) as f:
+            self._mergeFactor = int(f.next().strip())
+            self._nextDocId = int(f.next().strip())
+            segments = [segment.split("@") for segment in f.next().strip()[1:-1].split(",")]
         for i, segmentData in enumerate(segments):
             length, offset = int(segmentData[0]), int(segmentData[1])
             segment = SegmentInfo(length, offset)
@@ -227,7 +250,6 @@ class LuceneDocIdTracker(object):
             if luceneId >= segment.offset and luceneId < segment.offset + segment.length:
                 return segment
         raise Exception("Can't find luceneId %s in %s" % (luceneId, self))
-
 
     def close(self):
         self.flush()
