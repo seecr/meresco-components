@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -30,6 +31,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
 from meresco.core import be, Observable
+from lxml.etree import tostring
 
 from os.path import join, isdir
 from os import listdir
@@ -129,11 +131,10 @@ class ReindexTest(CQ2TestCase):
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '+id:2\n', '+id:3\n', '=batches left: 0'], result)
 
-        methods = [str(m) for m in observer.calledMethods]
-        self.assertEquals(3, len(methods))
-        self.assertEquals("addDocumentPart(identifier='id:1', name='ignoredName', lxmlNode=<etree._ElementTree>)", methods[0])
-        self.assertEquals("addDocumentPart(identifier='id:2', name='ignoredName', lxmlNode=<etree._ElementTree>)", methods[1])
-        self.assertEquals("addDocumentPart(identifier='id:3', name='ignoredName', lxmlNode=<etree._ElementTree>)", methods[2])
+        self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
+        self.assertEquals(['id:1','id:2','id:3'], [m.kwargs['identifier'] for m in observer.calledMethods])
+        self.assertEquals(['ignoredName']*3, [m.kwargs['name'] for m in observer.calledMethods])
+        self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 
     def testRemoveFilesAndDirectoryAfterProcess(self):
         storage = self.setupStorage([

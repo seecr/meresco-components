@@ -24,9 +24,6 @@
 ## end license ##
 
 from meresco.core import Observable
-from lxml.etree import parse
-from os.path import basename
-from xml.sax.saxutils import escape as xmlEscape
 
 class UpdateAdapterFromMsgbox(Observable):
 

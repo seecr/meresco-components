@@ -79,11 +79,12 @@ class Crosswalk(Observable):
         return self.all.unknown(method, *newArgs, **newKwargs)
 
     def convert(self, lxmlNode):
-        nsmap = findNamespaces(lxmlNode)
         if type(lxmlNode) == _ElementTree:
             prefix = lxmlNode.getroot().prefix
+            nsmap = lxmlNode.getroot().nsmap
         else:
             prefix = lxmlNode.prefix
+            nsmap = lxmlNode.nsmap
         if not prefix in nsmap:
             raise Exception("Prefix '%s' not found in rules, available namespaces: %s" % (prefix, nsmap.keys()))
         namespaceURI = nsmap[prefix]

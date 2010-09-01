@@ -28,11 +28,11 @@
 #
 ## end license ##
 
-from cStringIO import StringIO
+from StringIO import StringIO
 from meresco.core.observable import Observable, be
 from cq2utils import CallTrace, CQ2TestCase
 from amara import binderytools
-from lxml.etree import _ElementTree, tostring, parse
+from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult
 
 from meresco.components import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 
@@ -52,6 +52,18 @@ class XmlPumpTest(CQ2TestCase):
 
     def testInflate(self):
         xmlString = """<tag><content>contents</content></tag>"""
+        self.observable.do.add("id", "partName", xmlString)
+
+        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEquals("add", self.observer.calledMethods[0].name)
+        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args[:2])
+
+        xmlNode = self.observer.calledMethods[0].args[2]
+        self.assertEquals('tag', xmlNode.localName)
+        self.assertEquals('content', xmlNode.content.localName)
+
+    def testInflateWithElementStringResult(self):
+        xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
         self.observable.do.add("id", "partName", xmlString)
 
         self.assertEquals(1, len(self.observer.calledMethods))

@@ -62,7 +62,7 @@ class ValidateTest(CQ2TestCase):
             self.fail('must raise exception')
         except ValidateException:
             pass
-        self.assertEquals("<string>:1:ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://ltsc.ieee.org/xsd/LOM_this_should_not_work}lom': No matching global declaration available for the validation root.", str(self.exception))
+        self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://ltsc.ieee.org/xsd/LOM_this_should_not_work}lom': No matching global declaration available for the validation root." in str(self.exception), str(self.exception))
 
     def testAssertInvalidString(self):
         invalid = '<OAI-PMH/>'
@@ -71,4 +71,4 @@ class ValidateTest(CQ2TestCase):
             self.fail('must raise exception')
         except ValidateException, e:
             pass
-        self.assertEquals("<string>:1:ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element 'OAI-PMH': No matching global declaration available for the validation root.", str(self.exception))
+        self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element 'OAI-PMH': No matching global declaration available for the validation root." in str(self.exception), str(self.exception))

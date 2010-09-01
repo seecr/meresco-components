@@ -35,6 +35,11 @@ from lxml.etree import parse, _ElementTree, tostring, _XSLTResultTree
 from cStringIO import StringIO
 from re import compile
 
+try:
+    from lxml.etree import _ElementStringResult
+except:
+    _ElementStringResult = str
+
 class Converter(Observable):
     def unknown(self, msg, *args, **kwargs):
         newArgs = [self._detectAndConvert(arg) for arg in args]
@@ -55,7 +60,7 @@ class Converter(Observable):
 
 xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
 def isXmlString(anObject):
-    return type(anObject) in [str, unicode] and xmlStringRegexp.match(anObject)
+    return type(anObject) in [str, _ElementStringResult, unicode] and xmlStringRegexp.match(anObject)
 
 class XmlParseAmara(Converter):
     def _canConvert(self, anObject):

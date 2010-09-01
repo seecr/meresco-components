@@ -68,10 +68,7 @@ class Venturi(Observable):
 
     def _convert(self, anObject):
         if type(anObject) == _Element:
-            buff = StringIO()
-            ElementTree(anObject).write(buff)
-            buff.seek(0)
-            return parse(buff)
+            return ElementTree(anObject)
         return parse(StringIO(anObject))
 
     def delete(self, id):

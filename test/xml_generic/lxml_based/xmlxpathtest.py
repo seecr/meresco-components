@@ -45,9 +45,7 @@ class XmlXPathTest(CQ2TestCase):
             (Observable(),
                 (XmlParseLxml(),
                     (XmlXPath(xpathList, nsMap),
-                        (XmlPrintLxml(),
-                            (self.observer, ),
-                        )
+                        (self.observer, ),
                     )
                 )
             )
@@ -62,7 +60,7 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEquals('test', method.name)
         self.assertEquals(2, len(method.args))
         self.assertEquals('een tekst', method.args[0])
-        self.assertEqualsWS('<path><to>me</to></path>', method.args[1])
+        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.args[1]))
 
     def testElementInKwargs(self):
         self.createXmlXPath(['/root/path'], {})
@@ -74,7 +72,7 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEquals('aMethod', method.name)
         self.assertEquals(1, len(method.args))
         self.assertEquals(set(['aKeyword', 'otherKeyword']), set(method.kwargs.keys()))
-        self.assertEqualsWS('<path><to>me</to></path>', method.kwargs['aKeyword'])
+        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['aKeyword']))
 
     def testNoElementInArgumentsPassesOn(self):
         self.createXmlXPath(['/root/path'], {})
@@ -91,7 +89,7 @@ class XmlXPathTest(CQ2TestCase):
             <two:path><findme xmlns="ns3">Found</findme></two:path></root>""")
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEqualsWS('<findme xmlns="ns3">Found</findme>', self.observer.calledMethods[0].args[0])
+        self.assertEquals('Found', self.observer.calledMethods[0].args[0].xpath('text()')[0])
 
 
     def testXPathWithConditions(self):
@@ -109,7 +107,7 @@ class XmlXPathTest(CQ2TestCase):
 </root>""")
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEqualsWS('<data>This data</data>', self.observer.calledMethods[0].args[0])
+        self.assertEqualsWS('<data>This data</data>', tostring(self.observer.calledMethods[0].args[0]))
 
     def testXPathWithMultipleResults(self):
         self.createXmlXPath(['/root/element/data'], {})
@@ -123,8 +121,8 @@ class XmlXPathTest(CQ2TestCase):
     </element>
 </root>""")
         self.assertEquals(2, len(self.observer.calledMethods))
-        self.assertEqualsWS('<data>one</data>', self.observer.calledMethods[0].args[0])
-        self.assertEqualsWS('<data>two</data>', self.observer.calledMethods[1].args[0])
+        self.assertEqualsWS('<data>one</data>', tostring(self.observer.calledMethods[0].args[0]))
+        self.assertEqualsWS('<data>two</data>', tostring(self.observer.calledMethods[1].args[0]))
 
     def testXPathWithNoResults(self):
         self.createXmlXPath(['/does/not/exist'], {})
@@ -161,8 +159,8 @@ class XmlXPathTest(CQ2TestCase):
         newNode = message.args[0]
         self.assertEqualsWS('<bNode xmlns="bNamespace">ccc</bNode>', tostring(newNode))
 
-        newNamespaces = findNamespaces(newNode)
-        nameSpacesAfterParsing = findNamespaces(parse(StringIO(tostring(newNode))))
+        newNamespaces = newNode.getroot().nsmap
+        nameSpacesAfterParsing = parse(StringIO(tostring(newNode))).getroot().nsmap
         self.assertEquals(nameSpacesAfterParsing, newNamespaces)
 
     def testFindUsingMultipleXPaths(self):
@@ -174,9 +172,9 @@ class XmlXPathTest(CQ2TestCase):
         allResults = []
         for method in self.observer.calledMethods:
             allResults.append(method.args[0])
-        self.assertEqualsWS('<b><c>one</c></b>', allResults[0])
-        self.assertEqualsWS('<b><d>two</d></b>', allResults[1])
-        self.assertEqualsWS('<c>one</c>', allResults[2])
+        self.assertEqualsWS('<b><c>one</c></b>', tostring(allResults[0]))
+        self.assertEqualsWS('<b><d>two</d></b>', tostring(allResults[1]))
+        self.assertEqualsWS('<c>one</c>', tostring(allResults[2]))
 
     def testTestWithCondition(self):
         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
@@ -187,7 +185,7 @@ class XmlXPathTest(CQ2TestCase):
         allResults = []
         for method in self.observer.calledMethods:
             allResults.append(method.args[0])
-        self.assertEqualsWS('<d>two</d>', allResults[0])
+        self.assertEqualsWS('<d>two</d>', tostring(allResults[0]))
 
     def testTestWithConditionAndNS(self):
         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
@@ -198,7 +196,7 @@ class XmlXPathTest(CQ2TestCase):
         allResults = []
         for method in self.observer.calledMethods:
             allResults.append(method.args[0])
-        self.assertEqualsWS('<d>two</d>', allResults[0])
+        self.assertEqualsWS('two', allResults[0].xpath("text()")[0])
 
     def testXPathReturnsString(self):
         xpath = XmlXPath(['/a/t/text()'])

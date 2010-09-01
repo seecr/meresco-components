@@ -9,8 +9,8 @@ python-escaping (<< 0.2)
 python-jtool (>= 0.4)
 python-jtool (<< 0.6)
 python-levenshtein
-python-lxml (>=1.2)
-python-lxml (<<2.0)
+python-lxml (>=2.1)
+python-lxml (<<3.0)
 python-magic
 python-meresco-core3.1
 python-storage (>=5.1.7)
