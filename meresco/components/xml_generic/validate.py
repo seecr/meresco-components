@@ -48,8 +48,7 @@ class Validate(Observable):
         allArguments = list(args) + kwargs.values()
         for arg in allArguments:
             if type(arg) == _ElementTree:
-                toValidate = parse(StringIO(tostring(arg, pretty_print=True)))
-                self._schema.validate(toValidate)
+                self._schema.validate(arg)
                 if self._schema.error_log:
                     exception = ValidateException(self._schema.error_log.last_error)
                     self.do.logException(exception)

@@ -31,6 +31,12 @@ from meresco.core import Observable
 from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
 from StringIO import StringIO
 
+#HM: To support both lxml1.2 as 2.1
+try:
+    from lxml.etree import _ElementStringResult
+except ImportError:
+    _ElementStringResult = str 
+
 oftenUsedNamespaces = {
     'oai_dc': "http://www.openarchives.org/OAI/2.0/oai_dc/",
     'dc': "http://purl.org/dc/elements/1.1/",
@@ -40,11 +46,11 @@ oftenUsedNamespaces = {
 }
 
 class XmlXPath(Observable):
-    def __init__(self, xpathList, namespaceMap = {}):
+    def __init__(self, xpathList, namespaceMap=None):
         Observable.__init__(self)
         self._xpaths = xpathList
         self._namespacesMap = oftenUsedNamespaces.copy()
-        self._namespacesMap.update(namespaceMap)
+        self._namespacesMap.update(namespaceMap or {})
 
     def unknown(self, msg, *args, **kwargs):
         changeTheseArgs = [(position,arg) for position,arg in enumerate(args) if type(arg) == ElementTreeType]
@@ -69,11 +75,8 @@ class XmlXPath(Observable):
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:
             for element in elementTree.xpath(xpath, namespaces=self._namespacesMap):
-                if type(element) in [str, unicode]:
+                if type(element) in [_ElementStringResult, unicode]:
                     yield element
                 else:
-                    #to fix root element:
-                    buffer = StringIO()
-                    ElementTree(element).write(buffer)
-                    buffer.seek(0)
-                    yield parse(buffer)
+                    yield ElementTree(element)
+

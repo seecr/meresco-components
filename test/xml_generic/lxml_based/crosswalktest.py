@@ -69,7 +69,7 @@ class CrosswalkTest(CQ2TestCase):
             list(self.validate.unknown('methodname', 'id', 'metadata', parse(readRecord('imsmd_v1p2-1.xml'))))
             self.fail('must raise exception')
         except Exception, e:
-            self.assertEquals("<string>:1:ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://dpc.uba.uva.nl/schema/lom/triplel}lom': No matching global declaration available for the validation root.", str(e))
+            self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://dpc.uba.uva.nl/schema/lom/triplel}lom': No matching global declaration available for the validation root." in str(e), str(e))
 
     def testTripleLExample(self):
         try:
@@ -110,7 +110,7 @@ rules = [
         c = Crosswalk(rulesDir=self.tempdir, extraGlobals={'myNormalizeMethod': lambda x,y:(x+' '+y,)})
         node = parse(StringIO("""<old xmlns="CrosswalkTest"><one><sub1>first</sub1><sub2>second</sub2></one></old>"""))
         newNode = c.convert(node)
-        self.assertEquals('<new xmlns="CrosswalkTest"><two>first second</two></new>', tostring(newNode))
+        self.assertEquals(['first second'], newNode.xpath("/dst:new/dst:two/text()", namespaces={'dst':'CrosswalkTest'}))
 
     def testXPathNodeTest(self):
         x = """

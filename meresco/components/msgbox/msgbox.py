@@ -33,7 +33,6 @@ from sys import stderr
 
 from meresco.core import Observable
 from cq2utils import DirectoryWatcher
-from lxml.etree import parse
 from weightless import Suspend
 from escaping import escapeFilename, unescapeFilename
 
