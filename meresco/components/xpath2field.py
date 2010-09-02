@@ -35,7 +35,7 @@ class XPath2Field(Observable):
         self._namespaceMap = namespaceMap
         self._sendAsList = sendAsList
 
-    def add(self, id, partName, lxmlNode):
+    def add(self, identifier=None, partname=None, lxmlNode=None):
         for (xpath, dottedDestinationPath) in self._attributeXpaths:
             values = lxmlNode.xpath(xpath, namespaces=self._namespaceMap)
             if self._sendAsList:

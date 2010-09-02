@@ -41,18 +41,18 @@ class Venturi(Observable):
     def addDocumentPart(self, identifier=None, name=None, lxmlNode=None):
         return self.add(identifier=identifier, name=name, lxmlNode=lxmlNode)
 
-    def add(self, identifier=None, name=None, lxmlNode=None):
+    def add(self, identifier, partname=None, lxmlNode=None):
         """should be obsoleted in favor of addDocumentPart"""
         self.ctx.tx.locals['id'] = identifier
-        for partname, partXPath in self._should:
-            part = self._findPart(identifier, partname, lxmlNode, partXPath)
+        for shouldPartname, partXPath in self._should:
+            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath)
             if part == None:
-                raise VenturiException("Expected '%s', '%s'" %(partname, partXPath))
-            yield self.all.add(identifier, partname, part)
-        for partname, partXPath in self._could:
-            part = self._findPart(identifier, partname, lxmlNode, partXPath)
+                raise VenturiException("Expected '%s', '%s'" % (shouldPartname, partXPath))
+            yield self.all.add(identifier=identifier, partname=shouldPartname, lxmlNode=part)
+        for couldPartname, partXPath in self._could:
+            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath)
             if part != None:
-                yield self.all.add(identifier, partname, part)
+                yield self.all.add(identifier=identifier, partname=couldPartname, lxmlNode=part)
 
     def _findPart(self, identifier, partname, lxmlNode, partXPath):
         matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)

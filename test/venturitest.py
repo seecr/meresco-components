@@ -61,10 +61,12 @@ class VenturiTest(CQ2TestCase):
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals(('identifier', 'partone'), interceptor.calledMethods[1].args[:2])
-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].args[2]))
-        self.assertEquals(('identifier', 'parttwo',), interceptor.calledMethods[2].args[:2])
-        secondXml = interceptor.calledMethods[2].args[2]
+        self.assertEquals('identifier', interceptor.calledMethods[1].kwargs['identifier'])
+        self.assertEquals('partone', interceptor.calledMethods[1].kwargs['partname'])
+        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('identifier', interceptor.calledMethods[2].kwargs['identifier'])
+        self.assertEquals('parttwo', interceptor.calledMethods[2].kwargs['partname'])
+        secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
         self.assertEquals('<second>message</second>', tostring(secondXml))
         self.assertEquals('second', secondXml.getroot().tag)
 
@@ -75,7 +77,7 @@ class VenturiTest(CQ2TestCase):
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor)
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].args[2]))
+        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
 
     def testReadFromStorage(self):
         inputEvent = fromstring('<document/>')
@@ -86,7 +88,7 @@ class VenturiTest(CQ2TestCase):
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor, storage)
         v.do.add('identifier', 'document', inputEvent)
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].args[2]))
+        self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
         self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
 
     def testCouldHave(self):
@@ -95,7 +97,7 @@ class VenturiTest(CQ2TestCase):
         v = createVenturiHelix([], [('one', '/document/one')], interceptor)
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].args[2]))
+        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
 
     def testCouldHaveInStorage(self):
         inputEvent = fromstring('<document><other/></document>')
@@ -106,7 +108,7 @@ class VenturiTest(CQ2TestCase):
         v = createVenturiHelix([], [('one', '/document/one')], interceptor, storage)
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].args[2]))
+        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
         self.assertEquals(('identifier', 'one'), storage.calledMethods[1].args)
 
     def testCouldHaveButDoesnot(self):
@@ -117,7 +119,8 @@ class VenturiTest(CQ2TestCase):
         v = createVenturiHelix([('other', '/document/other')], [('one', '/document/one')], interceptor, storage)
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals(('identifier', 'other',), interceptor.calledMethods[1].args[:2])
+        self.assertEquals('identifier', interceptor.calledMethods[1].kwargs['identifier'])
+        self.assertEquals('other', interceptor.calledMethods[1].kwargs['partname'])
 
     def testXpathReturnsMultipleResults(self):
         inputEvent = fromstring('<document><one/><two/></document>')
@@ -141,10 +144,10 @@ class VenturiTest(CQ2TestCase):
     def testTransactionScopeFilledWithIdentifier(self):
         ids = []
         class TempComponent(Observable):
-            def add(this, oldStyleId, partname, data):
+            def add(this, identifier, partname, lxmlNode):
                 ids.append(this.ctx.tx.locals['id'])
         v = createVenturiHelix([('PARTNAME', '/document')],[], TempComponent())
-        v.do.add('ID', 'PARTNAME', fromstring('<document><other/></document>'))
+        v.do.add(identifier='ID', partname='PARTNAME', lxmlNode=fromstring('<document><other/></document>'))
         self.assertEquals(1, len(ids))
 
     def testDeleteAlsoSetsIdOnTransaction(self):

@@ -33,5 +33,5 @@ class RewritePartname(Transparant):
         Transparant.__init__(self)
         self._partname = partname
 
-    def add(self, id, partname, document):
-        yield self.asyncdo.add(id, self._partname, document)
+    def add(self, identifier, partname, **kwargs):
+        yield self.asyncdo.add(identifier=identifier, partname=self._partname, **kwargs)

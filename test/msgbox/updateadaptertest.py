@@ -43,7 +43,7 @@ class UpdateAdapterTest(CQ2TestCase):
         adapter = UpdateAdapterToMsgbox()
         adapter.addObserver(self.msgbox)
         
-        list(adapter.add('identifier', 'ignored-partName', 'data'))
+        list(adapter.add(identifier='identifier', filedata='data'))
         
         self.assertEquals('data', open(join(self.outdir, 'identifier.add')).read()) 
 
@@ -81,9 +81,9 @@ class UpdateAdapterTest(CQ2TestCase):
     def testMsgboxAndFromAdapterAdd(self):
         adapter = UpdateAdapterFromMsgbox()
         observer = CallTrace('observer')
-        processAddArgs = []
-        def processAdd(identifier, partName, data):
-            processAddArgs.append((identifier, partName, data.read()))
+        processAddKwargs = []
+        def processAdd(identifier=None, partname=None, filedata=None):
+            processAddKwargs.append((identifier, partname, filedata.read()))
         observer.methods['add'] = processAdd
         self.msgbox.addObserver(adapter)
         adapter.addObserver(observer)
@@ -94,6 +94,6 @@ class UpdateAdapterTest(CQ2TestCase):
         self.msgbox.processFile('identifier.add')
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals([('identifier', '', 'data')], processAddArgs)
+        self.assertEquals([('identifier', None, 'data')], processAddKwargs)
 
 

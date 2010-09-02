@@ -36,9 +36,9 @@ def removeNamespace(tagName):
 
 class Xml2Fields(Observable):
 
-    def add(self, id, partName, lxmlNode):
+    def add(self, identifier=None, partname=None, lxmlNode=None):
         """deprecated"""
-        self.addXml(lxmlNode)
+        self.addXml(lxmlNode=lxmlNode)
 
     def addXml(self, lxmlNode):
         if hasattr(lxmlNode, 'getroot'):

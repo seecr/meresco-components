@@ -150,8 +150,8 @@ class StorageComponentTest(CQ2TestCase):
         def add(*args, **kwargs):
             addInvocations.append(dict(args=args, kwargs=kwargs))
         s.add = add
-        s.addDocumentPart(identifier='x', name='y', someString='dummy')
-        self.assertEquals([{'args':(), 'kwargs':dict(id='x', partName='y', someString='dummy')}], addInvocations)
+        s.addDocumentPart(identifier='x', partname='y', data='dummy')
+        self.assertEquals([{'args':(), 'kwargs':dict(identifier='x', partname='y', data='dummy')}], addInvocations)
 
     def testObservableNameNotSet(self):
         s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)

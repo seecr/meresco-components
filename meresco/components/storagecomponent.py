@@ -54,14 +54,14 @@ class StorageComponent(object):
     def store(self, *args, **kwargs):
         return self.add(*args, **kwargs)
 
-    def addDocumentPart(self, identifier=None, name=None, someString=None):
-        return self.add(id=identifier, partName=name, someString=someString)
+    def addDocumentPart(self, identifier=None, partname=None, data=None):
+        return self.add(identifier=identifier, partname=partname, data=data)
 
-    def add(self, id, partName, someString):
+    def add(self, identifier, partname, data):
         """should be obsoleted in favor of addDocumentPart"""
-        sink = self._storage.put((id, partName))
+        sink = self._storage.put((identifier, partname))
         try:
-            sink.send(someString)
+            sink.send(data)
         finally:
             return sink.close()
 

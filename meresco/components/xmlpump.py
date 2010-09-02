@@ -34,6 +34,7 @@ from amara.bindery import is_element
 from lxml.etree import parse, _ElementTree, tostring, _XSLTResultTree
 from cStringIO import StringIO
 from re import compile
+from warnings import warn
 
 try:
     from lxml.etree import _ElementStringResult
@@ -45,6 +46,8 @@ class Converter(Observable):
         Observable.__init__(self, name=name)
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
+        if self._fromKwarg is None:
+            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
 
     def unknown(self, msg, *args, **kwargs):
         if self._fromKwarg is None:

@@ -129,7 +129,7 @@ class FieldletsTest(CQ2TestCase):
     <name3>value3</name3>
 </base>"""
         
-        dna.do.add(id='id', partName='part', lxmlNode=parse(StringIO(inputXml)))
+        dna.do.add(identifier='id', partname='part', lxmlNode=parse(StringIO(inputXml)))
 
         self.assertEquals(7, len(self.observert.calledMethods))
 

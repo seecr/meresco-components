@@ -40,9 +40,9 @@ class RewritePartnameTest(TestCase):
         rewrite.addObserver(observer)
         observable.addObserver(rewrite)
 
-        result = list(observable.all.add('identifier', 'oldPartname', 'data'))
+        result = list(observable.all.add(identifier='identifier', partname='oldPartname', data='data'))
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals(('identifier', 'newPartname', 'data'), observer.calledMethods[0].args)
+        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
         self.assertEquals([callable], result)
         
