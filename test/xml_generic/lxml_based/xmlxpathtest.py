@@ -42,6 +42,15 @@ class XmlXPathTest(CQ2TestCase):
         self.observer = CallTrace('observer',ignoredAttributes=['start'] )
         self.observable = be(
             (Observable(),
+                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+                    (XmlXPath(xpathList, nsMap),
+                        (self.observer, ),
+                    )
+                )
+            )
+        )
+        self.observableWithoutKwarg = be(
+            (Observable(),
                 (XmlParseLxml(),
                     (XmlXPath(xpathList, nsMap),
                         (self.observer, ),
@@ -49,22 +58,23 @@ class XmlXPathTest(CQ2TestCase):
                 )
             )
         )
+
     def testSimpleXPath(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observable.do.test('een tekst', '<root><path><to>me</to></path></root>')
+        self.observable.do.test('een tekst', data='<root><path><to>me</to></path></root>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
         self.assertEquals('test', method.name)
-        self.assertEquals(2, len(method.args))
+        self.assertEquals(1, len(method.args))
         self.assertEquals('een tekst', method.args[0])
-        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.args[1]))
+        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
 
     def testElementInKwargs(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observable.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
+        self.observableWithoutKwarg.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
@@ -84,17 +94,17 @@ class XmlXPathTest(CQ2TestCase):
     def testXPathWithNamespaces(self):
         self.createXmlXPath(['/a:root/b:path/c:findme'], {'a':'ns1', 'b':'ns2', 'c':'ns3'})
 
-        self.observable.do.aMethod("""<root xmlns="ns1" xmlns:two="ns2">
+        self.observable.do.aMethod(data="""<root xmlns="ns1" xmlns:two="ns2">
             <two:path><findme xmlns="ns3">Found</findme></two:path></root>""")
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals('Found', self.observer.calledMethods[0].args[0].xpath('text()')[0])
+        self.assertEquals('Found', self.observer.calledMethods[0].kwargs['lxmlNode'].xpath('text()')[0])
 
 
     def testXPathWithConditions(self):
         self.createXmlXPath(['/root/element[pick="me"]/data'], {})
 
-        self.observable.do.aMethod("""<root>
+        self.observable.do.aMethod(data="""<root>
     <element>
         <pick>not me</pick>
         <data>Not this data</data>
@@ -106,12 +116,12 @@ class XmlXPathTest(CQ2TestCase):
 </root>""")
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEqualsWS('<data>This data</data>', tostring(self.observer.calledMethods[0].args[0]))
+        self.assertEqualsWS('<data>This data</data>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
 
     def testXPathWithMultipleResults(self):
         self.createXmlXPath(['/root/element/data'], {})
 
-        self.observable.do.aMethod("""<root>
+        self.observable.do.aMethod(data="""<root>
     <element>
         <data>one</data>
     </element>
@@ -120,19 +130,19 @@ class XmlXPathTest(CQ2TestCase):
     </element>
 </root>""")
         self.assertEquals(2, len(self.observer.calledMethods))
-        self.assertEqualsWS('<data>one</data>', tostring(self.observer.calledMethods[0].args[0]))
-        self.assertEqualsWS('<data>two</data>', tostring(self.observer.calledMethods[1].args[0]))
+        self.assertEqualsWS('<data>one</data>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+        self.assertEqualsWS('<data>two</data>', tostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
 
     def testXPathWithNoResults(self):
         self.createXmlXPath(['/does/not/exist'], {})
 
-        self.observable.do.aMethod("""<some><element>data</element></some>""")
+        self.observableWithoutKwarg.do.aMethod("""<some><element>data</element></some>""")
         self.assertEquals(0, len(self.observer.calledMethods))
 
     def testOnlyOneXMLAllowed(self):
         self.createXmlXPath('/root', {})
         try:
-            self.observable.do.aMethod("<somexml/>", xml="<otherxml/>")
+            self.observableWithoutKwarg.do.aMethod("<somexml/>", data="<otherxml/>")
             self.fail()
         except AssertionError, e:
             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
@@ -165,7 +175,7 @@ class XmlXPathTest(CQ2TestCase):
     def testFindUsingMultipleXPaths(self):
         self.createXmlXPath(['/does/not/exist', '/a/b', '/a/b/c'], {})
 
-        self.observable.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
+        self.observableWithoutKwarg.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
 
         self.assertEquals(3, len(self.observer.calledMethods))
         allResults = []
@@ -178,7 +188,7 @@ class XmlXPathTest(CQ2TestCase):
     def testTestWithCondition(self):
         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
 
-        self.observable.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
+        self.observableWithoutKwarg.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         allResults = []
@@ -189,7 +199,7 @@ class XmlXPathTest(CQ2TestCase):
     def testTestWithConditionAndNS(self):
         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
 
-        self.observable.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
+        self.observableWithoutKwarg.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         allResults = []
@@ -206,7 +216,8 @@ class XmlXPathTest(CQ2TestCase):
         observable.addObserver(xpath)
         xpath.addObserver(observer)
 
-        observable.do.aMethod(inputNode)
+        observable.do.aMethod(lxmlNode=inputNode)
         self.assertEquals(1, len(observer.calledMethods))
-        result = observer.calledMethods[0].args
-        self.assertEquals(('some text & some <entities>',), result)
+        result = observer.calledMethods[0].kwargs
+        self.assertEquals({'lxmlNode': 'some text & some <entities>'}, result)
+
