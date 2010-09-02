@@ -121,8 +121,6 @@ class XmlPumpTest(CQ2TestCase):
         self.assertEquals('do not parse this', method.args[0])
         self.assertEquals('<parse>this</parse>', method.args[1].xml())
 
-
-
     def testTransparency(self):
         deflate = CallTrace('deflated')
         amara = CallTrace('amara')
@@ -175,4 +173,32 @@ class XmlPumpTest(CQ2TestCase):
         lxmlB = observer.calledMethods[0].kwargs['b']
         self.assertEquals('<a>aaa</a>', tostring(lxmlA))
         self.assertEquals('<b>bbb</b>', tostring(lxmlB))
+
+    def testRenameKwargOnConvert(self):
+        observer = CallTrace()
+        observable = be(
+            (Observable(),
+                (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='dataString'),
+                    (observer,),
+                )
+            )
+        )
+        observable.do.something('identifier', 'partname', lxmlNode=parse(StringIO('<someXml/>')))
+        self.assertEquals("something('identifier', 'partname', dataString='<someXml/>\n')", str(observer.calledMethods[0]))
+
+        observable.do.something('identifier', 'partname', someKwarg=1)
+        self.assertEquals("something('identifier', 'partname', someKwarg=1)", str(observer.calledMethods[1]))
+
+    def testToKwargDefaultsToFromKwarg(self):
+        observer = CallTrace()
+        observable = be(
+            (Observable(),
+                (XmlPrintLxml(fromKwarg='data'),
+                    (observer,),
+                )
+            )
+        )
+        observable.do.something('identifier', 'partname', data=parse(StringIO('<someXml/>')))
+        self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
+
 

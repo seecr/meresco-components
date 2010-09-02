@@ -41,10 +41,26 @@ except:
     _ElementStringResult = str
 
 class Converter(Observable):
+    def __init__(self, name=None, fromKwarg=None, toKwarg=None):
+        Observable.__init__(self, name=name)
+        self._fromKwarg = fromKwarg
+        self._toKwarg = toKwarg if toKwarg else self._fromKwarg
+
     def unknown(self, msg, *args, **kwargs):
-        newArgs = [self._detectAndConvert(arg) for arg in args]
-        newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
-        return self.all.unknown(msg, *newArgs, **newKwargs)
+        if self._fromKwarg is None:
+            newArgs = [self._detectAndConvert(arg) for arg in args]
+            newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
+            return self.all.unknown(msg, *newArgs, **newKwargs)
+
+        try:
+            oldValue = kwargs[self._fromKwarg]
+        except KeyError:
+            pass
+        else:
+            del kwargs[self._fromKwarg]
+            kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
+
+        return self.all.unknown(msg, *args, **kwargs)
 
     def _canConvert(self, anObject):
         raise NotImplementedError()
