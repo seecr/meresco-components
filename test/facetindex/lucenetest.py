@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- encoding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -530,5 +529,25 @@ class LuceneTest(CQ2TestCase):
 -3
 +4
 =
-""" % self.tempdir, open(logfilename).read()) 
+""" % self.tempdir, open(logfilename).read())
 
+    def testDeleteMultipleOccurrencesOfIdentifier(self):
+        document = Document('identifier')
+        document.addIndexedField('field', 'value')
+
+        document.addToIndexWith(self._luceneIndex._writer)
+        document.addToIndexWith(self._luceneIndex._writer)  # should not happen in practice, but has been seen to happen as the result of historical bug
+        self._luceneIndex._writer.optimize()
+        self._luceneIndex.close()
+
+        luceneIndex = LuceneIndex(directoryName=self.tempdir)
+
+        total, hits = luceneIndex.executeQuery(MatchAllDocsQuery())
+        self.assertEquals(2, total)
+
+        luceneIndex.delete('identifier')
+        luceneIndex.commit()
+
+        total, hits = luceneIndex.executeQuery(MatchAllDocsQuery())
+        self.assertEquals(0, total)
+        self.assertEquals(0, luceneIndex._currentTracker.nrOfDocs())

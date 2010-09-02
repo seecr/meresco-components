@@ -141,12 +141,6 @@ class LuceneIndex(Observable):
         results = islice(hits, start, stop)
         return nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]
 
-    def _luceneIdForIdentifier(self, identifier):
-        hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)) % Query)
-        if hits.length() == 1:
-            return hits.id(0)
-        return None
-
     def getIndexReader(self):
         return self._reader
 
@@ -162,13 +156,17 @@ class LuceneIndex(Observable):
         except StopIteration:
             return None
 
+    def _luceneIdsForIdentifier(self, identifier):
+        hits = self._searcher.search(TermQuery(Term(IDFIELD, identifier)) % Query)
+        return (hit.getId() for hit in iterJ(hits))
+
     def _luceneDelete(self, identifier):
         docId = self._docIdFromLastAddCommandFor(identifier)
-        if docId is None:
-            prevTxLuceneId = self._luceneIdForIdentifier(identifier)
-            if prevTxLuceneId != None:
-                docId = self._lucene2docId[prevTxLuceneId]
         if docId != None:
+            docIds = [docId]
+        else:
+            docIds = (self._lucene2docId[luceneid] for luceneid in self._luceneIdsForIdentifier(identifier))
+        for docId in docIds:
             deleted = self._currentTracker.deleteDocId(docId)
             if deleted:
                 self._commandQueue.append(FunctionCommand(self._delete, identifier=identifier))
