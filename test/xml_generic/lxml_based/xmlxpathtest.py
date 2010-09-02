@@ -28,7 +28,6 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
-from cq2utils.xmlutils import findNamespaces
 from meresco.core import Observable, be
 
 from meresco.components import XmlXPath, XmlParseLxml, XmlPrintLxml

@@ -34,8 +34,6 @@ from urlparse import urlsplit
 
 from amara.binderytools import bind_string
 
-from cq2utils.wrappers import wrapp
-
 from meresco.core import Observable
 from meresco.components.sru.sruparser import SruMandatoryParameterNotSuppliedException
 from meresco.components.http import utils as httputils

@@ -25,9 +25,8 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils.cq2testcase import CQ2TestCase
-from cq2utils.calltrace import CallTrace
-from cq2utils.xmlutils.xmlrewrite import XMLRewrite
+from cq2utils import CQ2TestCase, CallTrace
+from meresco.xml import XMLRewrite
 
 from StringIO import StringIO
 from lxml.etree import parse, tostring, XMLParser

@@ -26,11 +26,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
-
-from meresco.core import be, Observable
-
-
+from meresco.core import Observable
 from string import punctuation
 
 class TokenizeFieldlet(Observable):
