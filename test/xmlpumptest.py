@@ -43,7 +43,7 @@ class XmlPumpTest(CQ2TestCase):
         self.observer = CallTrace('Observer', ignoredAttributes=['start'])
         self.observable = be(
             (Observable(),
-                (XmlParseAmara(),
+                (XmlParseAmara(fromKwarg='data', toKwarg='amaraNode'),
                     (self.observer, )
                 )
             )
@@ -52,52 +52,55 @@ class XmlPumpTest(CQ2TestCase):
 
     def testInflate(self):
         xmlString = """<tag><content>contents</content></tag>"""
-        self.observable.do.add("id", "partName", xmlString)
+        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals("add", self.observer.calledMethods[0].name)
-        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args[:2])
+        self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
+        self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
 
-        xmlNode = self.observer.calledMethods[0].args[2]
+        xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
         self.assertEquals('tag', xmlNode.localName)
         self.assertEquals('content', xmlNode.content.localName)
 
     def testInflateWithElementStringResult(self):
         xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
-        self.observable.do.add("id", "partName", xmlString)
+        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals("add", self.observer.calledMethods[0].name)
-        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args[:2])
+        self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
+        self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
 
-        xmlNode = self.observer.calledMethods[0].args[2]
+        xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
         self.assertEquals('tag', xmlNode.localName)
         self.assertEquals('content', xmlNode.content.localName)
 
     def testDeflate(self):
         observable = be(
             (Observable(),
-                (XmlPrintAmara(),
+                (XmlPrintAmara(fromKwarg='amaraNode', toKwarg='data'),
                     (self.observer, )
                 )
             )
         )
 
         s = """<tag><content>contents</content></tag>"""
-        observable.do.aMethodCall("id", "partName", binderytools.bind_string(s).tag)
+        observable.do.aMethodCall("id", "partName", amaraNode=binderytools.bind_string(s).tag)
 
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals("aMethodCall", self.observer.calledMethods[0].name)
-        self.assertEquals(("id", "partName", s), self.observer.calledMethods[0].args)
+        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args)
+        self.assertEquals(s, self.observer.calledMethods[0].kwargs['data'])
 
     def testAmara2LXml(self):
         class Observer:
             def ape(inner, lxmlNode):
                 self.lxmlNode = lxmlNode
-        amara2lxml = Amara2Lxml()
+        amara2lxml = Amara2Lxml(fromKwarg='amaraNode', toKwarg='lxmlNode')
         amara2lxml.addObserver(Observer())
         amaraNode = binderytools.bind_string('<a><b>“c</b></a>')
-        list(amara2lxml.unknown('ape', amaraNode))
+        list(amara2lxml.unknown('ape', amaraNode=amaraNode))
         self.assertEquals(_ElementTree, type(self.lxmlNode))
         self.assertEquals('<a><b>“c</b></a>', tostring(self.lxmlNode, encoding='utf-8'))
 
@@ -105,21 +108,22 @@ class XmlPumpTest(CQ2TestCase):
         class Observer:
             def ape(inner, amaraNode):
                 self.amaraNode = amaraNode
-        lxml2amara = Lxml2Amara()
+        lxml2amara = Lxml2Amara(fromKwarg='lxmlNode', toKwarg='amaraNode')
         lxml2amara.addObserver(Observer())
         lxmlNode = parse(StringIO('<a><b>“c</b></a>'))
-        list(lxml2amara.unknown('ape', lxmlNode))
+        list(lxml2amara.unknown('ape', lxmlNode=lxmlNode))
         self.assertEquals('<a><b>“c</b></a>', self.amaraNode.xml())
 
     def testXmlParseAmaraRespondsToEveryMessage(self):
-        self.observable.do.aMethodCall('do not parse this', '<parse>this</parse>')
+        self.observable.do.aMethodCall('do not parse this', data='<parse>this</parse>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
         self.assertEquals('aMethodCall', method.name)
-        self.assertEquals(2, len(method.args))
+        self.assertEquals(1, len(method.args))
+        self.assertEquals(1, len(method.kwargs))
         self.assertEquals('do not parse this', method.args[0])
-        self.assertEquals('<parse>this</parse>', method.args[1].xml())
+        self.assertEquals('<parse>this</parse>', method.kwargs['amaraNode'].xml())
 
     def testTransparency(self):
         deflate = CallTrace('deflated')
@@ -128,37 +132,37 @@ class XmlPumpTest(CQ2TestCase):
         lxml2 = CallTrace('lxml2')
         observable = be(
             (Observable(),
-                (XmlParseAmara(),
+                (XmlParseAmara(fromKwarg='data', toKwarg='amaraNode'),
                     (amara,),
-                    (Amara2Lxml(),
-                        (XmlPrintLxml(),
+                    (Amara2Lxml(fromKwarg='amaraNode', toKwarg='lxmlNode'),
+                        (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='data'),
                             (lxml, ),
                         ),
-                        (Lxml2Amara(),
-                            (XmlPrintAmara(),
+                        (Lxml2Amara(fromKwarg='lxmlNode', toKwarg='amaraNode'),
+                            (XmlPrintAmara(fromKwarg='amaraNode', toKwarg='data'),
                                 (deflate, ),
                             )
                         )
                     )
                 ),
-                (XmlParseLxml(),
-                    (XmlPrintLxml(),
+                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+                    (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='data'),
                         (lxml2, ),
                     ),
                 )
             )
         )
 
-        observable.do.something('identifier', 'partName', '<?xml version="1.0"?><a><b>c</b></a>')
-        self.assertEqualsWS('<a><b>c</b></a>', amara.calledMethods[0].args[2].xml())
-        self.assertEqualsWS('<a><b>c</b></a>', deflate.calledMethods[0].args[2])
-        self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].args[2])
-        self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].args[2])
+        observable.do.something(identifier='identifier', partname='partName', data='<?xml version="1.0"?><a><b>c</b></a>')
+        self.assertEqualsWS('<a><b>c</b></a>', amara.calledMethods[0].kwargs['amaraNode'].xml())
+        self.assertEqualsWS('<a><b>c</b></a>', deflate.calledMethods[0].kwargs['data'])
+        self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].kwargs['data'])
+        self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].kwargs['data'])
 
     def testFileParseLxml(self):
         observable = Observable()
         observer = CallTrace('observer')
-        p = FileParseLxml()
+        p = FileParseLxml(fromKwarg='filedata', toKwarg='lxmlNode')
         observable.addObserver(p)
         p.addObserver(observer)
         a = StringIO('<a>aaa</a>')
@@ -167,11 +171,12 @@ class XmlPumpTest(CQ2TestCase):
         f.close()
         b = open(self.tempfile)
 
-        observable.do.someMessage(a, b=b)
-
-        lxmlA = observer.calledMethods[0].args[0]
-        lxmlB = observer.calledMethods[0].kwargs['b']
+        observable.do.someMessage(filedata=a)
+        lxmlA = observer.calledMethods[0].kwargs['lxmlNode']
         self.assertEquals('<a>aaa</a>', tostring(lxmlA))
+
+        observable.do.someMessage(filedata=b)
+        lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
         self.assertEquals('<b>bbb</b>', tostring(lxmlB))
 
     def testRenameKwargOnConvert(self):
