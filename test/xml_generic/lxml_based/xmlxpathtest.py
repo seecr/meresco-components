@@ -30,9 +30,11 @@
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import Observable, be
 
-from meresco.components import XmlXPath, XmlParseLxml, XmlPrintLxml
+from meresco.components import XmlXPath, XmlParseLxml
 from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType, tostring
 from StringIO import StringIO
+import sys
+
 
 
 class XmlXPathTest(CQ2TestCase):
@@ -49,15 +51,23 @@ class XmlXPathTest(CQ2TestCase):
                 )
             )
         )
-        self.observableWithoutKwarg = be(
-            (Observable(),
-                (XmlParseLxml(),
-                    (XmlXPath(xpathList, nsMap),
-                        (self.observer, ),
+        strm = StringIO()
+        sys.stderr = strm
+        try:
+            self.observableWithoutKwarg = be(
+                (Observable(),
+                    (XmlParseLxml(),
+                        (XmlXPath(xpathList, nsMap),
+                            (self.observer, ),
+                        )
                     )
                 )
             )
-        )
+        finally:
+            sys.stderr = sys.__stderr__
+            msg = strm.getvalue()
+            if msg:
+                self.assertEquals('../meresco/components/xmlpump.py:81: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
 
     def testSimpleXPath(self):
         self.createXmlXPath(['/root/path'], {})

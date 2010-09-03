@@ -46,8 +46,6 @@ class Converter(Observable):
         Observable.__init__(self, name=name)
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
-        if self._fromKwarg is None:
-            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
 
     def unknown(self, msg, *args, **kwargs):
         if self._fromKwarg is None:
@@ -76,53 +74,60 @@ class Converter(Observable):
             return self._convert(anObject)
         return anObject
 
+class _DeprecationWarningConverter(Converter):
+    def __init__(self, name=None, fromKwarg=None, toKwarg=None):
+        Converter.__init__(self, name, fromKwarg=fromKwarg, toKwarg=toKwarg)
+        if self._fromKwarg is None:
+            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
+
+_Converter = _DeprecationWarningConverter
 
 xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
 def isXmlString(anObject):
     return type(anObject) in [str, _ElementStringResult, unicode] and xmlStringRegexp.match(anObject)
 
-class XmlParseAmara(Converter):
+class XmlParseAmara(_Converter):
     def _canConvert(self, anObject):
         return isXmlString(anObject)
 
     def _convert(self, anObject):
         return bind_string(anObject.encode('UTF-8')).childNodes[0]
 
-class XmlPrintAmara(Converter):
+class XmlPrintAmara(_Converter):
     def _canConvert(self, anObject):
         return is_element(anObject)
 
     def _convert(self, anObject):
         return anObject.xml()
 
-class FileParseLxml(Converter):
+class FileParseLxml(_Converter):
     def _canConvert(self, anObject):
         return hasattr(anObject, 'read') and hasattr(anObject, 'readline')
 
     def _convert(self, anObject):
         return parse(anObject)
 
-class XmlParseLxml(Converter):
+class XmlParseLxml(_Converter):
     def _canConvert(self, anObject):
         return isXmlString(anObject)
 
     def _convert(self, anObject):
         return parse(StringIO(anObject.encode('UTF-8')))
         
-class XmlPrintLxml(Converter):
+class XmlPrintLxml(_Converter):
     def _canConvert(self, anObject):
         return type(anObject) == _ElementTree
 
     def _convert(self, anObject):
         return tostring(anObject, pretty_print = True, encoding="UTF-8")
 
-class Amara2Lxml(Converter):
+class Amara2Lxml(_Converter):
     def _detectAndConvert(self, something):
         if is_element(something):
             return parse(StringIO(something.xml()))
         return something
 
-class Lxml2Amara(Converter):
+class Lxml2Amara(_Converter):
     def _canConvert(self, anObject):
         return type(anObject) in [_ElementTree, _XSLTResultTree]
 
