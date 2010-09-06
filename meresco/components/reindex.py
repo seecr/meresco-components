@@ -103,7 +103,7 @@ class Reindex(Observable):
 
         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
             try:
-                yield self.asyncdo.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
+                yield self.asyncdo.addDocumentPart(identifier=identifier, partname='ignoredName', lxmlNode=EMPTYDOC)
             except Exception, e:
                 yield '\n!error processing "%s": %s' % (identifier, str(e))
                 return

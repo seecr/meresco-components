@@ -44,7 +44,7 @@ class ReindexTest(CQ2TestCase):
     def setupStorage(self, records):
         storage = StorageComponent(self._path('storage'))
         for record in records:
-            storage.add(*record)
+            storage.add(**record)
         return storage
 
     def setupDna(self, storage):
@@ -81,9 +81,9 @@ class ReindexTest(CQ2TestCase):
 
     def testCreateIdentifierFiles(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
-            ('id:2', 'part', 'data2'),
-            ('id:3', 'part', 'data3'),
+            dict(identifier='id:1', partname='part',  data='data1'),
+            dict(identifier='id:2', partname='part', data='data2'),
+            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
@@ -96,9 +96,9 @@ class ReindexTest(CQ2TestCase):
 
     def testCreateIdentifierFilesInBatches(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
-            ('id:2', 'part', 'data2'),
-            ('id:3', 'part', 'data3'),
+            dict(identifier='id:1', partname='part',  data='data1'),
+            dict(identifier='id:2', partname='part', data='data2'),
+            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
@@ -109,9 +109,9 @@ class ReindexTest(CQ2TestCase):
 
     def testCreateIdentifierFilesYieldsOutput(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
-            ('id:2', 'part', 'data2'),
-            ('id:3', 'part', 'data3'),
+            dict(identifier='id:1', partname='part',  data='data1'),
+            dict(identifier='id:2', partname='part', data='data2'),
+            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
@@ -120,9 +120,9 @@ class ReindexTest(CQ2TestCase):
 
     def testProcessCreatedBatches(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
-            ('id:2', 'part', 'data2'),
-            ('id:3', 'part', 'data3'),
+            dict(identifier='id:1', partname='part',  data='data1'),
+            dict(identifier='id:2', partname='part', data='data2'),
+            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
@@ -133,14 +133,14 @@ class ReindexTest(CQ2TestCase):
 
         self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
         self.assertEquals(['id:1','id:2','id:3'], [m.kwargs['identifier'] for m in observer.calledMethods])
-        self.assertEquals(['ignoredName']*3, [m.kwargs['name'] for m in observer.calledMethods])
+        self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
         self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 
     def testRemoveFilesAndDirectoryAfterProcess(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
-            ('id:2', 'part', 'data2'),
-            ('id:3', 'part', 'data3'),
+            dict(identifier='id:1', partname='part',  data='data1'),
+            dict(identifier='id:2', partname='part', data='data2'),
+            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         directory = join(self._path('reindex'), 'testcase')
@@ -172,9 +172,9 @@ class ReindexTest(CQ2TestCase):
 
     def testProcessGivesError(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
-            ('id:2', 'part', 'data2'),
-            ('id:3', 'part', 'data3'),
+            dict(identifier='id:1', partname='part',  data='data1'),
+            dict(identifier='id:2', partname='part', data='data2'),
+            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
@@ -185,7 +185,7 @@ class ReindexTest(CQ2TestCase):
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
 
     def testNotOffByOneIfNoRemainder(self):
-        records = [('id:%d' % i, 'part', 'data%d' % i) for i in range(80)]
+        records = [dict(identifier='id:%d' % i, partname='part', data='data%d' % i) for i in range(80)]
         storage = self.setupStorage(records)
         reindex, observer = self.setupDna(storage)
         directory = join(self._path('reindex'), 'testcase')
@@ -195,7 +195,7 @@ class ReindexTest(CQ2TestCase):
 
     def testProcessingBatchesIsAsynchronous(self):
         storage = self.setupStorage([
-            ('id:1', 'part', 'data1'),
+            dict(identifier='id:1', partname='part', data='data1'),
         ])
         reindex, observer = self.setupDna(storage)
         observer.returnValues['addDocumentPart'] = (f for f in [str])

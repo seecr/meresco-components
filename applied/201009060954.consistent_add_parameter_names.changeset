@@ -1,14 +1,16 @@
-Changeset created on Fri Sep  3 09:46:04 CEST 2010 by Seek You Too
+Changeset created on Mon Sep  6 09:54:12 CEST 2010 by Seek You Too
 
 Description: consistent naming of add parameters (identifier, partname, lxmlNode|data|amaraNode|...)
 
     To stimulate the use of kwargs in add calls, matching add methods on several components now take consistently named keyword arguments. Also: adapted xmlpump converters to take a fromKwarg and toKwarg parameter to make conversion more explicit.
 
+Impact: breaks backwards compatiblility with respect to component add interfaces.
+
 Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.3-CQ2/version_1
 
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/msgbox/updateadapter.py version_1-add-parameters/meresco/components/msgbox/updateadapter.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/msgbox/updateadapter.py version_1.more_add_adaptations/meresco/components/msgbox/updateadapter.py
 --- version_1/meresco/components/msgbox/updateadapter.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/meresco/components/msgbox/updateadapter.py	2010-09-02 15:37:51.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/msgbox/updateadapter.py	2010-09-06 09:31:38.000000000 +0200
 @@ -32,14 +32,14 @@
          if extension == "delete":
              self.do.delete(identifier)
@@ -27,9 +29,21 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
      def delete(self, identifier):
          return self.all.add(identifier='%s.delete' % identifier, filedata='')
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/rewritepartname.py version_1-add-parameters/meresco/components/rewritepartname.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/reindex.py version_1.more_add_adaptations/meresco/components/reindex.py
+--- version_1/meresco/components/reindex.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/reindex.py	2010-09-06 09:42:59.000000000 +0200
+@@ -103,7 +103,7 @@
+ 
+         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
+             try:
+-                yield self.asyncdo.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
++                yield self.asyncdo.addDocumentPart(identifier=identifier, partname='ignoredName', lxmlNode=EMPTYDOC)
+             except Exception, e:
+                 yield '\n!error processing "%s": %s' % (identifier, str(e))
+                 return
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/rewritepartname.py version_1.more_add_adaptations/meresco/components/rewritepartname.py
 --- version_1/meresco/components/rewritepartname.py	2010-09-02 09:58:55.000000000 +0200
-+++ version_1-add-parameters/meresco/components/rewritepartname.py	2010-09-02 15:37:51.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/rewritepartname.py	2010-09-06 09:31:38.000000000 +0200
 @@ -33,5 +33,5 @@
          Transparant.__init__(self)
          self._partname = partname
@@ -38,9 +52,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 -        yield self.asyncdo.add(id, self._partname, document)
 +    def add(self, identifier, partname, **kwargs):
 +        yield self.asyncdo.add(identifier=identifier, partname=self._partname, **kwargs)
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/sru/srurecordupdate.py version_1-add-parameters/meresco/components/sru/srurecordupdate.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/sru/srurecordupdate.py version_1.more_add_adaptations/meresco/components/sru/srurecordupdate.py
 --- version_1/meresco/components/sru/srurecordupdate.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/meresco/components/sru/srurecordupdate.py	2010-09-02 15:37:50.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/sru/srurecordupdate.py	2010-09-06 09:31:38.000000000 +0200
 @@ -44,7 +44,7 @@
              if action == prefix + "replace" or action == prefix + "create":
                  record = updateRequest.record
@@ -50,9 +64,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
              elif action == prefix + "delete":
                  yield self.asyncdo.delete(recordId)
              else:
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/storagecomponent.py version_1-add-parameters/meresco/components/storagecomponent.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/storagecomponent.py version_1.more_add_adaptations/meresco/components/storagecomponent.py
 --- version_1/meresco/components/storagecomponent.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/meresco/components/storagecomponent.py	2010-09-02 15:37:51.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/storagecomponent.py	2010-09-06 09:31:38.000000000 +0200
 @@ -54,14 +54,14 @@
      def store(self, *args, **kwargs):
          return self.add(*args, **kwargs)
@@ -73,12 +87,17 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
          finally:
              return sink.close()
  
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/venturi.py version_1-add-parameters/meresco/components/venturi.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/venturi.py version_1.more_add_adaptations/meresco/components/venturi.py
 --- version_1/meresco/components/venturi.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/meresco/components/venturi.py	2010-09-02 15:37:51.000000000 +0200
-@@ -41,18 +41,18 @@
-     def addDocumentPart(self, identifier=None, name=None, lxmlNode=None):
-         return self.add(identifier=identifier, name=name, lxmlNode=lxmlNode)
++++ version_1.more_add_adaptations/meresco/components/venturi.py	2010-09-06 09:46:49.000000000 +0200
+@@ -38,21 +38,21 @@
+         self._should = should
+         self._could = could
+ 
+-    def addDocumentPart(self, identifier=None, name=None, lxmlNode=None):
+-        return self.add(identifier=identifier, name=name, lxmlNode=lxmlNode)
++    def addDocumentPart(self, identifier=None, partname=None, lxmlNode=None):
++        return self.add(identifier=identifier, partname=partname, lxmlNode=lxmlNode)
  
 -    def add(self, identifier=None, name=None, lxmlNode=None):
 +    def add(self, identifier, partname=None, lxmlNode=None):
@@ -103,9 +122,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
      def _findPart(self, identifier, partname, lxmlNode, partXPath):
          matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xml2fields.py version_1-add-parameters/meresco/components/xml2fields.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xml2fields.py version_1.more_add_adaptations/meresco/components/xml2fields.py
 --- version_1/meresco/components/xml2fields.py	2010-09-02 09:58:55.000000000 +0200
-+++ version_1-add-parameters/meresco/components/xml2fields.py	2010-09-02 15:37:51.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/xml2fields.py	2010-09-06 09:31:38.000000000 +0200
 @@ -36,9 +36,9 @@
  
  class Xml2Fields(Observable):
@@ -118,9 +137,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
      def addXml(self, lxmlNode):
          if hasattr(lxmlNode, 'getroot'):
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xmlpump.py version_1-add-parameters/meresco/components/xmlpump.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xmlpump.py version_1.more_add_adaptations/meresco/components/xmlpump.py
 --- version_1/meresco/components/xmlpump.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/meresco/components/xmlpump.py	2010-09-03 09:37:25.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/xmlpump.py	2010-09-06 09:31:38.000000000 +0200
 @@ -34,6 +34,7 @@
  from lxml.etree import parse, _ElementTree, tostring, _XSLTResultTree
  from cStringIO import StringIO
@@ -227,9 +246,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
      def _canConvert(self, anObject):
          return type(anObject) in [_ElementTree, _XSLTResultTree]
  
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xpath2field.py version_1-add-parameters/meresco/components/xpath2field.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xpath2field.py version_1.more_add_adaptations/meresco/components/xpath2field.py
 --- version_1/meresco/components/xpath2field.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/meresco/components/xpath2field.py	2010-09-02 15:37:51.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/xpath2field.py	2010-09-06 09:31:38.000000000 +0200
 @@ -35,7 +35,7 @@
          self._namespaceMap = namespaceMap
          self._sendAsList = sendAsList
@@ -239,9 +258,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
          for (xpath, dottedDestinationPath) in self._attributeXpaths:
              values = lxmlNode.xpath(xpath, namespaces=self._namespaceMap)
              if self._sendAsList:
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/fieldletstest.py version_1-add-parameters/test/fieldletstest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/fieldletstest.py version_1.more_add_adaptations/test/fieldletstest.py
 --- version_1/test/fieldletstest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/fieldletstest.py	2010-09-02 15:37:49.000000000 +0200
++++ version_1.more_add_adaptations/test/fieldletstest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -129,7 +129,7 @@
      <name3>value3</name3>
  </base>"""
@@ -251,9 +270,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
          self.assertEquals(7, len(self.observert.calledMethods))
  
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/msgbox/updateadaptertest.py version_1-add-parameters/test/msgbox/updateadaptertest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/msgbox/updateadaptertest.py version_1.more_add_adaptations/test/msgbox/updateadaptertest.py
 --- version_1/test/msgbox/updateadaptertest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/msgbox/updateadaptertest.py	2010-09-02 15:37:49.000000000 +0200
++++ version_1.more_add_adaptations/test/msgbox/updateadaptertest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -43,7 +43,7 @@
          adapter = UpdateAdapterToMsgbox()
          adapter.addObserver(self.msgbox)
@@ -284,9 +303,123 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +        self.assertEquals([('identifier', None, 'data')], processAddKwargs)
  
  
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/rewritepartnametest.py version_1-add-parameters/test/rewritepartnametest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/reindextest.py version_1.more_add_adaptations/test/reindextest.py
+--- version_1/test/reindextest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/reindextest.py	2010-09-06 09:42:11.000000000 +0200
+@@ -44,7 +44,7 @@
+     def setupStorage(self, records):
+         storage = StorageComponent(self._path('storage'))
+         for record in records:
+-            storage.add(*record)
++            storage.add(**record)
+         return storage
+ 
+     def setupDna(self, storage):
+@@ -81,9 +81,9 @@
+ 
+     def testCreateIdentifierFiles(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+@@ -96,9 +96,9 @@
+ 
+     def testCreateIdentifierFilesInBatches(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
+@@ -109,9 +109,9 @@
+ 
+     def testCreateIdentifierFilesYieldsOutput(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+@@ -120,9 +120,9 @@
+ 
+     def testProcessCreatedBatches(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+@@ -133,14 +133,14 @@
+ 
+         self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
+         self.assertEquals(['id:1','id:2','id:3'], [m.kwargs['identifier'] for m in observer.calledMethods])
+-        self.assertEquals(['ignoredName']*3, [m.kwargs['name'] for m in observer.calledMethods])
++        self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
+         self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+ 
+     def testRemoveFilesAndDirectoryAfterProcess(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         directory = join(self._path('reindex'), 'testcase')
+@@ -172,9 +172,9 @@
+ 
+     def testProcessGivesError(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
+@@ -185,7 +185,7 @@
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
+ 
+     def testNotOffByOneIfNoRemainder(self):
+-        records = [('id:%d' % i, 'part', 'data%d' % i) for i in range(80)]
++        records = [dict(identifier='id:%d' % i, partname='part', data='data%d' % i) for i in range(80)]
+         storage = self.setupStorage(records)
+         reindex, observer = self.setupDna(storage)
+         directory = join(self._path('reindex'), 'testcase')
+@@ -195,7 +195,7 @@
+ 
+     def testProcessingBatchesIsAsynchronous(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
++            dict(identifier='id:1', partname='part', data='data1'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         observer.returnValues['addDocumentPart'] = (f for f in [str])
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/rewritepartnametest.py version_1.more_add_adaptations/test/rewritepartnametest.py
 --- version_1/test/rewritepartnametest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/rewritepartnametest.py	2010-09-02 15:37:49.000000000 +0200
++++ version_1.more_add_adaptations/test/rewritepartnametest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -40,9 +40,9 @@
          rewrite.addObserver(observer)
          observable.addObserver(rewrite)
@@ -299,9 +432,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
          self.assertEquals([callable], result)
          
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/sru/srurecordupdatetest.py version_1-add-parameters/test/sru/srurecordupdatetest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/sru/srurecordupdatetest.py version_1.more_add_adaptations/test/sru/srurecordupdatetest.py
 --- version_1/test/sru/srurecordupdatetest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/sru/srurecordupdatetest.py	2010-09-03 09:37:25.000000000 +0200
++++ version_1.more_add_adaptations/test/sru/srurecordupdatetest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -89,12 +89,12 @@
  
          self.assertEquals(1, len(self.observer.calledMethods))
@@ -320,9 +453,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
      def testDelete(self):
          requestBody = self.createRequestBody(action=DELETE)
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/storagecomponenttest.py version_1-add-parameters/test/storagecomponenttest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/storagecomponenttest.py version_1.more_add_adaptations/test/storagecomponenttest.py
 --- version_1/test/storagecomponenttest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/storagecomponenttest.py	2010-09-02 15:37:49.000000000 +0200
++++ version_1.more_add_adaptations/test/storagecomponenttest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -150,8 +150,8 @@
          def add(*args, **kwargs):
              addInvocations.append(dict(args=args, kwargs=kwargs))
@@ -334,9 +467,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
      def testObservableNameNotSet(self):
          s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/venturitest.py version_1-add-parameters/test/venturitest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/venturitest.py version_1.more_add_adaptations/test/venturitest.py
 --- version_1/test/venturitest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/venturitest.py	2010-09-02 15:37:49.000000000 +0200
++++ version_1.more_add_adaptations/test/venturitest.py	2010-09-06 09:45:36.000000000 +0200
 @@ -61,10 +61,12 @@
          v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
          list(v.all.add('identifier', 'document', inputEvent))
@@ -413,9 +546,18 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
          self.assertEquals(1, len(ids))
  
      def testDeleteAlsoSetsIdOnTransaction(self):
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/xml_generic/lxml_based/xmlxpathtest.py version_1-add-parameters/test/xml_generic/lxml_based/xmlxpathtest.py
+@@ -188,6 +191,6 @@
+         def add(*args, **kwargs):
+             addInvocations.append(dict(args=args, kwargs=kwargs))
+         v.add = add
+-        v.addDocumentPart(identifier='x', name='y', lxmlNode='dummy')
+-        self.assertEquals([{'args':(), 'kwargs':dict(identifier='x', name='y', lxmlNode='dummy')}], addInvocations)
++        v.addDocumentPart(identifier='x', partname='y', lxmlNode='dummy')
++        self.assertEquals([{'args': (), 'kwargs': dict(identifier='x', partname='y', lxmlNode='dummy')}], addInvocations)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/xml_generic/lxml_based/xmlxpathtest.py version_1.more_add_adaptations/test/xml_generic/lxml_based/xmlxpathtest.py
 --- version_1/test/xml_generic/lxml_based/xmlxpathtest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/xml_generic/lxml_based/xmlxpathtest.py	2010-09-03 09:37:25.000000000 +0200
++++ version_1.more_add_adaptations/test/xml_generic/lxml_based/xmlxpathtest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -30,9 +30,11 @@
  from cq2utils import CQ2TestCase, CallTrace
  from meresco.core import Observable, be
@@ -581,9 +723,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +        result = observer.calledMethods[0].kwargs
 +        self.assertEquals({'lxmlNode': 'some text & some <entities>'}, result)
 +
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/xmlpumptest.py version_1-add-parameters/test/xmlpumptest.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/xmlpumptest.py version_1.more_add_adaptations/test/xmlpumptest.py
 --- version_1/test/xmlpumptest.py	2010-09-02 09:58:54.000000000 +0200
-+++ version_1-add-parameters/test/xmlpumptest.py	2010-09-03 09:37:25.000000000 +0200
++++ version_1.more_add_adaptations/test/xmlpumptest.py	2010-09-06 09:31:38.000000000 +0200
 @@ -43,7 +43,7 @@
          self.observer = CallTrace('Observer', ignoredAttributes=['start'])
          self.observable = be(
