@@ -1,0 +1,929 @@
+Changeset created on Mon Sep  6 09:54:12 CEST 2010 by Seek You Too
+
+Description: consistent naming of add parameters (identifier, partname, lxmlNode|data|amaraNode|...)
+
+    To stimulate the use of kwargs in add calls, matching add methods on several components now take consistently named keyword arguments. Also: adapted xmlpump converters to take a fromKwarg and toKwarg parameter to make conversion more explicit.
+
+Impact: breaks backwards compatiblility with respect to component add interfaces.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.3-CQ2/version_1
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/msgbox/updateadapter.py version_1.more_add_adaptations/meresco/components/msgbox/updateadapter.py
+--- version_1/meresco/components/msgbox/updateadapter.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/msgbox/updateadapter.py	2010-09-06 09:31:38.000000000 +0200
+@@ -32,14 +32,14 @@
+         if extension == "delete":
+             self.do.delete(identifier)
+         elif extension == "add":
+-            self.do.add(identifier, '', filedata)
++            self.do.add(identifier=identifier, filedata=filedata)
+         else:
+             raise Exception('Expected add or delete as file extension')
+ 
+ class UpdateAdapterToMsgbox(Observable):
+ 
+-    def add(self, identifier, partName, data):
+-        return self.all.add(identifier='%s.add' % identifier, filedata=data)
++    def add(self, identifier, **kwargs):
++        return self.all.add(identifier='%s.add' % identifier, **kwargs)
+ 
+     def delete(self, identifier):
+         return self.all.add(identifier='%s.delete' % identifier, filedata='')
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/reindex.py version_1.more_add_adaptations/meresco/components/reindex.py
+--- version_1/meresco/components/reindex.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/reindex.py	2010-09-06 09:42:59.000000000 +0200
+@@ -103,7 +103,7 @@
+ 
+         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
+             try:
+-                yield self.asyncdo.addDocumentPart(identifier=identifier, name='ignoredName', lxmlNode=EMPTYDOC)
++                yield self.asyncdo.addDocumentPart(identifier=identifier, partname='ignoredName', lxmlNode=EMPTYDOC)
+             except Exception, e:
+                 yield '\n!error processing "%s": %s' % (identifier, str(e))
+                 return
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/rewritepartname.py version_1.more_add_adaptations/meresco/components/rewritepartname.py
+--- version_1/meresco/components/rewritepartname.py	2010-09-02 09:58:55.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/rewritepartname.py	2010-09-06 09:31:38.000000000 +0200
+@@ -33,5 +33,5 @@
+         Transparant.__init__(self)
+         self._partname = partname
+ 
+-    def add(self, id, partname, document):
+-        yield self.asyncdo.add(id, self._partname, document)
++    def add(self, identifier, partname, **kwargs):
++        yield self.asyncdo.add(identifier=identifier, partname=self._partname, **kwargs)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/sru/srurecordupdate.py version_1.more_add_adaptations/meresco/components/sru/srurecordupdate.py
+--- version_1/meresco/components/sru/srurecordupdate.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/sru/srurecordupdate.py	2010-09-06 09:31:38.000000000 +0200
+@@ -44,7 +44,7 @@
+             if action == prefix + "replace" or action == prefix + "create":
+                 record = updateRequest.record
+                 recordSchema = str(record.recordSchema)
+-                yield self.asyncdo.add(recordId, recordSchema, record.recordData.childNodes[0])
++                yield self.asyncdo.add(identifier=recordId, partname=recordSchema, amaraNode=record.recordData.childNodes[0])
+             elif action == prefix + "delete":
+                 yield self.asyncdo.delete(recordId)
+             else:
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/storagecomponent.py version_1.more_add_adaptations/meresco/components/storagecomponent.py
+--- version_1/meresco/components/storagecomponent.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/storagecomponent.py	2010-09-06 09:31:38.000000000 +0200
+@@ -54,14 +54,14 @@
+     def store(self, *args, **kwargs):
+         return self.add(*args, **kwargs)
+ 
+-    def addDocumentPart(self, identifier=None, name=None, someString=None):
+-        return self.add(id=identifier, partName=name, someString=someString)
++    def addDocumentPart(self, identifier=None, partname=None, data=None):
++        return self.add(identifier=identifier, partname=partname, data=data)
+ 
+-    def add(self, id, partName, someString):
++    def add(self, identifier, partname, data):
+         """should be obsoleted in favor of addDocumentPart"""
+-        sink = self._storage.put((id, partName))
++        sink = self._storage.put((identifier, partname))
+         try:
+-            sink.send(someString)
++            sink.send(data)
+         finally:
+             return sink.close()
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/venturi.py version_1.more_add_adaptations/meresco/components/venturi.py
+--- version_1/meresco/components/venturi.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/venturi.py	2010-09-06 09:46:49.000000000 +0200
+@@ -38,21 +38,21 @@
+         self._should = should
+         self._could = could
+ 
+-    def addDocumentPart(self, identifier=None, name=None, lxmlNode=None):
+-        return self.add(identifier=identifier, name=name, lxmlNode=lxmlNode)
++    def addDocumentPart(self, identifier=None, partname=None, lxmlNode=None):
++        return self.add(identifier=identifier, partname=partname, lxmlNode=lxmlNode)
+ 
+-    def add(self, identifier=None, name=None, lxmlNode=None):
++    def add(self, identifier, partname=None, lxmlNode=None):
+         """should be obsoleted in favor of addDocumentPart"""
+         self.ctx.tx.locals['id'] = identifier
+-        for partname, partXPath in self._should:
+-            part = self._findPart(identifier, partname, lxmlNode, partXPath)
++        for shouldPartname, partXPath in self._should:
++            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath)
+             if part == None:
+-                raise VenturiException("Expected '%s', '%s'" %(partname, partXPath))
+-            yield self.all.add(identifier, partname, part)
+-        for partname, partXPath in self._could:
+-            part = self._findPart(identifier, partname, lxmlNode, partXPath)
++                raise VenturiException("Expected '%s', '%s'" % (shouldPartname, partXPath))
++            yield self.all.add(identifier=identifier, partname=shouldPartname, lxmlNode=part)
++        for couldPartname, partXPath in self._could:
++            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath)
+             if part != None:
+-                yield self.all.add(identifier, partname, part)
++                yield self.all.add(identifier=identifier, partname=couldPartname, lxmlNode=part)
+ 
+     def _findPart(self, identifier, partname, lxmlNode, partXPath):
+         matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xml2fields.py version_1.more_add_adaptations/meresco/components/xml2fields.py
+--- version_1/meresco/components/xml2fields.py	2010-09-02 09:58:55.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/xml2fields.py	2010-09-06 09:31:38.000000000 +0200
+@@ -36,9 +36,9 @@
+ 
+ class Xml2Fields(Observable):
+ 
+-    def add(self, id, partName, lxmlNode):
++    def add(self, identifier=None, partname=None, lxmlNode=None):
+         """deprecated"""
+-        self.addXml(lxmlNode)
++        self.addXml(lxmlNode=lxmlNode)
+ 
+     def addXml(self, lxmlNode):
+         if hasattr(lxmlNode, 'getroot'):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xmlpump.py version_1.more_add_adaptations/meresco/components/xmlpump.py
+--- version_1/meresco/components/xmlpump.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/xmlpump.py	2010-09-06 09:31:38.000000000 +0200
+@@ -34,6 +34,7 @@
+ from lxml.etree import parse, _ElementTree, tostring, _XSLTResultTree
+ from cStringIO import StringIO
+ from re import compile
++from warnings import warn
+ 
+ try:
+     from lxml.etree import _ElementStringResult
+@@ -41,10 +42,26 @@
+     _ElementStringResult = str
+ 
+ class Converter(Observable):
++    def __init__(self, name=None, fromKwarg=None, toKwarg=None):
++        Observable.__init__(self, name=name)
++        self._fromKwarg = fromKwarg
++        self._toKwarg = toKwarg if toKwarg else self._fromKwarg
++
+     def unknown(self, msg, *args, **kwargs):
+-        newArgs = [self._detectAndConvert(arg) for arg in args]
+-        newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
+-        return self.all.unknown(msg, *newArgs, **newKwargs)
++        if self._fromKwarg is None:
++            newArgs = [self._detectAndConvert(arg) for arg in args]
++            newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
++            return self.all.unknown(msg, *newArgs, **newKwargs)
++
++        try:
++            oldValue = kwargs[self._fromKwarg]
++        except KeyError:
++            pass
++        else:
++            del kwargs[self._fromKwarg]
++            kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
++
++        return self.all.unknown(msg, *args, **kwargs)
+ 
+     def _canConvert(self, anObject):
+         raise NotImplementedError()
+@@ -57,53 +74,60 @@
+             return self._convert(anObject)
+         return anObject
+ 
++class _DeprecationWarningConverter(Converter):
++    def __init__(self, name=None, fromKwarg=None, toKwarg=None):
++        Converter.__init__(self, name, fromKwarg=fromKwarg, toKwarg=toKwarg)
++        if self._fromKwarg is None:
++            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
++
++_Converter = _DeprecationWarningConverter
+ 
+ xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
+ def isXmlString(anObject):
+     return type(anObject) in [str, _ElementStringResult, unicode] and xmlStringRegexp.match(anObject)
+ 
+-class XmlParseAmara(Converter):
++class XmlParseAmara(_Converter):
+     def _canConvert(self, anObject):
+         return isXmlString(anObject)
+ 
+     def _convert(self, anObject):
+         return bind_string(anObject.encode('UTF-8')).childNodes[0]
+ 
+-class XmlPrintAmara(Converter):
++class XmlPrintAmara(_Converter):
+     def _canConvert(self, anObject):
+         return is_element(anObject)
+ 
+     def _convert(self, anObject):
+         return anObject.xml()
+ 
+-class FileParseLxml(Converter):
++class FileParseLxml(_Converter):
+     def _canConvert(self, anObject):
+         return hasattr(anObject, 'read') and hasattr(anObject, 'readline')
+ 
+     def _convert(self, anObject):
+         return parse(anObject)
+ 
+-class XmlParseLxml(Converter):
++class XmlParseLxml(_Converter):
+     def _canConvert(self, anObject):
+         return isXmlString(anObject)
+ 
+     def _convert(self, anObject):
+         return parse(StringIO(anObject.encode('UTF-8')))
+         
+-class XmlPrintLxml(Converter):
++class XmlPrintLxml(_Converter):
+     def _canConvert(self, anObject):
+         return type(anObject) == _ElementTree
+ 
+     def _convert(self, anObject):
+         return tostring(anObject, pretty_print = True, encoding="UTF-8")
+ 
+-class Amara2Lxml(Converter):
++class Amara2Lxml(_Converter):
+     def _detectAndConvert(self, something):
+         if is_element(something):
+             return parse(StringIO(something.xml()))
+         return something
+ 
+-class Lxml2Amara(Converter):
++class Lxml2Amara(_Converter):
+     def _canConvert(self, anObject):
+         return type(anObject) in [_ElementTree, _XSLTResultTree]
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/xpath2field.py version_1.more_add_adaptations/meresco/components/xpath2field.py
+--- version_1/meresco/components/xpath2field.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/meresco/components/xpath2field.py	2010-09-06 09:31:38.000000000 +0200
+@@ -35,7 +35,7 @@
+         self._namespaceMap = namespaceMap
+         self._sendAsList = sendAsList
+ 
+-    def add(self, id, partName, lxmlNode):
++    def add(self, identifier=None, partname=None, lxmlNode=None):
+         for (xpath, dottedDestinationPath) in self._attributeXpaths:
+             values = lxmlNode.xpath(xpath, namespaces=self._namespaceMap)
+             if self._sendAsList:
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/fieldletstest.py version_1.more_add_adaptations/test/fieldletstest.py
+--- version_1/test/fieldletstest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/fieldletstest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -129,7 +129,7 @@
+     <name3>value3</name3>
+ </base>"""
+         
+-        dna.do.add(id='id', partName='part', lxmlNode=parse(StringIO(inputXml)))
++        dna.do.add(identifier='id', partname='part', lxmlNode=parse(StringIO(inputXml)))
+ 
+         self.assertEquals(7, len(self.observert.calledMethods))
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/msgbox/updateadaptertest.py version_1.more_add_adaptations/test/msgbox/updateadaptertest.py
+--- version_1/test/msgbox/updateadaptertest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/msgbox/updateadaptertest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -43,7 +43,7 @@
+         adapter = UpdateAdapterToMsgbox()
+         adapter.addObserver(self.msgbox)
+         
+-        list(adapter.add('identifier', 'ignored-partName', 'data'))
++        list(adapter.add(identifier='identifier', filedata='data'))
+         
+         self.assertEquals('data', open(join(self.outdir, 'identifier.add')).read()) 
+ 
+@@ -81,9 +81,9 @@
+     def testMsgboxAndFromAdapterAdd(self):
+         adapter = UpdateAdapterFromMsgbox()
+         observer = CallTrace('observer')
+-        processAddArgs = []
+-        def processAdd(identifier, partName, data):
+-            processAddArgs.append((identifier, partName, data.read()))
++        processAddKwargs = []
++        def processAdd(identifier=None, partname=None, filedata=None):
++            processAddKwargs.append((identifier, partname, filedata.read()))
+         observer.methods['add'] = processAdd
+         self.msgbox.addObserver(adapter)
+         adapter.addObserver(observer)
+@@ -94,6 +94,6 @@
+         self.msgbox.processFile('identifier.add')
+ 
+         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+-        self.assertEquals([('identifier', '', 'data')], processAddArgs)
++        self.assertEquals([('identifier', None, 'data')], processAddKwargs)
+ 
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/reindextest.py version_1.more_add_adaptations/test/reindextest.py
+--- version_1/test/reindextest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/reindextest.py	2010-09-06 09:42:11.000000000 +0200
+@@ -44,7 +44,7 @@
+     def setupStorage(self, records):
+         storage = StorageComponent(self._path('storage'))
+         for record in records:
+-            storage.add(*record)
++            storage.add(**record)
+         return storage
+ 
+     def setupDna(self, storage):
+@@ -81,9 +81,9 @@
+ 
+     def testCreateIdentifierFiles(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+@@ -96,9 +96,9 @@
+ 
+     def testCreateIdentifierFilesInBatches(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
+@@ -109,9 +109,9 @@
+ 
+     def testCreateIdentifierFilesYieldsOutput(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+@@ -120,9 +120,9 @@
+ 
+     def testProcessCreatedBatches(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+@@ -133,14 +133,14 @@
+ 
+         self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
+         self.assertEquals(['id:1','id:2','id:3'], [m.kwargs['identifier'] for m in observer.calledMethods])
+-        self.assertEquals(['ignoredName']*3, [m.kwargs['name'] for m in observer.calledMethods])
++        self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
+         self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+ 
+     def testRemoveFilesAndDirectoryAfterProcess(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         directory = join(self._path('reindex'), 'testcase')
+@@ -172,9 +172,9 @@
+ 
+     def testProcessGivesError(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
+-            ('id:2', 'part', 'data2'),
+-            ('id:3', 'part', 'data3'),
++            dict(identifier='id:1', partname='part',  data='data1'),
++            dict(identifier='id:2', partname='part', data='data2'),
++            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
+@@ -185,7 +185,7 @@
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
+ 
+     def testNotOffByOneIfNoRemainder(self):
+-        records = [('id:%d' % i, 'part', 'data%d' % i) for i in range(80)]
++        records = [dict(identifier='id:%d' % i, partname='part', data='data%d' % i) for i in range(80)]
+         storage = self.setupStorage(records)
+         reindex, observer = self.setupDna(storage)
+         directory = join(self._path('reindex'), 'testcase')
+@@ -195,7 +195,7 @@
+ 
+     def testProcessingBatchesIsAsynchronous(self):
+         storage = self.setupStorage([
+-            ('id:1', 'part', 'data1'),
++            dict(identifier='id:1', partname='part', data='data1'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         observer.returnValues['addDocumentPart'] = (f for f in [str])
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/rewritepartnametest.py version_1.more_add_adaptations/test/rewritepartnametest.py
+--- version_1/test/rewritepartnametest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/rewritepartnametest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -40,9 +40,9 @@
+         rewrite.addObserver(observer)
+         observable.addObserver(rewrite)
+ 
+-        result = list(observable.all.add('identifier', 'oldPartname', 'data'))
++        result = list(observable.all.add(identifier='identifier', partname='oldPartname', data='data'))
+ 
+         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+-        self.assertEquals(('identifier', 'newPartname', 'data'), observer.calledMethods[0].args)
++        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
+         self.assertEquals([callable], result)
+         
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/sru/srurecordupdatetest.py version_1.more_add_adaptations/test/sru/srurecordupdatetest.py
+--- version_1/test/sru/srurecordupdatetest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/sru/srurecordupdatetest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -89,12 +89,12 @@
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         method = self.observer.calledMethods[0]
+-        self.assertEquals(3, len(method.args))
++        self.assertEquals(3, len(method.kwargs))
+         self.assertEquals("add", method.name)
+-        self.assertEquals("123", method.args[0])
+-        self.assertEquals(str, type(method.args[0]))
+-        self.assertEquals("irrelevantXML", method.args[1])
+-        self.assertEquals("<dc>empty</dc>", method.args[2].xml())
++        self.assertEquals("123", method.kwargs['identifier'])
++        self.assertEquals(str, type(method.kwargs['identifier']))
++        self.assertEquals("irrelevantXML", method.kwargs['partname'])
++        self.assertEquals("<dc>empty</dc>", method.kwargs['amaraNode'].xml())
+ 
+     def testDelete(self):
+         requestBody = self.createRequestBody(action=DELETE)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/storagecomponenttest.py version_1.more_add_adaptations/test/storagecomponenttest.py
+--- version_1/test/storagecomponenttest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/storagecomponenttest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -150,8 +150,8 @@
+         def add(*args, **kwargs):
+             addInvocations.append(dict(args=args, kwargs=kwargs))
+         s.add = add
+-        s.addDocumentPart(identifier='x', name='y', someString='dummy')
+-        self.assertEquals([{'args':(), 'kwargs':dict(id='x', partName='y', someString='dummy')}], addInvocations)
++        s.addDocumentPart(identifier='x', partname='y', data='dummy')
++        self.assertEquals([{'args':(), 'kwargs':dict(identifier='x', partname='y', data='dummy')}], addInvocations)
+ 
+     def testObservableNameNotSet(self):
+         s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/venturitest.py version_1.more_add_adaptations/test/venturitest.py
+--- version_1/test/venturitest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/venturitest.py	2010-09-06 09:45:36.000000000 +0200
+@@ -61,10 +61,12 @@
+         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
+         list(v.all.add('identifier', 'document', inputEvent))
+         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
+-        self.assertEquals(('identifier', 'partone'), interceptor.calledMethods[1].args[:2])
+-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].args[2]))
+-        self.assertEquals(('identifier', 'parttwo',), interceptor.calledMethods[2].args[:2])
+-        secondXml = interceptor.calledMethods[2].args[2]
++        self.assertEquals('identifier', interceptor.calledMethods[1].kwargs['identifier'])
++        self.assertEquals('partone', interceptor.calledMethods[1].kwargs['partname'])
++        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
++        self.assertEquals('identifier', interceptor.calledMethods[2].kwargs['identifier'])
++        self.assertEquals('parttwo', interceptor.calledMethods[2].kwargs['partname'])
++        secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
+         self.assertEquals('<second>message</second>', tostring(secondXml))
+         self.assertEquals('second', secondXml.getroot().tag)
+ 
+@@ -75,7 +77,7 @@
+         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor)
+         list(v.all.add('identifier', 'document', inputEvent))
+         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].args[2]))
++        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+ 
+     def testReadFromStorage(self):
+         inputEvent = fromstring('<document/>')
+@@ -86,7 +88,7 @@
+         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor, storage)
+         v.do.add('identifier', 'document', inputEvent)
+         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+-        self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].args[2]))
++        self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+         self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
+ 
+     def testCouldHave(self):
+@@ -95,7 +97,7 @@
+         v = createVenturiHelix([], [('one', '/document/one')], interceptor)
+         list(v.all.add('identifier', 'document', inputEvent))
+         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+-        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].args[2]))
++        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+ 
+     def testCouldHaveInStorage(self):
+         inputEvent = fromstring('<document><other/></document>')
+@@ -106,7 +108,7 @@
+         v = createVenturiHelix([], [('one', '/document/one')], interceptor, storage)
+         list(v.all.add('identifier', 'document', inputEvent))
+         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+-        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].args[2]))
++        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+         self.assertEquals(('identifier', 'one'), storage.calledMethods[1].args)
+ 
+     def testCouldHaveButDoesnot(self):
+@@ -117,7 +119,8 @@
+         v = createVenturiHelix([('other', '/document/other')], [('one', '/document/one')], interceptor, storage)
+         list(v.all.add('identifier', 'document', inputEvent))
+         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+-        self.assertEquals(('identifier', 'other',), interceptor.calledMethods[1].args[:2])
++        self.assertEquals('identifier', interceptor.calledMethods[1].kwargs['identifier'])
++        self.assertEquals('other', interceptor.calledMethods[1].kwargs['partname'])
+ 
+     def testXpathReturnsMultipleResults(self):
+         inputEvent = fromstring('<document><one/><two/></document>')
+@@ -141,10 +144,10 @@
+     def testTransactionScopeFilledWithIdentifier(self):
+         ids = []
+         class TempComponent(Observable):
+-            def add(this, oldStyleId, partname, data):
++            def add(this, identifier, partname, lxmlNode):
+                 ids.append(this.ctx.tx.locals['id'])
+         v = createVenturiHelix([('PARTNAME', '/document')],[], TempComponent())
+-        v.do.add('ID', 'PARTNAME', fromstring('<document><other/></document>'))
++        v.do.add(identifier='ID', partname='PARTNAME', lxmlNode=fromstring('<document><other/></document>'))
+         self.assertEquals(1, len(ids))
+ 
+     def testDeleteAlsoSetsIdOnTransaction(self):
+@@ -188,6 +191,6 @@
+         def add(*args, **kwargs):
+             addInvocations.append(dict(args=args, kwargs=kwargs))
+         v.add = add
+-        v.addDocumentPart(identifier='x', name='y', lxmlNode='dummy')
+-        self.assertEquals([{'args':(), 'kwargs':dict(identifier='x', name='y', lxmlNode='dummy')}], addInvocations)
++        v.addDocumentPart(identifier='x', partname='y', lxmlNode='dummy')
++        self.assertEquals([{'args': (), 'kwargs': dict(identifier='x', partname='y', lxmlNode='dummy')}], addInvocations)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/xml_generic/lxml_based/xmlxpathtest.py version_1.more_add_adaptations/test/xml_generic/lxml_based/xmlxpathtest.py
+--- version_1/test/xml_generic/lxml_based/xmlxpathtest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/xml_generic/lxml_based/xmlxpathtest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -30,9 +30,11 @@
+ from cq2utils import CQ2TestCase, CallTrace
+ from meresco.core import Observable, be
+ 
+-from meresco.components import XmlXPath, XmlParseLxml, XmlPrintLxml
++from meresco.components import XmlXPath, XmlParseLxml
+ from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType, tostring
+ from StringIO import StringIO
++import sys
++
+ 
+ 
+ class XmlXPathTest(CQ2TestCase):
+@@ -42,29 +44,47 @@
+         self.observer = CallTrace('observer',ignoredAttributes=['start'] )
+         self.observable = be(
+             (Observable(),
+-                (XmlParseLxml(),
++                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+                     (XmlXPath(xpathList, nsMap),
+                         (self.observer, ),
+                     )
+                 )
+             )
+         )
++        strm = StringIO()
++        sys.stderr = strm
++        try:
++            self.observableWithoutKwarg = be(
++                (Observable(),
++                    (XmlParseLxml(),
++                        (XmlXPath(xpathList, nsMap),
++                            (self.observer, ),
++                        )
++                    )
++                )
++            )
++        finally:
++            sys.stderr = sys.__stderr__
++            msg = strm.getvalue()
++            if msg:
++                self.assertEquals('../meresco/components/xmlpump.py:81: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
++
+     def testSimpleXPath(self):
+         self.createXmlXPath(['/root/path'], {})
+ 
+-        self.observable.do.test('een tekst', '<root><path><to>me</to></path></root>')
++        self.observable.do.test('een tekst', data='<root><path><to>me</to></path></root>')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         method = self.observer.calledMethods[0]
+         self.assertEquals('test', method.name)
+-        self.assertEquals(2, len(method.args))
++        self.assertEquals(1, len(method.args))
+         self.assertEquals('een tekst', method.args[0])
+-        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.args[1]))
++        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+ 
+     def testElementInKwargs(self):
+         self.createXmlXPath(['/root/path'], {})
+ 
+-        self.observable.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
++        self.observableWithoutKwarg.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         method = self.observer.calledMethods[0]
+@@ -84,17 +104,17 @@
+     def testXPathWithNamespaces(self):
+         self.createXmlXPath(['/a:root/b:path/c:findme'], {'a':'ns1', 'b':'ns2', 'c':'ns3'})
+ 
+-        self.observable.do.aMethod("""<root xmlns="ns1" xmlns:two="ns2">
++        self.observable.do.aMethod(data="""<root xmlns="ns1" xmlns:two="ns2">
+             <two:path><findme xmlns="ns3">Found</findme></two:path></root>""")
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+-        self.assertEquals('Found', self.observer.calledMethods[0].args[0].xpath('text()')[0])
++        self.assertEquals('Found', self.observer.calledMethods[0].kwargs['lxmlNode'].xpath('text()')[0])
+ 
+ 
+     def testXPathWithConditions(self):
+         self.createXmlXPath(['/root/element[pick="me"]/data'], {})
+ 
+-        self.observable.do.aMethod("""<root>
++        self.observable.do.aMethod(data="""<root>
+     <element>
+         <pick>not me</pick>
+         <data>Not this data</data>
+@@ -106,12 +126,12 @@
+ </root>""")
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+-        self.assertEqualsWS('<data>This data</data>', tostring(self.observer.calledMethods[0].args[0]))
++        self.assertEqualsWS('<data>This data</data>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+ 
+     def testXPathWithMultipleResults(self):
+         self.createXmlXPath(['/root/element/data'], {})
+ 
+-        self.observable.do.aMethod("""<root>
++        self.observable.do.aMethod(data="""<root>
+     <element>
+         <data>one</data>
+     </element>
+@@ -120,19 +140,19 @@
+     </element>
+ </root>""")
+         self.assertEquals(2, len(self.observer.calledMethods))
+-        self.assertEqualsWS('<data>one</data>', tostring(self.observer.calledMethods[0].args[0]))
+-        self.assertEqualsWS('<data>two</data>', tostring(self.observer.calledMethods[1].args[0]))
++        self.assertEqualsWS('<data>one</data>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
++        self.assertEqualsWS('<data>two</data>', tostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
+ 
+     def testXPathWithNoResults(self):
+         self.createXmlXPath(['/does/not/exist'], {})
+ 
+-        self.observable.do.aMethod("""<some><element>data</element></some>""")
++        self.observableWithoutKwarg.do.aMethod("""<some><element>data</element></some>""")
+         self.assertEquals(0, len(self.observer.calledMethods))
+ 
+     def testOnlyOneXMLAllowed(self):
+         self.createXmlXPath('/root', {})
+         try:
+-            self.observable.do.aMethod("<somexml/>", xml="<otherxml/>")
++            self.observableWithoutKwarg.do.aMethod("<somexml/>", data="<otherxml/>")
+             self.fail()
+         except AssertionError, e:
+             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
+@@ -165,7 +185,7 @@
+     def testFindUsingMultipleXPaths(self):
+         self.createXmlXPath(['/does/not/exist', '/a/b', '/a/b/c'], {})
+ 
+-        self.observable.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
++        self.observableWithoutKwarg.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
+ 
+         self.assertEquals(3, len(self.observer.calledMethods))
+         allResults = []
+@@ -178,7 +198,7 @@
+     def testTestWithCondition(self):
+         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
+ 
+-        self.observable.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
++        self.observableWithoutKwarg.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         allResults = []
+@@ -189,7 +209,7 @@
+     def testTestWithConditionAndNS(self):
+         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
+ 
+-        self.observable.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
++        self.observableWithoutKwarg.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         allResults = []
+@@ -206,7 +226,8 @@
+         observable.addObserver(xpath)
+         xpath.addObserver(observer)
+ 
+-        observable.do.aMethod(inputNode)
++        observable.do.aMethod(lxmlNode=inputNode)
+         self.assertEquals(1, len(observer.calledMethods))
+-        result = observer.calledMethods[0].args
+-        self.assertEquals(('some text & some <entities>',), result)
++        result = observer.calledMethods[0].kwargs
++        self.assertEquals({'lxmlNode': 'some text & some <entities>'}, result)
++
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/xmlpumptest.py version_1.more_add_adaptations/test/xmlpumptest.py
+--- version_1/test/xmlpumptest.py	2010-09-02 09:58:54.000000000 +0200
++++ version_1.more_add_adaptations/test/xmlpumptest.py	2010-09-06 09:31:38.000000000 +0200
+@@ -43,7 +43,7 @@
+         self.observer = CallTrace('Observer', ignoredAttributes=['start'])
+         self.observable = be(
+             (Observable(),
+-                (XmlParseAmara(),
++                (XmlParseAmara(fromKwarg='data', toKwarg='amaraNode'),
+                     (self.observer, )
+                 )
+             )
+@@ -52,52 +52,55 @@
+ 
+     def testInflate(self):
+         xmlString = """<tag><content>contents</content></tag>"""
+-        self.observable.do.add("id", "partName", xmlString)
++        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         self.assertEquals("add", self.observer.calledMethods[0].name)
+-        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args[:2])
++        self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
++        self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
+ 
+-        xmlNode = self.observer.calledMethods[0].args[2]
++        xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
+         self.assertEquals('tag', xmlNode.localName)
+         self.assertEquals('content', xmlNode.content.localName)
+ 
+     def testInflateWithElementStringResult(self):
+         xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
+-        self.observable.do.add("id", "partName", xmlString)
++        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         self.assertEquals("add", self.observer.calledMethods[0].name)
+-        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args[:2])
++        self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
++        self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
+ 
+-        xmlNode = self.observer.calledMethods[0].args[2]
++        xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
+         self.assertEquals('tag', xmlNode.localName)
+         self.assertEquals('content', xmlNode.content.localName)
+ 
+     def testDeflate(self):
+         observable = be(
+             (Observable(),
+-                (XmlPrintAmara(),
++                (XmlPrintAmara(fromKwarg='amaraNode', toKwarg='data'),
+                     (self.observer, )
+                 )
+             )
+         )
+ 
+         s = """<tag><content>contents</content></tag>"""
+-        observable.do.aMethodCall("id", "partName", binderytools.bind_string(s).tag)
++        observable.do.aMethodCall("id", "partName", amaraNode=binderytools.bind_string(s).tag)
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         self.assertEquals("aMethodCall", self.observer.calledMethods[0].name)
+-        self.assertEquals(("id", "partName", s), self.observer.calledMethods[0].args)
++        self.assertEquals(("id", "partName"), self.observer.calledMethods[0].args)
++        self.assertEquals(s, self.observer.calledMethods[0].kwargs['data'])
+ 
+     def testAmara2LXml(self):
+         class Observer:
+             def ape(inner, lxmlNode):
+                 self.lxmlNode = lxmlNode
+-        amara2lxml = Amara2Lxml()
++        amara2lxml = Amara2Lxml(fromKwarg='amaraNode', toKwarg='lxmlNode')
+         amara2lxml.addObserver(Observer())
+         amaraNode = binderytools.bind_string('<a><b>“c</b></a>')
+-        list(amara2lxml.unknown('ape', amaraNode))
++        list(amara2lxml.unknown('ape', amaraNode=amaraNode))
+         self.assertEquals(_ElementTree, type(self.lxmlNode))
+         self.assertEquals('<a><b>“c</b></a>', tostring(self.lxmlNode, encoding='utf-8'))
+ 
+@@ -105,23 +108,22 @@
+         class Observer:
+             def ape(inner, amaraNode):
+                 self.amaraNode = amaraNode
+-        lxml2amara = Lxml2Amara()
++        lxml2amara = Lxml2Amara(fromKwarg='lxmlNode', toKwarg='amaraNode')
+         lxml2amara.addObserver(Observer())
+         lxmlNode = parse(StringIO('<a><b>“c</b></a>'))
+-        list(lxml2amara.unknown('ape', lxmlNode))
++        list(lxml2amara.unknown('ape', lxmlNode=lxmlNode))
+         self.assertEquals('<a><b>“c</b></a>', self.amaraNode.xml())
+ 
+     def testXmlParseAmaraRespondsToEveryMessage(self):
+-        self.observable.do.aMethodCall('do not parse this', '<parse>this</parse>')
++        self.observable.do.aMethodCall('do not parse this', data='<parse>this</parse>')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         method = self.observer.calledMethods[0]
+         self.assertEquals('aMethodCall', method.name)
+-        self.assertEquals(2, len(method.args))
++        self.assertEquals(1, len(method.args))
++        self.assertEquals(1, len(method.kwargs))
+         self.assertEquals('do not parse this', method.args[0])
+-        self.assertEquals('<parse>this</parse>', method.args[1].xml())
+-
+-
++        self.assertEquals('<parse>this</parse>', method.kwargs['amaraNode'].xml())
+ 
+     def testTransparency(self):
+         deflate = CallTrace('deflated')
+@@ -130,37 +132,37 @@
+         lxml2 = CallTrace('lxml2')
+         observable = be(
+             (Observable(),
+-                (XmlParseAmara(),
++                (XmlParseAmara(fromKwarg='data', toKwarg='amaraNode'),
+                     (amara,),
+-                    (Amara2Lxml(),
+-                        (XmlPrintLxml(),
++                    (Amara2Lxml(fromKwarg='amaraNode', toKwarg='lxmlNode'),
++                        (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='data'),
+                             (lxml, ),
+                         ),
+-                        (Lxml2Amara(),
+-                            (XmlPrintAmara(),
++                        (Lxml2Amara(fromKwarg='lxmlNode', toKwarg='amaraNode'),
++                            (XmlPrintAmara(fromKwarg='amaraNode', toKwarg='data'),
+                                 (deflate, ),
+                             )
+                         )
+                     )
+                 ),
+-                (XmlParseLxml(),
+-                    (XmlPrintLxml(),
++                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
++                    (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='data'),
+                         (lxml2, ),
+                     ),
+                 )
+             )
+         )
+ 
+-        observable.do.something('identifier', 'partName', '<?xml version="1.0"?><a><b>c</b></a>')
+-        self.assertEqualsWS('<a><b>c</b></a>', amara.calledMethods[0].args[2].xml())
+-        self.assertEqualsWS('<a><b>c</b></a>', deflate.calledMethods[0].args[2])
+-        self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].args[2])
+-        self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].args[2])
++        observable.do.something(identifier='identifier', partname='partName', data='<?xml version="1.0"?><a><b>c</b></a>')
++        self.assertEqualsWS('<a><b>c</b></a>', amara.calledMethods[0].kwargs['amaraNode'].xml())
++        self.assertEqualsWS('<a><b>c</b></a>', deflate.calledMethods[0].kwargs['data'])
++        self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].kwargs['data'])
++        self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].kwargs['data'])
+ 
+     def testFileParseLxml(self):
+         observable = Observable()
+         observer = CallTrace('observer')
+-        p = FileParseLxml()
++        p = FileParseLxml(fromKwarg='filedata', toKwarg='lxmlNode')
+         observable.addObserver(p)
+         p.addObserver(observer)
+         a = StringIO('<a>aaa</a>')
+@@ -169,10 +171,39 @@
+         f.close()
+         b = open(self.tempfile)
+ 
+-        observable.do.someMessage(a, b=b)
+-
+-        lxmlA = observer.calledMethods[0].args[0]
+-        lxmlB = observer.calledMethods[0].kwargs['b']
++        observable.do.someMessage(filedata=a)
++        lxmlA = observer.calledMethods[0].kwargs['lxmlNode']
+         self.assertEquals('<a>aaa</a>', tostring(lxmlA))
++
++        observable.do.someMessage(filedata=b)
++        lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
+         self.assertEquals('<b>bbb</b>', tostring(lxmlB))
+ 
++    def testRenameKwargOnConvert(self):
++        observer = CallTrace()
++        observable = be(
++            (Observable(),
++                (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='dataString'),
++                    (observer,),
++                )
++            )
++        )
++        observable.do.something('identifier', 'partname', lxmlNode=parse(StringIO('<someXml/>')))
++        self.assertEquals("something('identifier', 'partname', dataString='<someXml/>\n')", str(observer.calledMethods[0]))
++
++        observable.do.something('identifier', 'partname', someKwarg=1)
++        self.assertEquals("something('identifier', 'partname', someKwarg=1)", str(observer.calledMethods[1]))
++
++    def testToKwargDefaultsToFromKwarg(self):
++        observer = CallTrace()
++        observable = be(
++            (Observable(),
++                (XmlPrintLxml(fromKwarg='data'),
++                    (observer,),
++                )
++            )
++        )
++        observable.do.something('identifier', 'partname', data=parse(StringIO('<someXml/>')))
++        self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
++
++
