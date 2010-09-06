@@ -191,6 +191,6 @@ class VenturiTest(CQ2TestCase):
         def add(*args, **kwargs):
             addInvocations.append(dict(args=args, kwargs=kwargs))
         v.add = add
-        v.addDocumentPart(identifier='x', name='y', lxmlNode='dummy')
-        self.assertEquals([{'args':(), 'kwargs':dict(identifier='x', name='y', lxmlNode='dummy')}], addInvocations)
+        v.addDocumentPart(identifier='x', partname='y', lxmlNode='dummy')
+        self.assertEquals([{'args': (), 'kwargs': dict(identifier='x', partname='y', lxmlNode='dummy')}], addInvocations)
 

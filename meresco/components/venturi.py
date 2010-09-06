@@ -38,8 +38,8 @@ class Venturi(Observable):
         self._should = should
         self._could = could
 
-    def addDocumentPart(self, identifier=None, name=None, lxmlNode=None):
-        return self.add(identifier=identifier, name=name, lxmlNode=lxmlNode)
+    def addDocumentPart(self, identifier=None, partname=None, lxmlNode=None):
+        return self.add(identifier=identifier, partname=partname, lxmlNode=lxmlNode)
 
     def add(self, identifier, partname=None, lxmlNode=None):
         """should be obsoleted in favor of addDocumentPart"""
