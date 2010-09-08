@@ -37,7 +37,7 @@ class UpdateAdapterFromMsgbox(Observable):
         elif extension == "add":
             self.do.add(identifier, '', filedata)
         else:
-            raise Exception('Expected add or delete as file extension')
+            raise ValueError('Expected add or delete as file extension')
 
 class UpdateAdapterToMsgbox(Observable):
 
