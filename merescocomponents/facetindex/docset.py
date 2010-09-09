@@ -105,6 +105,8 @@ class DocSet(object):
     @classmethod
     def fromQuery(clazz, searcher, query, mapping=None):
         r = DocSet_fromQuery(searcher, query, mapping)
+        if r.ptr == -1:
+            raise RuntimeError('org.apache.lucene.search.BooleanQuery$TooManyClauses')
         return clazz(cobj=r, own=True)
 
     @classmethod
