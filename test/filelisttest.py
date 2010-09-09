@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -88,6 +89,7 @@ class FileListTest(CQ2TestCase):
         s = SortedFileList(join(self.tempdir, 'list'))
         for i in range(6):
             s.append(i)
+        self.assertEquals([], list(s[0:0]))
         self.assertEquals([1,2], list(s[1:3]))
         self.assertEquals([0,1,2,3], list(s[:-2]))
         self.assertEquals([4,5], list(s[-2:]))

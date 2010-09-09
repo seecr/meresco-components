@@ -181,14 +181,14 @@ class FileListSeq(object):
         if self._step < 0 and self._stop < index <= self._start:
             return self._mainList[index]
         raise IndexError('list index out of range')
-        
+
 
     def __len__(self):
         return abs((self._start - self._stop)/self._step)
 
 def _sliceWithinRange(aSlice, listLength):
         start = aSlice.start or 0
-        stop = aSlice.stop or listLength
+        stop = listLength if aSlice.stop is None else aSlice.stop
         step = aSlice.step or 1
         if stop < 0:
             stop += listLength
