@@ -27,13 +27,18 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
+import sys
+from os.path import join
+
 from meresco.components.facetindex import DocSet
-from lucenetestcase import LuceneTestCase
 from meresco.components.facetindex.docset import DocSet_combinedCardinalitySearch
-from meresco.components.facetindex.merescolucene import Term
+from meresco.components.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer, MatchAllDocsQuery, TermQuery, Query, BooleanQuery, PrefixQuery
+
+from lucenetestcase import LuceneTestCase
+
 
 class DocSetTest(LuceneTestCase):
-
     def testCreate(self):
         docset = DocSet()
         self.assertTrue(docset is not None)
@@ -196,3 +201,28 @@ class DocSetTest(LuceneTestCase):
         self.assertEquals(100, result.capacity())
         result = b.intersect(a)
         self.assertEquals(100, result.capacity())
+
+    def testPrefixQueryTooManyClauses(self):
+        directory = join(self.tempdir, 'index')
+        index = IndexWriter(directory, merescoStandardAnalyzer, True)
+        doc = Document()
+        doc.add(Field('field', 'term0', Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
+        index.addDocument(doc)
+        doc = Document()
+        doc.add(Field('field', 'term1', Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
+        index.addDocument(doc)
+        index.close()
+
+        reader = IndexReader.open(directory)
+        searcher = IndexSearcher(reader % IndexReader)
+        
+        maxClauseCount = BooleanQuery.getMaxClauseCount()
+        try:
+            BooleanQuery.setMaxClauseCount(1) # forces failure early
+            DocSet.fromQuery(searcher, PrefixQuery(Term("field", "term")) % Query)
+            self.fail()
+        except RuntimeError, e:
+            self.assertEquals('org.apache.lucene.search.BooleanQuery$TooManyClauses', e.message)
+        finally:
+            BooleanQuery.setMaxClauseCount(maxClauseCount)
+

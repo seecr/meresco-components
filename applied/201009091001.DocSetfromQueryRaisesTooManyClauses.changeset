@@ -1,0 +1,96 @@
+Changeset created on Thu Sep  9 10:01:43 UTC 2010 by Seek You Too
+
+Description: DocSet.fromQuery catches and reraises Lucene's TooManyClauses exception
+
+    It was possible to cause a process to abort by calling DocSet.fromQuery with a PrefixQuery that caused a TooManyClauses exception. This situation will now result in an appropriate Python RuntimeError.
+
+Impact: does not break backwards compatability.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.6-TUD/version_2
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/merescocomponents/facetindex/_docset.cpp version_2-lucene-prefixquery-exception-in-docset/merescocomponents/facetindex/_docset.cpp
+--- version_2/merescocomponents/facetindex/_docset.cpp	2010-09-08 07:55:55.000000000 +0000
++++ version_2-lucene-prefixquery-exception-in-docset/merescocomponents/facetindex/_docset.cpp	2010-09-09 09:51:10.000000000 +0000
+@@ -31,6 +31,7 @@
+ 
+ #include "assert.h"
+ 
++#include "org/apache/lucene/search/BooleanQuery$TooManyClauses.h"
+ #include "org/apache/lucene/search/MatchAllDocsQuery.h"
+ #include "org/apache/lucene/search/HitCollector.h"
+ #include "org/apache/lucene/index/TermEnum.h"
+@@ -239,7 +240,11 @@
+ fwPtr DocSet_fromQuery(lucene::search::Searcher* searcher, lucene::search::Query* query, IntegerList* mapping) {
+     fwPtr docset = DocSet_create();
+     DocSetHitCollector resultCollector(pDS(docset));
+-    searcher->search(query, (lucene::search::HitCollector*) &resultCollector);
++    try {
++        searcher->search(query, (lucene::search::HitCollector*) &resultCollector);
++    } catch (lucene::search::BooleanQuery$TooManyClauses *ex) {
++        return fwNONE;
++    }
+     pDS(docset)->map(mapping);
+     return docset;
+ }
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/merescocomponents/facetindex/docset.py version_2-lucene-prefixquery-exception-in-docset/merescocomponents/facetindex/docset.py
+--- version_2/merescocomponents/facetindex/docset.py	2010-09-08 07:55:55.000000000 +0000
++++ version_2-lucene-prefixquery-exception-in-docset/merescocomponents/facetindex/docset.py	2010-09-09 09:51:10.000000000 +0000
+@@ -105,6 +105,8 @@
+     @classmethod
+     def fromQuery(clazz, searcher, query, mapping=None):
+         r = DocSet_fromQuery(searcher, query, mapping)
++        if r.ptr == -1:
++            raise RuntimeError('org.apache.lucene.search.BooleanQuery$TooManyClauses')
+         return clazz(cobj=r, own=True)
+ 
+     @classmethod
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/test/facetindex/docsettest.py version_2-lucene-prefixquery-exception-in-docset/test/facetindex/docsettest.py
+--- version_2/test/facetindex/docsettest.py	2010-09-08 07:55:54.000000000 +0000
++++ version_2-lucene-prefixquery-exception-in-docset/test/facetindex/docsettest.py	2010-09-09 09:51:10.000000000 +0000
+@@ -27,10 +27,15 @@
+ #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ #
+ ## end license ##
++
++import sys
++from os.path import join
++
+ from merescocomponents.facetindex import DocSet
+-from lucenetestcase import LuceneTestCase
+ from merescocomponents.facetindex.docset import DocSet_combinedCardinalitySearch
+-from merescocomponents.facetindex.merescolucene import Term
++from merescocomponents.facetindex.merescolucene import IndexReader, IndexSearcher, IndexWriter, Document, Term, Field, Fieldable, merescoStandardAnalyzer, MatchAllDocsQuery, TermQuery, Query, BooleanQuery, PrefixQuery
++from lucenetestcase import LuceneTestCase
++
+ 
+ class DocSetTest(LuceneTestCase):
+ 
+@@ -196,3 +201,28 @@
+         self.assertEquals(100, result.capacity())
+         result = b.intersect(a)
+         self.assertEquals(100, result.capacity())
++
++    def testPrefixQueryTooManyClauses(self):
++        directory = join(self.tempdir, 'index')
++        index = IndexWriter(directory, merescoStandardAnalyzer, True)
++        doc = Document()
++        doc.add(Field('field', 'term0', Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
++        index.addDocument(doc)
++        doc = Document()
++        doc.add(Field('field', 'term1', Field.Store.NO, Field.Index.UN_TOKENIZED) % Fieldable)
++        index.addDocument(doc)
++        index.close()
++
++        reader = IndexReader.open(directory)
++        searcher = IndexSearcher(reader % IndexReader)
++        
++        maxClauseCount = BooleanQuery.getMaxClauseCount()
++        try:
++            BooleanQuery.setMaxClauseCount(1) # forces failure early
++            DocSet.fromQuery(searcher, PrefixQuery(Term("field", "term")) % Query)
++            self.fail()
++        except RuntimeError, e:
++            self.assertEquals('org.apache.lucene.search.BooleanQuery$TooManyClauses', e.message)
++        finally:
++            BooleanQuery.setMaxClauseCount(maxClauseCount)
++

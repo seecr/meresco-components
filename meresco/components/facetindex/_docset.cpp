@@ -31,6 +31,7 @@
 
 #include "assert.h"
 
+#include "org/apache/lucene/search/BooleanQuery$TooManyClauses.h"
 #include "org/apache/lucene/search/MatchAllDocsQuery.h"
 #include "org/apache/lucene/search/HitCollector.h"
 #include "org/apache/lucene/index/TermEnum.h"
@@ -231,7 +232,11 @@ extern "C"
 fwPtr DocSet_fromQuery(lucene::search::Searcher* searcher, lucene::search::Query* query, IntegerList* mapping) {
     fwPtr docset = DocSet_create();
     DocSetHitCollector resultCollector(pDS(docset));
-    searcher->search(query, (lucene::search::HitCollector*) &resultCollector);
+    try {
+        searcher->search(query, (lucene::search::HitCollector*) &resultCollector);
+    } catch (lucene::search::BooleanQuery$TooManyClauses *ex) {
+        return fwNONE;
+    }
     pDS(docset)->map(mapping);
     return docset;
 }
