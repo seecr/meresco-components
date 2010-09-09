@@ -4,6 +4,8 @@ Description: DocSet.fromQuery catches and reraises Lucene's TooManyClauses excep
 
     It was possible to cause a process to abort by calling DocSet.fromQuery with a PrefixQuery that caused a TooManyClauses exception. This situation will now result in an appropriate Python RuntimeError.
 
+Impact: does not break backwards compatability.
+
 Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.6-TUD/version_2
 
 diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/merescocomponents/facetindex/_docset.cpp version_2-lucene-prefixquery-exception-in-docset/merescocomponents/facetindex/_docset.cpp
