@@ -129,6 +129,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         error = UNSUPPORTED_PARAMETER_VALUE
         self.assertValid(SUCCESS, {'version':['1.1'], 'query':['TERM'], 'operation':['searchRetrieve'], 'startRecord':['1']})
         self.assertValid(QUERY_FEATURE_UNSUPPORTED, {'version':['1.1'], 'query':['TERM1)'], 'operation':['searchRetrieve']})
+        self.assertValid(QUERY_FEATURE_UNSUPPORTED, {'version':['1.1'], 'query':['"=+'], 'operation':['searchRetrieve']})
 
     def assertValid(self, expectedResult, arguments):
         component = SruParser('host', 'port')
