@@ -90,6 +90,7 @@ class Msgbox(Observable):
         self._asynchronous = asynchronous
         self._reactor = reactor
         self._suspended = {}
+        self._waiting = []
 
     def observer_init(self):
         self.processInDirectory()
@@ -135,6 +136,11 @@ class Msgbox(Observable):
             suspend.resume()
         
         self._forgivingRemove(filepath)
+        for suspendedidentifier, suspend in self._waiting:
+            if suspendedidentifier == identifier:
+                self._waiting.remove((suspendedidentifier, suspend))
+                suspend.resume()
+                break
 
     def _ack(self, filename):
         self._add(filename + ".ack", "")
@@ -147,17 +153,19 @@ class Msgbox(Observable):
 
     def add(self, identifier, filedata, **kwargs):
         filename = escapeFilename(identifier)
-        self._add(filename, filedata, **kwargs)
         if self._asynchronous:
-            if identifier in self._suspended:
-                duplicateError = ValueError("Concurrent request for identical identifiers on Msgbox")
-                self._suspended[identifier].throw(duplicateError)
-                del self._suspended[identifier]
-                raise duplicateError
             suspend = Suspend()
+            if identifier in self._suspended:
+                while identifier in self._suspended:
+                    self._waiting.append((identifier, suspend))
+                    yield suspend
+                    suspend.getResult()
+            self._add(filename, filedata, **kwargs)
             self._suspended[identifier] = suspend
             yield suspend
             suspend.getResult()
+        else:
+            self._add(filename, filedata, **kwargs)
 
     def _add(self, filename, filedata, **kwargs):
         """Adds a file to the outDirectory. 
