@@ -1,0 +1,35 @@
+CHANGELOG Meresco-Components
+============================
+
+version: 3.3 -> 3.4
+date:    2010-09-20
+
+!! Meresco-components 3.4 is not backwards compatible with Meresco 
+   Compontents 3.3. The "Consistent naming of add parameters" change breaks
+   compatibility(see below).
+
+Use Meresco Xml package instead of CQ2Utils/XmlUtils
+----------------------------------------------------
+The xmlutils are extracted from the CQ2Utils project into a separate Meresco
+project called Meresco-Xml. This changeset alters the imports needed for the
+use of Meresco-Xml. It also removes some unnecessary imports.
+
+_luceneDelete deletes all Lucene documents with given identifier 
+----------------------------------------------------------------
+Recognizing that - as the consequence of an historical bug - there may be
+more Lucene records with the same identifier, _luceneDelete will now delete
+all of them (instead of giving up on deleting anything alltogether).
+
+Consistent naming of add parameters 
+-----------------------------------
+To stimulate the use of kwargs in add calls, matching add methods on several
+components now take consistently named keyword arguments. 
+Also: adapted xmlpump converters to take a fromKwarg and toKwarg parameter to 
+make conversion more explicit.
+
+DocSet.fromQuery catches and reraises Lucene's TooManyClauses exception
+-----------------------------------------------------------------------
+It was possible to cause a process to abort by calling DocSet.fromQuery with
+a PrefixQuery that caused a TooManyClauses exception. This situation will now
+result in an appropriate Python RuntimeError.
+
