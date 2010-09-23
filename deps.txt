@@ -1,1 +1,2 @@
-python-meresco-core2.21
+python-meresco-core (>= 2.21)
+python-meresco-core (<< 2.22)
