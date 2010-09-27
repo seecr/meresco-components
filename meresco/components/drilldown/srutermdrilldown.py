@@ -38,7 +38,7 @@ class SRUTermDrilldown(Observable):
         self._sortedByTermCount = sortedByTermCount
                 
     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
-    def extraResponseData(self, cqlAbstractSyntaxTree=None, x_term_drilldown=None, **kwargs):
+    def extraResponseData(self, docset, x_term_drilldown=None, **kwargs):
         if x_term_drilldown == None or len(x_term_drilldown) != 1:
             return
         def splitTermAndMaximum(s):
@@ -54,7 +54,7 @@ class SRUTermDrilldown(Observable):
             raise StopIteration
 
         drilldownResults = self.any.drilldown(
-            self.any.docsetFromQuery(cqlAbstractSyntaxTree),
+            docset,
             fieldMaxTuples)
 
         yield self._termDrilldown(drilldownResults)

@@ -117,7 +117,6 @@ class SruHandlerTest(CQ2TestCase):
         sruHandler = SruHandler()
         sruTermDrilldown = SRUTermDrilldown()
         observer = CallTrace("Drilldown")
-        observer.returnValues['docsetFromQuery'] = 'docset'
         observer.returnValues['drilldown'] = iter([
                 ('field0', iter([('value0_0', 14)])),
                 ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
@@ -125,7 +124,7 @@ class SruHandlerTest(CQ2TestCase):
             ])
         sruTermDrilldown.addObserver(observer)
         sruHandler.addObserver(sruTermDrilldown)
-        result = "".join(list(sruHandler._writeExtraResponseData(cqlAbstractSyntaxTree=None, **arguments)))
+        result = "".join(list(sruHandler._writeExtraResponseData(docset='docset', **arguments)))
         self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.org/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
 
     def testNextRecordPosition(self):
@@ -164,8 +163,8 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(**arguments)))
-        self.assertEquals(['executeCQL', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        executeCQLMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+        self.assertEquals(['executeCQL', 'docsetFromCQL', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        executeCQLMethod, docsetFromCQL, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
         self.assertEquals('executeCQL', executeCQLMethod.name)
         methodKwargs = executeCQLMethod.kwargs
         self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
@@ -229,7 +228,7 @@ class SruHandlerTest(CQ2TestCase):
         self.assertEquals((), echoedExtraRequestDataMethod.args)
         self.assertEquals(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking'], echoedExtraRequestDataMethod.kwargs.keys())
         self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree']), set(extraResponseDataMethod.kwargs.keys()))
+        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'docset']), set(extraResponseDataMethod.kwargs.keys()))
 
     def testIOErrorInWriteRecordData(self):
         observer = CallTrace()

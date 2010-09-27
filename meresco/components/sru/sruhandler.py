@@ -51,6 +51,7 @@ class SruHandler(Observable):
                 sortBy=sortBy,
                 sortDescending=sortDescending,
                 **kwargs)
+            docset = self.any.docsetFromCQL(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
@@ -70,7 +71,7 @@ class SruHandler(Observable):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, **kwargs)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, docset=docset, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
