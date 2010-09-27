@@ -1,6 +1,17 @@
 CHANGELOG Meresco-Components
 ============================
 
+version: 3.4 -> 3.4.1
+date:    2010-09-27
+
+GC no longer disabled inside DocSet::forTerm
+--------------------------------------------
+Fixed memory leak on server startup by no longer disabling GC (which seemed a
+valid performance improvement).
+(2010-09-27, 3.4-NED)
+
+==============================================================================
+
 version: 3.3 -> 3.4
 date:    2010-09-20
 
