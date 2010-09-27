@@ -256,7 +256,6 @@ static jintArray documents = anchor[0] = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
 static jintArray ignored   = anchor[1] = JvNewIntArray(TERMDOCS_READ_BUFF_SIZE);
 
 fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char* term, IntegerList* mapping, lucene::index::TermEnum* termEnum) {
-    GC_disable(); // speeds up 25%
     fwPtr docset = DocSet_create();
     DocSet* docs = pDS(docset);
     if (!termEnum) {
@@ -279,7 +278,6 @@ fwPtr DocSet::forTerm(lucene::index::IndexReader *reader, char* fieldname, char*
         count += additional;
     }
     docs->map(mapping);
-    GC_enable();
     return docset;
 }
 
