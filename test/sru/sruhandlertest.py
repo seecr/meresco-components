@@ -163,7 +163,7 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(**arguments)))
-        self.assertEquals(['executeCQL', 'docsetFromCQL', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['executeCQL', 'docsetFromQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         executeCQLMethod, docsetFromCQL, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
         self.assertEquals('executeCQL', executeCQLMethod.name)
         methodKwargs = executeCQLMethod.kwargs
