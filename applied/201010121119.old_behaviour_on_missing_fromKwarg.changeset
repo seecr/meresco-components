@@ -2,7 +2,7 @@ Changeset created on Tue Oct 12 11:19:38 CEST 2010 by Seek You Too
 
 Description: Old behaviour on missing fromKwarg
 
-    The converters now display their old behaviour if the specified fromKwarg is now present in the kwargs.
+    The converters now display their old behaviour if the specified fromKwarg is not present in the kwargs.
 
 Baseline version: meresco-components/workingsets/3.4.2-NED/version_0
 
