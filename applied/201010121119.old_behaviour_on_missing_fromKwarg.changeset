@@ -1,0 +1,70 @@
+Changeset created on Tue Oct 12 11:19:38 CEST 2010 by Seek You Too
+
+Description: Old behaviour on missing fromKwarg
+
+    The converters now display their old behaviour if the specified fromKwarg is now present in the kwargs.
+
+Baseline version: meresco-components/workingsets/3.4.2-NED/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/xmlpump.py version_0-fix_kwargs_converters/meresco/components/xmlpump.py
+--- version_0/meresco/components/xmlpump.py	2010-10-12 10:18:31.000000000 +0200
++++ version_0-fix_kwargs_converters/meresco/components/xmlpump.py	2010-10-12 11:08:05.000000000 +0200
+@@ -48,18 +48,14 @@
+         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
+ 
+     def unknown(self, msg, *args, **kwargs):
+-        if self._fromKwarg is None:
++        if self._fromKwarg is None or not self._fromKwarg in kwargs:
+             newArgs = [self._detectAndConvert(arg) for arg in args]
+             newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
+             return self.all.unknown(msg, *newArgs, **newKwargs)
+ 
+-        try:
+-            oldValue = kwargs[self._fromKwarg]
+-        except KeyError:
+-            pass
+-        else:
+-            del kwargs[self._fromKwarg]
+-            kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
++        oldValue = kwargs[self._fromKwarg]
++        del kwargs[self._fromKwarg]
++        kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
+ 
+         return self.all.unknown(msg, *args, **kwargs)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/xml_generic/lxml_based/xmlxpathtest.py version_0-fix_kwargs_converters/test/xml_generic/lxml_based/xmlxpathtest.py
+--- version_0/test/xml_generic/lxml_based/xmlxpathtest.py	2010-10-12 10:18:30.000000000 +0200
++++ version_0-fix_kwargs_converters/test/xml_generic/lxml_based/xmlxpathtest.py	2010-10-12 11:11:41.000000000 +0200
+@@ -67,7 +67,7 @@
+             sys.stderr = sys.__stderr__
+             msg = strm.getvalue()
+             if msg:
+-                self.assertEquals('../meresco/components/xmlpump.py:81: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
++                self.assertEquals('../meresco/components/xmlpump.py:77: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
+ 
+     def testSimpleXPath(self):
+         self.createXmlXPath(['/root/path'], {})
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/xmlpumptest.py version_0-fix_kwargs_converters/test/xmlpumptest.py
+--- version_0/test/xmlpumptest.py	2010-10-12 10:18:31.000000000 +0200
++++ version_0-fix_kwargs_converters/test/xmlpumptest.py	2010-10-12 10:48:18.000000000 +0200
+@@ -159,6 +159,20 @@
+         self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].kwargs['data'])
+         self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].kwargs['data'])
+ 
++    def testMissingFromKwargsRevertsToOldStyleConversion(self):
++        observer = CallTrace()
++        observable = be(
++            (Observable(),
++                (XmlPrintLxml(fromKwarg='lxmlNode', toKwarg='data'),
++                    (observer, )
++                )
++            )
++        )
++
++        observable.do.something('identifier', 'partname', parse(StringIO('<a/>')))
++        self.assertEquals(1, len(observer.calledMethods))
++        self.assertEqualsWS('<a/>', observer.calledMethods[0].args[2])
++
+     def testFileParseLxml(self):
+         observable = Observable()
+         observer = CallTrace('observer')
