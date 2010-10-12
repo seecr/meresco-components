@@ -67,7 +67,7 @@ class XmlXPathTest(CQ2TestCase):
             sys.stderr = sys.__stderr__
             msg = strm.getvalue()
             if msg:
-                self.assertEquals('../meresco/components/xmlpump.py:81: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
+                self.assertEquals('../meresco/components/xmlpump.py:77: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
 
     def testSimpleXPath(self):
         self.createXmlXPath(['/root/path'], {})

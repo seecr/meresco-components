@@ -48,18 +48,14 @@ class Converter(Observable):
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
 
     def unknown(self, msg, *args, **kwargs):
-        if self._fromKwarg is None:
+        if self._fromKwarg is None or not self._fromKwarg in kwargs:
             newArgs = [self._detectAndConvert(arg) for arg in args]
             newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
             return self.all.unknown(msg, *newArgs, **newKwargs)
 
-        try:
-            oldValue = kwargs[self._fromKwarg]
-        except KeyError:
-            pass
-        else:
-            del kwargs[self._fromKwarg]
-            kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
+        oldValue = kwargs[self._fromKwarg]
+        del kwargs[self._fromKwarg]
+        kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
 
         return self.all.unknown(msg, *args, **kwargs)
 
