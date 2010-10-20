@@ -71,9 +71,9 @@ class Venturi(Observable):
             return ElementTree(anObject)
         return parse(StringIO(anObject))
 
-    def delete(self, id):
-        self.ctx.tx.locals['id'] = id
-        yield self.asyncdo.delete(id)
+    def delete(self, identifier):
+        self.ctx.tx.locals['id'] = identifier
+        yield self.asyncdo.delete(identifier=identifier)
 
 class VenturiException(Exception):
     pass

@@ -154,7 +154,7 @@ class VenturiTest(CQ2TestCase):
         __callstack_var_tx__ = CallTrace('Transaction')
         __callstack_var_tx__.locals={}
         v = Venturi(should=[('PARTNAME', '/document')],could=[])
-        list(v.delete('identifier'))
+        list(v.delete(identifier='identifier'))
         self.assertEquals('identifier', __callstack_var_tx__.locals['id'])
 
     def testPartInShouldDoesNotExist(self):
@@ -180,7 +180,7 @@ class VenturiTest(CQ2TestCase):
         v = Venturi()
         v.addObserver(observer)
 
-        result = list(compose(v.delete('identifier')))
+        result = list(compose(v.delete(identifier='identifier')))
 
         self.assertEquals([callable], result)
         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
