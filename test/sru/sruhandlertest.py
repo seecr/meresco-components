@@ -143,8 +143,8 @@ class SruHandlerTest(CQ2TestCase):
         executeCqlCallKwargs = observer.calledMethods[0].kwargs
         self.assertEquals(10, executeCqlCallKwargs['start']) # SRU is 1 based
         self.assertEquals(25, executeCqlCallKwargs['stop'])
-
-    def testSearchRetrieve(self):
+    
+    def testSearchRetrieveVersion11(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
@@ -163,15 +163,6 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(**arguments)))
-        self.assertEquals(['executeCQL', 'docsetFromQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        executeCQLMethod, docsetFromCQL, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
-        self.assertEquals('executeCQL', executeCQLMethod.name)
-        methodKwargs = executeCQLMethod.kwargs
-        self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
-        self.assertEquals(0, methodKwargs['start'])
-        self.assertEquals(2, methodKwargs['stop'])
-
-        self.assertEquals(6, sum(yieldRecordCalls))
 
         self.assertEqualsWS("""
 <srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -212,6 +203,89 @@ class SruHandlerTest(CQ2TestCase):
     <srw:nextRecordPosition>3</srw:nextRecordPosition>
     <srw:echoedSearchRetrieveRequest>
         <srw:version>1.1</srw:version>
+        <srw:query>field=value</srw:query>
+        <srw:startRecord>1</srw:startRecord>
+        <srw:maximumRecords>2</srw:maximumRecords>
+        <srw:recordPacking>xml</srw:recordPacking>
+        <srw:recordSchema>schema</srw:recordSchema>
+        <srw:x-recordSchema>extra</srw:x-recordSchema>
+        <srw:x-recordSchema>evenmore</srw:x-recordSchema>
+        <srw:extraRequestData>echoedExtraRequestData</srw:extraRequestData>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:extraResponseData>extraResponseData</srw:extraResponseData>
+</srw:searchRetrieveResponse>
+""", result)
+
+    def testSearchRetrieveVersion12(self):
+        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
+
+        observer = CallTrace()
+        observer.returnValues['executeCQL'] = (100, range(11, 13))
+
+        yieldRecordCalls = []
+        def yieldRecord(recordId, recordSchema):
+            yieldRecordCalls.append(1)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (recordId, recordSchema)
+        observer.yieldRecord = yieldRecord
+
+        observer.returnValues['extraResponseData'] = 'extraResponseData'
+        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+
+        component = SruHandler()
+        component.addObserver(observer)
+
+        result = "".join(compose(component.searchRetrieve(**arguments)))
+        self.assertEquals(['executeCQL', 'docsetFromQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        executeCQLMethod, docsetFromQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+        self.assertEquals('executeCQL', executeCQLMethod.name)
+        methodKwargs = executeCQLMethod.kwargs
+        self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals(0, methodKwargs['start'])
+        self.assertEquals(2, methodKwargs['stop'])
+
+        self.assertEquals(6, sum(yieldRecordCalls))
+
+        self.assertEqualsWS("""
+<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:numberOfRecords>100</srw:numberOfRecords>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>schema</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordIdentifier>11</srw:recordIdentifier>
+            <srw:recordData>
+                <MOCKED_WRITTEN_DATA>11-schema</MOCKED_WRITTEN_DATA>
+            </srw:recordData>
+            <srw:extraRecordData>
+                <recordData recordSchema="extra">
+                    <MOCKED_WRITTEN_DATA>11-extra</MOCKED_WRITTEN_DATA>
+                </recordData>
+                <recordData recordSchema="evenmore">
+                    <MOCKED_WRITTEN_DATA>11-evenmore</MOCKED_WRITTEN_DATA>
+                </recordData>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>schema</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordIdentifier>12</srw:recordIdentifier>
+            <srw:recordData>
+                <MOCKED_WRITTEN_DATA>12-schema</MOCKED_WRITTEN_DATA>
+            </srw:recordData>
+            <srw:extraRecordData>
+                <recordData recordSchema="extra">
+                    <MOCKED_WRITTEN_DATA>12-extra</MOCKED_WRITTEN_DATA>
+                </recordData>
+                <recordData recordSchema="evenmore">
+                    <MOCKED_WRITTEN_DATA>12-evenmore</MOCKED_WRITTEN_DATA>
+                </recordData>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>3</srw:nextRecordPosition>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:version>1.2</srw:version>
         <srw:query>field=value</srw:query>
         <srw:startRecord>1</srw:startRecord>
         <srw:maximumRecords>2</srw:maximumRecords>
@@ -280,11 +354,11 @@ class SruHandlerTest(CQ2TestCase):
 
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
-        assertValid(body, join(schemasPath, 'srw-types.xsd'))
+        assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
         self.assertTrue('<bike/>' in body)
         
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
-        assertValid(body, join(schemasPath, 'srw-types.xsd'))
+        assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
         self.assertTrue('diagnostic' in body)
 

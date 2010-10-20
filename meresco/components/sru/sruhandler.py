@@ -33,7 +33,7 @@ from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 from cqlparser import parseString as parseCQL
 from weightless import compose
 
-from sruparser import VERSION, DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
+from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet', 'x-recordSchema']
 
@@ -55,13 +55,13 @@ class SruHandler(Observable):
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
-        yield self._startResults(total)
+        yield self._startResults(total, version)
 
         recordsWritten = 0
         for recordId in recordIds:
             if not recordsWritten:
                 yield '<srw:records>'
-            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, **kwargs)
+            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, version=version, **kwargs)
             recordsWritten += 1
 
         if recordsWritten:
@@ -98,18 +98,20 @@ class SruHandler(Observable):
         except Exception, e:
             yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape(str(e))])
 
-    def _startResults(self, numberOfRecords):
+    def _startResults(self, numberOfRecords, version):
         yield RESPONSE_HEADER
-        yield '<srw:version>%s</srw:version>' % VERSION
+        yield '<srw:version>%s</srw:version>' % version 
         yield '<srw:numberOfRecords>%s</srw:numberOfRecords>' % numberOfRecords
 
     def _endResults(self):
         yield RESPONSE_FOOTER
 
-    def _writeResult(self, recordSchema=None, recordPacking=None, recordId=None, **kwargs):
+    def _writeResult(self, recordSchema=None, recordPacking=None, recordId=None, version=None, **kwargs):
         yield '<srw:record>'
         yield '<srw:recordSchema>%s</srw:recordSchema>' % recordSchema
         yield '<srw:recordPacking>%s</srw:recordPacking>' % recordPacking
+        if version == "1.2": 
+            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % recordId
         yield self._writeRecordData(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId)
         yield self._writeExtraRecordData(recordPacking=recordPacking, recordId=recordId, **kwargs)
         yield '</srw:record>'

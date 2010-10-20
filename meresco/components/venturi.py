@@ -28,7 +28,7 @@
 ## end license ##
 
 from meresco.core import Observable
-from lxml.etree import _Element, ElementTree, parse
+from lxml.etree import _Element, ElementTree, parse, XMLParser
 from StringIO import StringIO
 
 class Venturi(Observable):

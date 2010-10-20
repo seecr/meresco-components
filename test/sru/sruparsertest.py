@@ -89,6 +89,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         self.assertValid(error, {'version':['1.0'], 'query':['twente'], 'operation':['searchRetrieve']})
         self.assertValid(error, {'version':['2.0'], 'query':['twente'], 'operation':['searchRetrieve']})
         self.assertValid(SUCCESS, {'version':['1.1'], 'query':['twente'], 'operation':['searchRetrieve']})
+        self.assertValid(SUCCESS, {'version':['1.2'], 'query':['twente'], 'operation':['searchRetrieve']})
 
     def testValidOperation(self):
         error = UNSUPPORTED_OPERATION

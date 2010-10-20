@@ -79,4 +79,3 @@ class XmlXPath(Observable):
                     yield element
                 else:
                     yield ElementTree(element)
-

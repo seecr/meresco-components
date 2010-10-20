@@ -37,7 +37,8 @@ from weightless import compose
 from diagnostic import DIAGNOSTIC
 from diagnostic import GENERAL_SYSTEM_ERROR, SYSTEM_TEMPORARILY_UNAVAILABLE, UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
 
-VERSION = '1.1'
+DEFAULT_VERSION = '1.1'
+SUPPORTED_VERSIONS = ['1.1', '1.2']
 DEFAULT_MAXIMUMRECORDS = '10'
 
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
@@ -59,7 +60,7 @@ RESPONSE_HEADER = """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/z
 
 RESPONSE_FOOTER = """</srw:searchRetrieveResponse>"""
 
-DIAGNOSTICS = """%s%s%s<srw:diagnostics>%s</srw:diagnostics>%s""" % (RESPONSE_HEADER, '<srw:version>%s</srw:version>' % VERSION, '<srw:numberOfRecords>0</srw:numberOfRecords>', DIAGNOSTIC, RESPONSE_FOOTER)
+DIAGNOSTICS = """%s%s%s<srw:diagnostics>%s</srw:diagnostics>%s""" % (RESPONSE_HEADER, '<srw:version>%s</srw:version>' % DEFAULT_VERSION, '<srw:numberOfRecords>0</srw:numberOfRecords>', DIAGNOSTIC, RESPONSE_FOOTER)
 
 
 class SruException(Exception):
@@ -160,7 +161,7 @@ class SruParser(Observable):
 
     def _parseArguments(self, arguments):
         if arguments == {}:
-            arguments = {'version':[VERSION], 'operation':['explain']}
+            arguments = {'version':[DEFAULT_VERSION], 'operation':['explain']}
         operation = arguments.get('operation', [None])[0]
         self._validateArguments(operation, arguments)
         return operation, arguments
@@ -182,7 +183,7 @@ class SruParser(Observable):
             if not argument in arguments:
                 raise SruException(MANDATORY_PARAMETER_NOT_SUPPLIED, argument)
 
-        if not arguments['version'][0] == VERSION:
+        if not arguments['version'][0] in SUPPORTED_VERSIONS:
             raise SruException(UNSUPPORTED_VERSION, arguments['version'][0])
 
     def _validateCorrectEncoding(self, arguments):
@@ -194,8 +195,8 @@ class SruParser(Observable):
         except UnicodeDecodeError:
             raise SruException(UNSUPPORTED_PARAMETER_VALUE, "Parameters are not properly 'utf-8' encoded.")
 
-    def _explain(self, *args, **kwargs):
-        version = VERSION
+    def _explain(self, arguments):
+        version = arguments['version'][0]
         host = self._host
         port = self._port
         description = self._description
