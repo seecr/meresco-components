@@ -30,16 +30,16 @@
 from storage import HierarchicalStorage, Storage
 from itertools import ifilter
 
-def defaultSplit((id, partName)):
-    result = id.split(':',1)
-    if partName != None:
-        result += [partName]
+def defaultSplit((identifier, partname)):
+    result = identifier.split(':',1)
+    if partname != None:
+        result += [partname]
     return result
 
 def defaultJoin(parts):
-    id = ":".join(parts[:-1])
-    partName = parts[-1]
-    return id, partName
+    identifier = ":".join(parts[:-1])
+    partname = parts[-1]
+    return identifier, partname
 
 class StorageComponent(object):
     def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[], name=None):
@@ -65,38 +65,38 @@ class StorageComponent(object):
         finally:
             return sink.close()
 
-    def delete(self, id):
-        for partName in self._partsRemovedOnDelete:
-            self.deletePart(id, partName)
+    def delete(self, identifier):
+        for partname in self._partsRemovedOnDelete:
+            self.deletePart(identifier, partname)
 
-    def deletePart(self, id, partName):
-        if (id, partName) in self._storage:
-            self._storage.delete((id, partName))
+    def deletePart(self, identifier, partname):
+        if (identifier, partname) in self._storage:
+            self._storage.delete((identifier, partname))
 
-    def isAvailable(self, id, partName):
+    def isAvailable(self, identifier, partname):
         """returns (hasId, hasPartName)"""
-        if (id, partName) in self._storage:
+        if (identifier, partname) in self._storage:
             return True, True
-        elif (id, None) in self._storage:
+        elif (identifier, None) in self._storage:
             return True, False
         return False, False
 
-    def write(self, sink, id, partName):
-        stream = self._storage.getFile((id, partName))
+    def write(self, sink, identifier, partname):
+        stream = self._storage.getFile((identifier, partname))
         try:
             for line in stream:
                 sink.write(line)
         finally:
             stream.close()
 
-    def yieldRecord(self, id, partName):
-        stream = self._storage.getFile((id, partName))
+    def yieldRecord(self, identifier, partname):
+        stream = self._storage.getFile((identifier, partname))
         for data in stream:
             yield data
         stream.close()
 
-    def getStream(self, id, partName):
-        return self._storage.getFile((id, partName))
+    def getStream(self, identifier, partname):
+        return self._storage.getFile((identifier, partname))
 
     def _listIdentifiers(self, identifierPrefix=''):
         lastIdentifier = None
@@ -105,16 +105,16 @@ class StorageComponent(object):
                 yield identifier
                 lastIdentifier = identifier
 
-    def _listIdentifiersByPartName(self, partName, identifierPrefix=''):
-        for identifier, partname in self.glob((identifierPrefix, partName)):
+    def _listIdentifiersByPartName(self, partname, identifierPrefix=''):
+        for identifier, ignored in self.glob((identifierPrefix, partname)):
             yield identifier
 
-    def listIdentifiers(self, partName=None, identifierPrefix=''):
+    def listIdentifiers(self, partname=None, identifierPrefix=''):
         """Use an ifilter to hide the generator so it won't be consumed by compose"""
-        return ifilter(None, self._listIdentifiersByPartName(partName, identifierPrefix=identifierPrefix))
+        return ifilter(None, self._listIdentifiersByPartName(partname, identifierPrefix=identifierPrefix))
 
     def glob(self, (prefix, wantedPartname)):
-        def filterPrefixAndPart((identifier, partName)):
-            return identifier.startswith(prefix) and (wantedPartname == None or wantedPartname == partName)
+        def filterPrefixAndPart((identifier, partname)):
+            return identifier.startswith(prefix) and (wantedPartname == None or wantedPartname == partname)
 
         return ifilter(filterPrefixAndPart, self._storage.glob((prefix, wantedPartname)))
