@@ -30,7 +30,7 @@ from xml.sax.saxutils import escape as xmlEscape
 from meresco.core import Observable
 from meresco.components.http import utils as httputils
 
-from cqlparser import parseString, CQLParseException
+from cqlparser import parseString, CQLParseException, CQLTokenizerException
 
 from weightless import compose
 
@@ -138,6 +138,8 @@ class SruParser(Observable):
         try:
             parseString(query)
         except CQLParseException, e:
+            raise SruException(QUERY_FEATURE_UNSUPPORTED, str(e))
+        except CQLTokenizerException, e:
             raise SruException(QUERY_FEATURE_UNSUPPORTED, str(e))
         sruArgs['query'] = query
 
