@@ -1,0 +1,100 @@
+Changeset created on Mon Sep 20 17:06:44 CEST 2010 by Seek You Too
+
+Description: Delete incoming file before sending ack 
+
+    The Msgbox removes the original file before sending an ack 
+    to the client. This changesets fixed a bug when incoming files 
+    are removed when an ack is already send and the client overwrites
+    the previous request, which is later remove by the Msgbox
+
+Baseline version: meresco-components/workingsets/3.1.5-Edurep/version_6
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/meresco/components/msgbox/msgbox.py version_7/meresco/components/msgbox/msgbox.py
+--- version_6/meresco/components/msgbox/msgbox.py	2010-09-20 13:53:40.000000000 +0200
++++ version_7/meresco/components/msgbox/msgbox.py	2010-09-20 17:06:15.000000000 +0200
+@@ -105,6 +105,7 @@
+         self.processFile(event.name)
+ 
+     def processFile(self, filename):
++        needToAck = False
+         filepath = join(self._inDirectory, filename)
+         suspend = None
+         ackOrError = self._isAckOrError(filename)
+@@ -116,9 +117,8 @@
+         if suspend is None:
+             identifier = unescapeFilename(filename)
+             try:
+-                self.do.add(identifier=identifier, filedata=File(filepath)) # asyncdo !!
+-                if self._synchronous and not ackOrError:
+-                    self._ack(filename)
++                self.do.add(identifier=identifier, filedata=File(filepath))
++                needToAck = self._synchronous and not ackOrError
+             except (IOError, ValueError), e: #Java errors, like not valid RDF, must be ValueErrors and should be handled here.
+                 if type(e) == IOError and e.errno != 2:
+                     print_exc()
+@@ -133,8 +133,11 @@
+             suspend.throw(Exception(open(filepath).read()))
+         else:
+             suspend.resume()
+-        
++       
+         self._forgivingRemove(filepath)
++        if needToAck:
++            self._ack(filename)
++            
+         for suspendedidentifier, suspend in self._waiting:
+             if suspendedidentifier == identifier:
+                 self._waiting.remove((suspendedidentifier, suspend))
+@@ -159,6 +162,7 @@
+                     self._waiting.append((identifier, suspend))
+                     yield suspend
+                     suspend.getResult()
++            assert identifier not in self._suspended 
+             self._add(filename, filedata, **kwargs)
+             self._suspended[identifier] = suspend
+             yield suspend
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_6/test/msgbox/msgboxtest.py version_7/test/msgbox/msgboxtest.py
+--- version_6/test/msgbox/msgboxtest.py	2010-09-17 11:39:06.000000000 +0200
++++ version_7/test/msgbox/msgboxtest.py	2010-09-20 16:57:34.000000000 +0200
+@@ -275,11 +275,11 @@
+             self.fail(e)
+         self.assertTrue(isfile(join(self.outDirectory, "existed_but_being_replaced_with_newer_instance_by_other_process.ack")))
+ 
+-    def testRaiseErrorWhenOtherFailureThenNotExists(self):
++    def testRaiseErrorWhenOtherFailureThanNotExists(self):
+         self.createMsgbox()
+         try:
+             self.msgbox.processFile(self.tempdir)
+-            self.fail("Remove a directory should raise an error and not being ignored.")
++            self.fail("Remove a directory should raise an error and not be ignored.")
+         except OSError:
+             pass
+     
+@@ -500,10 +500,18 @@
+         self.assertEquals('add', calledMethod.name)
+         self.assertEquals(identifier + '.error', calledMethod.kwargs['identifier'])
+ 
+-    # helper methods
+-    def doubleStepper(self):
+-        self.reactor.step()
++    def testOriginalFileRemovedBeforeAckAndNotAfter(self):
++        self.createMsgbox()
++        fileExistsOnAck = []
++        def mockAck(filename):
++            filepath = join(self.msgbox._inDirectory, filename)
++            fileExistsOnAck.append(isfile(filepath))
++            open(filepath, 'w').write(DATA)
++        self.msgbox._ack = mockAck
++        self.moveInRecord('aName')
+         self.reactor.step()
++        self.assertEquals([False], fileExistsOnAck)
++        self.assertTrue(isfile(join(self.msgbox._inDirectory, 'aName')))
+ 
+     def createMsgbox(self, asynchronous=False):
+         self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory, asynchronous=asynchronous)
+@@ -516,4 +524,4 @@
+ 
+     def listfiles(self, directory):
+         return [f for f in listdir(directory) if isfile(join(directory, f))]
+-         
++        

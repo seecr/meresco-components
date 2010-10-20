@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -30,31 +31,34 @@ from os import rename, listdir, remove, makedirs, link
 from shutil import rmtree
 from traceback import format_exc, print_exc
 from sys import stderr
+from random import randint
+from tempfile import NamedTemporaryFile
 
 from meresco.core import Observable
 from cq2utils import DirectoryWatcher
 from weightless import Suspend
 from escaping import escapeFilename, unescapeFilename
 
+
 class Msgbox(Observable):
     """
-    Msgbox provides a file based messaging protocol: it receives incoming files and 
+    Msgbox provides a file based messaging protocol: it receives incoming files and
     supports a standardized mechanism for sending files.
 
     Msgbox monitors its inDirectory for files being moved into it. Each moved in file is
-    read and passed on to the observers of Msgbox using self.do.add(filepath=filepath). 
+    read and passed on to the observers of Msgbox using self.do.add(filepath=filepath).
     By default a Msgbox writes an acknowledgment (.ack) file to its outDirectory as
-    soon as the 'add' call returns. When an exception was raised an error (.error) 
+    soon as the 'add' call returns. When an exception was raised an error (.error)
     file is written instead, which contains the full traceback for the error.
-    
+
     To send a file, the Msgbox.add(filename, filedata) method can be used. It writes
-    the filedata to the file in a temporary directory and then moves it into the 
+    the filedata to the file in a temporary directory and then moves it into the
     outDirectory. Notice that this allows for another Msgbox instance to receive the
     file.
 
     An asynchronous Msgbox differs from the default synchronous Msgbox in that it doesn't
-    write the .ack file when the self.do.add call returns. Rather, an explicit 
-    acknowledgement (or error notification) is expected in the form of a request to 
+    write the .ack file when the self.do.add call returns. Rather, an explicit
+    acknowledgement (or error notification) is expected in the form of a request to
     send an acknowledgement (or error) file (by way of the previously
     described Msgbox.add method).
 
@@ -63,13 +67,13 @@ class Msgbox(Observable):
     The Msgbox intentionally only listens to move events. This avoids reading
     partial files that are still being written to. The move operation is atomic
     and makes sure that the events of putting something into the Msgbox and
-    reading it are serialized. NOTE: move files into the Msgbox's inDirectory 
+    reading it are serialized. NOTE: move files into the Msgbox's inDirectory
     only from the same file system to keep its atomicity property.
 
     When the system starts up, the Msgbox does not generate events for files that
     are already in the inDirectory. This avoids uncontrolled bursts.
     Instead, when there are still files in the inDirectory when the system is
-    restarted, either move them out and back in again or use the method 
+    restarted, either move them out and back in again or use the method
     processInDirectory() to generate events for existing files programmatically.
     """
 
@@ -89,6 +93,7 @@ class Msgbox(Observable):
         self._asynchronous = asynchronous
         self._reactor = reactor
         self._suspended = {}
+        self._waiting = []
 
     def observer_init(self):
         self.processInDirectory()
@@ -104,6 +109,7 @@ class Msgbox(Observable):
         self.processFile(event.name)
 
     def processFile(self, filename):
+        needToAck = False
         filepath = join(self._inDirectory, filename)
         suspend = None
         ackOrError = self._isAckOrError(filename)
@@ -111,86 +117,88 @@ class Msgbox(Observable):
             basename, extension = filename.rsplit('.', 1)
             identifier = unescapeFilename(basename)
             suspend = self._suspended.pop(identifier, None)
-            
-        if suspend is None:
+        if not suspend is None:
+            if extension == 'error':
+                suspend.throw(Exception(open(filepath).read()))
+            else:
+                suspend.resume()
+        else:
             identifier = unescapeFilename(filename)
             try:
-                self.do.add(identifier=identifier, filedata=File(filepath)) # asyncdo !!
-                if self._synchronous and not ackOrError:
-                    self._ack(filename)
-            except (IOError, ValueError), e: #Java errors, like not valid RDF, must be ValueErrors and should be handled here.
-                if type(e) == IOError and e.errno != 2:
+                self.do.add(identifier=identifier, filedata=File(filepath))
+                needToAck = self._synchronous and not ackOrError
+            except Exception, e:
+                if not self._impliesInputError(e):
                     print_exc()
                 if not ackOrError:
                     self._error(filename, format_exc())
-            except Exception: #All other exceptions should raise an error in the reactor. (When java errors are not Exceptions anymore)
-                print_exc()
-                if not ackOrError:
-                    self._error(filename, format_exc())
+        remove(filepath)
+        if needToAck:
+            self._ack(filename)
+        elif ackOrError:
+            for suspendedidentifier, suspend in self._waiting:
+                if suspendedidentifier == identifier:
+                    self._waiting.remove((suspendedidentifier, suspend))
+                    suspend.resume()
+                    break
 
-        elif extension == 'error':
-            suspend.throw(Exception(open(filepath).read()))
+    def add(self, identifier, filedata, **kwargs):
+        filename = escapeFilename(identifier)
+        outFilePath = join(self._outDirectory, filename)
+        if hasattr(filedata, 'read'):
+            tmpFilePath = self._tempFileName()
+            link(filedata.name, tmpFilePath)
         else:
-            suspend.resume()
-        
-        self._forgivingRemove(filepath)
+            tmpFilePath = self._writeTempFile(filedata)
+        if self._asynchronous:
+            suspend = Suspend()
+            while isfile(outFilePath) or identifier in self._suspended:
+                self._waiting.append((identifier, suspend))
+                yield suspend
+                suspend.getResult()
+            assert identifier not in self._suspended
+            self._suspended[identifier] = suspend
+            self._moveOrDitch(tmpFilePath, outFilePath)
+            yield suspend
+            suspend.getResult()
+        else:
+            self._moveOrDitch(tmpFilePath, outFilePath)
 
-    def _ack(self, filename):
-        self._add(filename + ".ack", "")
-
-    def _error(self, filename, errormessage):
-        self._add(filename + ".error", errormessage)
 
     def _isAckOrError(self, filename):
         return filename.endswith('.ack') or filename.endswith('.error')
 
-    def add(self, identifier, filedata, **kwargs):
-        filename = escapeFilename(identifier)
-        self._add(filename, filedata, **kwargs)
-        if self._asynchronous:
-            if identifier in self._suspended:
-                duplicateError = ValueError("Concurrent request for identical identifiers on Msgbox")
-                self._suspended[identifier].throw(duplicateError)
-                del self._suspended[identifier]
-                raise duplicateError
-            suspend = Suspend()
-            self._suspended[identifier] = suspend
-            yield suspend
-            suspend.getResult()
+    def _ack(self, filename):
+        self._atomicWrite(filename + ".ack", "")
 
-    def _add(self, filename, filedata, **kwargs):
-        """Adds a file to the outDirectory. 
-           'filedata' can be one of:
-           * a file object
-           * a file-like object
-           * a string with data
-        """
-        outFilepath = join(self._outDirectory, filename)
-        self._purge(outFilepath)
-        tmpFilePath = join(self._tmpDirectory, filename)
-        
+    def _error(self, filename, errormessage):
+        self._atomicWrite(filename + ".error", errormessage)
+
+    def _atomicWrite(self, name, data):
+        path = self._writeTempFile(data)
+        self._moveOrDitch(path, join(self._outDirectory, name))
+
+    def _writeTempFile(self, data):
+        tmpFilePath = self._tempFileName()
+        with open(tmpFilePath, 'w') as tmpFile:
+            tmpFile.write(data)
+        return tmpFilePath
+
+    def _tempFileName(self):
+        return join(self._tmpDirectory, str(randint(1, 2**48)))
+
+    def _moveOrDitch(self, src, dst):
         try:
-            if hasattr(filedata, 'read'):
-                link(filedata.name, tmpFilePath)
-            else:
-                with open(tmpFilePath, 'w') as tmpFile:
-                    tmpFile.write(filedata)
-            rename(tmpFilePath, outFilepath)
-        except:
-            self._forgivingRemove(tmpFilePath)
-            raise
+            rename(src, dst)
+        finally:
+            if isfile(src):
+                remove(src)
 
-    def _purge(self, filepath):
-        for ext in ('', '.ack', '.error'):
-            if isfile(filepath + ext):
-                self._forgivingRemove(filepath + ext)
+    def _impliesInputError(self, e):
+        # Input (Java) errors, like invalid RDF, must be ValueErrors.
+        return isinstance(e, ValueError) or \
+               (isinstance(e, IOError) and e.errno == 2)  # No such file or directory
 
-    def _forgivingRemove(self, filepath):
-        try:
-            remove(filepath)
-        except OSError, e:
-            if str(e) != "[Errno 2] No such file or directory: '%s'" % filepath:
-                raise
 
 class File(object):
     def __init__(self, path):
@@ -211,4 +219,3 @@ class File(object):
         while x:
             yield x
             x = f.read(4096)
-

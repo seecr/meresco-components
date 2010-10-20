@@ -1,0 +1,22 @@
+Changeset created on Thu Sep 30 16:54:58 CEST 2010 by Seek You Too
+
+Description: Check if identifier not in suspended before adding in Msgbox
+
+    Added a file to the Msgbox is only allowed when the previous file no longer exists 
+    and the identifier is not suspended anymore. This fixes a bug in the Msgbox which
+    will cause the server to crash.
+
+Baseline version: meresco-components/workingsets/3.3-Edurep/version_2
+
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_2/meresco/components/msgbox/msgbox.py version_3/meresco/components/msgbox/msgbox.py
+--- version_2/meresco/components/msgbox/msgbox.py	2010-09-21 18:55:09.000000000 +0200
++++ version_3/meresco/components/msgbox/msgbox.py	2010-09-30 16:54:15.000000000 +0200
+@@ -152,7 +152,7 @@
+             tmpFilePath = self._writeTempFile(filedata)
+         if self._asynchronous:
+             suspend = Suspend()
+-            while isfile(outFilePath):
++            while isfile(outFilePath) or identifier in self._suspended:
+                 self._waiting.append((identifier, suspend))
+                 yield suspend
+                 suspend.getResult()

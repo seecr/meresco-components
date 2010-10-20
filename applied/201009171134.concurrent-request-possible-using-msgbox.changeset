@@ -1,0 +1,219 @@
+Changeset created on Fri Sep 17 11:34:55 CEST 2010 by Seek You Too
+
+Description: Concurrent request possible using Msgbox 
+
+    While adding concurrent request to an asynchronous Msgbox, every second request will be waiting until the first is completly processed. 
+    Every other request about the same identifier will wait, all other request will be processed as excepted
+
+Baseline version: meresco-components/workingsets/3.1.5-Edurep/version_5
+
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_5/meresco/components/msgbox/msgbox.py version_6/meresco/components/msgbox/msgbox.py
+--- version_5/meresco/components/msgbox/msgbox.py	2010-09-16 14:37:55.000000000 +0200
++++ version_6/meresco/components/msgbox/msgbox.py	2010-09-17 11:33:21.000000000 +0200
+@@ -89,6 +89,7 @@
+         self._asynchronous = asynchronous
+         self._reactor = reactor
+         self._suspended = {}
++        self._waiting = []
+ 
+     def observer_init(self):
+         self.processInDirectory()
+@@ -134,6 +135,11 @@
+             suspend.resume()
+         
+         self._forgivingRemove(filepath)
++        for suspendedidentifier, suspend in self._waiting:
++            if suspendedidentifier == identifier:
++                self._waiting.remove((suspendedidentifier, suspend))
++                suspend.resume()
++                break
+ 
+     def _ack(self, filename):
+         self._add(filename + ".ack", "")
+@@ -146,17 +152,19 @@
+ 
+     def add(self, identifier, filedata, **kwargs):
+         filename = escapeFilename(identifier)
+-        self._add(filename, filedata, **kwargs)
+         if self._asynchronous:
+-            if identifier in self._suspended:
+-                duplicateError = ValueError("Concurrent request for identical identifiers on Msgbox")
+-                self._suspended[identifier].throw(duplicateError)
+-                del self._suspended[identifier]
+-                raise duplicateError
+             suspend = Suspend()
++            if identifier in self._suspended:
++                while identifier in self._suspended:
++                    self._waiting.append((identifier, suspend))
++                    yield suspend
++                    suspend.getResult()
++            self._add(filename, filedata, **kwargs)
+             self._suspended[identifier] = suspend
+             yield suspend
+             suspend.getResult()
++        else:
++            self._add(filename, filedata, **kwargs)
+ 
+     def _add(self, filename, filedata, **kwargs):
+         """Adds a file to the outDirectory. 
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_5/test/msgbox/msgboxtest.py version_6/test/msgbox/msgboxtest.py
+--- version_5/test/msgbox/msgboxtest.py	2010-09-16 14:37:53.000000000 +0200
++++ version_6/test/msgbox/msgboxtest.py	2010-09-17 11:33:22.000000000 +0200
+@@ -301,9 +301,12 @@
+         suspend = result.next()
+         suspend(myreactor, lambda: None)
+ 
+-        self.assertRaises(ValueError, self.msgbox.add('filename', 'data').next)
+-        self.assertRaises(ValueError, result.next)
+-        self.assertFalse('filename' in self.msgbox._suspended)
++        self.assertTrue('filename' in self.msgbox._suspended)
++        newResult = self.msgbox.add('filename', 'data2')
++        newResult.next()
++        self.assertEquals('data', open(join(self.msgbox._outDirectory, 'filename')).read())
++        self.assertTrue('filename' in self.msgbox._suspended)
++        self.assertTrue(1, len(self.msgbox._waiting))
+ 
+     def testAddAsynchronousYieldsSuspendAndReceivesAck(self):
+         self.createMsgbox(asynchronous=True)
+@@ -329,6 +332,93 @@
+ 
+         self.assertRaises(StopIteration, result.next)
+ 
++    def testAddTwoTimesAsynchronousYieldsSuspendAndReceivesAcks(self):
++        self.createMsgbox(asynchronous=True)
++        myreactor = CallTrace('reactor')
++        myreactor.returnValues['suspend'] = 'handle'
++
++        result = self.msgbox.add('filename', 'data')
++        
++        self.assertFalse(isfile(join(self.outDirectory, 'filename')))
++        suspend = result.next()
++        suspend(myreactor, lambda: None)
++        
++        result2 = self.msgbox.add('filename', 'data2')
++        suspend2 = result2.next()
++        suspend2(myreactor, lambda: None)
++
++        self.assertEquals('data', open(join(self.outDirectory, 'filename')).read())
++
++        self.assertEquals(['suspend', 'suspend'], [m.name for m in myreactor.calledMethods])
++       
++        self.moveInRecord('filename.ack', '')
++        self.assertTrue('filename' in self.msgbox._suspended)
++        self.assertTrue(1, len(self.msgbox._waiting))
++        self.reactor.step()
++        result2.next()
++        self.assertTrue('filename' in self.msgbox._suspended)
++        self.assertFalse(0, len(self.msgbox._waiting))
++        self.assertEquals('data2', open(join(self.outDirectory, 'filename')).read())
++
++        self.moveInRecord('filename.ack', '')
++        self.reactor.step()
++        self.assertFalse('filename' in self.msgbox._suspended)
++        
++        self.assertEquals(['suspend', 'suspend'], [m.name for m in myreactor.calledMethods])
++
++        self.assertRaises(StopIteration, result.next)
++        self.assertRaises(StopIteration, result2.next)
++
++    def testAddThreeTimesAsynchronousYieldsSuspendAndReceivesAcks(self):
++        self.createMsgbox(asynchronous=True)
++        myreactor = CallTrace('reactor')
++        myreactor.returnValues['suspend'] = 'handle'
++
++        result = self.msgbox.add('filename', 'data')
++        
++        self.assertFalse(isfile(join(self.outDirectory, 'filename')))
++        suspend = result.next()
++        suspend(myreactor, lambda: None)
++        
++        result2 = self.msgbox.add('filename', 'data2')
++        suspend2 = result2.next()
++        suspend2(myreactor, lambda: None)
++
++        result3 = self.msgbox.add('filename', 'data3')
++        suspend3 = result3.next()
++        suspend3(myreactor, lambda: None)
++        
++        self.assertEquals('data', open(join(self.outDirectory, 'filename')).read())
++
++        self.assertEquals(['suspend', 'suspend', 'suspend'], [m.name for m in myreactor.calledMethods])
++       
++        self.moveInRecord('filename.ack', '')
++        self.assertEquals(2, len(self.msgbox._waiting))
++        self.reactor.step()
++        result2.next()
++        self.assertTrue('filename' in self.msgbox._suspended)
++        self.assertEquals(1, len(self.msgbox._waiting))
++        self.assertEquals('data2', open(join(self.outDirectory, 'filename')).read())
++
++        self.moveInRecord('filename.ack', '')
++        self.reactor.step()
++        result3.next()
++        self.assertTrue('filename' in self.msgbox._suspended)
++        self.assertEquals(0, len(self.msgbox._waiting))
++        self.assertEquals('data3', open(join(self.outDirectory, 'filename')).read())
++
++        self.moveInRecord('filename.ack', '')
++        self.reactor.step()
++        self.assertFalse('filename' in self.msgbox._suspended)
++        
++        self.assertEquals(['suspend', 'suspend', 'suspend'], [m.name for m in myreactor.calledMethods])
++        self.assertEquals([], self.msgbox._waiting)
++        self.assertEquals({}, self.msgbox._suspended)
++        
++        self.assertRaises(StopIteration, result.next)
++        self.assertRaises(StopIteration, result2.next)
++        self.assertRaises(StopIteration, result3.next)
++
+     def testAddAsynchronousYieldsSuspendAndReceivesError(self):
+         self.createMsgbox(asynchronous=True)
+         myreactor = CallTrace('reactor')
+@@ -410,47 +500,6 @@
+         self.assertEquals('add', calledMethod.name)
+         self.assertEquals(identifier + '.error', calledMethod.kwargs['identifier'])
+ 
+-    def testOverwrittenInsertInProcessFile(self):
+-        self.createMsgbox()
+-        mockAddTrigger = []
+-        errorRaised = []
+-        ackCalled = []
+-        errorCalled = []
+-        def mockAdd(*args, **kwargs):
+-            mockAddTrigger.append(1)
+-            while len(mockAddTrigger) < 2:
+-                sleep(0.01)
+-            # Will crash the 2nd time ...
+-            try:
+-                open(join(self.inDirectory, filename)).close()
+-            except:
+-                errorRaised.append(1)
+-                raise
+-        def mockAck(*args, **kwargs):
+-            ackCalled.append(1)
+-        def mockError(*args, **kwargs):
+-            errorCalled.append(1)
+-        self.observer.methods["add"] = mockAdd
+-        self.msgbox._error = mockError
+-        self.msgbox._ack = mockAck
+-        filename = 'dejavu.txt'
+-        filedata = "something"
+-        
+-        reactorThread = Thread(None, self.doubleStepper, "reactor")
+-        reactorThread.start()
+-        
+-        # Move in first record, wait until in add call (mockAdd)
+-        self.moveInRecord(filename)
+-        while len(mockAddTrigger) < 1:
+-            sleep(0.01)
+-        self.moveInRecord(filename)
+-        # Moved in second file, first step can continue (That step may not remove the input file, because it's overwritten by the second move in)
+-        mockAddTrigger.append(2)
+-        reactorThread.join()
+-        self.assertEquals(1, len(errorRaised))
+-        self.assertEquals(1, len(ackCalled))
+-        self.assertEquals(1, len(errorCalled))
+-
+     # helper methods
+     def doubleStepper(self):
+         self.reactor.step()

@@ -26,7 +26,6 @@ from rfc822 import formatdate
 from time import mktime, gmtime, timezone
 from xml.sax.saxutils import escape as escapeXml
 from os.path import dirname, abspath, join
-from time import time
 
 from meresco.core import Observable
 from meresco.components.http import utils as httputils, FileServer
@@ -56,7 +55,6 @@ class Autocomplete(Observable):
             yield self._prefixSearch(arguments)
 
     def _prefixSearch(self, arguments):
-        t0 = time()
         fieldname = arguments['fieldname'][0]
         prefix = arguments['prefix'][0]
         label = None
@@ -73,7 +71,6 @@ class Autocomplete(Observable):
             escapedItem = escapeXml(item)
             yield """<item count="%s">%s</item>""" % (count, '%s=%s' % (label, escapedItem) if label else escapedItem)
         yield '</root>'
-        print "autocomplete -> prefixSearch", time()-t0
 
     def _javascript(self, filename, **kwargs):
         yield self._fileServer.handleRequest(path=filename, **kwargs)
