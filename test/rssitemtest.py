@@ -113,7 +113,7 @@ class RssItemTest(TestCase):
 </item>""", result)
 
 class MockStorage(object):
-    def getStream(self, id, partname):
+    def getStream(self, identifier, partname):
         if partname == 'part1':
             return StringIO('<dc><title>Title</title><description>Description</description></dc>')
         elif partname == 'part2':
