@@ -33,14 +33,14 @@ from meresco.components.http import IpFilter
 
 class IpFilterTest(TestCase):
 
-    def assertValidIp(self,  address, ipranges=[], ips=[]):
-        self._assertValidIp(address, ipranges, ips, passed=True)
+    def assertValidIp(self,  address, ipranges=[], ips=[], headers={}):
+        self._assertValidIp(address, ipranges, ips, headers, passed=True)
 
-    def assertInvalidIp(self,  address, ipranges=[], ips=[]):
-        self._assertValidIp(address, ipranges, ips, passed=False)
+    def assertInvalidIp(self,  address, ipranges=[], ips=[], headers={}):
+        self._assertValidIp(address, ipranges, ips, headers, passed=False)
 
 
-    def _assertValidIp(self, address, ipranges, ips, passed):
+    def _assertValidIp(self, address, ipranges, ips,headers, passed):
         self.observer = CallTrace('Observer')
 
         dna = be(
@@ -51,13 +51,41 @@ class IpFilterTest(TestCase):
             )
         )
 
-        list(dna.all.handleRequest(Client=(address,)))
+        list(dna.all.handleRequest(Client=(address,), Headers=headers))
         if passed:
             self.assertEquals(1, len(self.observer.calledMethods))
             self.assertEquals('handleRequest', self.observer.calledMethods[0].name)
             self.assertEquals((address,), self.observer.calledMethods[0].kwargs['Client'])
         else:
             self.assertEquals(0, len(self.observer.calledMethods))
+
+    def testIpfilterFakeIpHeaderForIntegrationTesting(self):
+        self.assertInvalidIp('127.0.0.1', ips=['192.168.1.1'])
+        self.assertInvalidIp('127.0.0.1', ips=['127.0.0.1'], headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'})
+        self.assertValidIp('127.0.0.1', ips=['192.168.1.1'], headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'})
+        self.assertInvalidIp('111.1.1.1', ips=['192.168.1.1'], headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'})
+
+    def testIpfilterFakeIpHeaderKwargsUnchanged(self):
+        observer = CallTrace()
+        ipf = IpFilter(allowedIps=['192.168.1.1'])
+
+        dna = be(
+            (Observable(),
+                (ipf,
+                    (observer,)
+                )
+            )
+        )
+
+        list(dna.all.handleRequest(Client=('127.0.0.1',), Headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'}))
+
+        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEquals((), observer.calledMethods[0].args)
+        self.assertEquals({
+            'Client': ('127.0.0.1',),
+            'Headers': {'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'}
+        }, observer.calledMethods[0].kwargs)
+
 
     def testFilterSingleIp(self):
         self.assertValidIp('192.168.1.0', ips=["192.168.1.0"])

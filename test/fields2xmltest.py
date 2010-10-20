@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -31,6 +32,8 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import Fields2XmlTx
 from meresco.components.fields2xml import Fields2XmlException, generateXml
 from amara.binderytools import bind_string
+from StringIO import StringIO
+from lxml.etree import parse
 
 class Fields2XmlTest(CQ2TestCase):
     def testOne(self):
@@ -44,11 +47,43 @@ class Fields2XmlTest(CQ2TestCase):
         transaction.do = transactionDo
         
         f = Fields2XmlTx(transaction, 'extra')
-
         f.addField('key.sub', 'value')
         f.commit()
 
-        self.assertEquals(['store'], [m.name for m in transactionDo.calledMethods])
+        self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
+        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
+
+    def testAddNotCalledWhenNoAddFields(self):
+        transaction = CallTrace('Transaction')
+        ctx = CallTrace('CTX')
+        tx = CallTrace('TX')
+        tx.locals = {'id': 'identifier'}
+        transaction.ctx = ctx
+        transaction.ctx.tx = tx
+        transactionDo = CallTrace('TransactionDo')
+        transaction.do = transactionDo
+        
+        f = Fields2XmlTx(transaction, 'extra')
+        f.commit()
+
+        self.assertEquals([], [m.name for m in transactionDo.calledMethods])
+    
+    def testSameAddFieldNotGeneratedTwoTimes(self):
+        transaction = CallTrace('Transaction')
+        ctx = CallTrace('CTX')
+        tx = CallTrace('TX')
+        tx.locals = {'id': 'identifier'}
+        transaction.ctx = ctx
+        transaction.ctx.tx = tx
+        transactionDo = CallTrace('TransactionDo')
+        transaction.do = transactionDo
+        
+        f = Fields2XmlTx(transaction, 'extra')
+        f.addField('key.sub', 'value')
+        f.addField('key.sub', 'value')
+        f.commit()
+
+        self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
         self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
 
     def testPartNameIsDefinedAtInitialization(self):
@@ -97,17 +132,17 @@ class Fields2XmlTest(CQ2TestCase):
     def testGenerateOneKeyXml(self):
         self.assertEquals('<key>value</key>', generateXml([('key','value')]))
 
+    def testGenerateOneKeyXml(self):
+        self.assertEquals('<key>value</key>', generateXml([('key','value')]))
+    
     def testGenerateOneSubKeyXml(self):
         self.assertEquals('<key><sub>value</sub></key>', generateXml([('key.sub','value')]))
    
-    def testGenerateTwoSubKeyXml(self):
-        self.assertEquals('<key><sub>value</sub><sub2>value2</sub2></key>', generateXml([('key.sub','value'), ('key.sub2','value2')]))
-
     def testGenerateOtherParentKeyXml(self):
         self.assertEquals('<a><b>value</b></a><c><d>value2</d></c>', generateXml([('a.b','value'), ('c.d','value2')]))
 
     def testGenerateXml(self):
-        self.assertEquals('<a><b><c><d>DDD</d><e>EEE</e></c><c>CCC</c><f>FFF</f><c><d>DDD</d></c></b></a>', generateXml([('a.b.c.d','DDD'), ('a.b.c.e','EEE'), ('a.b.c', 'CCC'),('a.b.f', 'FFF'), ('a.b.c.d', 'DDD')]))
+        self.assertEquals('<a><b><c><d>DDD</d></c></b></a><a><b><c><e>EEE</e></c></b></a><a><b><c>CCC</c></b></a><a><b><f>FFF</f></b></a><a><b><c><d>DDD</d></c></b></a>', generateXml([('a.b.c.d','DDD'), ('a.b.c.e','EEE'), ('a.b.c', 'CCC'),('a.b.f', 'FFF'), ('a.b.c.d', 'DDD')]))
 
     def testEscapeTagNamesAndValues(self):
         try:
@@ -118,4 +153,14 @@ class Fields2XmlTest(CQ2TestCase):
 
 
         self.assertEquals('<key>&lt;/tag&gt;</key>', generateXml([('key','</tag>')]))
-        
+
+    def testEscapeCorrectly(self):
+        fields = [
+               ( 'vuur.aap' , 'normal' ),
+               ( 'vuurboom.aap' , 'normal' ),
+            ]
+        x = '<root>%s</root>' % generateXml(fields)
+        self.assertEquals("<root><vuur><aap>normal</aap></vuur><vuurboom><aap>normal</aap></vuurboom></root>", x)
+
+
+

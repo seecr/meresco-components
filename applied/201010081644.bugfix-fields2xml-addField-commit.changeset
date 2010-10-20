@@ -1,0 +1,81 @@
+Changeset created on Fri Oct  8 16:44:06 CEST 2010 by Seek You Too
+
+Description: Fixed bugs in fields2xml
+
+    When deleting a record it has no fields. Because of that addField is not called and an self.any.add is not needed.
+    Also fixed that an key,value pair is not added twice
+
+Baseline version: meresco-components/workingsets/3.3-Edurep/version_5
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/meresco/components/fields2xml.py version_6/meresco/components/fields2xml.py
+--- version_5/meresco/components/fields2xml.py	2010-10-08 14:56:39.000000000 +0200
++++ version_6/meresco/components/fields2xml.py	2010-10-08 16:43:11.000000000 +0200
+@@ -47,9 +47,14 @@
+         self._namespace = namespace
+ 
+     def addField(self, name, value):
+-        self._fields.append((name,value))
++        try:
++            self._fields.index((name, value))
++        except ValueError:
++            self._fields.append((name, value))
+ 
+     def commit(self):
++        if not self._fields:
++            return
+         ns = self._namespace != None and ' xmlns="%s"' % self._namespace or ''
+         xml = '<%s%s>%s</%s>' % (self._partName, ns, generateXml(self._fields), self._partName)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_5/test/fields2xmltest.py version_6/test/fields2xmltest.py
+--- version_5/test/fields2xmltest.py	2010-10-07 15:22:49.000000000 +0200
++++ version_6/test/fields2xmltest.py	2010-10-08 16:43:11.000000000 +0200
+@@ -47,7 +47,39 @@
+         transaction.do = transactionDo
+         
+         f = Fields2XmlTx(transaction, 'extra')
++        f.addField('key.sub', 'value')
++        f.commit()
++
++        self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
++        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
++
++    def testAddNotCalledWhenNoAddFields(self):
++        transaction = CallTrace('Transaction')
++        ctx = CallTrace('CTX')
++        tx = CallTrace('TX')
++        tx.locals = {'id': 'identifier'}
++        transaction.ctx = ctx
++        transaction.ctx.tx = tx
++        transactionDo = CallTrace('TransactionDo')
++        transaction.do = transactionDo
++        
++        f = Fields2XmlTx(transaction, 'extra')
++        f.commit()
+ 
++        self.assertEquals([], [m.name for m in transactionDo.calledMethods])
++    
++    def testSameAddFieldNotGeneratedTwoTimes(self):
++        transaction = CallTrace('Transaction')
++        ctx = CallTrace('CTX')
++        tx = CallTrace('TX')
++        tx.locals = {'id': 'identifier'}
++        transaction.ctx = ctx
++        transaction.ctx.tx = tx
++        transactionDo = CallTrace('TransactionDo')
++        transaction.do = transactionDo
++        
++        f = Fields2XmlTx(transaction, 'extra')
++        f.addField('key.sub', 'value')
+         f.addField('key.sub', 'value')
+         f.commit()
+ 
+@@ -100,6 +132,9 @@
+     def testGenerateOneKeyXml(self):
+         self.assertEquals('<key>value</key>', generateXml([('key','value')]))
+ 
++    def testGenerateOneKeyXml(self):
++        self.assertEquals('<key>value</key>', generateXml([('key','value')]))
++    
+     def testGenerateOneSubKeyXml(self):
+         self.assertEquals('<key><sub>value</sub></key>', generateXml([('key.sub','value')]))
+    

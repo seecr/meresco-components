@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -46,42 +47,33 @@ class Fields2XmlTx(Observable):
         self._namespace = namespace
 
     def addField(self, name, value):
-        self._fields.append((name,value))
+        try:
+            self._fields.index((name, value))
+        except ValueError:
+            self._fields.append((name, value))
 
     def commit(self):
+        if not self._fields:
+            return
         ns = self._namespace != None and ' xmlns="%s"' % self._namespace or ''
         xml = '<%s%s>%s</%s>' % (self._partName, ns, generateXml(self._fields), self._partName)
 
         identifier = self._resourceManager.ctx.tx.locals['id']
-        self._resourceManager.do.store(identifier, self._partName, xml)
+        self._resourceManager.do.add(identifier, self._partName, xml)
 
 def splitName(name):
     result = name.split('.')
     return '//' + '/'.join(result[:-1]), result[-1]
 
 def _generateXml(fields):
-    currentPath = '//'
-    for name, value in fields:
-        for namePart in name.split('.'):
-            if not correctNameRe.match(namePart):
-                raise Fields2XmlException('Invalid name: "%s"' % name)
-
-        parentPath, tagName = splitName(name)
-        while parentPath != currentPath:
-            if currentPath in parentPath:
-                parentTagsToAdd = [tag for tag in parentPath[len(currentPath):].split('/') if tag]
-                for tag in parentTagsToAdd:
-                    yield '<%s>' % tag
-                currentPath = parentPath
-            else:
-                tag = currentPath.split('/')[-1]
-                currentPath = '/'.join(currentPath.split('/')[:-1])
-                yield '</%s>' % tag
-        yield '<%s>%s</%s>' % (tagName, escapeXml(value), tagName)
-    if currentPath != '//':
-        parentTagsToRemove = currentPath[len('//'):].split('/')
-        for tag in reversed(parentTagsToRemove):
-            yield '</%s>' % tag
+    for (key, value) in fields:
+        tags = key.split('.')
+        for tag in tags:
+            if not correctNameRe.match(tag):                                
+                raise Fields2XmlException('Invalid key: "%s"' % key)
+        yield ''.join("<%s>" % tag for tag in tags)
+        yield escapeXml(value)
+        yield ''.join("</%s>" % tag for tag in reversed(tags))
 
 def generateXml(fields):
     return ''.join(_generateXml(fields))

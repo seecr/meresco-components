@@ -35,8 +35,11 @@ class IpFilter(HandleRequestFilter):
         self._allowedIpRanges = [(self._convertToNumber(start), self._convertToNumber(end))
             for start,end in allowedIpRanges]
 
-    def _filter(self, Client, **kwargs):
+    def _filter(self, Client, Headers, **kwargs):
         ipaddress = Client[0] if Client != None else '0.0.0.0'
+        if 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
+            ipaddress = Headers['X-Meresco-Ipfilter-Fake-Ip']
+
         if ipaddress in self._allowedIps:
             return True
 
