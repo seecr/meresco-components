@@ -46,7 +46,7 @@ class Msgbox(Observable):
     supports a standardized mechanism for sending files.
 
     Msgbox monitors its inDirectory for files being moved into it. Each moved in file is
-    read and passed on to the observers of Msgbox using self.do.add(filepath=filepath).
+    read and passed on to the observers of Msgbox using self.do.add(filedata=<File>).
     By default a Msgbox writes an acknowledgment (.ack) file to its outDirectory as
     soon as the 'add' call returns. When an exception was raised an error (.error)
     file is written instead, which contains the full traceback for the error.

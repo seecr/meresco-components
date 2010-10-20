@@ -43,7 +43,7 @@ class UpdateAdapterTest(CQ2TestCase):
         adapter = UpdateAdapterToMsgbox()
         adapter.addObserver(self.msgbox)
         
-        list(adapter.add(identifier='identifier', filedata='data'))
+        list(adapter.add(identifier='identifier', partname='partname', data='data'))
         
         self.assertEquals('data', open(join(self.outdir, 'identifier.add')).read()) 
 
@@ -51,7 +51,7 @@ class UpdateAdapterTest(CQ2TestCase):
         adapter = UpdateAdapterToMsgbox()
         adapter.addObserver(self.msgbox)
         
-        list(adapter.delete('identifier'))
+        list(adapter.delete(identifier='identifier'))
         
         self.assertEquals('', open(join(self.outdir, 'identifier.delete')).read()) 
 
@@ -76,15 +76,17 @@ class UpdateAdapterTest(CQ2TestCase):
         self.msgbox.processFile('identifier.delete')
 
         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
-        self.assertEquals(('identifier',), observer.calledMethods[0].args)
+        self.assertEquals({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
+        self.assertEquals((), observer.calledMethods[0].args)
 
     def testMsgboxAndFromAdapterAdd(self):
         adapter = UpdateAdapterFromMsgbox()
         observer = CallTrace('observer')
-        processAddKwargs = []
-        def processAdd(identifier=None, partname=None, filedata=None):
-            processAddKwargs.append((identifier, partname, filedata.read()))
-        observer.methods['add'] = processAdd
+        addKwargs = {}
+        def addMethod(filedata, **kwargs):
+            addKwargs['filedata'] = filedata.read()
+            addKwargs.update(kwargs)
+        observer.methods['add'] = addMethod
         self.msgbox.addObserver(adapter)
         adapter.addObserver(observer)
         f = open(join(self.indir, 'identifier.add'), 'w')
@@ -94,6 +96,9 @@ class UpdateAdapterTest(CQ2TestCase):
         self.msgbox.processFile('identifier.add')
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals([('identifier', None, 'data')], processAddKwargs)
+        self.assertEquals('identifier', addKwargs['identifier'])
+        self.assertEquals(None, addKwargs['partname'])
+        self.assertEquals('data', addKwargs['filedata'])
+        self.assertEquals(3, len(addKwargs.items()))
 
 
