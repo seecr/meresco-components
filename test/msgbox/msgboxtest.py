@@ -35,6 +35,9 @@ from os import makedirs, rename, listdir, system, chmod, remove
 from lxml.etree import tostring
 from shutil import rmtree
 from stat import S_IXUSR, S_IRUSR, S_IWUSR
+from time import sleep
+
+from threading import Thread
 
 from meresco.components.msgbox import Msgbox
 from meresco.components.msgbox.msgbox import File
@@ -43,7 +46,7 @@ from meresco.components.msgbox.msgbox import File
 DATA = "<record/>"
 
 def failingAddMock(identifier=None, filedata=None):
-    result = 1/0
+    raise ValueError()
 
 class MsgboxTest(CQ2TestCase):
 
@@ -114,7 +117,7 @@ class MsgboxTest(CQ2TestCase):
         self.assertTrue(isfile(errorFile))
         errorMessage = open(errorFile).read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue(errorMessage.endswith("ZeroDivisionError: integer division or modulo by zero\n"), errorMessage)
+        self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
 
     def testErrorHandlingWithReactorStep(self):
         self.observer.add = failingAddMock
@@ -129,7 +132,7 @@ class MsgboxTest(CQ2TestCase):
         self.assertTrue(isfile(errorFile))
         errorMessage = open(errorFile).read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue(errorMessage.endswith("ZeroDivisionError: integer division or modulo by zero\n"), errorMessage)
+        self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
         self.assertTrue(self.msgbox._watcher in self.reactor._readers)
 
     def testCreateAsynchronousMsgbox(self):
@@ -163,7 +166,7 @@ class MsgboxTest(CQ2TestCase):
         self.assertTrue(isfile(errorFile))
         errorMessage = open(errorFile).read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue(errorMessage.endswith("ZeroDivisionError: integer division or modulo by zero\n"), errorMessage)
+        self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
         self.assertTrue(self.msgbox._watcher in self.reactor._readers)
     
     def testAck(self):
@@ -289,6 +292,19 @@ class MsgboxTest(CQ2TestCase):
         self.assertRaises(StopIteration, result.next)
         self.assertTrue(isfile(join(self.outDirectory, 'filename')))
 
+    def testSecondAddWhenFirstIsSuspended(self):
+        self.createMsgbox(asynchronous=True)
+        myreactor = CallTrace('reactor')
+        myreactor.returnValues['suspend'] = 'handle'
+
+        result = self.msgbox.add('filename', 'data')
+        suspend = result.next()
+        suspend(myreactor, lambda: None)
+
+        self.assertRaises(ValueError, self.msgbox.add('filename', 'data').next)
+        self.assertRaises(ValueError, result.next)
+        self.assertFalse('filename' in self.msgbox._suspended)
+
     def testAddAsynchronousYieldsSuspendAndReceivesAck(self):
         self.createMsgbox(asynchronous=True)
         myreactor = CallTrace('reactor')
@@ -305,7 +321,9 @@ class MsgboxTest(CQ2TestCase):
         self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
        
         self.moveInRecord('filename.ack', '')
+        self.assertTrue('filename' in self.msgbox._suspended)
         self.reactor.step()
+        self.assertFalse('filename' in self.msgbox._suspended)
 
         self.assertEquals(['suspend'], [m.name for m in myreactor.calledMethods])
 
@@ -392,8 +410,51 @@ class MsgboxTest(CQ2TestCase):
         self.assertEquals('add', calledMethod.name)
         self.assertEquals(identifier + '.error', calledMethod.kwargs['identifier'])
 
+    def testOverwrittenInsertInProcessFile(self):
+        self.createMsgbox()
+        mockAddTrigger = []
+        errorRaised = []
+        ackCalled = []
+        errorCalled = []
+        def mockAdd(*args, **kwargs):
+            mockAddTrigger.append(1)
+            while len(mockAddTrigger) < 2:
+                sleep(0.01)
+            # Will crash the 2nd time ...
+            try:
+                open(join(self.inDirectory, filename)).close()
+            except:
+                errorRaised.append(1)
+                raise
+        def mockAck(*args, **kwargs):
+            ackCalled.append(1)
+        def mockError(*args, **kwargs):
+            errorCalled.append(1)
+        self.observer.methods["add"] = mockAdd
+        self.msgbox._error = mockError
+        self.msgbox._ack = mockAck
+        filename = 'dejavu.txt'
+        filedata = "something"
+        
+        reactorThread = Thread(None, self.doubleStepper, "reactor")
+        reactorThread.start()
+        
+        # Move in first record, wait until in add call (mockAdd)
+        self.moveInRecord(filename)
+        while len(mockAddTrigger) < 1:
+            sleep(0.01)
+        self.moveInRecord(filename)
+        # Moved in second file, first step can continue (That step may not remove the input file, because it's overwritten by the second move in)
+        mockAddTrigger.append(2)
+        reactorThread.join()
+        self.assertEquals(1, len(errorRaised))
+        self.assertEquals(1, len(ackCalled))
+        self.assertEquals(1, len(errorCalled))
 
     # helper methods
+    def doubleStepper(self):
+        self.reactor.step()
+        self.reactor.step()
 
     def createMsgbox(self, asynchronous=False):
         self.msgbox = Msgbox(self.reactor, inDirectory=self.inDirectory, outDirectory=self.outDirectory, asynchronous=asynchronous)

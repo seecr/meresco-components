@@ -28,7 +28,7 @@ from __future__ import with_statement
 from os.path import join, isdir, isfile, basename, abspath
 from os import rename, listdir, remove, makedirs, link
 from shutil import rmtree
-from traceback import format_exc
+from traceback import format_exc, print_exc
 from sys import stderr
 
 from meresco.core import Observable
@@ -110,21 +110,29 @@ class Msgbox(Observable):
         if ackOrError:
             basename, extension = filename.rsplit('.', 1)
             identifier = unescapeFilename(basename)
-            suspend = self._suspended.get(identifier, None)
-        try:
-            if suspend is None:
-                identifier = unescapeFilename(filename)
+            suspend = self._suspended.pop(identifier, None)
+            
+        if suspend is None:
+            identifier = unescapeFilename(filename)
+            try:
                 self.do.add(identifier=identifier, filedata=File(filepath)) # asyncdo !!
                 if self._synchronous and not ackOrError:
                     self._ack(filename)
-            elif extension == 'error':
-                suspend.throw(Exception(open(filepath).read()))
-            else:
-                suspend.resume()
-        except Exception:
-            self._logError(format_exc())
-            if not ackOrError:
-                self._error(filename, format_exc())
+            except (IOError, ValueError), e: #Java errors, like not valid RDF, must be ValueErrors and should be handled here.
+                if type(e) == IOError and e.errno != 2:
+                    print_exc()
+                if not ackOrError:
+                    self._error(filename, format_exc())
+            except Exception: #All other exceptions should raise an error in the reactor. (When java errors are not Exceptions anymore)
+                print_exc()
+                if not ackOrError:
+                    self._error(filename, format_exc())
+
+        elif extension == 'error':
+            suspend.throw(Exception(open(filepath).read()))
+        else:
+            suspend.resume()
+        
         self._forgivingRemove(filepath)
 
     def _ack(self, filename):
@@ -136,18 +144,18 @@ class Msgbox(Observable):
     def _isAckOrError(self, filename):
         return filename.endswith('.ack') or filename.endswith('.error')
 
-    def _logError(self, errorMessage):
-        stderr.write(errorMessage)
-        stderr.flush()
-
     def add(self, identifier, filedata, **kwargs):
         filename = escapeFilename(identifier)
         self._add(filename, filedata, **kwargs)
         if self._asynchronous:
+            if identifier in self._suspended:
+                duplicateError = ValueError("Concurrent request for identical identifiers on Msgbox")
+                self._suspended[identifier].throw(duplicateError)
+                del self._suspended[identifier]
+                raise duplicateError
             suspend = Suspend()
             self._suspended[identifier] = suspend
             yield suspend
-            del self._suspended[identifier]
             suspend.getResult()
 
     def _add(self, filename, filedata, **kwargs):
