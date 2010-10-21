@@ -1,6 +1,107 @@
 CHANGELOG Meresco-Components
 ============================
 
+
+version: 3.4.2 -> 3.4.3
+date:    2010-10-12
+
+
+Kwargs improvement to use the new standard
+------------------------------------------
+Fixed some components to use the new style kwargs as used in meresco for add and
+delete calls. Upgraded the storagecomponent to use the new names 'identifier'
+and 'partname' as arguments.
+(2010-10-21, 3.4.3-Edurep)
+
+IpFilter component is now testable
+----------------------------------
+This changeset allows testing of configured IpFilter in a Meresco based server.
+With the setting of a special HTTP Header, the IpFilter component will fake the
+ip-address to be something else. The HTTP Header is
+"X-Meresco-Ipfilter-Fake-Ip". For security reasons this Header is only allowed
+from localhost.
+(2010-10-20, 3.3-Edurep)
+
+Fixed bugs in fields2xml
+------------------------
+When deleting a record it has no fields. Because of that addField is not called
+and an self.any.add is not needed. Also fixed that an key,value pair is not
+added twice
+(2010-10-08, 3.3-Edurep)
+
+Bugfix Fields2Xml for partly same keys
+--------------------------------------
+Fields2Xml generated invalid xml for keys that are partly the same, like
+'key.sub' and 'keyname.othersub', it generated xml that looked like
+<key><sub>data</sub><name><othersub>data</othersub></key>.
+
+This bug is solved with this changeset.
+(2010-10-07, 3.3-Edurep)
+
+Removed the timings of autocomplete.
+------------------------------------
+Removed the timings of autocomplete.
+(2010-10-07, 3.3-Edurep)
+
+WebRequestServer removed
+------------------------
+WebRequestServer is moved to meresco-oai.
+(2010-10-04, 3.3-Edurep)
+
+Check if identifier not in suspended before adding in Msgbox
+------------------------------------------------------------
+Added a file to the Msgbox is only allowed when the previous file no longer
+exists and the identifier is not suspended anymore. This fixes a bug in the
+Msgbox which will cause the server to crash.
+(2010-09-30, 3.3-Edurep)
+
+Add waits while file present in out directory + cleanups
+--------------------------------------------------------
+Writing file to outDirectory is suspended as long as that file already exists.
+'_purge' and '_forgivingRemove' were no longer necessary and therefore removed.
+Exception handling simplified.
+(2010-09-21, 3.1.5-Edurep)
+
+Delete incoming file before sending ack
+---------------------------------------
+The Msgbox removes the original file before sending an ack to the client. This
+changesets fixed a bug when incoming files are removed when an ack is already
+send and the client overwrites the previous request, which is later remove by
+the Msgbox
+(2010-09-20, 3.1.5-Edurep)
+
+Concurrent request possible using Msgbox
+----------------------------------------
+While adding concurrent request to an asynchronous Msgbox, every second request
+will be waiting until the first is completly processed. Every other request
+about the same identifier will wait, all other request will be processed as
+excepted
+(2010-09-17, 3.1.5-Edurep)
+
+Added optional recordIdentifier to sru repsonse
+-----------------------------------------------
+An sru query with version 2.1 will give an response with the recordIdentifier in
+the record as specified in sru 1.2
+(2010-09-15, 3.1.3-Edurep)
+
+Catching CQLTokenizerException from parseString
+-----------------------------------------------
+CQLTokenizerException raised from parseString is now converted to the
+appropriate SruException QUERY_FEATURE_UNSUPPORTED
+(2010-09-13, 3.1.3-Edurep)
+
+Fix for suspend bug in Msgbox
+-----------------------------
+Two concurrent request to the Msgbox can cause the suspend object to be used
+twice for different request. That results in a suspende directorywatcher which
+is never resumed. After this, the msgbox will not handle any more request and
+must be restarted. Now the suspend object is not known to the msgbox anymore,
+when it's used and therefore it cannot be used by another request at 'mostly'
+the same time.
+(2010-09-08, 3.1.3-Edurep-Bugfix)
+
+==============================================================================
+
 version: 3.4.2 -> 3.4.3
 date:    2010-10-12
 
