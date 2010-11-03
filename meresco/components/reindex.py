@@ -34,6 +34,7 @@ from lxml.etree import parse
 from StringIO import StringIO
 from os.path import isdir, join
 from os import makedirs, listdir, remove, rmdir
+from escaping import escapeFilename, unescapeFilename
 
 EMPTYDOC = parse(StringIO('<empty/>'))
 
@@ -74,7 +75,7 @@ class Reindex(Observable):
         identifiersFound = False
 
         for identifier in self.any.listIdentifiers(self._partName):
-            batch.append(identifier)
+            batch.append(escapeFilename(identifier))
             if len(batch) == batchSize:
                 identifiersFound = self._writeBatch(sessionDirectory, currentBatch, batch)
                 yield "#"
@@ -103,7 +104,7 @@ class Reindex(Observable):
 
         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
             try:
-                yield self.asyncdo.addDocumentPart(identifier=identifier, partname='ignoredName', lxmlNode=EMPTYDOC)
+                yield self.asyncdo.addDocumentPart(identifier=unescapeFilename(identifier), partname='ignoredName', lxmlNode=EMPTYDOC)
             except Exception, e:
                 yield '\n!error processing "%s": %s' % (identifier, str(e))
                 return

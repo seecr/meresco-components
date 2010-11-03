@@ -1,3 +1,4 @@
+# -*- coding=utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -67,7 +68,7 @@ class XmlXPathTest(CQ2TestCase):
             sys.stderr = sys.__stderr__
             msg = strm.getvalue()
             if msg:
-                self.assertEquals('../meresco/components/xmlpump.py:77: DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n', msg)
+                self.assertTrue('DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n' in msg, msg)
 
     def testSimpleXPath(self):
         self.createXmlXPath(['/root/path'], {})
@@ -80,6 +81,13 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEquals(1, len(method.args))
         self.assertEquals('een tekst', method.args[0])
         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+
+    def testSimpleXPathWithUnicodeChars(self):
+        self.createXmlXPath(['/root/text()'], {})
+
+        self.observable.do.test('een tekst', data='<root>&lt;tag&gt;t€xt&lt;/tag&gt;</root>')
+        method = self.observer.calledMethods[0]
+        self.assertEquals('<tag>t€xt</tag>', method.kwargs['lxmlNode'])
 
     def testElementInKwargs(self):
         self.createXmlXPath(['/root/path'], {})

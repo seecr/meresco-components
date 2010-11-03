@@ -32,7 +32,7 @@ from StringIO import StringIO
 from meresco.core.observable import Observable, be
 from cq2utils import CallTrace, CQ2TestCase
 from amara import binderytools
-from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult
+from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult, _ElementUnicodeResult
 
 from meresco.components import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 
@@ -75,6 +75,13 @@ class XmlPumpTest(CQ2TestCase):
         xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
         self.assertEquals('tag', xmlNode.localName)
         self.assertEquals('content', xmlNode.content.localName)
+
+    def testInflateWithElementUnicodeResult(self):
+        xmlString = _ElementUnicodeResult(u"""<tag><content>conténts</content></tag>""")
+        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
+
+        xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
+        self.assertEquals('conténts', str(xmlNode.content))
 
     def testDeflate(self):
         observable = be(

@@ -1,8 +1,35 @@
 CHANGELOG Meresco-Components
 ============================
 
+version: 3.4.4 -> 3.4.5
+date:    2010-11-03
 
-version: 3.4.2 -> 3.4.3
+
+Now also accept unicode from lxml 2
+-----------------------------------
+Lxml 2 has a different way of treating string or unicode results, the string
+results were already adapted to the lxml 2 way of presenting them. Now unicode
+results can be handled correctly as well.
+(2010-11-03, 3.4.4-Edurep)
+
+Duplicate field filtering removed
+---------------------------------
+Filtering of duplicate keys is removed. (Was introduced in 3.4.4) The generated
+XML will eventually create a LuceneDocument, the sequence of values is important
+for phrasequeries.
+(2010-10-27, 3.4.4-Edurep)
+
+Fixed an escaping bug in the reindex component
+----------------------------------------------
+The reindex components now escapes identifiers using escaping.escapeFilename. An
+identifier with a newline was not escaped and seen as a new record for the
+reindex component. This is now fixed with escaping the identifier from storage
+and unescaped when retrieving the record in the reindex process.
+(2010-10-26, 3.4.4-NED)
+
+==============================================================================
+
+version: 3.4.3 -> 3.4.4
 date:    2010-10-12
 
 

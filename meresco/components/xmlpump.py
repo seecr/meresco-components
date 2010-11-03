@@ -37,9 +37,10 @@ from re import compile
 from warnings import warn
 
 try:
-    from lxml.etree import _ElementStringResult
+    from lxml.etree import _ElementStringResult, _ElementUnicodeResult
 except:
     _ElementStringResult = str
+    _ElementUnicodeResult = unicode
 
 class Converter(Observable):
     def __init__(self, name=None, fromKwarg=None, toKwarg=None):
@@ -80,7 +81,8 @@ _Converter = _DeprecationWarningConverter
 
 xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
 def isXmlString(anObject):
-    return type(anObject) in [str, _ElementStringResult, unicode] and xmlStringRegexp.match(anObject)
+
+    return type(anObject) in [str, _ElementStringResult, unicode, _ElementUnicodeResult] and xmlStringRegexp.match(anObject)
 
 class XmlParseAmara(_Converter):
     def _canConvert(self, anObject):

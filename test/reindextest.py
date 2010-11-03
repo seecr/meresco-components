@@ -32,6 +32,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
 from meresco.core import be, Observable
 from lxml.etree import tostring
+from escaping import unescapeFilename, escapeFilename
 
 from os.path import join, isdir
 from os import listdir
@@ -202,4 +203,21 @@ class ReindexTest(CQ2TestCase):
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertTrue(str in result, result)
+    
+    def testBatchWithStrangeIdentifier(self):
+        identifier = unescapeFilename("newline%0A >")
+        storage = self.setupStorage([
+            dict(identifier=identifier, partname='part', data='data1'),
+        ])
+        reindex, observer = self.setupDna(storage)
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+
+        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+        result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+%s\n' % escapeFilename(identifier), '=batches left: 0'], result)
+
+        self.assertEquals(['addDocumentPart'], [m.name for m in observer.calledMethods])
+        self.assertEquals([identifier], [m.kwargs['identifier'] for m in observer.calledMethods])
+        self.assertEquals(['ignoredName'], [m.kwargs['partname'] for m in observer.calledMethods])
+        self.assertEquals(['<empty/>'], [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 

@@ -47,10 +47,7 @@ class Fields2XmlTx(Observable):
         self._namespace = namespace
 
     def addField(self, name, value):
-        try:
-            self._fields.index((name, value))
-        except ValueError:
-            self._fields.append((name, value))
+        self._fields.append((name, value))
 
     def commit(self):
         if not self._fields:

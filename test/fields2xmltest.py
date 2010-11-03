@@ -68,7 +68,7 @@ class Fields2XmlTest(CQ2TestCase):
 
         self.assertEquals([], [m.name for m in transactionDo.calledMethods])
     
-    def testSameAddFieldNotGeneratedTwoTimes(self):
+    def testSameAddFieldGeneratedTwoTimes(self):
         transaction = CallTrace('Transaction')
         ctx = CallTrace('CTX')
         tx = CallTrace('TX')
@@ -80,11 +80,18 @@ class Fields2XmlTest(CQ2TestCase):
         
         f = Fields2XmlTx(transaction, 'extra')
         f.addField('key.sub', 'value')
+        f.addField('key.sub', 'othervalue')
         f.addField('key.sub', 'value')
+        f.addField('key.sub', 'separatedbyvalue')
         f.commit()
 
         self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
-        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
+        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key><key><sub>othervalue</sub></key><key><sub>value</sub></key><key><sub>separatedbyvalue</sub></key></extra>'), transactionDo.calledMethods[0].args)
+
+        # Filtering of duplicate keys is removed. (Was introduced in 3.4.4)
+        # The generated XML will eventually create a LuceneDocument, the sequence of values is important
+        # for phrasequeries.
+
 
     def testPartNameIsDefinedAtInitialization(self):
         transaction = CallTrace('Transaction')

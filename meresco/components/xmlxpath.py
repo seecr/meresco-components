@@ -33,9 +33,10 @@ from StringIO import StringIO
 
 #HM: To support both lxml1.2 as 2.1
 try:
-    from lxml.etree import _ElementStringResult
+    from lxml.etree import _ElementStringResult, _ElementUnicodeResult
 except ImportError:
     _ElementStringResult = str 
+    _ElementUnicodeResult = unicode
 
 oftenUsedNamespaces = {
     'oai_dc': "http://www.openarchives.org/OAI/2.0/oai_dc/",
@@ -75,7 +76,7 @@ class XmlXPath(Observable):
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:
             for element in elementTree.xpath(xpath, namespaces=self._namespacesMap):
-                if type(element) in [_ElementStringResult, unicode]:
+                if type(element) in [_ElementStringResult, _ElementUnicodeResult]:
                     yield element
                 else:
                     yield ElementTree(element)

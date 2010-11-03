@@ -1,0 +1,57 @@
+Changeset created on Wed Oct 27 10:25:27 CEST 2010 by Seek You Too
+
+Description: Duplicate field filtering removed
+
+    Filtering of duplicate keys is removed. (Was introduced in 3.4.4) The
+    generated XML will eventually create a LuceneDocument, the sequence of
+    values is important for phrasequeries.
+
+Baseline version: meresco-components/workingsets/3.4.4-Edurep/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/fields2xml.py version_1/meresco/components/fields2xml.py
+--- version_0/meresco/components/fields2xml.py	2010-10-27 10:14:17.000000000 +0200
++++ version_1/meresco/components/fields2xml.py	2010-10-27 10:24:39.000000000 +0200
+@@ -47,10 +47,7 @@
+         self._namespace = namespace
+ 
+     def addField(self, name, value):
+-        try:
+-            self._fields.index((name, value))
+-        except ValueError:
+-            self._fields.append((name, value))
++        self._fields.append((name, value))
+ 
+     def commit(self):
+         if not self._fields:
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/fields2xmltest.py version_1/test/fields2xmltest.py
+--- version_0/test/fields2xmltest.py	2010-10-27 09:43:41.000000000 +0200
++++ version_1/test/fields2xmltest.py	2010-10-27 10:24:39.000000000 +0200
+@@ -68,7 +68,7 @@
+ 
+         self.assertEquals([], [m.name for m in transactionDo.calledMethods])
+     
+-    def testSameAddFieldNotGeneratedTwoTimes(self):
++    def testSameAddFieldGeneratedTwoTimes(self):
+         transaction = CallTrace('Transaction')
+         ctx = CallTrace('CTX')
+         tx = CallTrace('TX')
+@@ -80,11 +80,18 @@
+         
+         f = Fields2XmlTx(transaction, 'extra')
+         f.addField('key.sub', 'value')
++        f.addField('key.sub', 'othervalue')
+         f.addField('key.sub', 'value')
++        f.addField('key.sub', 'separatedbyvalue')
+         f.commit()
+ 
+         self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
+-        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
++        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key><key><sub>othervalue</sub></key><key><sub>value</sub></key><key><sub>separatedbyvalue</sub></key></extra>'), transactionDo.calledMethods[0].args)
++
++        # Filtering of duplicate keys is removed. (Was introduced in 3.4.4)
++        # The generated XML will eventually create a LuceneDocument, the sequence of values is important
++        # for phrasequeries.
++
+ 
+     def testPartNameIsDefinedAtInitialization(self):
+         transaction = CallTrace('Transaction')
