@@ -33,7 +33,7 @@ from merescocore.framework import be, Transparant
 from weightless import Reactor
 
 from os.path import join, isfile
-from os import makedirs, rename, listdir
+from os import makedirs, rename, listdir, remove
 from lxml.etree import tostring
 
 from merescocomponents.inbox import Inbox, InboxException
@@ -135,7 +135,42 @@ class InboxTest(CQ2TestCase):
         self.assertFalse(isfile(join(self.inboxDirectory, identifier+'.record')))
         self.assertTrue('Start tag expected' in open(errorFile).read())
 
+    def testFileDeletedBeforeHandling(self):
+        identifier = 'repository:record'
+        self.moveInRecord(identifier=identifier)
+        self.removeRecord(identifier=identifier)
+
+        self.reactor.step()
+        errorFile = join(self.doneDirectory, '%s.record.error' % identifier)
+        self.assertTrue(isfile(errorFile))
+
+        errorMessage = open(errorFile).read()
+        self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
+        self.assertTrue("IOError: [Errno 2] No such file or directory" in errorMessage, errorMessage)
+
+    def testFileDeleteWhileProcessing(self):
+        identifier = 'repository:record'
+
+        def mockedAddCall(identifier=None, name=None, lxmlNode=None):
+            identifierWithoutExtension = identifier[:-len('.record')]
+            self.removeRecord(identifierWithoutExtension)
+        self.observer.add = mockedAddCall
+
+        self.moveInRecord(identifier=identifier)
+        errorFile = join(self.doneDirectory, '%s.record.error' % identifier)
+        self.assertFalse(isfile(errorFile))
+        self.reactor.step()
+        self.assertTrue(isfile(errorFile))
+
+        errorMessage = open(errorFile).read()
+        self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
+        self.assertTrue("rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))" in errorMessage, errorMessage)
+        self.assertTrue("OSError: [Errno 2] No such file or directory" in errorMessage, errorMessage)
+
     def moveInRecord(self, identifier, data="<record/>"):
         filename = join(self.tempdir, identifier+".record")
         open(filename, 'w').write(data)
         rename(filename, join(self.inboxDirectory, identifier+".record"))
+
+    def removeRecord(self, identifier):
+        remove(join(self.inboxDirectory, identifier+".record"))

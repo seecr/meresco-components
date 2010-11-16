@@ -96,9 +96,14 @@ class Inbox(Observable):
         self.processFile(event.name)
 
     def processFile(self, filename):
+        errorFilename = join(self._doneDirectory, filename + ".error")
         try:
             lxmlNode = parse(open(join(self._inboxDirectory, filename)))
             self.do.add(identifier=filename, lxmlNode=lxmlNode)
         except Exception, e:
-            open(join(self._doneDirectory, filename + ".error"), 'w').write(format_exc(limit=7))
-        rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))
+            open(errorFilename, 'w').write(format_exc(limit=7))
+
+        try:
+            rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))
+        except Exception, e:
+            open(errorFilename, 'a').write(format_exc(limit=7))
