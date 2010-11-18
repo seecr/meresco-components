@@ -71,11 +71,18 @@ class Rss(Observable):
 
             maximumRecords = int(arguments.get('maximumRecords', [self._maximumRecords])[0])
             query = arguments.get('query', [''])[0]
+            filters = arguments.get('filter', [])
             startRecord = 1
 
             if not query:
                 raise SruMandatoryParameterNotSuppliedException("query")
             webquery = WebQuery(query, antiUnaryClause=self._antiUnaryClause)
+            for filter in filters:
+                if not ':' in filter:
+                    raise BadRequestException('Invalid filter: %s' % filter) 
+                field,term = filter.split(':', 1)
+                webquery.addFilter(field, term)
+
             cqlAbstractSyntaxTree = webquery.ast
         except (SruMandatoryParameterNotSuppliedException, BadRequestException, CQLParseException), e:
             yield '<title>ERROR %s</title>' % xmlEscape(self._title)
