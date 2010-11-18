@@ -1,14 +1,18 @@
-Changeset created on Thu Nov 18 11:54:09 CET 2010 by Seek You Too
+Changeset created on Thu Nov 18 15:04:01 CET 2010 by Seek You Too
 
-Description: Use WebQuery component to parse query for RSS 
+Description: RSS Component now uses WebQuery
 
-    The RSS component uses the WebQuery Component to parse queries, which enables support for 'google-like' and Boolean queries.
+    The RSS Component used to construct its own CQL-query.
+    To keep website query-construction and RSS query-construction in sync
+    WebQuery is now also used in the RSS Component.
+    Additionally filters, like drilldown, can be communicated by using
+    "filter" arguments the the http-request.
 
-Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.5-MWE/version_0
+Baseline version: meresco-components/workingsets/3.4.5-MWE/version_0
 
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/rss.py version_0-rss_use_webquery/meresco/components/rss.py
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/rss.py version_1/meresco/components/rss.py
 --- version_0/meresco/components/rss.py	2010-11-18 09:46:00.000000000 +0100
-+++ version_0-rss_use_webquery/meresco/components/rss.py	2010-11-18 11:15:29.000000000 +0100
++++ version_1/meresco/components/rss.py	2010-11-18 15:02:03.000000000 +0100
 @@ -38,7 +38,8 @@
  from meresco.components.sru.sruparser import SruMandatoryParameterNotSuppliedException
  from meresco.components.http import utils as httputils
@@ -33,19 +37,31 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
          self._sortKeys = sruArgs.get('sortKeys', None)
          self._maximumRecords = sruArgs.get('maximumRecords', 10)
  
-@@ -73,7 +75,8 @@
+@@ -69,11 +71,19 @@
+ 
+             maximumRecords = int(arguments.get('maximumRecords', [self._maximumRecords])[0])
+             query = arguments.get('query', [''])[0]
++            filters = arguments.get('filter', [])
+             startRecord = 1
  
              if not query:
                  raise SruMandatoryParameterNotSuppliedException("query")
 -            cqlAbstractSyntaxTree = parseCQL(query)
 +            webquery = WebQuery(query, antiUnaryClause=self._antiUnaryClause)
++            for filter in filters:
++                if not ':' in filter:
++                    raise BadRequestException('Invalid filter: %s' % filter) 
++                field,term = filter.split(':', 1)
++                webquery.addFilter(field, term)
++
 +            cqlAbstractSyntaxTree = webquery.ast
          except (SruMandatoryParameterNotSuppliedException, BadRequestException, CQLParseException), e:
              yield '<title>ERROR %s</title>' % xmlEscape(self._title)
              yield '<link>%s</link>' % xmlEscape(self._link)
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/rsstest.py version_0-rss_use_webquery/test/rsstest.py
+Binary files version_0/meresco/components/.rss.py.swp and version_1/meresco/components/.rss.py.swp differ
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/rsstest.py version_1/test/rsstest.py
 --- version_0/test/rsstest.py	2010-11-18 09:46:00.000000000 +0100
-+++ version_0-rss_use_webquery/test/rsstest.py	2010-11-18 11:15:01.000000000 +0100
++++ version_1/test/rsstest.py	2010-11-18 15:02:03.000000000 +0100
 @@ -94,16 +94,20 @@
          </item>""", result)
  
@@ -69,9 +85,9 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  
      def testErrorNoQuery(self):
          rss = Rss(
-@@ -167,3 +171,27 @@
+@@ -166,4 +170,47 @@
+         result = "".join(rss.handleRequest())
          self.assertTrue('Content-Type: application/rss+xml' in result, result)
- 
  
 +    def testWebQueryUsage(self):
 +        observer = CallTrace(
@@ -82,7 +98,6 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +
 +        result = "".join(rss.handleRequest(RequestURI='/?query=one+two'))
 +        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
-+
 +
 +    def testAntiUnaryClauseIsPassedToWebQuery(self):
 +        observer = CallTrace(
@@ -96,10 +111,31 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
 +        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
 +        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('antiunary'))), BOOLEAN('not'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('fiets'))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
 +
++    def testWebQueryUsesFilters(self):
++        observer = CallTrace(
++            returnValues={'executeCQL': (0, [])},
++            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
++        rss = Rss(title = 'Title', description = 'Description', link = 'Link')
++        rss.addObserver(observer)
 +
-diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/web/webquerytest.py version_0-rss_use_webquery/test/web/webquerytest.py
++        result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
++        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
++
++        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SCOPED_CLAUSE(SEARCH_CLAUSE(INDEX(TERM('field1')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value1'))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field2')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value2')))), BOOLEAN('and'), SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('one'))), BOOLEAN('and'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('two'))))))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
++
++    def testWebQueryIgnoresWrongFilters(self):
++        observer = CallTrace(
++            returnValues={'executeCQL': (0, [])},
++            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
++        rss = Rss(title = 'Title', description = 'Description', link = 'Link')
++        rss.addObserver(observer)
++
++        result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=invalid&filter='))
+ 
++        self.assertTrue("<description>An error occurred 'Invalid filter: invalid'</description>" in result, result)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/web/webquerytest.py version_1/test/web/webquerytest.py
 --- version_0/test/web/webquerytest.py	2010-11-18 09:45:59.000000000 +0100
-+++ version_0-rss_use_webquery/test/web/webquerytest.py	2010-11-18 10:16:54.000000000 +0100
++++ version_1/test/web/webquerytest.py	2010-11-18 15:02:03.000000000 +0100
 @@ -90,6 +90,7 @@
          self.assertBooleanQuery('antiunary exact true NOT (cats AND dogs)', 'NOT (cats AND dogs)')
          self.assertBooleanQuery('cheese OR (antiunary exact true NOT mice)', 'cheese OR (NOT mice)')
