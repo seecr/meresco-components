@@ -38,7 +38,8 @@ from meresco.core import Observable
 from meresco.components.sru.sruparser import SruMandatoryParameterNotSuppliedException
 from meresco.components.http import utils as httputils
 
-from cqlparser.cqlparser import parseString as parseCQL, CQLParseException
+from cqlparser.cqlparser import parseString as CQLParseException
+from meresco.components.web import WebQuery
 
 from weightless import compose
 
@@ -47,11 +48,12 @@ class BadRequestException(Exception):
 
 class Rss(Observable):
 
-    def __init__(self, title, description, link, **sruArgs):
+    def __init__(self, title, description, link, antiUnaryClause='', **sruArgs):
         Observable.__init__(self)
         self._title = title
         self._description = description
         self._link = link
+        self._antiUnaryClause = antiUnaryClause
         self._sortKeys = sruArgs.get('sortKeys', None)
         self._maximumRecords = sruArgs.get('maximumRecords', 10)
 
@@ -73,7 +75,8 @@ class Rss(Observable):
 
             if not query:
                 raise SruMandatoryParameterNotSuppliedException("query")
-            cqlAbstractSyntaxTree = parseCQL(query)
+            webquery = WebQuery(query, antiUnaryClause=self._antiUnaryClause)
+            cqlAbstractSyntaxTree = webquery.ast
         except (SruMandatoryParameterNotSuppliedException, BadRequestException, CQLParseException), e:
             yield '<title>ERROR %s</title>' % xmlEscape(self._title)
             yield '<link>%s</link>' % xmlEscape(self._link)

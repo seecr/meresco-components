@@ -90,6 +90,7 @@ class WebQueryTest(TestCase):
         self.assertBooleanQuery('antiunary exact true NOT (cats AND dogs)', 'NOT (cats AND dogs)')
         self.assertBooleanQuery('cheese OR (antiunary exact true NOT mice)', 'cheese OR (NOT mice)')
         self.assertBooleanQuery('"cat treat" AND "dog biscuit"', '"cat treat" and "dog biscuit"')
+        self.assertBooleanQuery('((fiets) AND (onderzoek)) AND meta.repository.collection exact hbokennisbank')
 
     def testFeelsLikePlusMinusQuery(self):
         self.assertFalse(_feelsLikePlusMinusQuery('cats OR dogs'))

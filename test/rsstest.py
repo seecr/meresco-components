@@ -94,16 +94,20 @@ class RssTest(CQ2TestCase):
         </item>""", result)
 
     def testError(self):
+        observer = CallTrace(
+            returnValues={'executeCQL': (0, [])},
+            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         rss = Rss(
             title = 'Test title',
             description = 'Test description',
             link = 'http://www.example.org',
         )
+        rss.addObserver(observer)
         result = "".join(list(rss.handleRequest(RequestURI='/?query=aQuery%29'))) #%29 == ')'
 
         xml = bind_string(result[result.index("<?xml"):])
-        self.assertEquals('ERROR Test title', str(xml.rss.channel.title))
-        self.assertTrue('''An error occurred 'Unexpected token after parsing''' in str(xml.rss.channel.description), str(xml.rss.channel.description))
+        self.assertEquals('Test title', str(xml.rss.channel.title))
+        self.assertFalse('''An error occurred 'Unexpected token after parsing''' in str(xml.rss.channel.description), str(xml.rss.channel.description))
 
     def testErrorNoQuery(self):
         rss = Rss(
@@ -165,5 +169,29 @@ class RssTest(CQ2TestCase):
 
         result = "".join(rss.handleRequest())
         self.assertTrue('Content-Type: application/rss+xml' in result, result)
+
+
+    def testWebQueryUsage(self):
+        observer = CallTrace(
+            returnValues={'executeCQL': (0, [])},
+            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        rss = Rss(title = 'Title', description = 'Description', link = 'Link')
+        rss.addObserver(observer)
+
+        result = "".join(rss.handleRequest(RequestURI='/?query=one+two'))
+        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+
+
+    def testAntiUnaryClauseIsPassedToWebQuery(self):
+        observer = CallTrace(
+            returnValues={'executeCQL': (0, [])},
+            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
+        rss.addObserver(observer)
+
+        result = "".join(rss.handleRequest(RequestURI='/?query=not+fiets'))
+        
+        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('antiunary'))), BOOLEAN('not'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('fiets'))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
 
 
