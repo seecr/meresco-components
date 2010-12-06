@@ -29,18 +29,108 @@
 
 #include "integerlist.h"
 #include <vector>
-#include <stdio.h>
 #include <errno.h>
 
-IntegerList* IntegerList_create(int n) {
-    return new IntegerList(n);
+
+/* ----------------------- C++ ---------------------------------------------*/
+
+
+template <typename T>
+class TypedIntegerList : public IntegerList {
+    private:
+        std::vector<T>* v;
+    public:
+        TypedIntegerList(int n) {
+            v = new std::vector<T>();
+            v->reserve(n);
+            for (int i=0; i < n; i++) {
+                v->push_back(i);
+            }
+        }
+        TypedIntegerList(TypedIntegerList<T>* integerList, int start, int stop) {
+            if (start < 0 || stop > integerList->size() || stop <= start) {
+                v = new std::vector<T>();
+            }
+            else {
+                v = new std::vector<T>(integerList->v->begin() + start, integerList->v->begin() + stop);
+            }
+        }
+        virtual ~TypedIntegerList() { delete v; }
+        virtual int size() { return v->size(); }
+        virtual uint64_t get(int index) {
+            if (index < 0) {
+                index = size() + index;
+            }
+            if (!use64bits()) {
+                return (signed) v->at(index);
+            }
+            return v->at(index);
+        }
+        virtual void append(uint64_t element) {
+            v->push_back((T) element);
+            size();
+        }
+        virtual void set(int index, uint64_t element) { v->at(index) = (T) element; }
+        virtual IntegerList* slice(int start, int stop, int step) {
+            return new TypedIntegerList<T>(this, start, stop);
+        }
+        virtual void delitems(int start, int stop) {
+            if (start >= 0 && stop <= v->size() && stop > start) {
+                v->erase(v->begin() + start, v->begin() + stop);
+            }
+        }
+        virtual int mergeFromOffset(int offset) {
+            for (typename std::vector<T>::iterator it=v->end()-1; it != v->begin()+offset-1; it--) {
+                if ((int) *it < 0) {
+                    v->erase(it);
+                }
+            }
+            return size() - offset;
+        }
+        virtual int save(char* filename, int offset, bool append) {
+            if (offset < 0 || (offset >= size() && size() > 0)) {
+                return -1;
+            }
+            FILE* fp = fopen(filename, append ? "ab" : "wb");
+            if (!fp) {
+                return errno;
+            }
+            if (size()-offset > 0) {
+                fwrite(&(v->at(offset)), sizeof(T), size() - offset, fp);
+            }
+            fclose(fp);
+            return 0;
+        }
+        virtual int extendFrom(char* filename) {
+            FILE* fp = fopen(filename, "r");
+            if (!fp) {
+                return errno;
+            }
+            while (!feof(fp)) {
+                T i;
+                if (fread(&i, sizeof(T), 1, fp) == 1) {
+                    v->push_back(i);
+                }
+            }
+            fclose(fp);
+            return 0;
+        }
+        bool use64bits() { return sizeof(T) == sizeof(uint64_t); }
+};
+
+
+/* ----------------------- C -----------------------------------------------*/
+
+
+IntegerList* IntegerList_create(int n, bool use64bits) {
+    return use64bits ? (IntegerList*) new TypedIntegerList<uint64_t>(n) : (IntegerList*) new TypedIntegerList<uint32_t>(n);
 }
 
 void IntegerList_delete(IntegerList* iList) {
     delete iList;
 }
 
-void IntegerList_append(IntegerList* iList, guint32 element) {
+void IntegerList_append(IntegerList* iList, uint64_t element) {
     iList->append(element);
 }
 
@@ -48,105 +138,32 @@ int IntegerList_size(IntegerList *iList) {
     return iList->size();
 }
 
-guint32 IntegerList_get(IntegerList *iList, int index) {
-    if (index < 0) {
-        index = iList->size() + index;
-    }
-    return iList->at(index);
+uint64_t IntegerList_get(IntegerList *iList, int index) {
+    return iList->get(index);
 }
 
-void IntegerList_set(IntegerList *iList, int index, guint32 value) {
-    iList->at(index) = value;
+void IntegerList_set(IntegerList *iList, int index, uint64_t value) {
+    iList->set(index, value);
 }
 
 IntegerList* IntegerList_slice(IntegerList *iList, int start, int stop, int step) {
     return iList->slice(start, stop, step);
 }
 
-void IntegerList_delitems(IntegerList* list, int start, int stop) {
-    list->erase(list->begin()+start, list->begin()+stop);
+void IntegerList_delitems(IntegerList* iList, int start, int stop) {
+    iList->delitems(start, stop);
 }
 
 int IntegerList_mergeFromOffset(IntegerList *iList, int offset) {
     return iList->mergeFromOffset(offset);
 }
 
-int IntegerList_save(IntegerList* list, char* filename, int offset) {
-    return list->save(filename, offset);
+int IntegerList_save(IntegerList* iList, char* filename, int offset, bool append) {
+    return iList->save(filename, offset, append);
 }
 
-int IntegerList_extendFrom(IntegerList* list, char* filename) {
-    return list->extendFrom(filename);
-}
-
-int IntegerList_extendTo(IntegerList* list, char* filename) {
-    return list->extendTo(filename);
+int IntegerList_extendFrom(IntegerList* iList, char* filename) {
+    return iList->extendFrom(filename);
 }
 
 
-/* ----------------------- C++ ---------------------------------------------*/
-
-IntegerList::IntegerList(int n) : std::vector<guint32>() {
-    reserve(n);
-    for ( int i=0; i < n; i++ ) {
-        push_back(i);
-    }
-}
-
-void IntegerList::append(guint32 element) {
-    push_back(element);
-}
-
-IntegerList* IntegerList::slice(int start, int stop, int step) {
-    return new IntegerList(begin()+start, begin()+stop);
-}
-
-int IntegerList::mergeFromOffset(int offset) {
-    for(std::vector<guint32>::iterator it=end()-1; it != begin()+offset-1; it--) {
-        if ((int)*it < 0) {
-            erase(it);
-        }
-    }
-    return size() - offset;
-}
-
-int IntegerList::save(char* filename, int offset) {
-    if ( offset < 0 || (offset >= size() && size() > 0) ) {
-        return -1;
-    }
-    FILE* fp = fopen(filename, "wb");
-    if ( !fp ) {
-        return errno;
-    }
-    if ( size()-offset > 0 ) {
-        fwrite(&at(offset), sizeof(guint32), size()-offset, fp);
-    }
-    fclose(fp);
-    return 0;
-}
-
-int IntegerList::extendFrom(char* filename) {
-    FILE* fp = fopen(filename, "r");
-    if ( !fp ) {
-        return errno;
-    }
-    while ( ! feof(fp) ) {
-        guint32 i;
-        if ( fread(&i, sizeof(guint32), 1, fp) == 1)
-            push_back(i);
-    }
-    fclose(fp);
-    return 0;
-}
-
-int IntegerList::extendTo(char* filename) {
-    FILE* fp = fopen(filename, "a");
-    if ( !fp ) {
-        return errno;
-    }
-    if ( size() > 0 ) {
-        fwrite(&at(0), sizeof(guint32), size(), fp);
-    }
-    fclose(fp);
-    return 0;
-}

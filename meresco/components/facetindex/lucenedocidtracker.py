@@ -70,7 +70,7 @@ class SegmentInfo(object):
         return l
 
     def saveDeleted(self):
-        self._deleted.extendTo(self._filename)
+        self._deleted.save(self._filename, append=True)
         self._deleted = IntegerList()
 
 

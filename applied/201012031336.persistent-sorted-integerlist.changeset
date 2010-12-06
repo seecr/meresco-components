@@ -1,0 +1,1510 @@
+Changeset created on Fri Dec  3 13:36:01 CET 2010 by Seek You Too
+
+Description: Introduced PersistentSortedIntegerList as a faster replacement for SortedFileList 
+
+    Introduced PersistentSortedIntegerList that adds transparant persistency for an IntegerList, which was extended to also support 64 bit integers. The persistency mechanism was designed to be faster than the existing SortedFileList, especially for deletes.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.4-Edurep/version_2
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/facetindex/_docset.cpp version_3/meresco/components/facetindex/_docset.cpp
+--- version_2/meresco/components/facetindex/_docset.cpp	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/facetindex/_docset.cpp	2010-12-03 13:35:36.000000000 +0100
+@@ -287,7 +287,7 @@
+         return;
+     }
+     for (DocSet::iterator it = begin(); it < end(); it++) {
+-        (*it) = (*mapping)[*it];
++        (*it) = mapping->get(*it);
+     }
+ }
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/facetindex/_docsetlist.cpp version_3/meresco/components/facetindex/_docsetlist.cpp
+--- version_2/meresco/components/facetindex/_docsetlist.cpp	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/facetindex/_docsetlist.cpp	2010-12-03 13:35:36.000000000 +0100
+@@ -369,11 +369,11 @@
+ CardinalityList* DocSetList::filterByPrefix(char* prefix, guint32 maxResults) {
+     CardinalityList* results = new CardinalityList();
+ 
+-    IntegerList* docSetFws = IntegerList_create(0);
++    IntegerList* docSetFws = IntegerList_create(0, false);
+     dictionary.valuesForPrefix(prefix, maxResults, docSetFws);
+ 
+-    for (IntegerList::iterator it = docSetFws->begin(); it < docSetFws->end(); it++) {
+-        fwPtr docset =  {0, (*it)};
++    for (int i=0; i<docSetFws->size(); i++) {
++        fwPtr docset = {0, docSetFws->get(i)};
+         cardinality_t cardinality = {getTermForDocset(pDS(docset)), pDS(docset)->size()};
+         results->push_back(cardinality);
+     }
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/facetindex/_integerlist.cpp version_3/meresco/components/facetindex/_integerlist.cpp
+--- version_2/meresco/components/facetindex/_integerlist.cpp	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/facetindex/_integerlist.cpp	2010-12-03 13:35:36.000000000 +0100
+@@ -29,18 +29,108 @@
+ 
+ #include "integerlist.h"
+ #include <vector>
+-#include <stdio.h>
+ #include <errno.h>
+ 
+-IntegerList* IntegerList_create(int n) {
+-    return new IntegerList(n);
++
++/* ----------------------- C++ ---------------------------------------------*/
++
++
++template <typename T>
++class TypedIntegerList : public IntegerList {
++    private:
++        std::vector<T>* v;
++    public:
++        TypedIntegerList(int n) {
++            v = new std::vector<T>();
++            v->reserve(n);
++            for (int i=0; i < n; i++) {
++                v->push_back(i);
++            }
++        }
++        TypedIntegerList(TypedIntegerList<T>* integerList, int start, int stop) {
++            if (start < 0 || stop > integerList->size() || stop <= start) {
++                v = new std::vector<T>();
++            }
++            else {
++                v = new std::vector<T>(integerList->v->begin() + start, integerList->v->begin() + stop);
++            }
++        }
++        virtual ~TypedIntegerList() { delete v; }
++        virtual int size() { return v->size(); }
++        virtual uint64_t get(int index) {
++            if (index < 0) {
++                index = size() + index;
++            }
++            if (!use64bits()) {
++                return (signed) v->at(index);
++            }
++            return v->at(index);
++        }
++        virtual void append(uint64_t element) {
++            v->push_back((T) element);
++            size();
++        }
++        virtual void set(int index, uint64_t element) { v->at(index) = (T) element; }
++        virtual IntegerList* slice(int start, int stop, int step) {
++            return new TypedIntegerList<T>(this, start, stop);
++        }
++        virtual void delitems(int start, int stop) {
++            if (start >= 0 && stop <= v->size() && stop > start) {
++                v->erase(v->begin() + start, v->begin() + stop);
++            }
++        }
++        virtual int mergeFromOffset(int offset) {
++            for (typename std::vector<T>::iterator it=v->end()-1; it != v->begin()+offset-1; it--) {
++                if ((int) *it < 0) {
++                    v->erase(it);
++                }
++            }
++            return size() - offset;
++        }
++        virtual int save(char* filename, int offset, bool append) {
++            if (offset < 0 || (offset >= size() && size() > 0)) {
++                return -1;
++            }
++            FILE* fp = fopen(filename, append ? "ab" : "wb");
++            if (!fp) {
++                return errno;
++            }
++            if (size()-offset > 0) {
++                fwrite(&(v->at(offset)), sizeof(T), size() - offset, fp);
++            }
++            fclose(fp);
++            return 0;
++        }
++        virtual int extendFrom(char* filename) {
++            FILE* fp = fopen(filename, "r");
++            if (!fp) {
++                return errno;
++            }
++            while (!feof(fp)) {
++                T i;
++                if (fread(&i, sizeof(T), 1, fp) == 1) {
++                    v->push_back(i);
++                }
++            }
++            fclose(fp);
++            return 0;
++        }
++        bool use64bits() { return sizeof(T) == sizeof(uint64_t); }
++};
++
++
++/* ----------------------- C -----------------------------------------------*/
++
++
++IntegerList* IntegerList_create(int n, bool use64bits) {
++    return use64bits ? (IntegerList*) new TypedIntegerList<uint64_t>(n) : (IntegerList*) new TypedIntegerList<uint32_t>(n);
+ }
+ 
+ void IntegerList_delete(IntegerList* iList) {
+     delete iList;
+ }
+ 
+-void IntegerList_append(IntegerList* iList, guint32 element) {
++void IntegerList_append(IntegerList* iList, uint64_t element) {
+     iList->append(element);
+ }
+ 
+@@ -48,105 +138,32 @@
+     return iList->size();
+ }
+ 
+-guint32 IntegerList_get(IntegerList *iList, int index) {
+-    if (index < 0) {
+-        index = iList->size() + index;
+-    }
+-    return iList->at(index);
++uint64_t IntegerList_get(IntegerList *iList, int index) {
++    return iList->get(index);
+ }
+ 
+-void IntegerList_set(IntegerList *iList, int index, guint32 value) {
+-    iList->at(index) = value;
++void IntegerList_set(IntegerList *iList, int index, uint64_t value) {
++    iList->set(index, value);
+ }
+ 
+ IntegerList* IntegerList_slice(IntegerList *iList, int start, int stop, int step) {
+     return iList->slice(start, stop, step);
+ }
+ 
+-void IntegerList_delitems(IntegerList* list, int start, int stop) {
+-    list->erase(list->begin()+start, list->begin()+stop);
++void IntegerList_delitems(IntegerList* iList, int start, int stop) {
++    iList->delitems(start, stop);
+ }
+ 
+ int IntegerList_mergeFromOffset(IntegerList *iList, int offset) {
+     return iList->mergeFromOffset(offset);
+ }
+ 
+-int IntegerList_save(IntegerList* list, char* filename, int offset) {
+-    return list->save(filename, offset);
++int IntegerList_save(IntegerList* iList, char* filename, int offset, bool append) {
++    return iList->save(filename, offset, append);
+ }
+ 
+-int IntegerList_extendFrom(IntegerList* list, char* filename) {
+-    return list->extendFrom(filename);
+-}
+-
+-int IntegerList_extendTo(IntegerList* list, char* filename) {
+-    return list->extendTo(filename);
++int IntegerList_extendFrom(IntegerList* iList, char* filename) {
++    return iList->extendFrom(filename);
+ }
+ 
+ 
+-/* ----------------------- C++ ---------------------------------------------*/
+-
+-IntegerList::IntegerList(int n) : std::vector<guint32>() {
+-    reserve(n);
+-    for ( int i=0; i < n; i++ ) {
+-        push_back(i);
+-    }
+-}
+-
+-void IntegerList::append(guint32 element) {
+-    push_back(element);
+-}
+-
+-IntegerList* IntegerList::slice(int start, int stop, int step) {
+-    return new IntegerList(begin()+start, begin()+stop);
+-}
+-
+-int IntegerList::mergeFromOffset(int offset) {
+-    for(std::vector<guint32>::iterator it=end()-1; it != begin()+offset-1; it--) {
+-        if ((int)*it < 0) {
+-            erase(it);
+-        }
+-    }
+-    return size() - offset;
+-}
+-
+-int IntegerList::save(char* filename, int offset) {
+-    if ( offset < 0 || (offset >= size() && size() > 0) ) {
+-        return -1;
+-    }
+-    FILE* fp = fopen(filename, "wb");
+-    if ( !fp ) {
+-        return errno;
+-    }
+-    if ( size()-offset > 0 ) {
+-        fwrite(&at(offset), sizeof(guint32), size()-offset, fp);
+-    }
+-    fclose(fp);
+-    return 0;
+-}
+-
+-int IntegerList::extendFrom(char* filename) {
+-    FILE* fp = fopen(filename, "r");
+-    if ( !fp ) {
+-        return errno;
+-    }
+-    while ( ! feof(fp) ) {
+-        guint32 i;
+-        if ( fread(&i, sizeof(guint32), 1, fp) == 1)
+-            push_back(i);
+-    }
+-    fclose(fp);
+-    return 0;
+-}
+-
+-int IntegerList::extendTo(char* filename) {
+-    FILE* fp = fopen(filename, "a");
+-    if ( !fp ) {
+-        return errno;
+-    }
+-    if ( size() > 0 ) {
+-        fwrite(&at(0), sizeof(guint32), size(), fp);
+-    }
+-    fclose(fp);
+-    return 0;
+-}
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/facetindex/integerlist.h version_3/meresco/components/facetindex/integerlist.h
+--- version_2/meresco/components/facetindex/integerlist.h	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/facetindex/integerlist.h	2010-12-03 13:35:36.000000000 +0100
+@@ -26,38 +26,40 @@
+  *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  *
+  * end license */
+-#include <vector>
+ 
+-#include <glib.h>
++#include <vector>
++#include <stdio.h>
++#include <stdint.h>
+ 
+ #ifndef __integerlist_h__
+ #define __integerlist_h__
+ 
+-class IntegerList : public std::vector<guint32> {
++class IntegerList {
+     public:
+-        IntegerList(int n);
+-        IntegerList(std::vector<guint32>::iterator first, std::vector<guint32>::iterator last) : std::vector<guint32>(first, last) {}
+-        void append(guint32);
+-        IntegerList* slice(int, int, int);
+-        int mergeFromOffset(int);
+-        int save(char* filename, int offset);
+-        int extendFrom(char* filename);
+-        int extendTo(char* filename);
++        virtual ~IntegerList() {};
++        virtual int size() = 0;
++        virtual uint64_t get(int index) = 0;
++        virtual void append(uint64_t element) = 0;
++        virtual void set(int index, uint64_t value) = 0;
++        virtual IntegerList* slice(int start, int stop, int step) = 0;
++        virtual void delitems(int start, int stop) = 0;
++        virtual int mergeFromOffset(int offset) = 0;
++        virtual int save(char* filename, int offset, bool append) = 0;
++        virtual int extendFrom(char* filename) = 0;
+ };
+ 
+ extern "C" {
+-    IntegerList*    IntegerList_create               (int n);
++    IntegerList*    IntegerList_create               (int n, bool use64bits);
+     void            IntegerList_delete               (IntegerList*);
+-    void            IntegerList_append               (IntegerList*, guint32);
++    void            IntegerList_append               (IntegerList*, uint64_t);
+     int             IntegerList_size                 (IntegerList*);
+-    guint32         IntegerList_get                  (IntegerList*, int);
+-    void            IntegerList_set                  (IntegerList*, int, guint32);
++    uint64_t        IntegerList_get                  (IntegerList*, int);
++    void            IntegerList_set                  (IntegerList*, int, uint64_t);
+     IntegerList*    IntegerList_slice                (IntegerList*, int, int, int);
+     void            IntegerList_delitems             (IntegerList* list, int start, int stop);
+     int             IntegerList_mergeFromOffset      (IntegerList* list, int);
+-    int             IntegerList_save                 (IntegerList* list, char* filename, int offset);
++    int             IntegerList_save                 (IntegerList* list, char* filename, int offset, bool append);
+     int             IntegerList_extendFrom           (IntegerList* list, char* filename);
+-    int             IntegerList_extendTo             (IntegerList* list, char* filename);
+ }
+ 
+ #endif
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/facetindex/integerlist.py version_3/meresco/components/facetindex/integerlist.py
+--- version_2/meresco/components/facetindex/integerlist.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/facetindex/integerlist.py	2010-12-03 13:35:36.000000000 +0100
+@@ -29,13 +29,13 @@
+ ## end license ##
+ 
+ from sys import maxint
+-from ctypes import c_uint32, c_int32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
++from ctypes import c_uint64, c_int64, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
+ from libfacetindex import libFacetIndex
+ 
+ INTEGERLIST = POINTER(None)
+ 
+ IntegerList_create = libFacetIndex.IntegerList_create
+-IntegerList_create.argtypes = [c_int]
++IntegerList_create.argtypes = [c_int, c_int]
+ IntegerList_create.restype = INTEGERLIST
+ 
+ IntegerList_delete = libFacetIndex.IntegerList_delete
+@@ -43,7 +43,7 @@
+ IntegerList_delete.restype = None
+ 
+ IntegerList_append = libFacetIndex.IntegerList_append
+-IntegerList_append.argtypes = [INTEGERLIST, c_uint32]
++IntegerList_append.argtypes = [INTEGERLIST, c_uint64]
+ IntegerList_append.restype = None
+ 
+ IntegerList_size = libFacetIndex.IntegerList_size
+@@ -51,11 +51,11 @@
+ IntegerList_size.restype = c_int
+ 
+ IntegerList_get = libFacetIndex.IntegerList_get
+-IntegerList_get.argtypes = [INTEGERLIST, c_uint32]
+-IntegerList_get.restype = c_int32
++IntegerList_get.argtypes = [INTEGERLIST, c_uint64]
++IntegerList_get.restype = c_int64
+ 
+ IntegerList_set = libFacetIndex.IntegerList_set
+-IntegerList_set.argtypes = [INTEGERLIST, c_int, c_uint32]
++IntegerList_set.argtypes = [INTEGERLIST, c_int, c_uint64]
+ IntegerList_set.restype = None
+ 
+ IntegerList_delitems = libFacetIndex.IntegerList_delitems
+@@ -71,24 +71,20 @@
+ IntegerList_mergeFromOffset.restype = c_int
+ 
+ IntegerList_save = libFacetIndex.IntegerList_save
+-IntegerList_save.argtypes = [INTEGERLIST, c_char_p, c_int]
++IntegerList_save.argtypes = [INTEGERLIST, c_char_p, c_int, c_int]
+ IntegerList_save.restype = c_int
+ 
+ IntegerList_extendFrom = libFacetIndex.IntegerList_extendFrom
+ IntegerList_extendFrom.argtypes = [INTEGERLIST, c_char_p]
+ IntegerList_extendFrom.restype = c_int
+ 
+-IntegerList_extendTo = libFacetIndex.IntegerList_extendTo
+-IntegerList_extendTo.argtypes = [INTEGERLIST, c_char_p]
+-IntegerList_extendTo.restype = c_int
+ 
+ class IntegerList(object):
+-
+-    def __init__(self, size=0, cobj=None):
++    def __init__(self, size=0, cobj=None, use64bits=False):
+         if cobj:
+             self._cobj = cobj
+         else:
+-            self._cobj = IntegerList_create(size)
++            self._cobj = IntegerList_create(size, use64bits)
+         self._as_parameter_ = self._cobj
+ 
+     def __del__(self):
+@@ -98,27 +94,43 @@
+         return IntegerList_size(self)
+ 
+     def __getitem__(self, i):
+-        length = len(self)
+         if type(i) == slice:
+-            start = i.start if i.start else 0
+-            step = i.step if i.step else 1
+-            stop = i.stop if i.stop else length
+-            if start < 0:
+-                start = length - -start
++            start, stop, step = self._parseSlice(i)
+             islice = IntegerList_slice(self, start, stop, step)
+-            return list(IntegerList(cobj=islice))
++            l = list(IntegerList(cobj=islice))
++            if step != 1:
++                l = l[::step]
++            return l
++        length = len(self)
+         if i >= length or -i > length:
+             raise IndexError(i)
+         return IntegerList_get(self, i)
+ 
+     def __delitem__(self, i):
+         if type(i) == slice:
+-            start = i.start if i.start else 0
+-            stop = i.stop if i.stop else len(self)
++            start, stop, step = self._parseSlice(i)
+             IntegerList_delitems(self, start, stop)
+         else:
++            length = len(self)
++            if i < 0:
++                i = length - -i
++            if i >= length or i < 0:
++                raise IndexError("list assignment index out of range")
+             IntegerList_delitems(self, i, i+1)
+ 
++    def _parseSlice(self, slice):
++        length = len(self)
++        start = slice.start if not slice.start is None else 0
++        step = slice.step if not slice.step is None else 1
++        stop = slice.stop if not slice.stop is None else length
++        if start < 0:
++            start = max(length - -start, 0)
++        if stop < 0:
++            stop = length - -stop
++        if stop > length:
++            stop = length
++        return start, stop, step
++        
+     def __setitem__(self, index, value):
+         IntegerList_set(self, index, value)
+ 
+@@ -148,8 +160,8 @@
+     def getCObject(self):
+         return self._cobj
+ 
+-    def save(self, filename, offset=0):
+-        errno = IntegerList_save(self, filename, offset)
++    def save(self, filename, offset=0, append=False):
++        errno = IntegerList_save(self, filename, offset, append)
+         if errno == -1:
+             raise IndexError("Invalid index: %d [0..%d)" % (offset, len(self)))
+         if errno:
+@@ -160,7 +172,3 @@
+         if errno:
+             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
+ 
+-    def extendTo(self, filename):
+-        errno = IntegerList_extendTo(self, filename)
+-        if errno:
+-            raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/facetindex/lucenedocidtracker.py version_3/meresco/components/facetindex/lucenedocidtracker.py
+--- version_2/meresco/components/facetindex/lucenedocidtracker.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/facetindex/lucenedocidtracker.py	2010-12-03 13:35:36.000000000 +0100
+@@ -70,7 +70,7 @@
+         return l
+ 
+     def saveDeleted(self):
+-        self._deleted.extendTo(self._filename)
++        self._deleted.save(self._filename, append=True)
+         self._deleted = IntegerList()
+ 
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/filelist.py version_3/meresco/components/filelist.py
+--- version_2/meresco/components/filelist.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/filelist.py	2010-12-03 13:35:36.000000000 +0100
+@@ -38,9 +38,9 @@
+         self._filename = filename
+         self._packer = packer
+         isfile(filename) or open(self._filename, 'w')
+-        self._length = stat(self._filename).st_size/self._packer.length
+         if initialContent != None:
+             self._writeInitialContent(initialContent)
++        self._length = stat(self._filename).st_size / self._packer.length
+         self._file = open(self._filename, 'ab+')
+ 
+     def append(self, item):
+@@ -76,14 +76,13 @@
+         return FileListSeq(self, *_sliceWithinRange(aSlice, len(self)))
+ 
+     def _writeInitialContent(self, initialContent):
+-        with open(self._filename+'~', 'wb') as self._file:
+-            self._length = 0
++        with open(self._filename+'~', 'wb') as f:
+             for item in initialContent:
+-                self._append(item)
+-        rename(self._filename+'~',self._filename)
++                f.write(self._packer.pack(item))
++            f.flush()
++        rename(self._filename+'~', self._filename)
+ 
+     def _append(self, item):
+-        self._file.seek(self._length * self._packer.length)
+         self._file.write(self._packer.pack(item))
+         self._file.flush()
+         self._length += 1
+@@ -114,8 +113,11 @@
+         return self._list[index]
+ 
+     def __iter__(self):
+-        for i in xrange(len(self)):
+-            yield self[i]
++        for p, item in enumerate(self._list):
++            position = bisect_left(self._tempDeletedIndexes, p)
++            if (position < len(self._tempDeletedIndexes) and p == self._tempDeletedIndexes[position]):
++                continue
++            yield item
+         
+     def __contains__(self, item):
+         return self._position(item) > -1
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/__init__.py version_3/meresco/components/__init__.py
+--- version_2/meresco/components/__init__.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/meresco/components/__init__.py	2010-12-03 13:35:36.000000000 +0100
+@@ -54,5 +54,6 @@
+ from statisticsxml import StatisticsXml
+ from requestscope import RequestScope
+ from filelist import SortedFileList, FileList
++from persistentsortedintegerlist import PersistentSortedIntegerList
+ from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
+ from inbox import Inbox
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/meresco/components/persistentsortedintegerlist.py version_3/meresco/components/persistentsortedintegerlist.py
+--- version_2/meresco/components/persistentsortedintegerlist.py	1970-01-01 01:00:00.000000000 +0100
++++ version_3/meresco/components/persistentsortedintegerlist.py	2010-12-03 13:35:36.000000000 +0100
+@@ -0,0 +1,119 @@
++# -*- coding: utf-8 -*-
++## begin license ##
++#
++#    Meresco Components are components to build searchengines, repositories
++#    and archives, based on Meresco Core.
++#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from os import remove, rename
++from os.path import isfile
++from bisect import bisect_left
++
++from facetindex.integerlist import IntegerList
++
++
++class PersistentSortedIntegerList(object):
++    def __init__(self, filepath, use64bits=False, mergeTrigger=100):
++        self._filepath = filepath
++        self._deletesFilepath = filepath + '.deleted'
++        self._use64bits = use64bits
++        self._mergeTrigger = mergeTrigger
++        self._cleanupInCaseOfCrashDuringMerge()
++        self._iList = IntegerList(0, use64bits=use64bits)
++        self._deletesList = IntegerList(0, use64bits=True)
++        if isfile(self._filepath):
++            self._iList.extendFrom(self._filepath)
++        if isfile(self._deletesFilepath):
++            self._deletesList.extendFrom(self._deletesFilepath)
++            for position in self._deletesList:
++                del self._iList[position]
++            self._merge()
++
++    def __len__(self):
++        return self._iList.__len__()
++
++    def __iter__(self):
++        return self._iList.__iter__()
++
++    def __contains__(self, element):
++        return self._position(element) != -1
++
++    def __getitem__(self, index):
++        return self._iList.__getitem__(index)
++
++    def append(self, element):
++        size = len(self)
++        if size > 0 and element <= self[-1]:
++            raise ValueError("list.append(%d): expected value to be greater than %d" % (element, self[-1]))
++        self._iList.append(element)
++        self._save(self._iList, self._filepath, offset=size, append=True)
++    
++    def remove(self, element):
++        position = self._position(element)
++        if position == -1:
++            raise ValueError('list.remove(%s): %s not in list' % (element, element))
++        del self._iList[position]
++        self._deletesList.append(position)
++        self._save(self._deletesList, self._deletesFilepath, offset=len(self._deletesList) - 1, append=True)
++        if len(self._deletesList) >= self._mergeTrigger:
++            self._merge()
++
++    def index(self, item):
++        position = self._position(item)
++        if position == -1:
++            raise ValueError('list.index(%s): %s not in list' % (item, item))
++        return position
++
++    def _merge(self):
++        self._rename(self._filepath, self._filepath + '.current')
++        self._rename(self._deletesFilepath, self._deletesFilepath + '.current')
++        self._save(self._iList, self._filepath + '.new', offset=0, append=False)
++        self._rename(self._filepath + '.new', self._filepath)
++        self._remove(self._filepath + '.current')
++        self._remove(self._deletesFilepath + '.current')
++        self._deletesList = IntegerList(0, use64bits=True)
++
++    def _cleanupInCaseOfCrashDuringMerge(self):
++        if isfile(self._filepath + '.new'):
++            self._remove(self._filepath + '.new')
++        if isfile(self._filepath + '.current'):
++            if isfile(self._deletesFilepath + '.current'):
++                self._rename(self._deletesFilepath + '.current', self._deletesFilepath)
++            self._rename(self._filepath + '.current', self._filepath)
++        elif isfile(self._deletesFilepath + '.current'):
++            self._remove(self._deletesFilepath + '.current')
++
++    def _position(self, element):
++        position = bisect_left(self._iList, element)
++        if (position < len(self) and element == self[position]):
++            return position
++        return -1
++
++    def _save(self, list, filepath, offset, append):
++        list.save(filepath, offset=offset, append=append)
++
++    def _rename(self, fromPath, toPath):
++        rename(fromPath, toPath)
++
++    def _remove(self, filepath):
++        remove(filepath)
++
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/test/_alltests.py version_3/test/_alltests.py
+--- version_2/test/_alltests.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/test/_alltests.py	2010-12-03 13:35:36.000000000 +0100
+@@ -54,6 +54,7 @@
+ from logobservertest import LogObserverTest
+ from packertest import PackerTest
+ from parsecqltest import ParseCQLTest
++from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
+ from reindextest import ReindexTest
+ from renamecqlindextest import RenameCqlIndexTest
+ from requestscopetest import RequestScopeTest
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/test/facetindex/integerlisttest.py version_3/test/facetindex/integerlisttest.py
+--- version_2/test/facetindex/integerlisttest.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/test/facetindex/integerlisttest.py	2010-12-03 13:35:36.000000000 +0100
+@@ -27,13 +27,15 @@
+ #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ #
+ ## end license ##
++
+ from cq2utils import CQ2TestCase
+ from time import time
++from os import getpid, remove
++from os.path import join, isfile
+ 
+ from meresco.components.facetindex import IntegerList
+ 
+ class IntegerListTest(CQ2TestCase):
+-
+     def testConstruct(self):
+         l = IntegerList()
+         self.assertEquals(0, len(l))
+@@ -41,213 +43,294 @@
+         self.assertEquals(10, len(l))
+         self.assertEquals([0,1,2,3,4,5,6,7,8,9], list(l))
+ 
++    def testConstruct64(self):
++        l = IntegerList(use64bits=True)
++        self.assertEquals(0, len(l))
++        l = IntegerList(10, use64bits=True)
++        self.assertEquals(10, len(l))
++        self.assertEquals([0,1,2,3,4,5,6,7,8,9], list(l))
++
+     def testAppend(self):
+-        l = IntegerList()
+-        l.append(4)
+-        self.assertEquals([4], list(l))
+-        l.append(8)
+-        self.assertEquals([4,8], list(l))
++        for l in [IntegerList(), IntegerList(use64bits=True)]:
++            l.append(4)
++            self.assertEquals([4], list(l))
++            l.append(8)
++            self.assertEquals([4,8], list(l))
+ 
+     def testLen(self):
+-        l = IntegerList()
+-        self.assertEquals(0, len(l))
+-
+-        l.append(1)
+-        self.assertEquals(1, len(l))
++        for l in [IntegerList(), IntegerList(use64bits=True)]:
++            self.assertEquals(0, len(l))
++            l.append(1)
++            self.assertEquals(1, len(l))
+ 
+     def testIndex(self):
+-        l = IntegerList(100)
+-
+-        self.assertEquals(0, l[0])
+-        self.assertEquals(66, l[66])
+-        self.assertEquals(99, l[-1])
+-        self.assertEquals(98, l[-2])
+-        self.assertEquals(90, l[-10])
++        for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
++            self.assertEquals(0, l[0])
++            self.assertEquals(66, l[66])
++            self.assertEquals(99, l[-1])
++            self.assertEquals(98, l[-2])
++            self.assertEquals(90, l[-10])
+ 
+     def testSlicing(self):
+-        l = IntegerList(100)
+-        self.assertEquals([0,1], l[:2])
+-        self.assertEquals([1,2,3,4], l[1:5])
+-        self.assertEquals([98, 99], l[98:])
+-        self.assertEquals([98, 99], l[-2:])
++        for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
++            self.assertEquals([0,1], l[:2])
++            self.assertEquals([1,2,3,4], l[1:5])
++            self.assertEquals([98, 99], l[98:])
++            self.assertEquals([98, 99], l[-2:])
++
++            self.assertEquals([98], l[-2:99])
++            self.assertEquals([], l[98:2])
++            self.assertEquals([0], l[-200:1])
++            self.assertEquals(range(99), l[-200:-1])
++            self.assertEquals(range(100), l[-200:200])
++            self.assertEquals([], l[0:0])
++            self.assertEquals(range(100), l[:])
++            self.assertEquals(range(99, -1, -1), l[::-1])
+ 
+     def testCopySlice(self):
+-        l = IntegerList(100)
+-        m = l[:]
+-        self.assertEquals(100, len(m))
++        for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
++            m = l[:]
++            self.assertEquals(100, len(m))
+ 
+     def testExtend(self):
+-        l = IntegerList()
+-        l.extend([1,2])
+-        self.assertEquals(2, len(l))
+-        self.assertEquals([1,2], list(l))
+-
+-        l.extend([3,4])
+-        self.assertEquals(4, len(l))
+-        self.assertEquals([1,2,3,4], list(l))
++        for l in [IntegerList(), IntegerList(use64bits=True)]:
++            l.extend([1,2])
++            self.assertEquals(2, len(l))
++            self.assertEquals([1,2], list(l))
++            l.extend([3,4])
++            self.assertEquals(4, len(l))
++            self.assertEquals([1,2,3,4], list(l))
+ 
+     def testDel(self):
+-        l = IntegerList()
+-        l.extend([1,2])
+-        del l[0]
+-        self.assertEquals(1, len(l))
+-        self.assertEquals([2], list(l))
++        for use64bits in [False, True]:
++            l = IntegerList(use64bits=use64bits)
++            try:
++                del l[0]
++                self.fail()
++            except IndexError, e:
++                self.assertEquals("list assignment index out of range", str(e))
++            l.extend([1,2])
++            del l[0]
++            self.assertEquals(1, len(l))
++            self.assertEquals([2], list(l))
++            try:
++                del l[1]
++                self.fail()
++            except IndexError, e:
++                self.assertEquals("list assignment index out of range", str(e))
++            del l[-1]
++            self.assertEquals([], list(l))
+ 
+     def testDelSlice(self):
+-        l = IntegerList(10)
+-        del l[5:]
+-        self.assertEquals([0,1,2,3,4], list(l))
++        for use64bits in [False, True]:
++            l = IntegerList(use64bits=use64bits)
++            del l[0:]
++            l = IntegerList(10, use64bits=use64bits)
++            del l[5:]
++            self.assertEquals([0,1,2,3,4], list(l))
++            del l[6:]
++            self.assertEquals([0,1,2,3,4], list(l))
+ 
+     def testEquality(self):
+         l1 = IntegerList(10)
+         l2 = IntegerList(10)
+         self.assertEquals(l1, l2)
++        l3 = IntegerList(10, use64bits=True)
++        self.assertEquals(l1, l3)
+ 
+     def testCopy(self):
+-        l = IntegerList(5)
+-        copy = l.copy()
+-        self.assertEquals([0,1,2,3,4], list(l))
+-        self.assertEquals(5, len(copy))
+-        self.assertEquals([0,1,2,3,4], list(copy))
+-        l.append(9)
+-        copy.append(7)
+-        self.assertEquals([0,1,2,3,4, 9], list(l))
+-        self.assertEquals([0,1,2,3,4, 7], list(copy))
++        for l in [IntegerList(5), IntegerList(5, use64bits=True)]:
++            copy = l.copy()
++            self.assertEquals([0,1,2,3,4], list(l))
++            self.assertEquals(5, len(copy))
++            self.assertEquals([0,1,2,3,4], list(copy))
++            l.append(9)
++            copy.append(7)
++            self.assertEquals([0,1,2,3,4, 9], list(l))
++            self.assertEquals([0,1,2,3,4, 7], list(copy))
+ 
+     def testSetItem(self):
+-        l = IntegerList(5)
+-        l[0] = 10
+-        self.assertEquals([10,1,2,3,4], list(l))
+-
+-        l = IntegerList(5)
+-        l[2] = -1
+-        self.assertEquals([0,1,-1,3,4], list(l))
++        for l in [IntegerList(5), IntegerList(5, use64bits=True)]:
++            l[0] = 10
++            l[2] = -1
++            self.assertEquals([10,1,-1,3,4], list(l))
+ 
+     def testDitchHolesStartingAt(self):
+-        l = IntegerList(5)
+-        l.mergeFromOffset(0)
+-        self.assertEquals([0,1,2,3,4], list(l))
+-
+-        l = IntegerList(5)
+-        l[2] = -3
+-        l[4] = -5
+-        l.mergeFromOffset(0)
+-        self.assertEquals([0,1,3], list(l))
+-
+-        l = IntegerList(5)
+-        l[2] = -3
+-        l[4] = -5
+-        l.mergeFromOffset(3)
+-        self.assertEquals([0,1,-3,3], list(l))
+-
+-        l = IntegerList(5)
+-        for i in range(5):
+-            l[i] = i ^ -1
+-        l.mergeFromOffset(0)
+-        self.assertEquals([], list(l))
+-
+-        l = IntegerList(5)
+-        l[2] = -3
+-        l.mergeFromOffset(2)
+-        self.assertEquals([0, 1, 3, 4], list(l))
++        for use64bits in [False, True]:
++            l = IntegerList(5, use64bits=use64bits)
++            l.mergeFromOffset(0)
++            self.assertEquals([0,1,2,3,4], list(l))
++
++            l = IntegerList(5, use64bits=use64bits)
++            l[2] = -3
++            l[4] = -5
++            l.mergeFromOffset(0)
++            self.assertEquals([0,1,3], list(l))
++
++            l = IntegerList(5, use64bits=use64bits)
++            l[2] = -3
++            l[4] = -5
++            l.mergeFromOffset(3)
++            self.assertEquals([0,1,-3,3], list(l))
++
++            l = IntegerList(5, use64bits=use64bits)
++            for i in range(5):
++                l[i] = i ^ -1
++            l.mergeFromOffset(0)
++            self.assertEquals([], list(l))
++
++            l = IntegerList(5, use64bits=use64bits)
++            l[2] = -3
++            l.mergeFromOffset(2)
++            self.assertEquals([0, 1, 3, 4], list(l))
+ 
+     def testIndexBoundaryCheck(self):
+-        l = IntegerList(5)
+-        try:
+-            l[0]
+-            l[1]
+-            l[2]
+-            l[3]
+-            l[4]
+-            l[5]
+-            self.fail('must raise exception')
+-        except Exception, e:
+-            self.assertEquals('5', str(e))
+-        try:
+-            l[-1]
+-            l[-2]
+-            l[-3]
+-            l[-4]
+-            l[-5]
+-            l[-6]
+-            self.fail('must raise exception')
+-        except Exception, e:
+-            self.assertEquals('-6', str(e))
++        for use64bits in [False, True]:
++            l = IntegerList(5, use64bits=use64bits)
++            try:
++                l[0]
++                l[1]
++                l[2]
++                l[3]
++                l[4]
++                l[5]
++                self.fail('must raise exception')
++            except Exception, e:
++                self.assertEquals('5', str(e))
++            try:
++                l[-1]
++                l[-2]
++                l[-3]
++                l[-4]
++                l[-5]
++                l[-6]
++                self.fail('must raise exception')
++            except Exception, e:
++                self.assertEquals('-6', str(e))
+ 
+     def testSave(self):
+-        l1 = IntegerList(5)
+-        l1.save(self.tempdir+'/list.bin')
+-        l2 = IntegerList()
+-        l2.extendFrom(self.tempdir+'/list.bin')
+-        self.assertEquals(l1, l2)
+-        l2.extendFrom(self.tempdir+'/list.bin')
+-        self.assertEquals([0,1,2,3,4,0,1,2,3,4], l2)
++        for use64bits in [False, True]:
++            l1 = IntegerList(5, use64bits=use64bits)
++            l1.save(self.tempdir+'/list.bin')
++            l2 = IntegerList(use64bits=use64bits)
++            l2.extendFrom(self.tempdir+'/list.bin')
++            self.assertEquals(l1, l2)
++            l2.extendFrom(self.tempdir+'/list.bin')
++            self.assertEquals([0,1,2,3,4,0,1,2,3,4], l2)
+ 
+     def testSaveFromOffset(self):
+-        l1 = IntegerList(5)
+-        l1.save(self.tempdir+'/list.bin', offset=3)
+-        l2 = IntegerList()
+-        l2.extendFrom(self.tempdir+'/list.bin')
+-        self.assertEquals([3,4], l2)
++        for use64bits in [False, True]:
++            l1 = IntegerList(5, use64bits=use64bits)
++            l1.save(self.tempdir+'/list.bin', offset=3)
++            l2 = IntegerList(use64bits=use64bits)
++            l2.extendFrom(self.tempdir+'/list.bin')
++            self.assertEquals([3,4], l2)
+ 
+     def testSaveInvalidOffset(self):
+-        l1 = IntegerList(5)
+-        try:
+-            l1.save(self.tempdir+'/list.bin', offset=5)
+-            self.fail()
+-        except Exception, e:
+-            self.assertEquals('Invalid index: 5 [0..5)', str(e))
+-        try:
+-            l1.save(self.tempdir+'/list.bin', offset=-1)
+-            self.fail()
+-        except Exception, e:
+-            self.assertEquals('Invalid index: -1 [0..5)', str(e))
++        for use64bits in [False, True]:
++            l1 = IntegerList(5, use64bits=use64bits)
++            try:
++                l1.save(self.tempdir+'/list.bin', offset=5)
++                self.fail()
++            except Exception, e:
++                self.assertEquals('Invalid index: 5 [0..5)', str(e))
++            try:
++                l1.save(self.tempdir+'/list.bin', offset=-1)
++                self.fail()
++            except Exception, e:
++                self.assertEquals('Invalid index: -1 [0..5)', str(e))
+ 
+     def testSaveEmpty(self):
+-        l = IntegerList()
+-        l.save(self.tempdir+'/empty')
+-        l.extendFrom(self.tempdir+'/empty')
+-        self.assertEquals([], l)
++        for use64bits in [False, True]:
++            l = IntegerList(use64bits=use64bits)
++            l.save(self.tempdir+'/empty')
++            l.extendFrom(self.tempdir+'/empty')
++            self.assertEquals([], l)
+ 
+     def testSaveWrongDir(self):
+-        l1 = IntegerList(5)
+-        try:
+-            l1.save(self.tempdir + '/notexist/doesnotexist')
+-            self.fail('must raise ioerror')
+-        except IOError, e:
+-            self.assertTrue("[Errno 2] No such file or directory:" in str(e), str(e))
++        for use64bits in [False, True]:
++            l1 = IntegerList(5, use64bits=use64bits)
++            try:
++                l1.save(self.tempdir + '/notexist/doesnotexist')
++                self.fail('must raise ioerror')
++            except IOError, e:
++                self.assertTrue("[Errno 2] No such file or directory:" in str(e), str(e))
+ 
+     def testLoadWrongDir(self):
+-        l1 = IntegerList(5)
+-        try:
+-            l1.extendFrom(self.tempdir + '/doesnotexist')
+-            self.fail('must raise ioerror')
+-        except IOError, e:
+-            self.assertTrue("[Errno 2] No such file or directory" in str(e), str(e))
+-        self.assertEquals([0,1,2,3,4], list(l1))
+-
+-    def testExtendTo(self):
+-        def check(expected):
+-            l2 = IntegerList()
+-            l2.extendFrom(self.tempdir+'/list.bin')
+-            self.assertEquals(expected, l2)
++        for use64bits in [False, True]:
++            l1 = IntegerList(5, use64bits=use64bits)
++            try:
++                l1.extendFrom(self.tempdir + '/doesnotexist')
++                self.fail('must raise ioerror')
++            except IOError, e:
++                self.assertTrue("[Errno 2] No such file or directory" in str(e), str(e))
++            self.assertEquals([0,1,2,3,4], list(l1))
++
++    def testSaveAppend(self):
++        filepath = join(self.tempdir, 'list.bin')
++        for use64bits in [False, True]:
++            def check(expected):
++                l2 = IntegerList(use64bits=use64bits)
++                l2.extendFrom(filepath)
++                self.assertEquals(expected, l2)
++
++            if isfile(filepath):
++                remove(filepath)
++            l1 = IntegerList(use64bits=use64bits)
++            l1.save(filepath, append=True)
++            check([])
++
++            l1 = IntegerList(use64bits=use64bits)
++            l1.append(94)
++            l1.append(34)
++            l1.append(81)
++
++            l1.save(filepath, append=True)
++            check([94, 34, 81])
++
++            l1 = IntegerList(use64bits=use64bits)
++            l1.append(8)
++            l1.append(4)
++            l1.append(16)
++
++            l1.save(filepath, offset=1, append=True)
++            check([94, 34, 81, 4, 16])
++
++    def testNoMemoryLeakInIntegerlist(self):
++        self.probeMemory() 
++        for i in range(100):
++            l1 = IntegerList(1000000)
++            l2 = IntegerList(1000000, use64bits=True)
++        l1 = None
++        l2 = None
++        self.assertNoMemoryLeaks()
++
++    def testIntegerSizes(self):
++        l = IntegerList(0, use64bits=False)
++        l.append(2 ** 31 - 1)
++        l.append(2 ** 32 - 1)
++        l.append(2 ** 32)
++        self.assertEquals([2 ** 31 - 1, -1, 0], l)
++
++        l = IntegerList(0, use64bits=True)
++        l.append(2 ** 63 - 1)
++        l.append(2 ** 64 - 1)
++        l.append(2 ** 64)
++        self.assertEquals([2 ** 63 - 1, -1, 0], l)
++
++    def probeMemory(self):
++        self.vmsize = self._getVmSize()
++
++    def _getVmSize(self):
++        status = open('/proc/%d/status' % getpid()).read()
++        i = status.find('VmSize:') + len('VmSize:')
++        j = status.find('kB', i)
++        vmsize = int(status[i:j].strip())
++        return vmsize
++
++    def assertNoMemoryLeaks(self, bandwidth=0.8):
++        vmsize = self._getVmSize()
++        self.assertTrue(self.vmsize*bandwidth < vmsize < self.vmsize/bandwidth,
++                "memory leaking: before: %d, after: %d" % (self.vmsize, vmsize))
+ 
+-        l1 = IntegerList()
+-        l1.extendTo(self.tempdir + '/list.bin')
+-        check([])
+-
+-        l1 = IntegerList()
+-        l1.append(94)
+-        l1.append(34)
+-        l1.append(81)
+-
+-        l1.extendTo(self.tempdir + '/list.bin')
+-        check([94, 34, 81])
+-
+-        l1 = IntegerList()
+-        l1.append(8)
+-        l1.append(4)
+-        l1.append(16)
+ 
+-        l1.extendTo(self.tempdir + '/list.bin')
+-        check([94, 34, 81, 8, 4, 16])
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/test/filelisttest.py version_3/test/filelisttest.py
+--- version_2/test/filelisttest.py	2010-11-03 15:45:07.000000000 +0100
++++ version_3/test/filelisttest.py	2010-12-03 13:35:36.000000000 +0100
+@@ -33,6 +33,7 @@
+ from cq2utils import CQ2TestCase
+ from os.path import join
+ from bisect import bisect_left, bisect_right
++from random import choice
+ 
+ from meresco.components import SortedFileList, FileList
+ from meresco.components.packer import IntStringPacker, IntPacker
+@@ -256,16 +257,3 @@
+         s._merge()
+         self.assertEquals([1235], list(s))
+         
+-    def xtestPerformance(self):
+-        s = SortedFileList(join(self.tempdir, 'list'))
+-        t0 = time()
+-        for i in xrange(10**6):
+-            s.append(i)
+-            if i%100 == 99:
+-                s.remove(i-1)
+-            if i%1000 == 0:
+-                print i, len(s)
+-        t1 = time()
+-        print t1 - t0
+-        # Appends only, 10**6 within 220 seconds (4500/s)
+-        # Appends and deletes 1/100, 10**6 within 2754 seconds (363/s)  mergeTrigger=100
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_2/test/persistentsortedintegerlisttest.py version_3/test/persistentsortedintegerlisttest.py
+--- version_2/test/persistentsortedintegerlisttest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_3/test/persistentsortedintegerlisttest.py	2010-12-03 13:35:36.000000000 +0100
+@@ -0,0 +1,318 @@
++# -*- coding: utf-8 -*-
++## begin license ##
++#
++#    Meresco Components are components to build searchengines, repositories
++#    and archives, based on Meresco Core.
++#    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
++#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
++#       http://www.kennisnetictopschool.nl
++#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
++#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
++#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from __future__ import with_statement
++from cq2utils import CQ2TestCase
++from os import rename, remove, listdir
++from os.path import join, isfile
++from bisect import bisect_left, bisect_right
++from random import choice
++
++from meresco.components import PersistentSortedIntegerList
++from meresco.components.facetindex import IntegerList
++from time import time
++
++
++class FullStopException(Exception): pass
++
++class PersistentSortedIntegerListTest(CQ2TestCase):
++    def setUp(self):
++        CQ2TestCase.setUp(self)
++        self.filepath = join(self.tempdir, 'list')
++
++    def testAppendAndWrite(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        s.append(1)
++        s.append(2)
++        self.assertEquals([1,2], list(iter(s)))
++        self.assertEquals(16, len(open(self.filepath).read()))
++        self.assertEquals([1,2], list(s))
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        self.assertEquals([1,2], list(iter(s)))
++        self.assertEquals(len(s), len(list(s)))
++
++    def testEmpty(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        self.assertEquals([], list(s))
++
++    def testContains(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(0,20,2):
++            s.append(i)
++        self.assertTrue(14 in s)
++        self.assertFalse(15 in s)
++        self.assertFalse(32 in s)
++
++    def testZero(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        s.append(0)
++        self.assertEquals([0], list(s))
++
++    def testGetItem(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(20):
++            s.append(i)
++        self.assertEquals(2, s[2])
++        self.assertRaises(IndexError, lambda: s[1234567])
++        self.assertEquals(19, s[-1])
++        self.assertEquals(0, s[-20])
++        self.assertRaises(IndexError, lambda: s[-21])
++
++    def testSlicing(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(6):
++            s.append(i)
++        self.assertEquals([], list(s[0:0]))
++        self.assertEquals([1,2], list(s[1:3]))
++        self.assertEquals([0,1,2,3], list(s[:-2]))
++        self.assertEquals([4,5], list(s[-2:]))
++        self.assertEquals([0,2], list(s[:4:2]))
++        self.assertEquals([5,4,3,2,1,0], list(s[::-1]))
++        self.assertEquals([], list(s[4:3]))
++        self.assertEquals([0,1,2,3,4,5], list(s[-12345:234567]))
++        self.assertEquals([1,2], list(s[1:3]))
++
++    def testSlicingCreatesASequence(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(6):
++            s.append(i)
++        r = s[2:4]
++        self.assertEquals(s[2], r[0])
++        self.assertEquals(2, len(r))
++        self.assertEquals([2,3], list(r))
++
++        r = s[0:4:2]
++        self.assertEquals([0,2], list(r))
++        self.assertEquals(2, r[1])
++        r = s[::-1]
++        self.assertEquals([5,4,3,2,1,0], list(r))
++        self.assertEquals(5, r[0])
++        self.assertEquals(0, r[5])
++        self.assertEquals(0, r[-1])
++        self.assertEquals([5,4], list(r[:2]))
++        self.assertEquals(4, r[:4][1])
++        self.assertRaises(IndexError, lambda: s[:2][4])
++
++    def testAppendFailsIfValueMakesListUnsorted(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        s.append(10)
++        try:
++            s.append(5)
++            self.fail()
++        except ValueError, e:
++            self.assertEquals('list.append(5): expected value to be greater than 10', str(e))
++        try:
++            s.append(10)
++            self.fail()
++        except ValueError, e:
++            self.assertEquals('list.append(10): expected value to be greater than 10', str(e))
++        self.assertEquals([10], list(s))
++        
++    def testWithDeletedItems(self):
++        def assertListFunctions(aList):
++            self.assertEquals(0, aList[0])
++            self.assertEquals(2, aList[1])
++            self.assertEquals(8, aList[4])
++            self.assertEquals(8, aList[-2])
++            self.assertEquals(10, aList[-1])
++            
++            self.assertEquals([0,2,4,6,8,10], list(aList))
++            self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
++            self.assertEquals([0,2,4,6,8,10], list(aList[::-1][::-1]))
++            self.assertEquals([10,8,6,4,2,0], list(aList[::-1]))
++            self.assertEquals([2,4,6], list(aList[1:4]))
++            self.assertTrue(2 in aList)
++            self.assertFalse(1 in aList)
++            self.assertRaises(IndexError, lambda: aList[20])
++            self.assertRaises(IndexError, lambda: aList[-34567])
++            
++        s = PersistentSortedIntegerList(join(self.tempdir, 'list1'))
++        for i in [0,2,4,6,8,10]:
++            s.append(i)
++        assertListFunctions(s)
++        t = PersistentSortedIntegerList(join(self.tempdir, 'list2'))
++        for i in [0,1,2,3,4,5,6,7,8,9,10]:
++            t.append(i)
++        for i in [1,3,5,7,9]:
++            t.remove(i)
++        assertListFunctions(t)
++
++    def testDelete(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(5):
++            s.append(i)
++        try:
++            s.remove(8)
++            self.fail('ValueError expected')
++        except ValueError:
++            pass
++        s.remove(2)
++        try:
++            s.remove(2)
++            self.fail('ValueError expected')
++        except ValueError:
++            pass
++        self.assertEquals(0, s[0])
++        self.assertEquals(3, s[2])
++        self.assertEquals(4, len(s))
++
++    def testDeleteIsPersistent(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(10):
++            s.append(i)
++        s.remove(2)
++        s.remove(6)
++        s.remove(4)
++        self.assertEquals([0,1,3,5,7,8,9], list(s))
++        t = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        self.assertEquals([0,1,3,5,7,8,9], list(t))
++        t.remove(7)
++        t = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        self.assertEquals([0,1,3,5,8,9], list(t))
++
++    def testIndex(self):
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++        for i in range(4):
++            s.append(i)
++        self.assertEquals(0, s.index(0))
++        self.assertEquals(3, s.index(3))
++       
++    def testRecoverFromCrash(self):
++        mergeSteps = [0]
++        recoverSteps = [0]
++        crashSave = [False]
++
++        def crashingRename(fromPath, toPath):
++            rename(fromPath, toPath)
++            mergeSteps[0] += 1
++            if mergeSteps[0] == mergeCrashTrigger:
++                raise FullStopException("forced crash after %d merge steps (renaming %s to %s)" % (mergeSteps[0], fromPath, toPath))
++
++        def crashingRemove(filepath):
++            remove(filepath)
++            mergeSteps[0] += 1
++            if mergeSteps[0] == mergeCrashTrigger:
++                raise FullStopException("forced crash after %d merge steps (removing %s)" % (mergeSteps[0], filepath))
++
++        def crashingSave(list, filepath, offset, append):
++            list.save(filepath, offset=offset, append=append)
++            if crashSave[0] and crashSave[0](filepath):
++                mergeSteps[0] += 1
++                if mergeSteps[0] == mergeCrashTrigger:
++                    raise FullStopException("forced crash after %d merge steps (saving %s)" % (mergeSteps[0], filepath))
++
++        class MockPersistentSortedIntegerList(PersistentSortedIntegerList):
++            def _remove(self, filepath):
++                remove(filepath)
++                recoverSteps[0] += 1
++                if recoverSteps[0] == recoverCrashTrigger:
++                    raise FullStopException("forced crash after %d recover steps (removing %s)" % (recoverSteps[0], filepath))
++
++            def _rename(self, fromPath, toPath):
++                rename(fromPath, toPath)
++                recoverSteps[0] += 1
++                if recoverSteps[0] == recoverCrashTrigger:
++                    raise FullStopException("forced crash after %d recover steps (renaming %s to %s)" % (recoverSteps[0], fromPath, toPath))
++            def _save(self, list, filepath, offset, append):
++                list.save(filepath, offset=offset, append=append)
++                recoverSteps[0] += 1
++                if recoverSteps[0] == recoverCrashTrigger:
++                    raise FullStopException("forced crash after %d recover steps (saving %s)" % (mergeSteps[0], filepath))
++
++        def mergeCrashRecover():
++            mergeSteps[0] = 0
++            recoverSteps[0] = 0
++            crashSave[0] = False
++            if isfile(self.filepath):
++                remove(self.filepath)
++            s = PersistentSortedIntegerList(self.filepath, use64bits=True, mergeTrigger=2)
++            s._rename = crashingRename
++            s._remove = crashingRemove
++            s._save = crashingSave
++            try:
++                for i in range(4):
++                    s.append(i)
++                for i in range(2):
++                    if i == 1:
++                        crashSave[0] = lambda filepath: not filepath.endswith('.deleted')
++                    s.remove(i)
++            except FullStopException, e:
++                pass
++            try:
++                s = MockPersistentSortedIntegerList(self.filepath, use64bits=True)
++            except FullStopException, e:
++                pass
++            s = PersistentSortedIntegerList(self.filepath, use64bits=True)
++            return s
++
++        for mergeCrashTrigger in xrange(1, 20):
++            for recoverCrashTrigger in xrange(1, 20):
++                s = mergeCrashRecover()
++                self.assertEquals([2,3], list(s))            
++                self.assertTrue(isfile(self.filepath))
++                self.assertFalse(isfile(self.filepath + '.deleted'))
++                self.assertFalse(isfile(self.filepath + '.new'))
++                self.assertFalse(isfile(self.filepath + '.current'))
++                self.assertFalse(isfile(self.filepath + '.deleted.current'))
++
++    def testPerformance(self):
++        mergeTrigger = 100
++        size = 10**6
++        measurements = 1000
++
++        t = time()
++        s = PersistentSortedIntegerList(self.filepath, use64bits=True, mergeTrigger=mergeTrigger)
++        s._iList = IntegerList(size, use64bits=True)
++        s._iList.save(self.filepath, offset=0, append=False)
++        tCreate = time() - t
++
++        tIn = 0
++        tAppend = 0
++        tDelete = 0
++        for i in xrange(measurements):
++            t = time()
++            size in s
++            tIn += time() - t
++
++            t = time()
++            s.append(size + i)
++            tAppend += time() - t
++
++            element = choice(s)
++            t = time()
++            s.remove(element)
++            tDelete += time() - t
++
++        self.assertTiming(0.0, tCreate, 0.050)
++        self.assertTiming(0.0, tIn / measurements, 0.001)
++        self.assertTiming(0.0, tAppend / measurements, 0.001)
++        self.assertTiming(0.0, tDelete / measurements, 0.003)
++

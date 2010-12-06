@@ -26,38 +26,40 @@
  *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * end license */
-#include <vector>
 
-#include <glib.h>
+#include <vector>
+#include <stdio.h>
+#include <stdint.h>
 
 #ifndef __integerlist_h__
 #define __integerlist_h__
 
-class IntegerList : public std::vector<guint32> {
+class IntegerList {
     public:
-        IntegerList(int n);
-        IntegerList(std::vector<guint32>::iterator first, std::vector<guint32>::iterator last) : std::vector<guint32>(first, last) {}
-        void append(guint32);
-        IntegerList* slice(int, int, int);
-        int mergeFromOffset(int);
-        int save(char* filename, int offset);
-        int extendFrom(char* filename);
-        int extendTo(char* filename);
+        virtual ~IntegerList() {};
+        virtual int size() = 0;
+        virtual uint64_t get(int index) = 0;
+        virtual void append(uint64_t element) = 0;
+        virtual void set(int index, uint64_t value) = 0;
+        virtual IntegerList* slice(int start, int stop, int step) = 0;
+        virtual void delitems(int start, int stop) = 0;
+        virtual int mergeFromOffset(int offset) = 0;
+        virtual int save(char* filename, int offset, bool append) = 0;
+        virtual int extendFrom(char* filename) = 0;
 };
 
 extern "C" {
-    IntegerList*    IntegerList_create               (int n);
+    IntegerList*    IntegerList_create               (int n, bool use64bits);
     void            IntegerList_delete               (IntegerList*);
-    void            IntegerList_append               (IntegerList*, guint32);
+    void            IntegerList_append               (IntegerList*, uint64_t);
     int             IntegerList_size                 (IntegerList*);
-    guint32         IntegerList_get                  (IntegerList*, int);
-    void            IntegerList_set                  (IntegerList*, int, guint32);
+    uint64_t        IntegerList_get                  (IntegerList*, int);
+    void            IntegerList_set                  (IntegerList*, int, uint64_t);
     IntegerList*    IntegerList_slice                (IntegerList*, int, int, int);
     void            IntegerList_delitems             (IntegerList* list, int start, int stop);
     int             IntegerList_mergeFromOffset      (IntegerList* list, int);
-    int             IntegerList_save                 (IntegerList* list, char* filename, int offset);
+    int             IntegerList_save                 (IntegerList* list, char* filename, int offset, bool append);
     int             IntegerList_extendFrom           (IntegerList* list, char* filename);
-    int             IntegerList_extendTo             (IntegerList* list, char* filename);
 }
 
 #endif

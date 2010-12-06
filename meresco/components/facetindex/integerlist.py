@@ -29,13 +29,13 @@
 ## end license ##
 
 from sys import maxint
-from ctypes import c_uint32, c_int32, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
+from ctypes import c_uint64, c_int64, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
 from libfacetindex import libFacetIndex
 
 INTEGERLIST = POINTER(None)
 
 IntegerList_create = libFacetIndex.IntegerList_create
-IntegerList_create.argtypes = [c_int]
+IntegerList_create.argtypes = [c_int, c_int]
 IntegerList_create.restype = INTEGERLIST
 
 IntegerList_delete = libFacetIndex.IntegerList_delete
@@ -43,7 +43,7 @@ IntegerList_delete.argtypes = [INTEGERLIST]
 IntegerList_delete.restype = None
 
 IntegerList_append = libFacetIndex.IntegerList_append
-IntegerList_append.argtypes = [INTEGERLIST, c_uint32]
+IntegerList_append.argtypes = [INTEGERLIST, c_uint64]
 IntegerList_append.restype = None
 
 IntegerList_size = libFacetIndex.IntegerList_size
@@ -51,11 +51,11 @@ IntegerList_size.argtypes = [INTEGERLIST]
 IntegerList_size.restype = c_int
 
 IntegerList_get = libFacetIndex.IntegerList_get
-IntegerList_get.argtypes = [INTEGERLIST, c_uint32]
-IntegerList_get.restype = c_int32
+IntegerList_get.argtypes = [INTEGERLIST, c_uint64]
+IntegerList_get.restype = c_int64
 
 IntegerList_set = libFacetIndex.IntegerList_set
-IntegerList_set.argtypes = [INTEGERLIST, c_int, c_uint32]
+IntegerList_set.argtypes = [INTEGERLIST, c_int, c_uint64]
 IntegerList_set.restype = None
 
 IntegerList_delitems = libFacetIndex.IntegerList_delitems
@@ -71,24 +71,20 @@ IntegerList_mergeFromOffset.argtypes = [INTEGERLIST, c_int]
 IntegerList_mergeFromOffset.restype = c_int
 
 IntegerList_save = libFacetIndex.IntegerList_save
-IntegerList_save.argtypes = [INTEGERLIST, c_char_p, c_int]
+IntegerList_save.argtypes = [INTEGERLIST, c_char_p, c_int, c_int]
 IntegerList_save.restype = c_int
 
 IntegerList_extendFrom = libFacetIndex.IntegerList_extendFrom
 IntegerList_extendFrom.argtypes = [INTEGERLIST, c_char_p]
 IntegerList_extendFrom.restype = c_int
 
-IntegerList_extendTo = libFacetIndex.IntegerList_extendTo
-IntegerList_extendTo.argtypes = [INTEGERLIST, c_char_p]
-IntegerList_extendTo.restype = c_int
 
 class IntegerList(object):
-
-    def __init__(self, size=0, cobj=None):
+    def __init__(self, size=0, cobj=None, use64bits=False):
         if cobj:
             self._cobj = cobj
         else:
-            self._cobj = IntegerList_create(size)
+            self._cobj = IntegerList_create(size, use64bits)
         self._as_parameter_ = self._cobj
 
     def __del__(self):
@@ -98,27 +94,43 @@ class IntegerList(object):
         return IntegerList_size(self)
 
     def __getitem__(self, i):
-        length = len(self)
         if type(i) == slice:
-            start = i.start if i.start else 0
-            step = i.step if i.step else 1
-            stop = i.stop if i.stop else length
-            if start < 0:
-                start = length - -start
+            start, stop, step = self._parseSlice(i)
             islice = IntegerList_slice(self, start, stop, step)
-            return list(IntegerList(cobj=islice))
+            l = list(IntegerList(cobj=islice))
+            if step != 1:
+                l = l[::step]
+            return l
+        length = len(self)
         if i >= length or -i > length:
             raise IndexError(i)
         return IntegerList_get(self, i)
 
     def __delitem__(self, i):
         if type(i) == slice:
-            start = i.start if i.start else 0
-            stop = i.stop if i.stop else len(self)
+            start, stop, step = self._parseSlice(i)
             IntegerList_delitems(self, start, stop)
         else:
+            length = len(self)
+            if i < 0:
+                i = length - -i
+            if i >= length or i < 0:
+                raise IndexError("list assignment index out of range")
             IntegerList_delitems(self, i, i+1)
 
+    def _parseSlice(self, slice):
+        length = len(self)
+        start = slice.start if not slice.start is None else 0
+        step = slice.step if not slice.step is None else 1
+        stop = slice.stop if not slice.stop is None else length
+        if start < 0:
+            start = max(length - -start, 0)
+        if stop < 0:
+            stop = length - -stop
+        if stop > length:
+            stop = length
+        return start, stop, step
+        
     def __setitem__(self, index, value):
         IntegerList_set(self, index, value)
 
@@ -148,8 +160,8 @@ class IntegerList(object):
     def getCObject(self):
         return self._cobj
 
-    def save(self, filename, offset=0):
-        errno = IntegerList_save(self, filename, offset)
+    def save(self, filename, offset=0, append=False):
+        errno = IntegerList_save(self, filename, offset, append)
         if errno == -1:
             raise IndexError("Invalid index: %d [0..%d)" % (offset, len(self)))
         if errno:
@@ -160,7 +172,3 @@ class IntegerList(object):
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
 
-    def extendTo(self, filename):
-        errno = IntegerList_extendTo(self, filename)
-        if errno:
-            raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))

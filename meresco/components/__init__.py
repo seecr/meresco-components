@@ -54,5 +54,6 @@ from renamecqlindex import RenameCqlIndex
 from statisticsxml import StatisticsXml
 from requestscope import RequestScope
 from filelist import SortedFileList, FileList
+from persistentsortedintegerlist import PersistentSortedIntegerList
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from inbox import Inbox

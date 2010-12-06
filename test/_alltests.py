@@ -54,6 +54,7 @@ from logcomponenttest import LogComponentTest
 from logobservertest import LogObserverTest
 from packertest import PackerTest
 from parsecqltest import ParseCQLTest
+from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
 from renamecqlindextest import RenameCqlIndexTest
 from requestscopetest import RequestScopeTest

@@ -369,11 +369,11 @@ void DocSetList::nodecount(void) {
 CardinalityList* DocSetList::filterByPrefix(char* prefix, guint32 maxResults) {
     CardinalityList* results = new CardinalityList();
 
-    IntegerList* docSetFws = IntegerList_create(0);
+    IntegerList* docSetFws = IntegerList_create(0, false);
     dictionary.valuesForPrefix(prefix, maxResults, docSetFws);
 
-    for (IntegerList::iterator it = docSetFws->begin(); it < docSetFws->end(); it++) {
-        fwPtr docset =  {0, (*it)};
+    for (int i=0; i<docSetFws->size(); i++) {
+        fwPtr docset = {0, docSetFws->get(i)};
         cardinality_t cardinality = {getTermForDocset(pDS(docset)), pDS(docset)->size()};
         results->push_back(cardinality);
     }

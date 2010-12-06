@@ -38,9 +38,9 @@ class FileList(object):
         self._filename = filename
         self._packer = packer
         isfile(filename) or open(self._filename, 'w')
-        self._length = stat(self._filename).st_size/self._packer.length
         if initialContent != None:
             self._writeInitialContent(initialContent)
+        self._length = stat(self._filename).st_size / self._packer.length
         self._file = open(self._filename, 'ab+')
 
     def append(self, item):
@@ -76,14 +76,13 @@ class FileList(object):
         return FileListSeq(self, *_sliceWithinRange(aSlice, len(self)))
 
     def _writeInitialContent(self, initialContent):
-        with open(self._filename+'~', 'wb') as self._file:
-            self._length = 0
+        with open(self._filename+'~', 'wb') as f:
             for item in initialContent:
-                self._append(item)
-        rename(self._filename+'~',self._filename)
+                f.write(self._packer.pack(item))
+            f.flush()
+        rename(self._filename+'~', self._filename)
 
     def _append(self, item):
-        self._file.seek(self._length * self._packer.length)
         self._file.write(self._packer.pack(item))
         self._file.flush()
         self._length += 1
@@ -114,8 +113,11 @@ class SortedFileList(object):
         return self._list[index]
 
     def __iter__(self):
-        for i in xrange(len(self)):
-            yield self[i]
+        for p, item in enumerate(self._list):
+            position = bisect_left(self._tempDeletedIndexes, p)
+            if (position < len(self._tempDeletedIndexes) and p == self._tempDeletedIndexes[position]):
+                continue
+            yield item
         
     def __contains__(self, item):
         return self._position(item) > -1

@@ -287,7 +287,7 @@ DocSet::map(IntegerList* mapping) {
         return;
     }
     for (DocSet::iterator it = begin(); it < end(); it++) {
-        (*it) = (*mapping)[*it];
+        (*it) = mapping->get(*it);
     }
 }
 
