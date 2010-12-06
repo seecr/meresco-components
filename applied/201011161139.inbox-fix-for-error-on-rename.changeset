@@ -7,9 +7,9 @@ Description: Exception thrown on rename will now be written to the .error file
 
 Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/2.23.6-TUD/version_3
 
-diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_3/merescocomponents/inbox.py version_4/merescocomponents/inbox.py
---- version_3/merescocomponents/inbox.py	2010-09-13 08:55:19.000000000 +0200
-+++ version_4/merescocomponents/inbox.py	2010-11-16 11:38:34.000000000 +0100
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_3/meresco/components/inbox.py version_4/meresco/components/inbox.py
+--- version_3/meresco/components/inbox.py	2010-09-13 08:55:19.000000000 +0200
++++ version_4/meresco/components/inbox.py	2010-11-16 11:38:34.000000000 +0100
 @@ -96,9 +96,14 @@
          self.processFile(event.name)
  
@@ -38,7 +38,7 @@ diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn'
 +from os import makedirs, rename, listdir, remove
  from lxml.etree import tostring
  
- from merescocomponents.inbox import Inbox, InboxException
+ from meresco.components.inbox import Inbox, InboxException
 @@ -135,7 +135,42 @@
          self.assertFalse(isfile(join(self.inboxDirectory, identifier+'.record')))
          self.assertTrue('Start tag expected' in open(errorFile).read())
