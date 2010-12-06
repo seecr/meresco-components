@@ -39,7 +39,7 @@ from cq2utils import CallTrace
 from lucenetestcase import LuceneTestCase
 
 from meresco.components.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
-from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ
+from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ, IndexWriter, MerescoStandardAnalyzer
 from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
 
 
@@ -262,6 +262,21 @@ class PerformanceTuningTest(LuceneTestCase):
         delta = time() - t0
         self.assertTiming(0.4, delta, 0.6)
 
+    def testDocumentAddToIndexWith(self):
+        # Note: running with lucenegcjutil package installed should be notably faster than without
+        indexWriter = IndexWriter(self.tempdir, merescoStandardAnalyzer, True)
+        t = 0.0
+        n = 200
+        for i in xrange(n):
+            document = Document(str(i))
+            for i in xrange(100):
+                terms = ' '.join(['t€rm'+str(randint(0, 1000)) for j in xrange(5)])
+                document.addIndexedField('field%duntokenized' % i, terms, False)
+                document.addIndexedField('field%dtokenized' % i, terms, True)
+            t0 = time()
+            document.addToIndexWith(indexWriter)
+            t += time() - t0
+        self.assertTiming(0.02, t/n, 0.05)
 
 
 

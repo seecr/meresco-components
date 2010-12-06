@@ -34,6 +34,26 @@ from merescolucene import Document as LuceneDocument, Field, Fieldable, iterJ, a
 
 from java.io import StringReader, Reader
 
+
+def _pyAddToIndexWith(indexWriter, identifier, values):
+    document = LuceneDocument()
+    document.add(Field(IDFIELD, identifier, Field.Store.YES, Field.Index.UN_TOKENIZED) % Fieldable)
+    for key, value, tokenize in values:
+        document.add(Field(
+                key,
+                value,
+                Field.Store.NO,
+                Field.Index.TOKENIZED if tokenize else Field.Index.UN_TOKENIZED
+            ) % Fieldable)
+    indexWriter.addDocument(document)
+    return document
+
+try:
+    from lucenegcjutil import addToIndexWith
+except:
+    addToIndexWith = _pyAddToIndexWith
+
+
 IDFIELD = '__id__'
 
 def tokenize(aString):
@@ -77,16 +97,7 @@ class Document(object):
         self._fields.append((aKey, aValue, tokenize))
 
     def addToIndexWith(self, anIndexWriter):
-        document = LuceneDocument()
-        document.add(Field(IDFIELD, self.identifier, Field.Store.YES, Field.Index.UN_TOKENIZED) % Fieldable)
-        for key, value, tokenize in self._fields:
-            document.add(Field(
-                    key,
-                    value, 
-                    Field.Store.NO,
-                    Field.Index.TOKENIZED if tokenize else Field.Index.UN_TOKENIZED
-                ) % Fieldable)
-        anIndexWriter.addDocument(document)
+        return addToIndexWith(anIndexWriter, self.identifier, self._fields)
 
     def validate(self):
         if self._fields == []:
@@ -113,7 +124,7 @@ def unique(iterable):
         if item not in seen:
             seen.add(item)
             yield item
-            
+
 
 class DocDict(object):
     def __init__(self, keysMethod, valuesMethod):
@@ -130,5 +141,5 @@ class DocDict(object):
     get = __getitem__
 
     def items(self):
-        return ((key, self[key]) for key in self.keys()) 
- 
+        return ((key, self[key]) for key in self.keys())
+

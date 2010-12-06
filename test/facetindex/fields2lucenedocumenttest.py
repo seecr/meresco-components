@@ -29,16 +29,17 @@
 #
 ## end license ##
 from unittest import TestCase
-from cq2utils import CallTrace
+from cq2utils import CallTrace, CQ2TestCase
 from meresco.core import be, Transparant, Observable
 from meresco.core import TransactionScope, ResourceManager, Transaction
 
 from meresco.components.facetindex import Fields2LuceneDocumentTx, Document
-from meresco.components.facetindex.merescolucene import iterJ
+from meresco.components.facetindex.merescolucene import iterJ, IndexWriter, merescoStandardAnalyzer
 
-class Fields2LuceneDocumentTest(TestCase):
+class Fields2LuceneDocumentTest(CQ2TestCase):
 
     def setUp(self):
+        CQ2TestCase.setUp(self)
         self.observert = CallTrace('Observert', ignoredAttributes=['_observers'])
         class Splitter(Transparant):
             def addFields(this, tupleList, identifier='fixedId'):
@@ -84,17 +85,15 @@ class Fields2LuceneDocumentTest(TestCase):
         self.assertEquals([Document], [type(arg) for arg in self.observert.calledMethods[1].args])
 
         document = self.observert.calledMethods[1].args[0]
-        indexwriter = CallTrace('IndexWriter')
-        document.addToIndexWith(indexwriter)
-        luceneDocument = indexwriter.calledMethods[0].args[0]
+        indexwriter = IndexWriter(self.tempdir, merescoStandardAnalyzer, True)
+        luceneDocument = document.addToIndexWith(indexwriter)
         self.assertEquals([u'TermOne', u'TermTwo'], list(iterJ(luceneDocument.getValues('a'))))
 
     def testTokenizedIsNotForgotten(self):
         list(self.body.all.addFields([('a', '1'), ('a', 'termone termtwo'), ('b', 'termone termtwo')]))
         document = self.observert.calledMethods[1].args[0]
-        indexwriter = CallTrace('IndexWriter')
-        document.addToIndexWith(indexwriter)
-        luceneDocument = indexwriter.calledMethods[0].args[0]
+        indexwriter = IndexWriter(self.tempdir, merescoStandardAnalyzer, True)
+        luceneDocument = document.addToIndexWith(indexwriter)
         self.assertTrue(luceneDocument.getField('a').isTokenized())
         self.assertFalse(luceneDocument.getField('b').isTokenized())
 

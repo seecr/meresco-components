@@ -100,8 +100,8 @@ class NGramTest(CQ2TestCase):
             self.indexingDna.do.addDict(document)
 
         self.addWord = addWord
-    
-        
+
+
 
     def testOneWord(self):
         self.addWord('appelboom')
@@ -116,7 +116,7 @@ class NGramTest(CQ2TestCase):
         self.assertEquals(str, type(self.suggestionsFor('ar')[1][0]))
         self.assertEquals((False, ['ideeën']), self.suggestionsFor('ee'))
         self.assertEquals((False, ['škvarla']), self.suggestionsFor('Škvarla'))
-        
+
 
     def testNgram(self):
         self.assertEquals(set(['bo', 'oo', 'om', 'boo', 'oom', 'boom']), set(ngrams('boom', N=4)))
@@ -182,7 +182,7 @@ class NGramTest(CQ2TestCase):
             self.addWord('field0value%s' % i, fieldname='field0')
         inclusive, suggestions = self.suggestionsFor('val', 'field0')
         self.assertEquals(set(['field0value0', 'field0value1', 'field0value2']), set(suggestions))
-        
+
 
     def assertSuggestions(self, expected, term, suggester, ngramQuerySamples):
         ngramindex = CallTrace('ngramindex')

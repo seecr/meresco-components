@@ -30,7 +30,8 @@
 
 import unittest
 from cq2utils import CallTrace
-from meresco.components.facetindex.document import IDFIELD, Document, DocumentException, tokenize
+from meresco.components.facetindex.document import IDFIELD, Document, DocumentException, tokenize, _pyAddToIndexWith
+from meresco.components.facetindex.merescolucene import iterJ
 
 class DocumentTest(unittest.TestCase):
 
@@ -93,7 +94,6 @@ class DocumentTest(unittest.TestCase):
         d = Document('1234')
         d.addIndexedField('x', 'a')
         d.addIndexedField('x', 'b')
-        d.addToIndexWith(CallTrace("IndexWriter"))
         self.assertEquals([IDFIELD, 'x', 'x'], d.fields())
 
     def testAsDict(self):
@@ -155,6 +155,10 @@ class DocumentTest(unittest.TestCase):
         self.assertEquals(['value1', 'value2'], d.asDict().get('field1'))
         self.assertEquals(['nothing'], d.asDict().get('doesnotexist', ['nothing']))
 
+    def testPyAddToIndexWith(self):
+        indexWriter = CallTrace('indexWriter')
+        luceneDoc = _pyAddToIndexWith(indexWriter, 'identifier1', [("key", "value", False), ("key", "anothervalue", False)])
+        self.assertEquals([u"value", u"anothervalue"], list(iterJ(luceneDoc.getValues("key"))))
+
 #def testDictUniqueKeysElements(self):
 
-        
