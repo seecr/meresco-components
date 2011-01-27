@@ -32,12 +32,19 @@ from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 
 from cqlparser import parseString as parseCQL
 from weightless import compose
+from warnings import warn
 
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet', 'x-recordSchema']
 
 class SruHandler(Observable):
+    def __init__(self, extraRecordDataNewStyle=False):
+        Observable.__init__(self)
+        self._extraRecordDataNewStyle = extraRecordDataNewStyle
+        if not extraRecordDataNewStyle:
+            warn("""Old style extraRecordData is used, this is deprecated and will be removed in the future.""", DeprecationWarning)
+
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, **kwargs):
         SRU_IS_ONE_BASED = 1
 
@@ -130,6 +137,10 @@ class SruHandler(Observable):
         except Exception, e:
             yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape(str(e))])
 
+    def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):
+        yield '<recordData recordSchema="%s">' % xmlEscape(schema)
+        yield self._catchErrors(self._yieldRecordForRecordPacking(recordId, schema, recordPacking), schema, recordId)
+        yield '</recordData>'
 
     def _writeExtraRecordData(self, x_recordSchema=None, recordPacking=None, recordId=None, **kwargs):
         if not x_recordSchema:
@@ -137,6 +148,9 @@ class SruHandler(Observable):
 
         yield '<srw:extraRecordData>'
         for schema in x_recordSchema:
+            if not self._extraRecordDataNewStyle:
+                yield self._writeOldStyleExtraRecordData(schema, recordPacking, recordId)
+                continue
             yield '<srw:record>'
             yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(schema)
             yield '<srw:recordPacking>%s</srw:recordPacking>' % recordPacking
