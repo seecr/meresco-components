@@ -176,12 +176,20 @@ class SruHandlerTest(CQ2TestCase):
                 <MOCKED_WRITTEN_DATA>11-schema</MOCKED_WRITTEN_DATA>
             </srw:recordData>
             <srw:extraRecordData>
-                <recordData recordSchema="extra">
+                <srw:record>
+                    <srw:recordSchema>extra</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>11-extra</MOCKED_WRITTEN_DATA>
-                </recordData>
-                <recordData recordSchema="evenmore">
+                    </srw:recordData>
+                </srw:record>
+                <srw:record>
+                    <srw:recordSchema>evenmore</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>11-evenmore</MOCKED_WRITTEN_DATA>
-                </recordData>
+                    </srw:recordData>
+                </srw:record>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -191,12 +199,20 @@ class SruHandlerTest(CQ2TestCase):
                 <MOCKED_WRITTEN_DATA>12-schema</MOCKED_WRITTEN_DATA>
             </srw:recordData>
             <srw:extraRecordData>
-                <recordData recordSchema="extra">
+                <srw:record>
+                    <srw:recordSchema>extra</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>12-extra</MOCKED_WRITTEN_DATA>
-                </recordData>
-                <recordData recordSchema="evenmore">
+                    </srw:recordData>
+                </srw:record>
+                <srw:record>
+                    <srw:recordSchema>evenmore</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>12-evenmore</MOCKED_WRITTEN_DATA>
-                </recordData>
+                    </srw:recordData>
+                </srw:record>
             </srw:extraRecordData>
         </srw:record>
     </srw:records>
@@ -258,12 +274,20 @@ class SruHandlerTest(CQ2TestCase):
                 <MOCKED_WRITTEN_DATA>11-schema</MOCKED_WRITTEN_DATA>
             </srw:recordData>
             <srw:extraRecordData>
-                <recordData recordSchema="extra">
+                <srw:record>
+                    <srw:recordSchema>extra</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>11-extra</MOCKED_WRITTEN_DATA>
-                </recordData>
-                <recordData recordSchema="evenmore">
+                    </srw:recordData>
+                </srw:record>
+                <srw:record>
+                    <srw:recordSchema>evenmore</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>11-evenmore</MOCKED_WRITTEN_DATA>
-                </recordData>
+                    </srw:recordData>
+                </srw:record>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -274,12 +298,20 @@ class SruHandlerTest(CQ2TestCase):
                 <MOCKED_WRITTEN_DATA>12-schema</MOCKED_WRITTEN_DATA>
             </srw:recordData>
             <srw:extraRecordData>
-                <recordData recordSchema="extra">
+                <srw:record>
+                    <srw:recordSchema>extra</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>12-extra</MOCKED_WRITTEN_DATA>
-                </recordData>
-                <recordData recordSchema="evenmore">
+                    </srw:recordData>
+                </srw:record>
+                <srw:record>
+                    <srw:recordSchema>evenmore</srw:recordSchema>
+                    <srw:recordPacking>xml</srw:recordPacking>
+                    <srw:recordData>
                     <MOCKED_WRITTEN_DATA>12-evenmore</MOCKED_WRITTEN_DATA>
-                </recordData>
+                    </srw:recordData>
+                </srw:record>
             </srw:extraRecordData>
         </srw:record>
     </srw:records>
