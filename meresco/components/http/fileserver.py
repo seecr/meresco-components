@@ -27,7 +27,7 @@
 ## end license ##
 from os.path import isfile, join, normpath, commonprefix
 from rfc822 import formatdate
-from time import mktime, gmtime, timezone
+from time import time
 from stat import ST_MTIME
 from os import stat
 
@@ -71,7 +71,7 @@ class File(object):
         fp.close()
 
     def _date(self, offset=0):
-        return formatdate(mktime(gmtime()) - timezone + offset)
+        return formatdate(time() + offset)
 
 class FileServer(object):
     def __init__(self, documentRoot):

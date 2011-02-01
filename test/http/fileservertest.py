@@ -31,6 +31,9 @@ from os.path import join
 from shutil import rmtree
 from tempfile import mkdtemp
 from os import remove, makedirs
+from time import time
+from rfc822 import parsedate
+from calendar import timegm
 
 from meresco.components.http.fileserver import FileServer
 
@@ -84,10 +87,17 @@ class FileServerTest(TestCase):
 
         fileServer = FileServer(self.directory)
         response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        headers, body = response.split("\r\n\r\n")
 
-        self.assertTrue("Date: " in response)
-        self.assertTrue("Last-Modified: " in response)
-        self.assertTrue("Expires: " in response)
+        self.assertTrue("Date: " in headers)
+        self.assertTrue("Last-Modified: " in headers)
+        self.assertTrue("Expires: " in headers)
+
+        headerValues = dict(tuple(a.strip() for a in line.split(':', 1)) for line in headers.split('\r\n') if ':' in line)
+        date = timegm(parsedate(headerValues['Date']))
+        expires = timegm(parsedate(headerValues['Expires']))
+        self.assertTrue(1 > time() - date > 0, time() - date)
+        self.assertTrue(61 * 60 > expires - date > 59 * 60, expires - date)
 
     def testPathShouldBeInDocumentRoot(self):
         documentRoot = join(self.directory, 'documentRoot')
