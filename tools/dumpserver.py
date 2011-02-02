@@ -3,9 +3,9 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+#    Copyright (C) 2007-2009, 2011 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
@@ -82,7 +82,7 @@ class Dump(object):
         except Exception, e:
             answer = RESPONSE_XML % {
                 "operationStatus": "fail",
-                "diagnostics": DIAGNOSTIC_XML % escapeXml(format_exc(limit=7))}
+                "diagnostics": DIAGNOSTIC_XML % escapeXml(format_exc())}
 
         yield answer
 

@@ -3,8 +3,8 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -26,6 +26,7 @@
 
 from __future__ import with_statement
 
+from sys import exc_info
 from os.path import join, isdir, isfile, basename, abspath
 from os import rename, listdir, remove, makedirs, link
 from shutil import rmtree
@@ -119,7 +120,10 @@ class Msgbox(Observable):
             suspend = self._suspended.pop(identifier, None)
         if not suspend is None:
             if extension == 'error':
-                suspend.throw(Exception(open(filepath).read()))
+                try:
+                    raise MsgboxRemoteError(open(filepath).read())
+                except:
+                    suspend.throw(*exc_info())
             else:
                 suspend.resume()
         else:
@@ -219,3 +223,8 @@ class File(object):
         while x:
             yield x
             x = f.read(4096)
+
+
+class MsgboxRemoteError(RuntimeError):
+    pass
+

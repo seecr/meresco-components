@@ -3,8 +3,8 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -34,9 +34,11 @@ from weightless import Reactor
 from os.path import join, isfile, basename
 from os import makedirs, rename, listdir, system, chmod, remove
 from lxml.etree import tostring
+from re import sub
 from shutil import rmtree
 from stat import S_IXUSR, S_IRUSR, S_IWUSR
 from time import sleep
+from traceback import format_exc
 
 from threading import Thread
 
@@ -441,7 +443,19 @@ class MsgboxTest(CQ2TestCase):
             result.next()
             self.fail('Expected an exception.')
         except Exception, e:
-            self.assertEquals('Stacktrace', str(e))
+            self.assertEquals("MsgboxRemoteError('Stacktrace',)", repr(e))
+            fileDict = {
+                '__file__': ignoreLineNumbers.func_code.co_filename,
+                'msgbox.py': Msgbox.processFile.func_code.co_filename, 
+            }
+            self.assertEqualsWS(ignoreLineNumbers("""Traceback (most recent call last):
+  File "%(__file__)s", line 442, in testAddAsynchronousYieldsSuspendAndReceivesError
+    result.next()
+  File "%(msgbox.py)s", line 167, in add
+    suspend.getResult()
+  File "%(msgbox.py)s", line 124, in processFile
+    raise MsgboxRemoteError(open(filepath).read())
+MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
         self.assertRaises(StopIteration, result.next)
 
     def testEscapeIdentifiersWhenUsedAsOutFilenames(self):
@@ -522,4 +536,8 @@ class MsgboxTest(CQ2TestCase):
 
     def listfiles(self, directory):
         return [f for f in listdir(directory) if isfile(join(directory, f))]
+
+
+def ignoreLineNumbers(s):
+    return sub("line \d+,", "line [#],", s)
 
