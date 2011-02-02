@@ -1,6 +1,118 @@
 CHANGELOG Meresco-Components
 ============================
 
+version: 3.4.6 -> 3.4.7
+date:    2011-02-02
+
+
+srw:record in srw:extraRecordData
+---------------------------------
+Extra recordData returned in SRU/W responses didn't have a namespace, and
+therefor was in "default" namespace. See the following example.
+
+Old style: <srw:record> <srw:recordSchema>dc</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking> <srw:recordData> .. </srw:recordData>
+<srw:extraRecordData> <recordData recordSchema="extra"> <!-- no namespace --> ..
+</recordData> </srw:extraRecordData> </srw:record>
+
+The SruHandler can now be configured to return extraRecordData as a srw:record.
+See the following example:
+
+New style: <srw:record> <srw:recordSchema>dc</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking> <srw:recordData> .. </srw:recordData>
+<srw:extraRecordData> <srw:record> <srw:recordSchema>extra</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking> <srw:recordData> .. </srw:recordData>
+</srw:record> </srw:extraRecordData> </srw:record>
+
+To avoid backwards incompatibility the old version is still available.
+(2011-02-01, 3.4.6
+)
+
+Removed wrong optimization in docset
+------------------------------------
+Removed wrong optimization in docset
+(2011-01-25, 3.4.6-MWE)
+
+Added an hierarchical drilldown
+-------------------------------
+The hierarchical drilldown can be used besides the normal drilldown. The
+hierarchicaldrilldown needs a list with the nested drilldown fields. It returns
+a nested dictionary with fieldnames and terms and for every term the name, count
+and extra the nested drilldown.
+(2011-01-25, 3.4.6-MWE)
+
+Traceback reporting more complete.
+----------------------------------
+Removed limits from tracebacks and passing error with traceback to Suspend
+object in Msgbox.processFile
+(2011-01-06, 3.4.6-Edurep)
+
+Detect out-of-sync tracker
+--------------------------
+Lucene index and docIdTracker sometimes differ due to unexpected server crash.
+This mismatch is detected before starting. Optimization of the index will
+resolve the problem.
+(2011-01-04, 3.4.6-Edurep)
+
+Converter not calling _canConvert when not needed; extended fromKwarg approach to using Converter
+-------------------------------------------------------------------------------------------------
+A subclass of Converter no longer needs to provide _canConvert when the
+conversion is carried out on a specific kwarg (via fromKwarg parameter);
+Deprecation warning with respect to old style use now extended to all
+subclasses; moved a number of tests to path that properly corresponds to class
+under test.
+(2010-12-16, 3.4.6-Edurep)
+
+SessionHandler callable passthrough
+-----------------------------------
+The SessionHandler passes callable objects through to its caller unchanged. This
+is required to support asyncany and asyncdo calls.
+(2010-12-07, 3.4.6-TUD)
+
+Fileserver's Expires header calculation simplified
+--------------------------------------------------
+The http FileServer Expires (and Date) headers calculation has been simplified
+and more thoroughly tested.
+(2010-10-14, 3.4.2-CQ2)
+
+==============================================================================
+
+version: 3.4.5 -> 3.4.6
+date:    2010-12-06
+
+
+Introduced PersistentSortedIntegerList as a faster replacement for SortedFileList
+---------------------------------------------------------------------------------
+Introduced PersistentSortedIntegerList that adds transparant persistency for an
+IntegerList, which was extended to also support 64 bit integers. The persistency
+mechanism was designed to be faster than the existing SortedFileList, especially
+for deletes.
+(2010-12-03, 3.4.4-Edurep)
+
+RSS Component now uses WebQuery
+-------------------------------
+The RSS Component used to construct its own CQL-query. To keep website
+query-construction and RSS query-construction in sync WebQuery is now also used
+in the RSS Component. Additionally filters, like drilldown, can be communicated
+by using "filter" arguments the the http-request.
+(2010-11-18, 3.4.5-MWE)
+
+Exception thrown on rename will now be written to the .error file
+-----------------------------------------------------------------
+An error on the rename would cause the msgbox to crash. Exception now will be
+handled and written to the .error file in the done directory. The msgbox will
+not be removed anymore from the reactor on errors.
+(2010-11-16, 2.23.6-TUD)
+
+Adds support for faster drop-in-replacement of Document.addToIndexWith
+----------------------------------------------------------------------
+The Python implementation of addToIndexWith can now optionally be replaced with
+the faster C++ implementation in the lucenegcjutil package.
+(2010-07-07, 3.0-Edurep)
+
+
+==============================================================================
+
 version: 3.4.4 -> 3.4.5
 date:    2010-11-03
 
