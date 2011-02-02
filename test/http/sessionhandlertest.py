@@ -7,6 +7,7 @@
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -152,6 +153,25 @@ class SessionHandlerTest(TestCase):
         sessionIdJustExpired = self.assertSessionCookie(result)
 
         self.assertNotEqual(firstSessionId, sessionIdJustExpired)
+
+    def testPassThroughOfCallables(self):
+        def callableMethod():
+            pass
+
+        def handleRequest(*args, **kwargs):
+            yield callableMethod
+            yield "HTTP/1.0 200 OK\r\n\r\nBODY"
+            yield callableMethod
+            yield "THE END"
+
+        self.observer.handleRequest = handleRequest
+        result = list(self.handler.handleRequest(Client=('127.0.0.1', 12345)))
+        self.assertEquals(callableMethod, result[0])
+        self.assertEquals("HTTP/1.0 200 OK\r\n", result[1])
+        self.assertEquals("\r\nBODY", result[3])
+        self.assertEquals(callableMethod, result[4])
+        self.assertTrue(result[2].startswith('Set-Cookie: session'), result[2])
+        self.assertEquals("THE END", result[5])
 
     def assertSessionCookie(self, handleRequestOutput, nameSuffix=''):
         header, body = handleRequestOutput.split(utils.CRLF*2,1)

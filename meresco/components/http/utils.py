@@ -10,6 +10,7 @@
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -78,6 +79,10 @@ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
 def insertHeader(httpResponse, extraHeader):
     alreadyDone = False
     for response in httpResponse:
+        if callable(response):
+            yield response
+            continue
+
         if not alreadyDone and CRLF in response:
             alreadyDone = True
             statusLine, remainder = response.split(CRLF, 1)

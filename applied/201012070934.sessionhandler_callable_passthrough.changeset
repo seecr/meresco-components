@@ -1,0 +1,51 @@
+Changeset created on Tue Dec  7 09:34:40 CET 2010 by Seek You Too
+
+Description: SessionHandler callable passthrough
+
+    The SessionHandler passes callable objects through to its caller unchanged. This is required to support asyncany and asyncdo calls.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.6-TUD/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/http/utils.py version_0-asyncany_sessionhandler/meresco/components/http/utils.py
+--- version_0/meresco/components/http/utils.py	2010-12-07 09:11:49.000000000 +0100
++++ version_0-asyncany_sessionhandler/meresco/components/http/utils.py	2010-12-07 09:28:33.000000000 +0100
+@@ -78,6 +78,10 @@
+ def insertHeader(httpResponse, extraHeader):
+     alreadyDone = False
+     for response in httpResponse:
++        if callable(response):
++            yield response
++            continue
++
+         if not alreadyDone and CRLF in response:
+             alreadyDone = True
+             statusLine, remainder = response.split(CRLF, 1)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/sessionhandlertest.py version_0-asyncany_sessionhandler/test/http/sessionhandlertest.py
+--- version_0/test/http/sessionhandlertest.py	2010-12-07 09:11:49.000000000 +0100
++++ version_0-asyncany_sessionhandler/test/http/sessionhandlertest.py	2010-12-07 09:32:05.000000000 +0100
+@@ -153,6 +153,25 @@
+ 
+         self.assertNotEqual(firstSessionId, sessionIdJustExpired)
+ 
++    def testPassThroughOfCallables(self):
++        def callableMethod():
++            pass
++
++        def handleRequest(*args, **kwargs):
++            yield callableMethod
++            yield "HTTP/1.0 200 OK\r\n\r\nBODY"
++            yield callableMethod
++            yield "THE END"
++
++        self.observer.handleRequest = handleRequest
++        result = list(self.handler.handleRequest(Client=('127.0.0.1', 12345)))
++        self.assertEquals(callableMethod, result[0])
++        self.assertEquals("HTTP/1.0 200 OK\r\n", result[1])
++        self.assertEquals("\r\nBODY", result[3])
++        self.assertEquals(callableMethod, result[4])
++        self.assertTrue(result[2].startswith('Set-Cookie: session'), result[2])
++        self.assertEquals("THE END", result[5])
++
+     def assertSessionCookie(self, handleRequestOutput, nameSuffix=''):
+         header, body = handleRequestOutput.split(utils.CRLF*2,1)
+         headerParts = header.split(utils.CRLF)
