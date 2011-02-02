@@ -8,8 +8,9 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2011 Maastricht University http://www.um.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -28,7 +29,9 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from .docsetlist import DocSetList, JACCARD_MI
+
+from docset import DocSet
+from docsetlist import DocSetList, JACCARD_MI
 from merescolucene import Term, IndexReader, iterJ  
 from time import time
 from sys import maxint
@@ -49,11 +52,10 @@ class NoFacetIndexException(Exception):
 class Drilldown(object):
 
     def __init__(self, drilldownFields=None, transactionName=None):
-        drilldownFields = drilldownFields or ['*']
         self._drilldownFields = []
         self._prefixes = []
         self._compoundFields = []
-        for field in drilldownFields:
+        for field in drilldownFields if drilldownFields else []:
             if type(field) == tuple:
                 self._compoundFields.append(field)
             elif field.endswith('*'):
@@ -75,6 +77,8 @@ class Drilldown(object):
             self._docsetlists[compoundField].addDocument(docId, terms)
 
     def _isDrilldownField(self, field):
+        if type(field) == tuple and field in self._compoundFields:
+            return True
         if field.startswith('__'):
             return False
         if field in self._drilldownFields:
@@ -142,14 +146,42 @@ class Drilldown(object):
         return self._docsetlists.keys()
 
     def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None, defaultMaximumResults=0, defaultSorting=False):
-        allActualFields = self._docsetlists.keys()
         if not drilldownFieldnamesAndMaximumResults:
-            drilldownFieldnamesAndMaximumResults = [(fieldname, defaultMaximumResults, defaultSorting)
-                for fieldname in allActualFields]
-        for fieldname, maximumResults, sorted in drilldownFieldnamesAndMaximumResults:
-            if fieldname not in allActualFields:
-                raise NoFacetIndexException(fieldname, allActualFields)
-            yield fieldname, self._docsetlists[fieldname].termCardinalities(docset, maximumResults or maxint, sorted)
+            drilldownFieldnamesAndMaximumResults = [
+                (fieldname, defaultMaximumResults, defaultSorting)
+                for fieldname in self._docsetlists]
+        for fieldname, maximumResults, howToSort in drilldownFieldnamesAndMaximumResults:
+            if not self._isDrilldownField(fieldname):
+                raise NoFacetIndexException(fieldname, self.listFields())
+
+            docsetlist = self._docsetlists[fieldname]
+            yield fieldname, docsetlist.termCardinalities(docset, maximumResults or maxint, howToSort)
+
+    def hierarchicalDrilldown(self, docset, drilldownFieldnamesAndMaximumResults=None, defaultMaximumResults=0, defaultSorting=False):
+        if not drilldownFieldnamesAndMaximumResults:
+            drilldownFieldnamesAndMaximumResults = [
+                (fieldname, defaultMaximumResults, defaultSorting)
+                for fieldname in self._docsetlists]
+        for fieldname, maximumResults, howToSort in drilldownFieldnamesAndMaximumResults:
+            if fieldname == []:
+                raise StopIteration()
+            fieldname, remainingFields = fieldname[0], fieldname[1:]
+
+            if not self._isDrilldownField(fieldname):
+                raise NoFacetIndexException(fieldname, self.listFields())
+
+            docsetlist = self._docsetlists[fieldname]
+            termCardinalities = docsetlist.termCardinalities(docset, maximumResults or maxint, howToSort)
+            yield dict(fieldname=fieldname, terms=self._buildHierarchicalDrilldownTree(
+                        docset, docsetlist, termCardinalities, 
+                        [(remainingFields, maximumResults, howToSort)]))
+
+    def _buildHierarchicalDrilldownTree(self, docset, docsetlist, termCardinalities, drilldownFieldnamesAndMaximumResults):
+        #intersectedDocsetlist = docsetlist.intersect(docset)
+        for term, cardinality in termCardinalities:
+            docsetForTerm = docsetlist._TEST_getDocsetForTerm(term)
+            intersectedTermDocset = DocSet(sorted(docsetForTerm.intersect(docset)))
+            yield dict(term=term, count=cardinality, remainder=self.hierarchicalDrilldown(intersectedTermDocset, drilldownFieldnamesAndMaximumResults))
 
     def jaccard(self, docset, jaccardFieldsAndRanges, algorithm=JACCARD_MI, maxTermFreqPercentage=100):
         for fieldname, minimum, maximum in jaccardFieldsAndRanges:

@@ -129,18 +129,6 @@ void intersect_generic(
             lhs_from++;
             rhs_from++;
         }
-        // Upperbound pruning optimization
-        rhs_till = upper_bound(rhs_from, rhs_till, *(lhs_till-1));
-        if ( rhs_till <= rhs_from )
-            return;
-        lhs_till = upper_bound(lhs_from, lhs_till, *(rhs_till-1));
-        if ( lhs_till <= lhs_from )
-            return;
-        if ( *(lhs_till-1) == *(rhs_till-1) ) {
-            *result++ = *(lhs_till-1);
-            lhs_till--;
-            rhs_till--;
-        }
         // Switch to Zipper, optimization
         size_t lhs_size = lhs_till - lhs_from;
         size_t rhs_size = rhs_till - rhs_from;

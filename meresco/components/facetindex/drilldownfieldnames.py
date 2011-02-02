@@ -7,8 +7,9 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2011 Maastricht University http://www.um.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -48,4 +49,28 @@ class DrilldownFieldnames(Observable):
                 for field, termCounts in drilldownResults]
         except NoFacetIndexException, e:
             raise NoFacetIndexException(reverseLookup[e.field], e.fields)
-            
+           
+
+    def hierarchicalDrilldown(self, docset, fieldsAndMaximums):
+        reverseLookup = {}
+        translatedFields = []
+        for fields, maximum, sort in fieldsAndMaximums:
+            newFields = []
+            for field in fields:
+                translated = self.lookup(field)
+                reverseLookup[translated] = field
+                newFields.append(translated)
+            translatedFields.append((newFields, maximum, sort))
+        drilldownResults = self.any.hierarchicalDrilldown(docset, translatedFields)
+
+        def translateField(remainderGenerator):
+            for field in remainderGenerator:
+                yield dict(
+                    fieldname=reverseLookup[field['fieldname']], 
+                    terms=(dict(
+                        term=item['term'], 
+                        count=item['count'], 
+                        remainder=translateField(item['remainder'])) for item in field['terms']))
+
+        return translateField(drilldownResults)
+        #return [dict(fieldname=reverseLookup[fields['fieldname']], terms=fields['terms']) for fields in drilldownResults]

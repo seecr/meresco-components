@@ -8,7 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2011 Maastricht University http://www.um.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -92,11 +93,19 @@ class DocSetTest(LuceneTestCase):
         except Exception, e:
             self.assertTrue('non-increasing' in str(e))
 
-    def assertIntersect(self, lhs, rhs):
+    def XXXX_assertIntersect(self, lhs, rhs):
         soll = set(lhs).intersection(set(rhs))
         intersection1 = DocSet(lhs).intersect(DocSet(rhs))
         ist1 = set(iter(intersection1))
         ist2 = set(iter(DocSet(rhs).intersect(DocSet(lhs))))
+        self.assertEquals(soll, ist1)
+        self.assertEquals(soll, ist2)
+    
+    def assertIntersect(self, lhs, rhs):
+        soll = sorted(set(lhs).intersection(set(rhs)))
+        intersection1 = DocSet(lhs).intersect(DocSet(rhs))
+        ist1 = list(sorted(iter(intersection1)))
+        ist2 = list(sorted(iter(DocSet(rhs).intersect(DocSet(lhs)))))
         self.assertEquals(soll, ist1)
         self.assertEquals(soll, ist2)
 

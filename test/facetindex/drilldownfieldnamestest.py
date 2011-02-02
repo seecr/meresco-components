@@ -7,8 +7,9 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2011 Maastricht University http://www.um.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -30,6 +31,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.facetindex import DrilldownFieldnames
 from meresco.components.facetindex.drilldown import NoFacetIndexException
+from testutils import generators2lists
 
 class DrilldownFieldnamesTest(CQ2TestCase):
 
@@ -46,6 +48,33 @@ class DrilldownFieldnamesTest(CQ2TestCase):
 
         self.assertEquals([('field1', [('term1',1)]),('field2', [('term2', 2)])], result)
 
+    def testHierarchicalDrilldown(self):
+        d = DrilldownFieldnames(lookup=lambda name: 'drilldown.'+name)
+        observer = CallTrace('drilldown')
+        observer.returnValues['hierarchicalDrilldown'] = [
+            dict(fieldname="drilldown.field1", terms=(term for term in [
+                dict(term="term1", count=1, remainder=(field for field in [
+                    dict(fieldname="drilldown.field2", terms=(term for term in [
+                        dict(term="term2", count=2, remainder=(x for x in []))])
+                    )])
+                )])
+            )]
+                    
+        d.addObserver(observer)
+
+        result = generators2lists(d.hierarchicalDrilldown('docset', [(['field1', 'field2'], 0, True)]))
+
+        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEquals([(['drilldown.field1', 'drilldown.field2'], 0, True)], list(observer.calledMethods[0].args[1]))
+
+        self.assertEquals([
+            {'fieldname': 'field1', 'terms': 
+                [{'count': 1, 'term': 'term1', 'remainder': 
+                    [{'fieldname': 'field2', 'terms': 
+                        [{'count': 2, 'term': 'term2', 'remainder': []}]
+                    }]
+                }]
+            }], result)
 
     def testReverseLookupInException(self):
         d = DrilldownFieldnames(lookup=lambda name: 'drilldown.'+name)

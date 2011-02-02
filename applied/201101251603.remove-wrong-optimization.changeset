@@ -1,0 +1,30 @@
+Changeset created on Tue Jan 25 16:03:40 CET 2011 by Seek You Too
+
+Description: Removed wrong optimization in docset
+
+    Removed wrong optimization in docset
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.6-MWE/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/docset.h version_1/meresco/components/facetindex/docset.h
+--- version_0/meresco/components/facetindex/docset.h	2011-01-20 14:45:45.000000000 +0100
++++ version_1/meresco/components/facetindex/docset.h	2011-01-25 15:57:37.000000000 +0100
+@@ -129,18 +129,6 @@
+             lhs_from++;
+             rhs_from++;
+         }
+-        // Upperbound pruning optimization
+-        rhs_till = upper_bound(rhs_from, rhs_till, *(lhs_till-1));
+-        if ( rhs_till <= rhs_from )
+-            return;
+-        lhs_till = upper_bound(lhs_from, lhs_till, *(rhs_till-1));
+-        if ( lhs_till <= lhs_from )
+-            return;
+-        if ( *(lhs_till-1) == *(rhs_till-1) ) {
+-            *result++ = *(lhs_till-1);
+-            lhs_till--;
+-            rhs_till--;
+-        }
+         // Switch to Zipper, optimization
+         size_t lhs_size = lhs_till - lhs_from;
+         size_t rhs_size = rhs_till - rhs_from;

@@ -8,8 +8,9 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2011 Maastricht University http://www.um.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -28,11 +29,12 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from struct import calcsize
-from meresco.components.facetindex.merescolucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 
+from struct import calcsize
+from testutils import generators2lists
 from cq2utils import CQ2TestCase, CallTrace
 
+from meresco.components.facetindex.merescolucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 from meresco.components.facetindex.document import Document
 from meresco.components.facetindex.drilldown import Drilldown, NoFacetIndexException
 from meresco.components.facetindex.lucene import LuceneIndex
@@ -103,6 +105,38 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(['field_0', 'field_1'], result.keys())
         self.assertEquals(set([("this is term_0", 1), ("this is term_1", 2)]), set(result['field_0']))
         self.assertEquals([("inquery", 3)], list(result['field_1']))
+
+    def testHierarchicalDrilldown(self):
+        self.createDrilldown(['faculty', 'group'])
+        self.addUntokenized([
+            ('0', {'faculty': 'economie',    'group': 'accounting'}),
+            ('1', {'faculty': 'geneeskunde', 'group': 'cardiologie'}),
+            ('2', {'faculty': 'geneeskunde', 'group': 'cardiologie'}),
+            ('3', {'faculty': 'geneeskunde', 'group': 'biochemie'}),
+            ('4', {'faculty': 'economie',    'group': 'algemeen'}),
+            ('5', {'faculty': 'economie',    'group': 'accounting'}),
+            ('6', {'faculty': 'geneeskunde', 'group': 'algemeen'}),
+            ('7', {'faculty': 'wiskunde',    'group': 'algemeen'}),
+        ])
+        queryDocset = self.index.docsetFromQuery(MatchAllDocsQuery())
+        drilldownResults = self.drilldown.hierarchicalDrilldown(queryDocset, [(['faculty', 'group'], 2, False)])
+
+        self.assertEquals([
+            dict(fieldname='faculty', terms=[
+                dict(term='economie', count=3, remainder=[
+                    dict(fieldname='group', terms=[
+                        dict(term='accounting', count=2, remainder=[]),
+                        dict(term='algemeen',   count=1, remainder=[])
+                    ])
+                 ]),
+                 dict(term='geneeskunde', count=4, remainder=[
+                    dict(fieldname='group', terms=[
+                        dict(term='algemeen', count=1, remainder=[]),
+                        dict(term='biochemie', count=1, remainder=[]),
+                    ])
+                 ])
+             ])
+        ], generators2lists(drilldownResults))
 
     def testSortingOnCardinality(self):
         self.createDrilldown(['field0'])
@@ -210,6 +244,19 @@ class DrilldownTest(CQ2TestCase):
         except NoFacetIndexException, e:
             self.assertEquals("No facetindex for field 'name'. Available fields: 'title'", str(e))
 
+    def testIsDrilldownField(self):
+        drilldown = Drilldown()
+        self.assertFalse(drilldown._isDrilldownField("thingy"))
+        drilldown = Drilldown(drilldownFields=['*'])
+        self.assertTrue(drilldown._isDrilldownField("thingy"))
+        self.assertFalse(drilldown._isDrilldownField("__thingy"))
+        drilldown = Drilldown(drilldownFields=['thing*'])
+        self.assertTrue(drilldown._isDrilldownField("thingy"))
+        drilldown = Drilldown(drilldownFields=['thingy'])
+        self.assertTrue(drilldown._isDrilldownField("thingy"))
+        drilldown = Drilldown(drilldownFields=[('thingy', )])
+        self.assertTrue(drilldown._isDrilldownField(("thingy",)))
+
     def testAddDocument(self):
         drilldown = Drilldown(['title'])
         self.assertEquals(0, drilldown.queueLength())
@@ -310,7 +357,7 @@ class DrilldownTest(CQ2TestCase):
         dsl0 = drilldown.intersect('field_0', DocSet([0,1,2,3]))
         self.assertEquals([[0], [1,2], [3]], list(dsl0))
         dsl1 = drilldown.intersect('field_1', DocSet([0,1,2,3]))
-        self.assertEquals([[0,2,1],[3]], list(dsl1))
+        self.assertEquals([[0,1,2],[3]], [list(sorted(part)) for part in dsl1])
 
     def testMultiFieldDrilldown(self):
         drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
