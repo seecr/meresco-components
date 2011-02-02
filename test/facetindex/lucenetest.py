@@ -8,8 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -551,3 +551,24 @@ class LuceneTest(CQ2TestCase):
         total, hits = luceneIndex.executeQuery(MatchAllDocsQuery())
         self.assertEquals(0, total)
         self.assertEquals(0, luceneIndex._currentTracker.nrOfDocs())
+
+    def testAssertionErrorInCaseTrackerOutOfSync(self):
+        from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker
+        mergeFactor = self._luceneIndex.getMergeFactor()
+
+        document = Document('identifier')
+        document.addIndexedField('field', 'value')
+        document.addToIndexWith(self._luceneIndex._writer)
+        document.addToIndexWith(self._luceneIndex._writer)
+
+        self._luceneIndex.close()
+        outOfSyncTracker = LuceneDocIdTracker(mergeFactor, directory=self.tempdir, maxDoc=1)
+        outOfSyncTracker.flush()
+        try:
+            luceneIndex = LuceneIndex(directoryName=self.tempdir)
+        except AssertionError, e:
+            self.assertEquals("The docId tracker for the Lucene index in '%s' is out of sync (probably after a crash); Please optimize the index before restarting." % self.tempdir, str(e))
+        else:
+            self.fail("should have resulted in AssertionError")
+
+

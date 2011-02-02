@@ -8,8 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -103,6 +103,7 @@ class LuceneIndex(Observable):
         maxDoc = self.docCount() if optimized else 0
         self._currentTracker = LuceneDocIdTracker(mergeFactor, directory=self._directoryName, maxDoc=maxDoc)
         self._lucene2docId = self._currentTracker.getMap()
+        assert len(self._lucene2docId) == self._searcher.maxDoc(), "The docId tracker for the Lucene index in '%s' is out of sync (probably after a crash); Please optimize the index before restarting." % self._directoryName
         self._debugLog = DevNullLogger() if debugLogFilename == None else DebugLogger(debugLogFilename)
         self._debugLog.comment('Debug Log for LuceneIndex')
         self._debugLog.comment('directoryName = ', repr(directoryName))

@@ -9,7 +9,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -39,7 +39,7 @@ from cq2utils import CallTrace
 from lucenetestcase import LuceneTestCase
 
 from meresco.components.facetindex import DocSetList, DocSet, Trie, IntegerList, LuceneIndex, Document
-from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ, IndexWriter, MerescoStandardAnalyzer
+from meresco.components.facetindex.merescolucene import Term, IndexReader, asFloat, iterJ, IndexWriter, merescoStandardAnalyzer
 from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker, LuceneDocIdTrackerException, trackerBisect
 
 
@@ -60,7 +60,7 @@ class PerformanceTuningTest(LuceneTestCase):
             t0 = time()
             ds0.combinedCardinality(ds1)
             t1 += time() - t0
-        self.assertTiming(0.5, t1, 0.9)
+        self.assertTiming(0.4, t1, 0.8)
 
     def testSwitchFromSearchToZipperPoint(self):
         t = {}
@@ -249,7 +249,7 @@ class PerformanceTuningTest(LuceneTestCase):
         tsave = t1 - t0
         tload = t2 - t1
         self.assertTiming(0.004, tsave, 0.020)
-        self.assertTiming(0.10, tload, 0.50)
+        self.assertTiming(0.05, tload, 0.30)
 
     def testLuceneDocIdTrackerDeleteDocId(self):
         tracker = LuceneDocIdTracker(10, directory=self.tempdir)
