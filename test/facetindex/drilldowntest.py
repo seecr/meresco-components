@@ -357,7 +357,7 @@ class DrilldownTest(CQ2TestCase):
         dsl0 = drilldown.intersect('field_0', DocSet([0,1,2,3]))
         self.assertEquals([[0], [1,2], [3]], list(dsl0))
         dsl1 = drilldown.intersect('field_1', DocSet([0,1,2,3]))
-        self.assertEquals([[0,1,2],[3]], [list(sorted(part)) for part in dsl1])
+        self.assertEquals([[0,1,2],[3]], list(dsl1))
 
     def testMultiFieldDrilldown(self):
         drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])

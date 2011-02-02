@@ -104,8 +104,8 @@ class DocSetTest(LuceneTestCase):
     def assertIntersect(self, lhs, rhs):
         soll = sorted(set(lhs).intersection(set(rhs)))
         intersection1 = DocSet(lhs).intersect(DocSet(rhs))
-        ist1 = list(sorted(iter(intersection1)))
-        ist2 = list(sorted(iter(DocSet(rhs).intersect(DocSet(lhs)))))
+        ist1 = list(iter(intersection1))
+        ist2 = list(iter(DocSet(rhs).intersect(DocSet(lhs))))
         self.assertEquals(soll, ist1)
         self.assertEquals(soll, ist2)
 
