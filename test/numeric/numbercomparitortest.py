@@ -62,7 +62,7 @@ class NumberComparitorTest(CQ2TestCase):
 
     def assertResult(self, expectedResult, query):
         dna = be((Observable(),
-            (NumberComparitorCqlConversion('field', self.nrOfDecimals, valueLength=self.valueLength),
+            (NumberComparitorCqlConversion('field', self.nrOfDecimals, valueLength=self.valueLength, fromKwarg='cqlAbstractSyntaxTree'),
                 (CQL2LuceneQuery(unqualifiedTermFields),
                     (self.index,)
                 )

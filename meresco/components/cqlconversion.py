@@ -33,8 +33,8 @@ from cqlparser.cqlparser import CQLAbstractSyntaxNode
 from cqlparser import CqlVisitor
 
 class CQLConversion(Converter):
-    def __init__(self, astConversion):
-        Converter.__init__(self)
+    def __init__(self, astConversion, name=None, fromKwarg=None, toKwarg=None):
+        Converter.__init__(self, name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
         self._astConversion = astConversion
 
     def _canConvert(self, anObject):
@@ -44,17 +44,17 @@ class CQLConversion(Converter):
         return self._astConversion(cqlAst)
 
 class CqlMultiSearchClauseConversion(CQLConversion):
-    def __init__(self, filtersAndModifiers):
-        CQLConversion.__init__(self, self._convertAst)
+    def __init__(self, filtersAndModifiers, name=None, fromKwarg=None, toKwarg=None):
+        CQLConversion.__init__(self, self._convertAst, name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
         self._filtersAndModifiers = filtersAndModifiers
 
-    def _convertAst(self, ast):
-        CqlMultiSearchClauseModification(ast, self._filtersAndModifiers).visit()
-        return ast
+    def _convertAst(self, cqlAst):
+        CqlMultiSearchClauseModification(cqlAst, self._filtersAndModifiers).visit()
+        return cqlAst
 
 class CqlSearchClauseConversion(CqlMultiSearchClauseConversion):
-    def __init__(self, searchClauseFilter, modifier):
-        CqlMultiSearchClauseConversion.__init__(self, [(searchClauseFilter, modifier)])
+    def __init__(self, searchClauseFilter, modifier, name=None, fromKwarg=None, toKwarg=None):
+        CqlMultiSearchClauseConversion.__init__(self, filtersAndModifiers=[(searchClauseFilter, modifier)], name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
     
 class CqlMultiSearchClauseModification(CqlVisitor):
     def __init__(self, ast, filtersAndModifiers):

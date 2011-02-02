@@ -6,6 +6,7 @@
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -30,8 +31,8 @@ from xmlpump import Converter
 from lxml.etree import parse, XSLT, _ElementTree
 
 class XsltCrosswalk(Converter):
-    def __init__(self, xslFileList):
-        Converter.__init__(self)
+    def __init__(self, xslFileList, name=None, fromKwarg=None, toKwarg=None):
+        Converter.__init__(self, name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
         self._xsltFilelist = xslFileList
         self._xslts = [XSLT(parse(open(s))) for s in self._xsltFilelist]
 

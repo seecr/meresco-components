@@ -6,6 +6,7 @@
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -55,7 +56,7 @@ class NumberComparitorModifierTest(TestCase):
     def assertAst(self, expected, input, fieldname='rating', nrOfDecimals=0, valueLength=2):
         expected = parseString(expected)
         ast = parseString(input)
-        self.assertEquals(expected, NumberComparitorCqlConversion(fieldname, nrOfDecimals=nrOfDecimals, valueLength=valueLength)._convertAst(ast))
+        self.assertEquals(expected, NumberComparitorCqlConversion(fieldname, nrOfDecimals=nrOfDecimals, valueLength=valueLength, fromKwarg="cqlAst")._convertAst(cqlAst=ast))
 
     def testVerySmallFigures(self):
         query = 'rating < 2'

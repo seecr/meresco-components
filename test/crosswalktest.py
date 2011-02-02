@@ -6,6 +6,7 @@
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -41,7 +42,7 @@ from meresco.components.xml_generic import Validate, __file__ as xml_genericpath
 from os.path import join, dirname, abspath
 
 def readRecord(name):
-    return open('xml_generic/lxml_based/data/' + name)
+    return open('data/' + name)
 
 class CrosswalkTest(CQ2TestCase):
 

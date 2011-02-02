@@ -6,6 +6,7 @@
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
+#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -85,15 +86,15 @@ class XsltCrosswalkTest(CQ2TestCase):
         self.crosswalkedNode = []
 
         class Intercept:
-            def someMessage(innerself, xmlNode):
-                self.crosswalkedNode.append(tostring(xmlNode, pretty_print=True))
-                self.assertEquals(_ElementTree, type(xmlNode))
+            def someMessage(innerself, lxmlNode):
+                self.crosswalkedNode.append(tostring(lxmlNode, pretty_print=True))
+                self.assertEquals(_ElementTree, type(lxmlNode))
         root = be(
             (Observable(),
-                (XsltCrosswalk([self.xsltFilename]),
+                (XsltCrosswalk([self.xsltFilename], fromKwarg="lxmlNode"),
                     (Intercept(), )
                 )
             )
         )
-        root.do.someMessage(parse(open(self.xmlFilename)))
+        root.do.someMessage(lxmlNode=parse(open(self.xmlFilename)))
         self.assertEqualsWS(expectedXml, self.crosswalkedNode[0])

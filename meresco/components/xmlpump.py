@@ -45,87 +45,88 @@ except:
 class Converter(Observable):
     def __init__(self, name=None, fromKwarg=None, toKwarg=None):
         Observable.__init__(self, name=name)
+        if fromKwarg is None:
+            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
 
     def unknown(self, msg, *args, **kwargs):
-        if self._fromKwarg is None or not self._fromKwarg in kwargs:
+        if self._fromKwarg is None:
             newArgs = [self._detectAndConvert(arg) for arg in args]
             newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
             return self.all.unknown(msg, *newArgs, **newKwargs)
 
-        oldValue = kwargs[self._fromKwarg]
-        del kwargs[self._fromKwarg]
-        kwargs[self._toKwarg] = self._detectAndConvert(oldValue)
+        try:
+            oldvalue = kwargs[self._fromKwarg]
+        except KeyError:
+            pass
+        else:
+            del kwargs[self._fromKwarg]
+            kwargs[self._toKwarg] = self._convert(oldvalue)
 
         return self.all.unknown(msg, *args, **kwargs)
-
-    def _canConvert(self, anObject):
-        raise NotImplementedError()
 
     def _convert(self, anObject):
         raise NotImplementedError()
 
+    def _canConvert(self, anObject):
+        "deprecated"
+        raise NotImplementedError()
+
     def _detectAndConvert(self, anObject):
+        "deprecated"
         if self._canConvert(anObject):
             return self._convert(anObject)
         return anObject
 
-class _DeprecationWarningConverter(Converter):
-    def __init__(self, name=None, fromKwarg=None, toKwarg=None):
-        Converter.__init__(self, name, fromKwarg=fromKwarg, toKwarg=toKwarg)
-        if self._fromKwarg is None:
-            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
-
-_Converter = _DeprecationWarningConverter
 
 xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
 def isXmlString(anObject):
-
     return type(anObject) in [str, _ElementStringResult, unicode, _ElementUnicodeResult] and xmlStringRegexp.match(anObject)
 
-class XmlParseAmara(_Converter):
+class XmlParseAmara(Converter):
     def _canConvert(self, anObject):
         return isXmlString(anObject)
 
     def _convert(self, anObject):
         return bind_string(anObject.encode('UTF-8')).childNodes[0]
 
-class XmlPrintAmara(_Converter):
+class XmlPrintAmara(Converter):
     def _canConvert(self, anObject):
         return is_element(anObject)
 
     def _convert(self, anObject):
         return anObject.xml()
 
-class FileParseLxml(_Converter):
+class FileParseLxml(Converter):
     def _canConvert(self, anObject):
         return hasattr(anObject, 'read') and hasattr(anObject, 'readline')
 
     def _convert(self, anObject):
         return parse(anObject)
 
-class XmlParseLxml(_Converter):
+class XmlParseLxml(Converter):
     def _canConvert(self, anObject):
         return isXmlString(anObject)
 
     def _convert(self, anObject):
         return parse(StringIO(anObject.encode('UTF-8')))
         
-class XmlPrintLxml(_Converter):
+class XmlPrintLxml(Converter):
     def _canConvert(self, anObject):
         return type(anObject) == _ElementTree
 
     def _convert(self, anObject):
         return tostring(anObject, pretty_print = True, encoding="UTF-8")
 
-class Amara2Lxml(_Converter):
-    def _detectAndConvert(self, something):
-        if is_element(something):
-            return parse(StringIO(something.xml()))
-        return something
+class Amara2Lxml(Converter):
+    def _canConvert(self, anObject):
+        return is_element(anObject)
 
-class Lxml2Amara(_Converter):
+    def _convert(self, anObject):
+        return parse(StringIO(anObject.xml()))
+
+class Lxml2Amara(Converter):
     def _canConvert(self, anObject):
         return type(anObject) in [_ElementTree, _XSLTResultTree]
 

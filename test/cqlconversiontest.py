@@ -35,35 +35,34 @@ from cqlparser.cqlparser import SEARCH_TERM, SEARCH_CLAUSE, TERM
 
 
 class CQLConversionTest(CQ2TestCase):
-    
     def testCQLContextSetConversion(self):
         observer = CallTrace('observer')
         o = be((Observable(),
-            (CQLConversion(lambda ast:parseString('anotherQuery')),
+            (CQLConversion(lambda ast: parseString('anotherQuery'), fromKwarg="cqlAst"),
                 (observer,)
             )
         ))
-        o.do.whatever(parseString('afield = value'))
+        o.do.whatever(cqlAst=parseString('afield = value'))
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals('whatever', observer.calledMethods[0].name)
-        self.assertEquals((parseString('anotherQuery'),), observer.calledMethods[0].args)
+        self.assertEquals({'cqlAst': parseString('anotherQuery')}, observer.calledMethods[0].kwargs)
 
     def testCQLCanConvert(self):
-        c = CQLConversion(lambda ast: ast)
+        c = CQLConversion(lambda ast: ast, fromKwarg="cqlAst")
         self.assertTrue(c._canConvert(parseString('field = value')))
         self.assertFalse(c._canConvert('other object'))
 
     def testCQLConvert(self):
         converter = CallTrace('Converter')
         converter.returnValues['convert'] = parseString('ast')
-        c = CQLConversion(converter.convert)
+        c = CQLConversion(converter.convert, fromKwarg="cqlAst")
         self.assertEquals(parseString('ast'), c._convert(parseString('otherfield = value')))
         self.assertEquals(['convert'], [m.name for m in converter.calledMethods])
 
     def testSearchClauseNoModification(self):
         ast = parseString('field=value')
         modifier = CallTrace('SearchClauseModifier')
-        conversion = CqlSearchClauseConversion(lambda node: False, modifier.modify)
+        conversion = CqlSearchClauseConversion(lambda node: False, modifier.modify, fromKwarg="cqlAst")
         result = conversion._detectAndConvert(ast)
         self.assertEquals('field=value', cql2string(result))
         self.assertEquals(0, len(modifier.calledMethods))
@@ -75,7 +74,7 @@ class CQLConversionTest(CQ2TestCase):
             return True
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
-        conversion = CqlSearchClauseConversion(canModify, modify)
+        conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
         result = conversion._detectAndConvert(ast)
         self.assertEquals('newvalue', cql2string(result))
 
@@ -85,7 +84,7 @@ class CQLConversionTest(CQ2TestCase):
             return ['CQL_QUERY'] == [c.name() for c in node.children()]
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
-        conversion = CqlSearchClauseConversion(canModify, modify)
+        conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
         result = conversion._detectAndConvert(ast)
         self.assertEquals('field1=value1 AND newvalue', cql2string(result))
 
@@ -93,7 +92,7 @@ class CQLConversionTest(CQ2TestCase):
         ast = parseString('term')
         canModify = lambda node: True
         modify = lambda node: TERM('wrong')
-        conversion = CqlSearchClauseConversion(canModify, modify)
+        conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
         self.assertRaises(AssertionError, conversion._detectAndConvert, ast)
 
     def testMultipleSearchClauseReplacements(self):
@@ -110,8 +109,8 @@ class CQLConversionTest(CQ2TestCase):
         observerClassic = CallTrace('observerClassic')
         observerNewStyle = CallTrace('observerNewStyle')
         classic = be((Observable(),
-            (CqlSearchClauseConversion(canModifyTerm1,modifyTerm1),
-                (CqlSearchClauseConversion(canModifyTerm3,modifyTerm3),
+            (CqlSearchClauseConversion(canModifyTerm1, modifyTerm1, fromKwarg="cqlAst"),
+                (CqlSearchClauseConversion(canModifyTerm3, modifyTerm3, fromKwarg="cqlAst"),
                     (observerClassic,)
                 )
             )
@@ -120,22 +119,19 @@ class CQLConversionTest(CQ2TestCase):
             (CqlMultiSearchClauseConversion([
                     (canModifyTerm1, modifyTerm1),
                     (canModifyTerm3, modifyTerm3)
-                ]),
+                ], fromKwarg="cqlAst"),
                 (observerNewStyle,)
             )
         ))
 
-        classic.do.message(ast)
-        newStyle.do.message(ast)
+        classic.do.message(cqlAst=ast)
+        newStyle.do.message(cqlAst=ast)
 
         self.assertEquals(['message'], [m.name for m in observerClassic.calledMethods])
-        resultClassic = observerClassic.calledMethods[0].args[0]
+        resultClassic = observerClassic.calledMethods[0].kwargs['cqlAst']
         self.assertEquals(['message'], [m.name for m in observerNewStyle.calledMethods])
-        resultNewStyle = observerNewStyle.calledMethods[0].args[0]
+        resultNewStyle = observerNewStyle.calledMethods[0].kwargs['cqlAst']
 
         self.assertEquals('termOne AND term2 AND termThree', cql2string(resultClassic))
         self.assertEquals('termOne AND term2 AND termThree', cql2string(resultNewStyle))
-
-
-
 

@@ -37,8 +37,9 @@ def filterAndModifier(fieldname, nrOfDecimals, valueLength):
     modifier = NumberComparitorModifier(fieldname=fieldname, convert=Convert(nrOfDecimals), valueLength=valueLength)
     return modifier.canModify, modifier.modify
 
-def NumberComparitorCqlConversion(fieldname, nrOfDecimals, valueLength):
-    return CqlSearchClauseConversion(*filterAndModifier(fieldname, nrOfDecimals, valueLength))
+def NumberComparitorCqlConversion(fieldname, nrOfDecimals, valueLength, fromKwarg=None, toKwarg=None):
+    canModify, modify = filterAndModifier(fieldname, nrOfDecimals, valueLength)
+    return CqlSearchClauseConversion(searchClauseFilter=canModify, modifier=modify, fromKwarg=fromKwarg, toKwarg=toKwarg)
 
 class NumberComparitorModifier(object):
     def __init__(self, fieldname, convert, valueLength):

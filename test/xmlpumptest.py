@@ -166,7 +166,7 @@ class XmlPumpTest(CQ2TestCase):
         self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].kwargs['data'])
         self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].kwargs['data'])
 
-    def testMissingFromKwargsRevertsToOldStyleConversion(self):
+    def testMissingFromKwargDoesNothing(self):
         observer = CallTrace()
         observable = be(
             (Observable(),
@@ -178,7 +178,7 @@ class XmlPumpTest(CQ2TestCase):
 
         observable.do.something('identifier', 'partname', parse(StringIO('<a/>')))
         self.assertEquals(1, len(observer.calledMethods))
-        self.assertEqualsWS('<a/>', observer.calledMethods[0].args[2])
+        self.assertEquals("<type 'lxml.etree._ElementTree'>", str(type(observer.calledMethods[0].args[2])))
 
     def testFileParseLxml(self):
         observable = Observable()

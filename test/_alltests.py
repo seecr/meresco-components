@@ -46,6 +46,7 @@ import unittest
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from contextsettest import ContextSetTest
 from cqlconversiontest import CQLConversionTest
+from crosswalktest import CrosswalkTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from filelisttest import FileListTest
@@ -68,8 +69,11 @@ from storagecomponenttest import StorageComponentTest
 from tokenizefieldlettest import TokenizeFieldletTest
 from venturitest import VenturiTest
 from xml2fieldstest import Xml2FieldsTest
+from xmlcomposetest import XmlComposeTest
 from xmlpumptest import XmlPumpTest
+from xmlxpathtest import XmlXPathTest
 from xpath2fieldtest import XPath2FieldTest
+from xsltcrosswalktest import XsltCrosswalkTest
 
 from autocomplete.autocompletetest import AutocompleteTest
 
@@ -98,10 +102,6 @@ from sru.srurecordupdatetest import SRURecordUpdateTest
 from sru.srutermdrilldowntest import SRUTermDrilldownTest
 from sru.srwtest import SrwTest
 
-from xml_generic.lxml_based.crosswalktest import CrosswalkTest
-from xml_generic.lxml_based.xmlcomposetest import XmlComposeTest
-from xml_generic.lxml_based.xmlxpathtest import XmlXPathTest
-from xml_generic.lxml_based.xsltcrosswalktest import XsltCrosswalkTest
 from xml_generic.validatetest import ValidateTest
 
 from facetindex.clausecollectortest import ClauseCollectorTest
