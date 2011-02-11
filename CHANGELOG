@@ -1,6 +1,16 @@
 CHANGELOG Meresco-Components
 ============================
 
+version: 3.4.7 -> 3.4.7.1
+date:    2011-02-11
+
+
+Boundary checks back in docset intersect
+----------------------------------------
+A boundary check was removed and is no inserted back into docset.h
+(2011-02-11, 3.4.7-Edurep)
+
+
 version: 3.4.6 -> 3.4.7
 date:    2011-02-02
 
