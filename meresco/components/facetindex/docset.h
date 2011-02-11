@@ -114,8 +114,14 @@ void intersect_generic(
         ForwardIterator lhs_from, ForwardIterator lhs_till,
         ForwardIterator rhs_from, ForwardIterator rhs_till,
         OutputIterator& result) {
-    if ( lhs_till <= lhs_from || rhs_till <= rhs_from )
+    if ( lhs_till <= lhs_from )
        return;
+    rhs_till = upper_bound(rhs_from, rhs_till, *(lhs_till-1));
+    if ( rhs_till <= rhs_from )
+        return;
+    lhs_till = upper_bound(lhs_from, lhs_till, *(rhs_till-1));
+    if ( lhs_till <= lhs_from )
+        return;
     while ( 1 ) {
         // Lowerbound pruning
         rhs_from = lower_bound(rhs_from, rhs_till, *lhs_from);
