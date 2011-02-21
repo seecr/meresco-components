@@ -43,7 +43,7 @@ from meresco.components.facetindex.merescolucene import Field, IndexReader, Inde
 
 from cqlparser import parseString
 
-from weightless import Reactor
+from weightless.io import Reactor
 
 class LuceneTest(CQ2TestCase):
 

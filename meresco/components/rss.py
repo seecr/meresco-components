@@ -41,7 +41,7 @@ from meresco.components.http import utils as httputils
 from cqlparser.cqlparser import parseString as CQLParseException
 from meresco.components.web import WebQuery
 
-from weightless import compose
+from weightless.core import compose
 
 class BadRequestException(Exception):
     pass

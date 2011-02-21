@@ -34,7 +34,7 @@ from inspect import currentframe
 from time import mktime, gmtime
 import operator
 from meresco.core import Observable
-from callstackscope import callstackscope
+from weightless.core import local
 
 snapshotFilename = 'snapshot'
 
@@ -59,7 +59,7 @@ def log(observable, **kwargs):
 class Logger(object):
     def log(self, **kwargs):
         try:
-            _log(callstackscope('__callstack_var_statisticsLog__'), **kwargs)
+            _log(local('__callstack_var_statisticsLog__'), **kwargs)
         except AttributeError:
             pass
         

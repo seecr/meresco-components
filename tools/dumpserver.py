@@ -34,7 +34,7 @@ for directory in glob('../deps.d/*'):
     path.insert(0, directory)
 path.insert(0, '..')
 
-from weightless import Reactor
+from weightless.io import Reactor
 from sys import stdout
 from os.path import abspath, dirname, join, isdir, basename
 from os import makedirs

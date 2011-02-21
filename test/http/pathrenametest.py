@@ -29,7 +29,7 @@ from unittest import TestCase
 from cq2utils import CallTrace
 from meresco.components.http import PathRename
 from meresco.core import Observable
-from weightless import compose
+from weightless.core import compose
 
 class PathRenameTest(TestCase):
     def testRename(self):

@@ -31,7 +31,7 @@ from meresco.core import Observable, decorate, decorateWith
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 
 from cqlparser import parseString as parseCQL
-from weightless import compose
+from weightless.core import compose
 from warnings import warn
 
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER

@@ -33,7 +33,7 @@ from urlparse import urlsplit
 from time import mktime, gmtime
 
 from meresco.components.statistics import AggregatorException
-from weightless import compose
+from weightless.core import compose
 from xml.sax.saxutils import escape as xmlEscape
 
 NAMESPACE="http://meresco.org/namespace/meresco/statistics"
@@ -59,14 +59,14 @@ class StatisticsXml(object):
                 toTime = self._parseTime(toTime[0])
         except ValueError:
             yield "</header><error>Invalid Time Format. Times must be of the format 1970-01-01T00:00:00Z or any shorter subpart.</error></statistics>"
-            raise StopIteration
+            return
         try:
             if "maxResults" in arguments:
                 yield "<maxResults>%s</maxResults>" % arguments["maxResults"][0]
             maxResults = int(arguments.get("maxResults", [0])[0])
         except ValueError:
             yield "</header><error>maxResults must be number.</error></statistics>"
-            raise StopIteration
+            return
         key = arguments.get("key", None)
         if not key:
             for stuff in self._listKeys():
@@ -92,10 +92,10 @@ class StatisticsXml(object):
             data = self._statistics.get(key, fromTime, toTime).items()
         except KeyError, e:
             yield "</header><error>Unknown key: %s</error></statistics>" % str(key)
-            raise StopIteration
+            return
         except AggregatorException, e:
             yield "</header><error>Statistics Aggregation Exception: %s</error></statistics>" % str(e)
-            raise StopIteration
+            return
 
         data = self._sorted(data)
         if maxResults:

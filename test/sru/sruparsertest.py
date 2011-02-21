@@ -32,7 +32,7 @@ from meresco.components.sru import SruParser, SruHandler
 from cq2utils import CallTrace, CQ2TestCase
 from lxml.etree import parse
 from StringIO import StringIO
-from weightless import compose
+from weightless.core import compose
 
 SUCCESS = "SUCCESS"
 

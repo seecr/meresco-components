@@ -29,7 +29,7 @@
 #
 ## end license ##
 from meresco.core import Observable
-from weightless import HttpServer
+from weightless.http import HttpServer
 from cgi import parse_qs
 from urlparse import urlsplit
 from StringIO import StringIO
@@ -54,11 +54,12 @@ class ObservableHttpServer(Observable):
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
-        self._keepHttpServerForTestingSupport = \
+        self._httpserver = \
             HttpServer(self._reactor, self._port, self._connect,
                 timeout=self._timeout, prio=self._prio, sok=self._sok,
                 maxConnections=self._maxConnections,
                 errorHandler=self._error)
+        self._httpserver.listen()
         self._started = True
 
     def observer_init(self):

@@ -30,7 +30,7 @@ from unittest import TestCase
 from cq2utils import CallTrace
 from meresco.components.http import BasicAuthentication
 from base64 import b64encode
-from weightless import compose
+from weightless.core import compose
 
 class BasicAuthenticationTest(TestCase):
 

@@ -34,7 +34,7 @@ from meresco.components.http.utils import CRLF
 from StringIO import StringIO
 from lxml.etree import parse
 
-from weightless import compose
+from weightless.core import compose
 
 class StatisticsXmlTest(CQ2TestCase):
 
@@ -62,7 +62,7 @@ class StatisticsXmlTest(CQ2TestCase):
         def shuntQuery(*args):
             while shuntedQuery: shuntedQuery.pop()
             shuntedQuery.append(args)
-            return ""
+            return (x for x in ())
 
         def check(expected, query):
             statisticsxml = StatisticsXml('ignored')

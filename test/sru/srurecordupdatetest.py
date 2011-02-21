@@ -31,7 +31,7 @@ from cq2utils import CallTrace, CQ2TestCase
 
 from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
-from weightless import compose
+from weightless.core import compose
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>

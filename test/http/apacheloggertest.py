@@ -26,7 +26,7 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from StringIO import StringIO
-from weightless import compose
+from weightless.core import compose
 
 from meresco.components.http import ApacheLogger
 from meresco.components.http.utils import okPlainText

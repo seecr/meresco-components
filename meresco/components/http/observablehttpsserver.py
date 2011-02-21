@@ -28,7 +28,7 @@
 ## end license ##
 from meresco.core import Observable
 
-from weightless import HttpsServer
+from weightless.http import HttpsServer
 from cgi import parse_qs
 from urlparse import urlsplit
 from StringIO import StringIO

@@ -36,9 +36,9 @@ from merescolucene import Term, IndexReader, iterJ
 from time import time
 from sys import maxint
 from functioncommand import FunctionCommand
-from callstackscope import callstackscope
 from .triedict import TrieDict
 from collections import defaultdict
+from weightless.core import local
 
 IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 
@@ -108,7 +108,7 @@ class Drilldown(object):
         pass
 
     def begin(self):
-        tx = callstackscope('__callstack_var_tx__')
+        tx = local('__callstack_var_tx__')
         if tx.name == self._transactionName:
             tx.join(self)
 

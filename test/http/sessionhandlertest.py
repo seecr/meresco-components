@@ -30,7 +30,7 @@
 from unittest import TestCase
 from meresco.components.http import SessionHandler, utils
 from meresco.components.http.sessionhandler import Session
-from weightless import compose
+from weightless.core import compose
 from cq2utils import CallTrace
 from time import time, sleep
 

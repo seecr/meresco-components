@@ -30,7 +30,7 @@ from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.core import be, Transparant
 
-from weightless import Reactor
+from weightless.io import Reactor
 
 from os.path import join, isfile
 from os import makedirs, rename, listdir, remove

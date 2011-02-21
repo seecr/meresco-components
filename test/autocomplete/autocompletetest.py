@@ -27,7 +27,7 @@
 from meresco.components.autocomplete import Autocomplete
 
 from cq2utils import CQ2TestCase, CallTrace
-from weightless import compose
+from weightless.core import compose
 
 class AutocompleteTest(CQ2TestCase):
     def testHandleRequest(self):

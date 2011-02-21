@@ -36,7 +36,7 @@ from escaping import unescapeFilename, escapeFilename
 
 from os.path import join, isdir
 from os import listdir
-from weightless import compose
+from weightless.core import compose
 
 class ReindexTest(CQ2TestCase):
     def _path(self, subdir):

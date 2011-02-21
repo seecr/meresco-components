@@ -32,7 +32,7 @@ from meresco.components.http import utils as httputils
 
 from cqlparser import parseString, CQLParseException, CQLTokenizerException
 
-from weightless import compose
+from weightless.core import compose
 
 from diagnostic import DIAGNOSTIC
 from diagnostic import GENERAL_SYSTEM_ERROR, SYSTEM_TEMPORARILY_UNAVAILABLE, UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED

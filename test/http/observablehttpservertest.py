@@ -29,7 +29,7 @@
 ## end license ##
 from socket import socket
 from cq2utils import CQ2TestCase, CallTrace
-from weightless import Reactor
+from weightless.io import Reactor
 
 from meresco.components.http import ObservableHttpServer
 from meresco.components.http.utils import CRLF
@@ -86,7 +86,7 @@ class ObservableHttpServerTest(CQ2TestCase):
         s = ObservableHttpServer(reactor, 1024, maxConnections=5)
         s.startServer()
 
-        acceptor = s._keepHttpServerForTestingSupport
+        acceptor = s._httpserver._acceptor
         httphandler = acceptor._sinkFactory('sok')
         errorHandler = httphandler._errorHandler
         self.assertTrue(errorHandler == s._error)

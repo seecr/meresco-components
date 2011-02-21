@@ -28,7 +28,7 @@
 ## end license ##
 import meresco.components.http.utils as utils
 from unittest import TestCase
-from weightless import compose
+from weightless.core import compose
 
 class UtilsTest(TestCase):
     def testInsertHeader(self):

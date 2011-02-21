@@ -42,7 +42,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from cqlparser import parseString
 import traceback
 
-from weightless import compose
+from weightless.core import compose
 
 SUCCESS = "SUCCESS"
 

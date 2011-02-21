@@ -27,7 +27,7 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
-from weightless import compose
+from weightless.core import compose
 
 from meresco.components.sru.diagnostic import generalSystemError
 
