@@ -1,0 +1,848 @@
+Changeset created on Tue Mar  1 15:56:09 CET 2011 by Seek You Too
+
+Description: Weightless Upgrade
+
+    Weightless is upgraded to version 0.5, therefor some imports changed and callstackscope was removed.
+
+Baseline version: meresco/meresco-components/tags/version_3.4.7.1
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/deps.txt version_0-weightless/deps.txt
+--- version_0/deps.txt	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/deps.txt	2011-02-16 20:53:33.000000000 +0100
+@@ -1,7 +1,5 @@
+ python-amara (>=1.2a2)
+ python-amara (<<1.3)
+-python-callstackscope (>=0.1)
+-python-callstackscope (<<0.2)
+ python-cqlparser (>=1.5.4)
+ python-cqlparser (<<1.6)
+ python-escaping (>= 0.1)
+@@ -20,8 +18,8 @@
+ python-meresco-xml (<< 1.1)
+ python-storage (>=5.1.7)
+ python-storage (<<5.2)
+-python-weightless (>= 0.4.12)
+-python-weightless (<< 0.5)
++python-weightless (>= 0.5)
++python-weightless (<< 0.6)
+ liblucene-core2-gcj9 (>= 2.2.0)
+ liblucene-core2-gcj9 (< 2.4.0)
+ libgcj9-0
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/drilldown/srufielddrilldown.py version_0-weightless/meresco/components/drilldown/srufielddrilldown.py
+--- version_0/meresco/components/drilldown/srufielddrilldown.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/drilldown/srufielddrilldown.py	2011-03-01 15:47:15.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -33,7 +34,7 @@
+ from meresco.core.observable import Observable
+ from meresco.core.generatorutils import decorateWith
+ 
+-from weightless import compose
++from weightless.core import compose
+ 
+ from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/drilldown.py version_0-weightless/meresco/components/facetindex/drilldown.py
+--- version_0/meresco/components/facetindex/drilldown.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/facetindex/drilldown.py	2011-03-01 15:47:32.000000000 +0100
+@@ -9,7 +9,7 @@
+ #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+ #    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2011 Maastricht University http://www.um.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -36,9 +36,9 @@
+ from time import time
+ from sys import maxint
+ from functioncommand import FunctionCommand
+-from callstackscope import callstackscope
+ from .triedict import TrieDict
+ from collections import defaultdict
++from weightless.core import local
+ 
+ IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
+ 
+@@ -108,7 +108,7 @@
+         pass
+ 
+     def begin(self):
+-        tx = callstackscope('__callstack_var_tx__')
++        tx = local('__callstack_var_tx__')
+         if tx.name == self._transactionName:
+             tx.join(self)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/http/observablehttpserver.py version_0-weightless/meresco/components/http/observablehttpserver.py
+--- version_0/meresco/components/http/observablehttpserver.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/http/observablehttpserver.py	2011-03-01 15:47:50.000000000 +0100
+@@ -3,13 +3,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -29,7 +28,7 @@
+ #
+ ## end license ##
+ from meresco.core import Observable
+-from weightless import HttpServer
++from weightless.http import HttpServer
+ from cgi import parse_qs
+ from urlparse import urlsplit
+ from StringIO import StringIO
+@@ -54,11 +53,12 @@
+         root user. In other cases it will be started when initializing all observers,
+         see observer_init()
+         """
+-        self._keepHttpServerForTestingSupport = \
++        self._httpserver = \
+             HttpServer(self._reactor, self._port, self._connect,
+                 timeout=self._timeout, prio=self._prio, sok=self._sok,
+                 maxConnections=self._maxConnections,
+                 errorHandler=self._error)
++        self._httpserver.listen()
+         self._started = True
+ 
+     def observer_init(self):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/http/observablehttpsserver.py version_0-weightless/meresco/components/http/observablehttpsserver.py
+--- version_0/meresco/components/http/observablehttpsserver.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/http/observablehttpsserver.py	2011-03-01 15:48:22.000000000 +0100
+@@ -3,11 +3,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -28,7 +29,7 @@
+ ## end license ##
+ from meresco.core import Observable
+ 
+-from weightless import HttpsServer
++from weightless.http import HttpsServer
+ from cgi import parse_qs
+ from urlparse import urlsplit
+ from StringIO import StringIO
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/msgbox/msgbox.py version_0-weightless/meresco/components/msgbox/msgbox.py
+--- version_0/meresco/components/msgbox/msgbox.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/msgbox/msgbox.py	2011-02-16 20:58:02.000000000 +0100
+@@ -37,7 +37,7 @@
+ 
+ from meresco.core import Observable
+ from cq2utils import DirectoryWatcher
+-from weightless import Suspend
++from weightless.http import Suspend
+ from escaping import escapeFilename, unescapeFilename
+ 
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/rss.py version_0-weightless/meresco/components/rss.py
+--- version_0/meresco/components/rss.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/rss.py	2011-03-01 15:48:41.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -41,7 +42,7 @@
+ from cqlparser.cqlparser import parseString as CQLParseException
+ from meresco.components.web import WebQuery
+ 
+-from weightless import compose
++from weightless.core import compose
+ 
+ class BadRequestException(Exception):
+     pass
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/sru/sruhandler.py version_0-weightless/meresco/components/sru/sruhandler.py
+--- version_0/meresco/components/sru/sruhandler.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/sru/sruhandler.py	2011-03-01 15:48:51.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -31,7 +32,7 @@
+ from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+ 
+ from cqlparser import parseString as parseCQL
+-from weightless import compose
++from weightless.core import compose
+ from warnings import warn
+ 
+ from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/sru/sruparser.py version_0-weightless/meresco/components/sru/sruparser.py
+--- version_0/meresco/components/sru/sruparser.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/sru/sruparser.py	2011-03-01 15:49:00.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -32,7 +33,7 @@
+ 
+ from cqlparser import parseString, CQLParseException, CQLTokenizerException
+ 
+-from weightless import compose
++from weightless.core import compose
+ 
+ from diagnostic import DIAGNOSTIC
+ from diagnostic import GENERAL_SYSTEM_ERROR, SYSTEM_TEMPORARILY_UNAVAILABLE, UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/sru/srw.py version_0-weightless/meresco/components/sru/srw.py
+--- version_0/meresco/components/sru/srw.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/sru/srw.py	2011-03-01 15:49:11.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -33,7 +34,7 @@
+ from meresco.core import Observable
+ from meresco.components.http import utils as httputils
+ 
+-from weightless import compose
++from weightless.core import compose
+ 
+ SOAP_XML_URI = "http://schemas.xmlsoap.org/soap/envelope/"
+ 
+@@ -117,4 +118,4 @@
+         if operation != 'searchRetrieve':
+             raise SruException(UNSUPPORTED_OPERATION, operation)
+         if 'stylesheet' in arguments:
+-            raise SruException(UNSUPPORTED_PARAMETER, 'stylesheet')
+\ No newline at end of file
++            raise SruException(UNSUPPORTED_PARAMETER, 'stylesheet')
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/statistics.py version_0-weightless/meresco/components/statistics.py
+--- version_0/meresco/components/statistics.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/statistics.py	2011-03-01 15:49:26.000000000 +0100
+@@ -3,11 +3,11 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -34,7 +34,7 @@
+ from time import mktime, gmtime
+ import operator
+ from meresco.core import Observable
+-from callstackscope import callstackscope
++from weightless.core import local
+ 
+ snapshotFilename = 'snapshot'
+ 
+@@ -59,7 +59,7 @@
+ class Logger(object):
+     def log(self, **kwargs):
+         try:
+-            _log(callstackscope('__callstack_var_statisticsLog__'), **kwargs)
++            _log(local('__callstack_var_statisticsLog__'), **kwargs)
+         except AttributeError:
+             pass
+         
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/statisticsxml.py version_0-weightless/meresco/components/statisticsxml.py
+--- version_0/meresco/components/statisticsxml.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/meresco/components/statisticsxml.py	2011-03-01 15:49:36.000000000 +0100
+@@ -3,11 +3,11 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -33,7 +33,7 @@
+ from time import mktime, gmtime
+ 
+ from meresco.components.statistics import AggregatorException
+-from weightless import compose
++from weightless.core import compose
+ from xml.sax.saxutils import escape as xmlEscape
+ 
+ NAMESPACE="http://meresco.org/namespace/meresco/statistics"
+@@ -59,14 +59,14 @@
+                 toTime = self._parseTime(toTime[0])
+         except ValueError:
+             yield "</header><error>Invalid Time Format. Times must be of the format 1970-01-01T00:00:00Z or any shorter subpart.</error></statistics>"
+-            raise StopIteration
++            return
+         try:
+             if "maxResults" in arguments:
+                 yield "<maxResults>%s</maxResults>" % arguments["maxResults"][0]
+             maxResults = int(arguments.get("maxResults", [0])[0])
+         except ValueError:
+             yield "</header><error>maxResults must be number.</error></statistics>"
+-            raise StopIteration
++            return
+         key = arguments.get("key", None)
+         if not key:
+             for stuff in self._listKeys():
+@@ -92,10 +92,10 @@
+             data = self._statistics.get(key, fromTime, toTime).items()
+         except KeyError, e:
+             yield "</header><error>Unknown key: %s</error></statistics>" % str(key)
+-            raise StopIteration
++            return
+         except AggregatorException, e:
+             yield "</header><error>Statistics Aggregation Exception: %s</error></statistics>" % str(e)
+-            raise StopIteration
++            return
+ 
+         data = self._sorted(data)
+         if maxResults:
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/autocomplete/autocompletetest.py version_0-weightless/test/autocomplete/autocompletetest.py
+--- version_0/test/autocomplete/autocompletetest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/autocomplete/autocompletetest.py	2011-03-01 15:49:44.000000000 +0100
+@@ -3,8 +3,9 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -27,7 +28,7 @@
+ from meresco.components.autocomplete import Autocomplete
+ 
+ from cq2utils import CQ2TestCase, CallTrace
+-from weightless import compose
++from weightless.core import compose
+ 
+ class AutocompleteTest(CQ2TestCase):
+     def testHandleRequest(self):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/facetindex/lucenetest.py version_0-weightless/test/facetindex/lucenetest.py
+--- version_0/test/facetindex/lucenetest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/facetindex/lucenetest.py	2011-02-16 20:58:01.000000000 +0100
+@@ -43,7 +43,7 @@
+ 
+ from cqlparser import parseString
+ 
+-from weightless import Reactor
++from weightless.io import Reactor
+ 
+ class LuceneTest(CQ2TestCase):
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/apacheloggertest.py version_0-weightless/test/http/apacheloggertest.py
+--- version_0/test/http/apacheloggertest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/apacheloggertest.py	2011-03-01 15:50:03.000000000 +0100
+@@ -2,8 +2,8 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -26,7 +26,7 @@
+ from unittest import TestCase
+ from cq2utils import CallTrace
+ from StringIO import StringIO
+-from weightless import compose
++from weightless.core import compose
+ 
+ from meresco.components.http import ApacheLogger
+ from meresco.components.http.utils import okPlainText
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/argumentsinsessiontest.py version_0-weightless/test/http/argumentsinsessiontest.py
+--- version_0/test/http/argumentsinsessiontest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/argumentsinsessiontest.py	2011-03-01 15:50:16.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -30,7 +31,7 @@
+ from cq2utils import CallTrace
+ from meresco.components.http import ArgumentsInSession
+ from meresco.core import Observable
+-from weightless import compose
++from weightless.core import compose
+ 
+ class ArgumentsInSessionTest(TestCase):
+     def setUp(self):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/basicauthenticationtest.py version_0-weightless/test/http/basicauthenticationtest.py
+--- version_0/test/http/basicauthenticationtest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/basicauthenticationtest.py	2011-03-01 15:50:24.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -30,7 +31,7 @@
+ from cq2utils import CallTrace
+ from meresco.components.http import BasicAuthentication
+ from base64 import b64encode
+-from weightless import compose
++from weightless.core import compose
+ 
+ class BasicAuthenticationTest(TestCase):
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/observablehttpservertest.py version_0-weightless/test/http/observablehttpservertest.py
+--- version_0/test/http/observablehttpservertest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/observablehttpservertest.py	2011-03-01 15:50:38.000000000 +0100
+@@ -2,13 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -29,7 +28,7 @@
+ ## end license ##
+ from socket import socket
+ from cq2utils import CQ2TestCase, CallTrace
+-from weightless import Reactor
++from weightless.io import Reactor
+ 
+ from meresco.components.http import ObservableHttpServer
+ from meresco.components.http.utils import CRLF
+@@ -86,7 +85,7 @@
+         s = ObservableHttpServer(reactor, 1024, maxConnections=5)
+         s.startServer()
+ 
+-        acceptor = s._keepHttpServerForTestingSupport
++        acceptor = s._httpserver._acceptor
+         httphandler = acceptor._sinkFactory('sok')
+         errorHandler = httphandler._errorHandler
+         self.assertTrue(errorHandler == s._error)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/pathrenametest.py version_0-weightless/test/http/pathrenametest.py
+--- version_0/test/http/pathrenametest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/pathrenametest.py	2011-03-01 15:50:48.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -29,7 +30,7 @@
+ from cq2utils import CallTrace
+ from meresco.components.http import PathRename
+ from meresco.core import Observable
+-from weightless import compose
++from weightless.core import compose
+ 
+ class PathRenameTest(TestCase):
+     def testRename(self):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/sessionhandlertest.py version_0-weightless/test/http/sessionhandlertest.py
+--- version_0/test/http/sessionhandlertest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/sessionhandlertest.py	2011-03-01 15:50:57.000000000 +0100
+@@ -2,12 +2,13 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #    Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -30,7 +31,7 @@
+ from unittest import TestCase
+ from meresco.components.http import SessionHandler, utils
+ from meresco.components.http.sessionhandler import Session
+-from weightless import compose
++from weightless.core import compose
+ from cq2utils import CallTrace
+ from time import time, sleep
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/http/utilstest.py version_0-weightless/test/http/utilstest.py
+--- version_0/test/http/utilstest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/http/utilstest.py	2011-03-01 15:51:05.000000000 +0100
+@@ -3,11 +3,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -28,7 +29,7 @@
+ ## end license ##
+ import meresco.components.http.utils as utils
+ from unittest import TestCase
+-from weightless import compose
++from weightless.core import compose
+ 
+ class UtilsTest(TestCase):
+     def testInsertHeader(self):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/inboxtest.py version_0-weightless/test/inboxtest.py
+--- version_0/test/inboxtest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/inboxtest.py	2011-03-01 15:51:28.000000000 +0100
+@@ -3,11 +3,10 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2008 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2008-2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2008-2009 Tilburg University http://www.uvt.nl
++#    Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -30,7 +29,7 @@
+ 
+ from meresco.core import be, Transparant
+ 
+-from weightless import Reactor
++from weightless.io import Reactor
+ 
+ from os.path import join, isfile
+ from os import makedirs, rename, listdir, remove
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/msgbox/msgboxtest.py version_0-weightless/test/msgbox/msgboxtest.py
+--- version_0/test/msgbox/msgboxtest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/msgbox/msgboxtest.py	2011-02-16 20:58:01.000000000 +0100
+@@ -29,7 +29,7 @@
+ 
+ from meresco.core import be, Transparant
+ 
+-from weightless import Reactor
++from weightless.io import Reactor
+ 
+ from os.path import join, isfile, basename
+ from os import makedirs, rename, listdir, system, chmod, remove
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/reindextest.py version_0-weightless/test/reindextest.py
+--- version_0/test/reindextest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/reindextest.py	2011-03-01 15:51:49.000000000 +0100
+@@ -3,11 +3,11 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -36,7 +36,7 @@
+ 
+ from os.path import join, isdir
+ from os import listdir
+-from weightless import compose
++from weightless.core import compose
+ 
+ class ReindexTest(CQ2TestCase):
+     def _path(self, subdir):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/sru/sruhandlertest.py version_0-weightless/test/sru/sruhandlertest.py
+--- version_0/test/sru/sruhandlertest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/sru/sruhandlertest.py	2011-03-01 15:51:56.000000000 +0100
+@@ -3,11 +3,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -42,7 +43,7 @@
+ from cqlparser import parseString
+ import traceback
+ 
+-from weightless import compose
++from weightless.core import compose
+ 
+ SUCCESS = "SUCCESS"
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/sru/sruparsertest.py version_0-weightless/test/sru/sruparsertest.py
+--- version_0/test/sru/sruparsertest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/sru/sruparsertest.py	2011-03-01 15:52:03.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -32,7 +33,7 @@
+ from cq2utils import CallTrace, CQ2TestCase
+ from lxml.etree import parse
+ from StringIO import StringIO
+-from weightless import compose
++from weightless.core import compose
+ 
+ SUCCESS = "SUCCESS"
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/sru/srurecordupdatetest.py version_0-weightless/test/sru/srurecordupdatetest.py
+--- version_0/test/sru/srurecordupdatetest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/sru/srurecordupdatetest.py	2011-03-01 15:52:25.000000000 +0100
+@@ -2,12 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -31,7 +31,7 @@
+ 
+ from meresco.components.sru.srurecordupdate import SRURecordUpdate
+ from amara.binderytools import bind_string
+-from weightless import compose
++from weightless.core import compose
+ 
+ 
+ XML = """<?xml version="1.0" encoding="UTF-8"?>
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/sru/srutermdrilldowntest.py version_0-weightless/test/sru/srutermdrilldowntest.py
+--- version_0/test/sru/srutermdrilldowntest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/sru/srutermdrilldowntest.py	2011-03-01 15:52:43.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -27,7 +28,7 @@
+ ## end license ##
+ 
+ from cq2utils import CQ2TestCase, CallTrace
+-from weightless import compose
++from weightless.core import compose
+ 
+ from meresco.components.sru.diagnostic import generalSystemError
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/statisticsxmltest.py version_0-weightless/test/statisticsxmltest.py
+--- version_0/test/statisticsxmltest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/statisticsxmltest.py	2011-03-01 15:52:57.000000000 +0100
+@@ -3,11 +3,11 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -34,7 +34,7 @@
+ from StringIO import StringIO
+ from lxml.etree import parse
+ 
+-from weightless import compose
++from weightless.core import compose
+ 
+ class StatisticsXmlTest(CQ2TestCase):
+ 
+@@ -62,7 +62,7 @@
+         def shuntQuery(*args):
+             while shuntedQuery: shuntedQuery.pop()
+             shuntedQuery.append(args)
+-            return ""
++            return (x for x in ())
+ 
+         def check(expected, query):
+             statisticsxml = StatisticsXml('ignored')
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/venturitest.py version_0-weightless/test/venturitest.py
+--- version_0/test/venturitest.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/test/venturitest.py	2011-03-01 15:53:07.000000000 +0100
+@@ -2,12 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -34,7 +34,7 @@
+ 
+ from meresco.components.venturi import Venturi, VenturiException
+ from meresco.core import TransactionScope, be, Observable
+-from weightless import compose
++from weightless.core import compose
+ 
+ 
+ def fromstring(aString):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/tools/dumpserver.py version_0-weightless/tools/dumpserver.py
+--- version_0/tools/dumpserver.py	2011-02-11 12:14:40.000000000 +0100
++++ version_0-weightless/tools/dumpserver.py	2011-03-01 15:53:15.000000000 +0100
+@@ -8,6 +8,7 @@
+ #    Copyright (C) 2007-2009, 2011 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -34,7 +35,7 @@
+     path.insert(0, directory)
+ path.insert(0, '..')
+ 
+-from weightless import Reactor
++from weightless.io import Reactor
+ from sys import stdout
+ from os.path import abspath, dirname, join, isdir, basename
+ from os import makedirs
