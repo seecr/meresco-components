@@ -23,8 +23,8 @@ diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn -
  python-storage (<<5.2)
 -python-weightless (>= 0.4.12)
 -python-weightless (<< 0.5)
-+python-weightless (>= 0.5)
-+python-weightless (<< 0.6)
++python-weightless-core (>= 0.5)
++python-weightless-core (<< 0.6)
  liblucene-core2-gcj9 (>= 2.2.0)
  liblucene-core2-gcj9 (< 2.4.0)
  libgcj9-0
