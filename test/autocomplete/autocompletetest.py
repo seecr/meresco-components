@@ -3,8 +3,9 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
