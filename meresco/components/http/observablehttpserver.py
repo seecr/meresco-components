@@ -83,3 +83,5 @@ class ObservableHttpServer(Observable):
         requestArguments.update(kwargs)
         return self.all.handleRequest(**requestArguments)
 
+    def setMaxConnections(self, m):
+        self._httpserver.setMaxConnections(m)

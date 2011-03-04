@@ -90,6 +90,19 @@ class ObservableHttpServerTest(CQ2TestCase):
         errorHandler = httphandler._errorHandler
         self.assertTrue(errorHandler == s._error)
 
+    def testSetMaximumConnections(self):
+        reactor = CallTrace('Reactor')
+
+        s = ObservableHttpServer(reactor, 2048, maxConnections=5)
+        s.startServer()
+
+        httpserver = s._httpserver
+        self.assertEquals(5, httpserver._maxConnections)
+        s.setMaxConnections(6)
+        acceptor = s._httpserver
+        self.assertEquals(6, httpserver._maxConnections)
+        self.assertEquals(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
+
     def testServerWithPrio(self):
         import gc, weakref
         prios = []
