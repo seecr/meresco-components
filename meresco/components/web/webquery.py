@@ -85,23 +85,11 @@ class WebQuery(object):
 
     def _addFilter(self, filterQuery):
         self._filters.append(filterQuery)
-
-        newAst = [self._filters[-1]]
-
-        for f in reversed(self._filters[:-1]):
-            if len(newAst) != 1:
-                newAst = [SCOPED_CLAUSE(*newAst)]
-            newAst.insert(0,BOOLEAN('and'))
-            newAst.insert(0,f)
-        if len(newAst) != 1:
-            newAst = [SCOPED_CLAUSE(*newAst)]
         self.ast = CQL_QUERY(
             SCOPED_CLAUSE(
-                newAst[0],
+                SEARCH_CLAUSE(self.ast),
                 BOOLEAN('and'),
-                SCOPED_CLAUSE(
-                    SEARCH_CLAUSE(self.originalAst)
-                )
+                filterQuery 
             )
         )
 
@@ -137,7 +125,7 @@ class CqlReplaceTerm(CqlIdentityVisitor):
         self._newTerm = newTerm
 
     def visitTERM(self, node):
-        if node.children()[0] == self._oldTerm:
+        if node.children[0] == self._oldTerm:
             return node.__class__(self._newTerm)
         return CqlIdentityVisitor.visitTERM(self, node)
 
