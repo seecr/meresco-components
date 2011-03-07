@@ -35,7 +35,7 @@ class ClauseCollector(CqlVisitor):
         self._logger = logger
 
     def visitSEARCH_CLAUSE(self, node):
-        firstChild = node.children()[0].name()
+        firstChild = node.children[0].__class__.__name__
         result = CqlVisitor.visitSEARCH_CLAUSE(self, node)
         if firstChild == 'SEARCH_TERM':
             self._logger(clause = result[0].lower())

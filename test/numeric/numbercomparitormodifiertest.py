@@ -36,7 +36,7 @@ from meresco.components.numeric import NumberComparitorCqlConversion
 class NumberComparitorModifierTest(TestCase):
     def testGTE(self):
         modifier = NumberComparitorModifier('rating', convert=int, valueLength=2)
-        sc = parseString('rating >= 23').children()[0].children()[0]
+        sc = parseString('rating >= 23').children[0].children[0]
         expected = parseString('(rating.gte exact 3z OR (rating.gte exact 2z AND rating.gte exact z3))')
 
         self.assertTrue(modifier.canModify(sc))
@@ -44,7 +44,7 @@ class NumberComparitorModifierTest(TestCase):
 
     def testOnlyActOnGivenField(self):
         modifier = NumberComparitorModifier('rating', convert=int, valueLength=2)
-        sc = parseString('someField >= 23').children()[0].children()[0]
+        sc = parseString('someField >= 23').children[0].children[0]
 
         self.assertFalse(modifier.canModify(sc))
 
@@ -65,7 +65,7 @@ class NumberComparitorModifierTest(TestCase):
 
     def testVeryLargeFigures(self):
         modifier = NumberComparitorModifier('rating', convert=int, valueLength=2)
-        sc = parseString('rating > 97').children()[0].children()[0]
+        sc = parseString('rating > 97').children[0].children[0]
 
         expected = parseString('(rating.gte exact 9z AND rating.gte exact z8)')
         self.assertEquals(expected, CQL_QUERY(SCOPED_CLAUSE(modifier.modify(sc))))

@@ -49,13 +49,13 @@ class NumberComparitorModifier(object):
 
     def canModify(self, node):
         #SEARCH_CLAUSE(INDEX(TERM('term')),RELATION(COMPARITOR('...')),SEARCH_TERM(...))
-        return node.children()[0].name() == 'INDEX' and \
-              node.children()[0].children()[0].children()[0] == self._fieldname and \
-              node.children()[1].children()[0].children()[0] in ['>=', '<', '>',  '<=']
+        return node.children[0].__class__.__name__ == 'INDEX' and \
+              node.children[0].children[0].children[0] == self._fieldname and \
+              node.children[1].children[0].children[0] in ['>=', '<', '>',  '<=']
 
     def modify(self, node):
-        comparitor = node.children()[1].children()[0].children()[0]
-        value = node.children()[2].children()[0].children()[0]
+        comparitor = node.children[1].children[0].children[0]
+        value = node.children[2].children[0].children[0]
 
         field = "%s.gte" % self._fieldname if ">" in comparitor else "%s.lte" % self._fieldname
         higherInOrdering = 1 if ">" in comparitor else -1

@@ -59,6 +59,17 @@ def _termOrPhraseQuery(index, termString):
         result.add(Term(index, term))
     return result
 
+LHS_OCCUR = {
+    "AND": BooleanClause.Occur.MUST,
+    "OR" : BooleanClause.Occur.SHOULD,
+    "NOT": BooleanClause.Occur.MUST
+}
+RHS_OCCUR = {
+    "AND": BooleanClause.Occur.MUST,
+    "OR" : BooleanClause.Occur.SHOULD,
+    "NOT": BooleanClause.Occur.MUST_NOT
+}
+
 class CqlAst2LuceneVisitor(CqlVisitor):
     def __init__(self, unqualifiedTermFields, node):
         CqlVisitor.__init__(self, node)
@@ -69,16 +80,9 @@ class CqlAst2LuceneVisitor(CqlVisitor):
         if len(clause) == 1:
             return clause[0]
         lhs, operator, rhs = clause
-        lhsDict = {
-            "AND": BooleanClause.Occur.MUST,
-            "OR" : BooleanClause.Occur.SHOULD,
-            "NOT": BooleanClause.Occur.MUST
-        }
-        rhsDict = lhsDict.copy()
-        rhsDict["NOT"] = BooleanClause.Occur.MUST_NOT
         query = BooleanQuery()
-        query.add(lhs % Query, lhsDict[operator])
-        query.add(rhs % Query, rhsDict[operator])
+        query.add(lhs % Query, LHS_OCCUR[operator])
+        query.add(rhs % Query, RHS_OCCUR[operator])
         return query
 
     def visitSEARCH_CLAUSE(self, node):
@@ -86,7 +90,7 @@ class CqlAst2LuceneVisitor(CqlVisitor):
         # CQL_QUERY
         # SEARCH_TERM
         # INDEX, RELATION, SEARCH_TERM
-        firstChild = node.children()[0].name()
+        firstChild = node.children[0].name
         results = CqlVisitor.visitSEARCH_CLAUSE(self, node)
         if firstChild == 'SEARCH_TERM':
             (unqualifiedRhs,) = results
@@ -102,7 +106,7 @@ class CqlAst2LuceneVisitor(CqlVisitor):
                     query.add(subQuery % Query, BooleanClause.Occur.SHOULD)
             return query
         elif firstChild == 'INDEX':
-            ((left,), (relation, boost), right) = results
+            (left, (relation, boost), right) = results
             if relation in ['==', 'exact']:
                 query = TermQuery(Term(left, right))
             elif relation == '=':

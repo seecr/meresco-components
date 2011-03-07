@@ -45,8 +45,8 @@ class _CqlIndexChangeVisitor(CqlVisitor):
 
     def visitINDEX(self, node):
         #INDEX(TERM('term'))
-        assert len(node.children()) == 1
-        term = node.children()[0]
-        termString = term.children()[0]
-        term.replaceChildren(self._fieldRename(termString))
+        assert len(node.children) == 1
+        term = node.children[0]
+        termString = term.children[0]
+        term.children = (self._fieldRename(termString), )
         return node

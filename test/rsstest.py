@@ -190,7 +190,7 @@ class RssTest(CQ2TestCase):
         result = "".join(rss.handleRequest(RequestURI='/?query=not+fiets'))
         
         self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
-        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('antiunary'))), BOOLEAN('not'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('fiets'))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('antiunary'))), BOOLEAN('not'), SEARCH_CLAUSE(SEARCH_TERM(TERM('fiets')))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
 
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
@@ -202,7 +202,7 @@ class RssTest(CQ2TestCase):
         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
         self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
 
-        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SCOPED_CLAUSE(SEARCH_CLAUSE(INDEX(TERM('field1')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value1'))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field2')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value2')))), BOOLEAN('and'), SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('one'))), BOOLEAN('and'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('two'))))))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEquals("""CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('one'))), BOOLEAN('and'), SEARCH_CLAUSE(SEARCH_TERM(TERM('two')))))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field1')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value1')))))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field2')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value2')))))""", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
 
     def testWebQueryIgnoresWrongFilters(self):
         observer = CallTrace(

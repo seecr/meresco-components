@@ -65,8 +65,8 @@ class CqlMultiSearchClauseModification(CqlVisitor):
         for searchClauseFilter, searchClauseModifier in self._filtersAndModifiers:
             if searchClauseFilter(node):
                 newSearchClause = searchClauseModifier(node)
-                assert newSearchClause.name() == 'SEARCH_CLAUSE', 'Expected a SEARCH_CLAUSE'
-                node.replaceChildren(*newSearchClause.children())
+                assert newSearchClause.name == 'SEARCH_CLAUSE', 'Expected a SEARCH_CLAUSE'
+                node.children = newSearchClause.children
                 return ()
         return CqlVisitor.visitSEARCH_CLAUSE(self, node)
 
