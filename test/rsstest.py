@@ -2,11 +2,12 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -31,6 +32,8 @@ from amara.binderytools import bind_string
 from urllib import urlencode
 
 from meresco.components.rss import Rss
+
+from cqlparser import parseString as parseCql
 
 RSS_HEAD = """HTTP/1.0 200 OK
 Content-Type: application/rss+xml
@@ -190,7 +193,7 @@ class RssTest(CQ2TestCase):
         result = "".join(rss.handleRequest(RequestURI='/?query=not+fiets'))
         
         self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
-        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('antiunary'))), BOOLEAN('not'), SEARCH_CLAUSE(SEARCH_TERM(TERM('fiets')))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
@@ -202,7 +205,7 @@ class RssTest(CQ2TestCase):
         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
         self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
 
-        self.assertEquals("""CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('one'))), BOOLEAN('and'), SEARCH_CLAUSE(SEARCH_TERM(TERM('two')))))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field1')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value1')))))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field2')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value2')))))""", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertCql(parseCql("((one AND two) AND field1 exact value1) AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryIgnoresWrongFilters(self):
         observer = CallTrace(
@@ -214,3 +217,6 @@ class RssTest(CQ2TestCase):
         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=invalid&filter='))
 
         self.assertTrue("<description>An error occurred 'Invalid filter: invalid'</description>" in result, result)
+
+    def assertCql(self, expected, input):
+        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

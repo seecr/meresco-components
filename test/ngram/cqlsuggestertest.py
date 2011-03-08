@@ -8,7 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -53,7 +54,7 @@ class CqlSuggesterTest(TestCase):
         result = cqlsuggester.suggestForCql(cqlAST=cqlquery)
         self.assertEquals(['wordy'], result)
 
-    def testTwoWordsWithRealSuggester(self) :
+    def testTwoWordsWithRealSuggester(self):
         ngramQuery = MockNGramQuery([u'wordy', u'wordx'])
         self.assertEquals(['wordy', 'wordx'], ngramQuery.executeNGramQuery('nonsense', 99))
         suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
@@ -63,7 +64,7 @@ class CqlSuggesterTest(TestCase):
         cqlsuggester = CqlSuggester()
         cqlsuggester.addObserver(suggester)
         cqlAST = parseString('wordz and wordy')
-        self.assertEquals('wordz', cqlAST.children[0].children[0].children[0].children[0].children[0])
+        self.assertEquals('wordz', cqlAST.children[0].children[0].children[0].children[0].children[0].children[0])
         result = cqlsuggester.suggestForCql(cqlAST)
         self.assertEquals((False, ['wordy', 'wordx']), result)
 

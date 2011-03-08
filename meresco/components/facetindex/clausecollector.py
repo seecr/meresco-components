@@ -7,7 +7,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -35,19 +36,19 @@ class ClauseCollector(CqlVisitor):
         self._logger = logger
 
     def visitSEARCH_CLAUSE(self, node):
-        firstChild = node.children[0].__class__.__name__
+        firstChild = node.children[0].name
         result = CqlVisitor.visitSEARCH_CLAUSE(self, node)
         if firstChild == 'SEARCH_TERM':
             self._logger(clause = result[0].lower())
         elif firstChild == 'INDEX':
-            self._logger(clause = "%s %s %s" % (result[0][0], result[1], quot(result[2].lower())))
+            self._logger(clause = "%s %s %s" % (result[0], result[1], quot(result[2].lower())))
         return result
 
     def visitRELATION(self, node):
         result = CqlVisitor.visitRELATION(self, node)
         if len(result) == 1:
             return result[0]
-        relation, ((modifier, comparitor, value),) = result
+        relation, (modifier, comparitor, value) = result
         return "%s/%s%s%s" % (relation, modifier, comparitor, value)
 
 def quot(aString):

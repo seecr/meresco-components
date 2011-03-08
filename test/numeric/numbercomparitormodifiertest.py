@@ -2,11 +2,11 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -56,7 +56,8 @@ class NumberComparitorModifierTest(TestCase):
     def assertAst(self, expected, input, fieldname='rating', nrOfDecimals=0, valueLength=2):
         expected = parseString(expected)
         ast = parseString(input)
-        self.assertEquals(expected, NumberComparitorCqlConversion(fieldname, nrOfDecimals=nrOfDecimals, valueLength=valueLength, fromKwarg="cqlAst")._convertAst(cqlAst=ast))
+        result = NumberComparitorCqlConversion(fieldname, nrOfDecimals=nrOfDecimals, valueLength=valueLength, fromKwarg="cqlAst")._convertAst(cqlAst=ast)
+        self.assertEquals(expected, result, '%s != %s' %(expected.prettyPrint(), result.prettyPrint()))
 
     def testVerySmallFigures(self):
         query = 'rating < 2'
@@ -70,7 +71,6 @@ class NumberComparitorModifierTest(TestCase):
         expected = parseString('(rating.gte exact 9z AND rating.gte exact z8)')
         self.assertEquals(expected, CQL_QUERY(SCOPED_CLAUSE(modifier.modify(sc))))
 
-
     def testLessThanZero(self):
         self.assertAst('rating.lte exact zz', 'rating < 0')
         self.assertAst('rating.lte exact zz', 'rating < -10')
@@ -79,4 +79,6 @@ class NumberComparitorModifierTest(TestCase):
         self.assertAst('rating.gte exact zz', 'rating > 99')
         self.assertAst('rating.gte exact zz', 'rating >= 2399')
 
+    def assertCql(self, expected, input):
+        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))
         

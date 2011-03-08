@@ -8,7 +8,8 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -87,7 +88,9 @@ class WebQuery(object):
         self._filters.append(filterQuery)
         self.ast = CQL_QUERY(
             SCOPED_CLAUSE(
-                SEARCH_CLAUSE(self.ast),
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(self.ast)
+                ),
                 BOOLEAN('and'),
                 filterQuery 
             )

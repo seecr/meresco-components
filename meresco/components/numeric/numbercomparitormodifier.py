@@ -2,11 +2,11 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #
 #    This file is part of Meresco Components.
@@ -80,11 +80,11 @@ class NumberComparitorModifier(object):
             nestedClause =  SEARCH_CLAUSE(
                 CQL_QUERY(
                     SCOPED_CLAUSE(
-                        self._simpleSearchClause(field, self._util.termWithDecimal(decimal, decimalPosition)),
-                        BOOLEAN('and'),
                         SCOPED_CLAUSE(
-                            self._searchClause(decimalPosition -1, value, higherInOrdering, field)
-                        )
+                            self._simpleSearchClause(field, self._util.termWithDecimal(decimal, decimalPosition))
+                        ),
+                        BOOLEAN('and'),
+                        self._searchClause(decimalPosition -1, value, higherInOrdering, field)
                     )
                 ),
             )

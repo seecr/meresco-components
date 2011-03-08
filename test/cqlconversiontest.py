@@ -2,12 +2,12 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -70,7 +70,7 @@ class CQLConversionTest(CQ2TestCase):
     def testSearchClauseModifySimpleSearchClause(self):
         ast = parseString('field=value')
         def canModify(node):
-            self.assertEquals(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name() for c in node.children()])
+            self.assertEquals(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name for c in node.children])
             return True
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
@@ -81,7 +81,7 @@ class CQLConversionTest(CQ2TestCase):
     def testReplaceSubtree(self):
         ast = parseString('field1=value1 AND (field2=value2 OR (field3=value3))')
         def canModify(node):
-            return ['CQL_QUERY'] == [c.name() for c in node.children()]
+            return ['CQL_QUERY'] == [c.name for c in node.children]
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
