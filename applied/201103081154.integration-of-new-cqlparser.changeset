@@ -1,0 +1,490 @@
+Changeset created on Tue Mar  8 11:54:35 CET 2011 by Seek You Too
+
+Description: Integration with new (optimized) cqlparser
+
+    With the new cqlparser there are some little speed improvements.
+        Little changes in the new cqlparser on abstractSyntaxNodes:
+            .name() is .name
+            .children() is .children
+    New implementation of webquery based on new version of cqlparser
+    Added little improvement in CqlAst2LuceneVisitor by extracting RHS_OCCUR and LHS_OCCUR
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.8-Edurep/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/cqlconversion.py version_1/meresco/components/cqlconversion.py
+--- version_0/meresco/components/cqlconversion.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/meresco/components/cqlconversion.py	2011-03-08 11:52:18.000000000 +0100
+@@ -65,8 +65,8 @@
+         for searchClauseFilter, searchClauseModifier in self._filtersAndModifiers:
+             if searchClauseFilter(node):
+                 newSearchClause = searchClauseModifier(node)
+-                assert newSearchClause.name() == 'SEARCH_CLAUSE', 'Expected a SEARCH_CLAUSE'
+-                node.replaceChildren(*newSearchClause.children())
++                assert newSearchClause.name == 'SEARCH_CLAUSE', 'Expected a SEARCH_CLAUSE'
++                node.children = newSearchClause.children
+                 return ()
+         return CqlVisitor.visitSEARCH_CLAUSE(self, node)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/clausecollector.py version_1/meresco/components/facetindex/clausecollector.py
+--- version_0/meresco/components/facetindex/clausecollector.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/meresco/components/facetindex/clausecollector.py	2011-03-08 11:52:18.000000000 +0100
+@@ -7,7 +7,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -35,19 +36,19 @@
+         self._logger = logger
+ 
+     def visitSEARCH_CLAUSE(self, node):
+-        firstChild = node.children()[0].name()
++        firstChild = node.children[0].name
+         result = CqlVisitor.visitSEARCH_CLAUSE(self, node)
+         if firstChild == 'SEARCH_TERM':
+             self._logger(clause = result[0].lower())
+         elif firstChild == 'INDEX':
+-            self._logger(clause = "%s %s %s" % (result[0][0], result[1], quot(result[2].lower())))
++            self._logger(clause = "%s %s %s" % (result[0], result[1], quot(result[2].lower())))
+         return result
+ 
+     def visitRELATION(self, node):
+         result = CqlVisitor.visitRELATION(self, node)
+         if len(result) == 1:
+             return result[0]
+-        relation, ((modifier, comparitor, value),) = result
++        relation, (modifier, comparitor, value) = result
+         return "%s/%s%s%s" % (relation, modifier, comparitor, value)
+ 
+ def quot(aString):
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/cqlparsetreetolucenequery.py version_1/meresco/components/facetindex/cqlparsetreetolucenequery.py
+--- version_0/meresco/components/facetindex/cqlparsetreetolucenequery.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/meresco/components/facetindex/cqlparsetreetolucenequery.py	2011-03-08 11:52:18.000000000 +0100
+@@ -8,7 +8,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -59,6 +60,17 @@
+         result.add(Term(index, term))
+     return result
+ 
++LHS_OCCUR = {
++    "AND": BooleanClause.Occur.MUST,
++    "OR" : BooleanClause.Occur.SHOULD,
++    "NOT": BooleanClause.Occur.MUST
++}
++RHS_OCCUR = {
++    "AND": BooleanClause.Occur.MUST,
++    "OR" : BooleanClause.Occur.SHOULD,
++    "NOT": BooleanClause.Occur.MUST_NOT
++}
++
+ class CqlAst2LuceneVisitor(CqlVisitor):
+     def __init__(self, unqualifiedTermFields, node):
+         CqlVisitor.__init__(self, node)
+@@ -69,16 +81,9 @@
+         if len(clause) == 1:
+             return clause[0]
+         lhs, operator, rhs = clause
+-        lhsDict = {
+-            "AND": BooleanClause.Occur.MUST,
+-            "OR" : BooleanClause.Occur.SHOULD,
+-            "NOT": BooleanClause.Occur.MUST
+-        }
+-        rhsDict = lhsDict.copy()
+-        rhsDict["NOT"] = BooleanClause.Occur.MUST_NOT
+         query = BooleanQuery()
+-        query.add(lhs % Query, lhsDict[operator])
+-        query.add(rhs % Query, rhsDict[operator])
++        query.add(lhs % Query, LHS_OCCUR[operator])
++        query.add(rhs % Query, RHS_OCCUR[operator])
+         return query
+ 
+     def visitSEARCH_CLAUSE(self, node):
+@@ -86,7 +91,7 @@
+         # CQL_QUERY
+         # SEARCH_TERM
+         # INDEX, RELATION, SEARCH_TERM
+-        firstChild = node.children()[0].name()
++        firstChild = node.children[0].name
+         results = CqlVisitor.visitSEARCH_CLAUSE(self, node)
+         if firstChild == 'SEARCH_TERM':
+             (unqualifiedRhs,) = results
+@@ -102,7 +107,7 @@
+                     query.add(subQuery % Query, BooleanClause.Occur.SHOULD)
+             return query
+         elif firstChild == 'INDEX':
+-            ((left,), (relation, boost), right) = results
++            (left, (relation, boost), right) = results
+             if relation in ['==', 'exact']:
+                 query = TermQuery(Term(left, right))
+             elif relation == '=':
+@@ -122,7 +127,7 @@
+             relation = results[0]
+             boost = 1.0
+         else:
+-            (relation, ((modifier, comparitor, value), )) = results
++            (relation, (modifier, comparitor, value)) = results
+             boost = float(value)
+         return relation, boost
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/numeric/numbercomparitormodifier.py version_1/meresco/components/numeric/numbercomparitormodifier.py
+--- version_0/meresco/components/numeric/numbercomparitormodifier.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/meresco/components/numeric/numbercomparitormodifier.py	2011-03-08 11:52:18.000000000 +0100
+@@ -2,11 +2,11 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -49,13 +49,13 @@
+ 
+     def canModify(self, node):
+         #SEARCH_CLAUSE(INDEX(TERM('term')),RELATION(COMPARITOR('...')),SEARCH_TERM(...))
+-        return node.children()[0].name() == 'INDEX' and \
+-              node.children()[0].children()[0].children()[0] == self._fieldname and \
+-              node.children()[1].children()[0].children()[0] in ['>=', '<', '>',  '<=']
++        return node.children[0].name == 'INDEX' and \
++              node.children[0].children[0].children[0] == self._fieldname and \
++              node.children[1].children[0].children[0] in ['>=', '<', '>',  '<=']
+ 
+     def modify(self, node):
+-        comparitor = node.children()[1].children()[0].children()[0]
+-        value = node.children()[2].children()[0].children()[0]
++        comparitor = node.children[1].children[0].children[0]
++        value = node.children[2].children[0].children[0]
+ 
+         field = "%s.gte" % self._fieldname if ">" in comparitor else "%s.lte" % self._fieldname
+         higherInOrdering = 1 if ">" in comparitor else -1
+@@ -80,11 +80,11 @@
+             nestedClause =  SEARCH_CLAUSE(
+                 CQL_QUERY(
+                     SCOPED_CLAUSE(
+-                        self._simpleSearchClause(field, self._util.termWithDecimal(decimal, decimalPosition)),
+-                        BOOLEAN('and'),
+                         SCOPED_CLAUSE(
+-                            self._searchClause(decimalPosition -1, value, higherInOrdering, field)
+-                        )
++                            self._simpleSearchClause(field, self._util.termWithDecimal(decimal, decimalPosition))
++                        ),
++                        BOOLEAN('and'),
++                        self._searchClause(decimalPosition -1, value, higherInOrdering, field)
+                     )
+                 ),
+             )
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/renamecqlindex.py version_1/meresco/components/renamecqlindex.py
+--- version_0/meresco/components/renamecqlindex.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/meresco/components/renamecqlindex.py	2011-03-08 11:52:18.000000000 +0100
+@@ -45,8 +45,8 @@
+ 
+     def visitINDEX(self, node):
+         #INDEX(TERM('term'))
+-        assert len(node.children()) == 1
+-        term = node.children()[0]
+-        termString = term.children()[0]
+-        term.replaceChildren(self._fieldRename(termString))
++        assert len(node.children) == 1
++        term = node.children[0]
++        termString = term.children[0]
++        term.children = (self._fieldRename(termString), )
+         return node
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/web/webquery.py version_1/meresco/components/web/webquery.py
+--- version_0/meresco/components/web/webquery.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/meresco/components/web/webquery.py	2011-03-08 11:52:18.000000000 +0100
+@@ -8,7 +8,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -85,23 +86,12 @@
+ 
+     def _addFilter(self, filterQuery):
+         self._filters.append(filterQuery)
+-
+-        newAst = [self._filters[-1]]
+-
+-        for f in reversed(self._filters[:-1]):
+-            if len(newAst) != 1:
+-                newAst = [SCOPED_CLAUSE(*newAst)]
+-            newAst.insert(0,BOOLEAN('and'))
+-            newAst.insert(0,f)
+-        if len(newAst) != 1:
+-            newAst = [SCOPED_CLAUSE(*newAst)]
++        insertOriginalAst = SCOPED_CLAUSE(SEARCH_CLAUSE(self.ast)) if len(self._filters) == 1 else self.ast.children[0]
+         self.ast = CQL_QUERY(
+             SCOPED_CLAUSE(
+-                newAst[0],
++                insertOriginalAst,
+                 BOOLEAN('and'),
+-                SCOPED_CLAUSE(
+-                    SEARCH_CLAUSE(self.originalAst)
+-                )
++                filterQuery 
+             )
+         )
+ 
+@@ -137,7 +127,7 @@
+         self._newTerm = newTerm
+ 
+     def visitTERM(self, node):
+-        if node.children()[0] == self._oldTerm:
++        if node.children[0] == self._oldTerm:
+             return node.__class__(self._newTerm)
+         return CqlIdentityVisitor.visitTERM(self, node)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/cqlconversiontest.py version_1/test/cqlconversiontest.py
+--- version_0/test/cqlconversiontest.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/test/cqlconversiontest.py	2011-03-08 11:52:18.000000000 +0100
+@@ -2,12 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -70,7 +70,7 @@
+     def testSearchClauseModifySimpleSearchClause(self):
+         ast = parseString('field=value')
+         def canModify(node):
+-            self.assertEquals(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name() for c in node.children()])
++            self.assertEquals(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name for c in node.children])
+             return True
+         def modify(node):
+             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
+@@ -81,7 +81,7 @@
+     def testReplaceSubtree(self):
+         ast = parseString('field1=value1 AND (field2=value2 OR (field3=value3))')
+         def canModify(node):
+-            return ['CQL_QUERY'] == [c.name() for c in node.children()]
++            return ['CQL_QUERY'] == [c.name for c in node.children]
+         def modify(node):
+             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
+         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/ngram/cqlsuggestertest.py version_1/test/ngram/cqlsuggestertest.py
+--- version_0/test/ngram/cqlsuggestertest.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/test/ngram/cqlsuggestertest.py	2011-03-08 11:52:18.000000000 +0100
+@@ -8,7 +8,8 @@
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+ #    Copyright (C) 2009 Tilburg University http://www.uvt.nl
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -53,7 +54,7 @@
+         result = cqlsuggester.suggestForCql(cqlAST=cqlquery)
+         self.assertEquals(['wordy'], result)
+ 
+-    def testTwoWordsWithRealSuggester(self) :
++    def testTwoWordsWithRealSuggester(self):
+         ngramQuery = MockNGramQuery([u'wordy', u'wordx'])
+         self.assertEquals(['wordy', 'wordx'], ngramQuery.executeNGramQuery('nonsense', 99))
+         suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
+@@ -63,7 +64,7 @@
+         cqlsuggester = CqlSuggester()
+         cqlsuggester.addObserver(suggester)
+         cqlAST = parseString('wordz and wordy')
+-        self.assertEquals('wordz', cqlAST.children()[0].children()[0].children()[0].children()[0].children()[0])
++        self.assertEquals('wordz', cqlAST.children[0].children[0].children[0].children[0].children[0].children[0])
+         result = cqlsuggester.suggestForCql(cqlAST)
+         self.assertEquals((False, ['wordy', 'wordx']), result)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/numeric/numbercomparitormodifiertest.py version_1/test/numeric/numbercomparitormodifiertest.py
+--- version_0/test/numeric/numbercomparitormodifiertest.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/test/numeric/numbercomparitormodifiertest.py	2011-03-08 11:52:18.000000000 +0100
+@@ -2,11 +2,11 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
++#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ #
+ #    This file is part of Meresco Components.
+@@ -36,7 +36,7 @@
+ class NumberComparitorModifierTest(TestCase):
+     def testGTE(self):
+         modifier = NumberComparitorModifier('rating', convert=int, valueLength=2)
+-        sc = parseString('rating >= 23').children()[0].children()[0]
++        sc = parseString('rating >= 23').children[0].children[0]
+         expected = parseString('(rating.gte exact 3z OR (rating.gte exact 2z AND rating.gte exact z3))')
+ 
+         self.assertTrue(modifier.canModify(sc))
+@@ -44,7 +44,7 @@
+ 
+     def testOnlyActOnGivenField(self):
+         modifier = NumberComparitorModifier('rating', convert=int, valueLength=2)
+-        sc = parseString('someField >= 23').children()[0].children()[0]
++        sc = parseString('someField >= 23').children[0].children[0]
+ 
+         self.assertFalse(modifier.canModify(sc))
+ 
+@@ -56,7 +56,8 @@
+     def assertAst(self, expected, input, fieldname='rating', nrOfDecimals=0, valueLength=2):
+         expected = parseString(expected)
+         ast = parseString(input)
+-        self.assertEquals(expected, NumberComparitorCqlConversion(fieldname, nrOfDecimals=nrOfDecimals, valueLength=valueLength, fromKwarg="cqlAst")._convertAst(cqlAst=ast))
++        result = NumberComparitorCqlConversion(fieldname, nrOfDecimals=nrOfDecimals, valueLength=valueLength, fromKwarg="cqlAst")._convertAst(cqlAst=ast)
++        self.assertEquals(expected, result, '%s != %s' %(expected.prettyPrint(), result.prettyPrint()))
+ 
+     def testVerySmallFigures(self):
+         query = 'rating < 2'
+@@ -65,12 +66,11 @@
+ 
+     def testVeryLargeFigures(self):
+         modifier = NumberComparitorModifier('rating', convert=int, valueLength=2)
+-        sc = parseString('rating > 97').children()[0].children()[0]
++        sc = parseString('rating > 97').children[0].children[0]
+ 
+         expected = parseString('(rating.gte exact 9z AND rating.gte exact z8)')
+         self.assertEquals(expected, CQL_QUERY(SCOPED_CLAUSE(modifier.modify(sc))))
+ 
+-
+     def testLessThanZero(self):
+         self.assertAst('rating.lte exact zz', 'rating < 0')
+         self.assertAst('rating.lte exact zz', 'rating < -10')
+@@ -79,4 +79,6 @@
+         self.assertAst('rating.gte exact zz', 'rating > 99')
+         self.assertAst('rating.gte exact zz', 'rating >= 2399')
+ 
++    def assertCql(self, expected, input):
++        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))
+         
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/rsstest.py version_1/test/rsstest.py
+--- version_0/test/rsstest.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/test/rsstest.py	2011-03-08 11:52:18.000000000 +0100
+@@ -2,11 +2,12 @@
+ #
+ #    Meresco Components are components to build searchengines, repositories
+ #    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ #    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+ #       http://www.kennisnetictopschool.nl
+ #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++#    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+ #
+ #    This file is part of Meresco Components.
+ #
+@@ -32,6 +33,8 @@
+ 
+ from meresco.components.rss import Rss
+ 
++from cqlparser import parseString as parseCql
++
+ RSS_HEAD = """HTTP/1.0 200 OK
+ Content-Type: application/rss+xml
+ 
+@@ -190,7 +193,7 @@
+         result = "".join(rss.handleRequest(RequestURI='/?query=not+fiets'))
+         
+         self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+-        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('antiunary'))), BOOLEAN('not'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('fiets'))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
++        self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+ 
+     def testWebQueryUsesFilters(self):
+         observer = CallTrace(
+@@ -202,7 +205,7 @@
+         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
+         self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+ 
+-        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SCOPED_CLAUSE(SEARCH_CLAUSE(INDEX(TERM('field1')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value1'))), BOOLEAN('and'), SEARCH_CLAUSE(INDEX(TERM('field2')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value2')))), BOOLEAN('and'), SCOPED_CLAUSE(SEARCH_CLAUSE(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('one'))), BOOLEAN('and'), SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('two'))))))))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
++        self.assertCql(parseCql("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+ 
+     def testWebQueryIgnoresWrongFilters(self):
+         observer = CallTrace(
+@@ -214,3 +217,6 @@
+         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=invalid&filter='))
+ 
+         self.assertTrue("<description>An error occurred 'Invalid filter: invalid'</description>" in result, result)
++
++    def assertCql(self, expected, input):
++        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/web/webquerytest.py version_1/test/web/webquerytest.py
+--- version_0/test/web/webquerytest.py	2011-03-04 13:59:30.000000000 +0100
++++ version_1/test/web/webquerytest.py	2011-03-08 11:52:18.000000000 +0100
+@@ -160,23 +160,24 @@
+     def testFilter(self):
+         wq = WebQuery('fiets')
+         wq.addFilter('field', 'value')
+-        self.assertCql(parseCql('field exact value AND (fiets)'), wq.ast)
++        self.assertCql(parseCql('(fiets) AND field exact value'), wq.ast)
+ 
+     def testTermFilter(self):
+         wq = WebQuery('fiets')
+         wq.addTermFilter("water")
+-        self.assertCql(parseCql('water AND (fiets)'), wq.ast)
++        #self.assertCql(parseCql('water AND (fiets)'), wq.ast)
++        self.assertCql(parseCql('(fiets) AND water'), wq.ast)
+ 
+     def testFilterWithSpaces(self):
+         wq = WebQuery('fiets')
+         wq.addFilter('field', 'value with spaces')
+-        self.assertEquals(parseCql('field exact "value with spaces" AND (fiets)'), wq.ast)
++        self.assertCql(parseCql('(fiets) AND field exact "value with spaces"'), wq.ast)
+ 
+     def testFilterFilter(self):
+         wq = WebQuery('fiets')
+         wq.addFilter('field1', 'value1')
+         wq.addFilter('field2', 'value2')
+-        self.assertCql(parseCql('field1 exact value1 AND field2 exact value2 AND (fiets)'), wq.ast)
++        self.assertCql(parseCql('(fiets) AND field1 exact value1 AND field2 exact value2'), wq.ast)
+ 
+     def testFilterX4(self):
+         wq = WebQuery('fiets')
+@@ -184,7 +185,7 @@
+         wq.addFilter('field2', 'value2')
+         wq.addFilter('field3', 'value3')
+         wq.addFilter('field4', 'value4')
+-        self.assertCql(parseCql('field1 exact value1 AND field2 exact value2 AND field3 exact value3 AND field4 exact value4 AND (fiets)'), wq.ast)
++        self.assertCql(parseCql('(fiets) AND field1 exact value1 AND field2 exact value2 AND field3 exact value3 AND field4 exact value4'), wq.ast)
+ 
+     def testReplaceTerm(self):
+         wq = WebQuery('fiets')
+@@ -209,7 +210,7 @@
+         newWq = wq.replaceTerm('fiets', 'bike')
+         self.assertEquals('fiets kaart', wq.original)
+         self.assertEquals('bike AND kaart', newWq.original)
+-        self.assertCql(parseCql('label exact value AND (bike AND kaart)'), newWq.ast)
++        self.assertCql(parseCql('(bike AND kaart) AND label exact value'), newWq.ast)
+ 
+     def testHasFilters(self):
+         wq = WebQuery('fiets kaart')
