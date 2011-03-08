@@ -86,11 +86,10 @@ class WebQuery(object):
 
     def _addFilter(self, filterQuery):
         self._filters.append(filterQuery)
+        insertOriginalAst = SCOPED_CLAUSE(SEARCH_CLAUSE(self.ast)) if len(self._filters) == 1 else self.ast.children[0]
         self.ast = CQL_QUERY(
             SCOPED_CLAUSE(
-                SCOPED_CLAUSE(
-                    SEARCH_CLAUSE(self.ast)
-                ),
+                insertOriginalAst,
                 BOOLEAN('and'),
                 filterQuery 
             )

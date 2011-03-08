@@ -49,7 +49,7 @@ class NumberComparitorModifier(object):
 
     def canModify(self, node):
         #SEARCH_CLAUSE(INDEX(TERM('term')),RELATION(COMPARITOR('...')),SEARCH_TERM(...))
-        return node.children[0].__class__.__name__ == 'INDEX' and \
+        return node.children[0].name == 'INDEX' and \
               node.children[0].children[0].children[0] == self._fieldname and \
               node.children[1].children[0].children[0] in ['>=', '<', '>',  '<=']
 

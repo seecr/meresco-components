@@ -177,7 +177,7 @@ class WebQueryTest(TestCase):
         wq = WebQuery('fiets')
         wq.addFilter('field1', 'value1')
         wq.addFilter('field2', 'value2')
-        self.assertCql(parseCql('((fiets) AND field1 exact value1) AND field2 exact value2'), wq.ast)
+        self.assertCql(parseCql('(fiets) AND field1 exact value1 AND field2 exact value2'), wq.ast)
 
     def testFilterX4(self):
         wq = WebQuery('fiets')
@@ -185,7 +185,7 @@ class WebQueryTest(TestCase):
         wq.addFilter('field2', 'value2')
         wq.addFilter('field3', 'value3')
         wq.addFilter('field4', 'value4')
-        self.assertCql(parseCql('((((fiets) AND field1 exact value1) AND field2 exact value2) AND field3 exact value3) AND field4 exact value4'), wq.ast)
+        self.assertCql(parseCql('(fiets) AND field1 exact value1 AND field2 exact value2 AND field3 exact value3 AND field4 exact value4'), wq.ast)
 
     def testReplaceTerm(self):
         wq = WebQuery('fiets')
