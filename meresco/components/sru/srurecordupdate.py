@@ -31,6 +31,7 @@ from amara.binderytools import bind_string
 from meresco.core.observable import Observable
 from traceback import format_exc
 from xml.sax.saxutils import escape as escapeXml
+from meresco.components.xml_generic.validate import ValidateException
 
 class SRURecordUpdate(Observable):
 
@@ -52,10 +53,20 @@ class SRURecordUpdate(Observable):
             answer = RESPONSE_XML % {
                 "operationStatus": "success",
                 "diagnostics": ""}
+        except ValidateException, e:
+            answer = RESPONSE_XML % {
+                "operationStatus": "fail",
+                "diagnostics": DIAGNOSTIC_XML % {
+                    'uri': 'info:srw/diagnostic/12/12',
+                    'details': escapeXml(format_exc()),
+                    'message': 'Invalid data:  record rejected'}}
         except Exception, e:
             answer = RESPONSE_XML % {
                 "operationStatus": "fail",
-                "diagnostics": DIAGNOSTIC_XML % escapeXml(format_exc())}
+                "diagnostics": DIAGNOSTIC_XML % {
+                    'uri': 'info:srw/diagnostic/12/1', 
+                    'details': escapeXml(format_exc()), 
+                    'message': 'Invalid component:  record rejected'}}
 
         yield answer
 
@@ -67,8 +78,8 @@ RESPONSE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 DIAGNOSTIC_XML = """<srw:diagnostics>
     <diag:diagnostic xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
-        <diag:uri>info:srw/diagnostic/12/1</diag:uri>
-        <diag:details>%s</diag:details>
-        <diag:message>Invalid component:  record rejected</diag:message>
+        <diag:uri>%(uri)s</diag:uri>
+        <diag:details>%(details)s</diag:details>
+        <diag:message>%(message)s</diag:message>
     </diag:diagnostic>
 </srw:diagnostics>"""

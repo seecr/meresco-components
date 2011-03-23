@@ -32,6 +32,7 @@ from cq2utils import CallTrace, CQ2TestCase
 from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
 from weightless.core import compose
+from meresco.components.xml_generic.validate import ValidateException
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -164,3 +165,12 @@ class SRURecordUpdateTest(CQ2TestCase):
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
         diag = bind_string(result)
         self.assertTrue(str(diag.updateResponse.diagnostics.diagnostic.details).find("""Some <Exception>""") > -1)
+
+    def testValidationErrors(self):
+        self.observer.exceptions['add'] = ValidateException('Some <Exception>')
+        headers, result = self.performRequest(self.createRequestBody())
+        self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
+        diag = bind_string(result)
+        self.assertTrue(str(diag.updateResponse.diagnostics.diagnostic.details).find("""Some <Exception>""") > -1)
+        self.assertEquals("info:srw/diagnostic/12/12", str(diag.updateResponse.diagnostics.diagnostic.uri))
+        self.assertEquals("Invalid data:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
