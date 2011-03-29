@@ -58,7 +58,7 @@ class SRURecordUpdate(Observable):
                 "operationStatus": "fail",
                 "diagnostics": DIAGNOSTIC_XML % {
                     'uri': 'info:srw/diagnostic/12/12',
-                    'details': escapeXml(format_exc()),
+                    'details': escapeXml(str(e)),
                     'message': 'Invalid data:  record rejected'}}
         except Exception, e:
             answer = RESPONSE_XML % {

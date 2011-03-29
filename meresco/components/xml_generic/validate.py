@@ -50,7 +50,7 @@ class Validate(Observable):
             if type(arg) == _ElementTree:
                 self._schema.validate(arg)
                 if self._schema.error_log:
-                    exception = ValidateException(self._schema.error_log.last_error)
+                    exception = ValidateException(formatException(self._schema, arg))
                     self.do.logException(exception)
                     raise exception
         return self.all.unknown(*args, **kwargs)
@@ -60,6 +60,10 @@ def assertValid(xmlString, schemaPath):
     toValidate = parse(StringIO(xmlString))
     schema.validate(toValidate)
     if schema.error_log:
-        for nr, line in enumerate(tostring(toValidate, encoding="utf-8", pretty_print=True).split('\n')):
-            print nr+1, line
-        raise AssertionError(str(schema.error_log))
+        raise AssertionError(formatException(schema, toValidate))
+
+def formatException(schema, lxmlNode):
+    message = str(schema.error_log.last_error) + "\n\n"
+    for nr, line in enumerate(tostring(lxmlNode, encoding="utf-8", pretty_print=True).split('\n')):
+        message += "%s %s\n" % (nr+1, line)
+    return message

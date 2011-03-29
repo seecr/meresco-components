@@ -171,6 +171,6 @@ class SRURecordUpdateTest(CQ2TestCase):
         headers, result = self.performRequest(self.createRequestBody())
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
         diag = bind_string(result)
-        self.assertTrue(str(diag.updateResponse.diagnostics.diagnostic.details).find("""Some <Exception>""") > -1)
         self.assertEquals("info:srw/diagnostic/12/12", str(diag.updateResponse.diagnostics.diagnostic.uri))
+        self.assertEquals("Some <Exception>", str(diag.updateResponse.diagnostics.diagnostic.details))
         self.assertEquals("Invalid data:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
