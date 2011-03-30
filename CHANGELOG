@@ -1,6 +1,45 @@
 CHANGELOG Meresco-Components
 ============================
 
+version: 3.4.9 -> 3.4.10
+date:    2011-03-30
+
+
+Prefix search now also work on words with a "-"
+-----------------------------------------------
+The prefixRegexp now matches word-characters and extra a "-". Search query's on
+"word-123*" is now also a valid prefix search.
+(2011-03-30, 3.4.9-Edurep)
+
+SRU Record Update gives invaliddata response by a ValidateException
+-------------------------------------------------------------------
+When a ValidateException is raised SRU Record Update response with an
+InvalidData errors. All other cases are InvalidComponent errors. The validate
+component now adds the whole recorddata to the exception message including
+line-numbers.
+(2011-03-29, 3.4.9-Edurep)
+
+==============================================================================
+
+version: 3.4.8 -> 3.4.9
+date:    2011-03-04
+
+
+Integration with new (optimized) cqlparser
+------------------------------------------
+With the new cqlparser there are some little speed improvements. Little changes
+in the new cqlparser on abstractSyntaxNodes: .name() is .name .children() is
+.children New implementation of webquery based on new version of cqlparser Added
+little improvement in CqlAst2LuceneVisitor by extracting RHS_OCCUR and LHS_OCCUR
+(2011-03-08, 3.4.8-Edurep)
+
+Dynamically assign max-connections
+----------------------------------
+You can dynamically change the maximum connections on the http-server
+(2011-03-04, 3.4.6-Edurep)
+
+==============================================================================
+
 version: 3.4.7.1 -> 3.4.8
 date:    2011-03-01
 
@@ -21,6 +60,7 @@ Boundary checks back in docset intersect
 A boundary check was removed and is no inserted back into docset.h
 (2011-02-11, 3.4.7-Edurep)
 
+==============================================================================
 
 version: 3.4.6 -> 3.4.7
 date:    2011-02-02
