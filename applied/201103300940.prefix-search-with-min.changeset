@@ -1,0 +1,32 @@
+Changeset created on Wed Mar 30 09:40:52 CEST 2011 by Seek You Too
+
+Description: Prefix search now also work on words with a "-"
+
+    The prefixRegexp now matches word-characters and extra a "-". Search query's on "word-123*" is now also a valid prefix search.
+
+Baseline version: meresco-components/workingsets/3.4.9-Edurep/version_1
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/meresco/components/facetindex/cqlparsetreetolucenequery.py version_2/meresco/components/facetindex/cqlparsetreetolucenequery.py
+--- version_1/meresco/components/facetindex/cqlparsetreetolucenequery.py	2011-03-30 09:32:22.000000000 +0200
++++ version_2/meresco/components/facetindex/cqlparsetreetolucenequery.py	2011-03-30 09:40:12.000000000 +0200
+@@ -47,7 +47,7 @@
+         token = tokenStream.next()
+     return result
+ 
+-prefixRegexp = compile(r'^(\w{2,})\*$') # pr*, prefix* ....
++prefixRegexp = compile(r'^([\w-]{2,})\*$') # pr*, prefix* ....
+ 
+ def _termOrPhraseQuery(index, termString):
+     listOfTermStrings = _analyzeToken(termString.lower())
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1/test/facetindex/cqlparsetreetolucenequerytest.py version_2/test/facetindex/cqlparsetreetolucenequerytest.py
+--- version_1/test/facetindex/cqlparsetreetolucenequerytest.py	2011-03-30 09:32:22.000000000 +0200
++++ version_2/test/facetindex/cqlparsetreetolucenequerytest.py	2011-03-30 09:40:12.000000000 +0200
+@@ -139,6 +139,8 @@
+         query = PrefixQuery(Term('field', 'prefix'))
+         self.assertConversion(query, 'field="PREfix*"')
+         self.assertConversion(query, 'field=prefix*')
++        query = PrefixQuery(Term('field', 'oc-0123'))
++        self.assertConversion(query, 'field="oc-0123*"')
+         query = TermQuery(Term('field', 'p'))
+         self.assertConversion(query, 'field="P*"')
+         #only prefix queries for now
