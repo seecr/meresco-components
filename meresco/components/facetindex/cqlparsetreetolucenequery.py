@@ -47,7 +47,7 @@ def _analyzeToken(token):
         token = tokenStream.next()
     return result
 
-prefixRegexp = compile(r'^(\w{2,})\*$') # pr*, prefix* ....
+prefixRegexp = compile(r'^([\w-]{2,})\*$') # pr*, prefix* ....
 
 def _termOrPhraseQuery(index, termString):
     listOfTermStrings = _analyzeToken(termString.lower())

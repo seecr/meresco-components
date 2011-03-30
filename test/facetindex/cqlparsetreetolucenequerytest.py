@@ -139,6 +139,8 @@ class CqlParseTreeToLuceneQueryTest(TestCase):
         query = PrefixQuery(Term('field', 'prefix'))
         self.assertConversion(query, 'field="PREfix*"')
         self.assertConversion(query, 'field=prefix*')
+        query = PrefixQuery(Term('field', 'oc-0123'))
+        self.assertConversion(query, 'field="oc-0123*"')
         query = TermQuery(Term('field', 'p'))
         self.assertConversion(query, 'field="P*"')
         #only prefix queries for now
