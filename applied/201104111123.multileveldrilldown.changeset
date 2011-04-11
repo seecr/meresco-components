@@ -1,0 +1,300 @@
+Changeset created on Mon Apr 11 11:23:44 CEST 2011 by Seek You Too
+
+Description: Multi-Level drilldown 
+
+    Multi-Level drilldown allows for drilldown to change granularity based on number
+    of results for the given docset.
+
+Baseline version: meresco-components/workingsets/3.4.10-MWE/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/__init__.py version_0-multileveldrilldown/meresco/components/__init__.py
+--- version_0/meresco/components/__init__.py	2011-04-11 10:50:49.000000000 +0200
++++ version_0-multileveldrilldown/meresco/components/__init__.py	2011-04-11 11:18:44.000000000 +0200
+@@ -57,3 +57,4 @@
+ from persistentsortedintegerlist import PersistentSortedIntegerList
+ from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
+ from inbox import Inbox
++from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/multileveldrilldown.py version_0-multileveldrilldown/meresco/components/multileveldrilldown.py
+--- version_0/meresco/components/multileveldrilldown.py	1970-01-01 01:00:00.000000000 +0100
++++ version_0-multileveldrilldown/meresco/components/multileveldrilldown.py	2011-04-11 11:22:13.000000000 +0200
+@@ -0,0 +1,54 @@
++## begin license ##
++#
++#    Meresco Components (delfttilburg) is a package containing shared code
++#    between the Delft "Discover" and Tilburg "Beter Zoeken & Vinden" projects.
++#    Both projects are based on Meresco Software (http://meresco.com)
++#    Copyright (C) 2008-2009 Technische Universiteit Delft http://www.tudelft.nl
++#    Copyright (C) 2008-2009 Universiteit van Tilburg http://www.uvt.nl
++#    Copyright (C) 2008-2009, 2011 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from meresco.core import Observable
++
++class MultiLevelDrilldownException(Exception):
++    pass
++
++class MultiLevelDrilldown(Observable):
++    def __init__(self, multiLevelFieldsDict):
++        Observable.__init__(self)
++        self._multiLevelFields = multiLevelFieldsDict
++        for key, multilevelFields in multiLevelFieldsDict.items():
++            for multilevelField in multilevelFields:
++                assert len(multilevelField) == 3, 'multilevelFields for %s should be a list of tuples with: levelField, maximumCount, sorted' % key
++
++    def multiLevelDrilldown(self, docset, drilldownFields):
++        for field in drilldownFields:
++            if field not in self._multiLevelFields:
++                raise MultiLevelDrilldownException("No drilldown fields defined for '%s'." % field)
++            resultFieldName, resultTermCounts = None, []
++            for levelField, maximumCount, sorted in self._multiLevelFields[field]:
++                fieldName, termCounts = self.any.drilldown(docset, [(levelField, maximumCount, sorted)]).next()
++                termCounts = list(termCounts)
++                if len(termCounts) > 0:
++                    resultFieldName, resultTermCounts = fieldName, termCounts
++                if len(termCounts) < maximumCount:
++                    break
++
++            yield (field, resultFieldName), resultTermCounts
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/_alltests.py version_0-multileveldrilldown/test/_alltests.py
+--- version_0/test/_alltests.py	2011-04-11 10:50:47.000000000 +0200
++++ version_0-multileveldrilldown/test/_alltests.py	2011-04-11 10:50:42.000000000 +0200
+@@ -53,6 +53,7 @@
+ from inboxtest import InboxTest
+ from logcomponenttest import LogComponentTest
+ from logobservertest import LogObserverTest
++from multileveldrilldowntest import MultiLevelDrilldownTest
+ from packertest import PackerTest
+ from parsecqltest import ParseCQLTest
+ from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/multileveldrilldowntest.py version_0-multileveldrilldown/test/multileveldrilldowntest.py
+--- version_0/test/multileveldrilldowntest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_0-multileveldrilldown/test/multileveldrilldowntest.py	2011-04-11 11:17:26.000000000 +0200
+@@ -0,0 +1,210 @@
++## begin license ##
++#
++#    "Delft-Tilburg" (delfttilburg) is a package containing shared code
++#    between the Delft "Discover" and Tilburg "Beter Zoeken & Vinden" projects.
++#    Both projects are based on Meresco Software (http://meresco.com)
++#    Copyright (C) 2008-2009 Technische Universiteit Delft http://www.tudelft.nl
++#    Copyright (C) 2008-2009 Universiteit van Tilburg http://www.uvt.nl
++#    Copyright (C) 2008-2009 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of "Delft-Tilburg".
++#
++#    "Delft-Tilburg" is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    "Delft-Tilburg" is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with "Delft-Tilburg"; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from cq2utils import CallTrace
++from unittest import TestCase
++from meresco.core import Observable
++from weightless.core import compose
++
++from meresco.components import MultiLevelDrilldown, MultiLevelDrilldownException
++
++class MultiLevelDrilldownTest(TestCase):
++    def testOne(self):
++        observable = Observable()
++        bitMatrixRow = CallTrace('BitMatrixRow')
++        multi = MultiLevelDrilldown(
++            {'date':[('datelevel1', 10, False)]}
++        )
++        drilldown = CallTrace('Drilldown')
++        drilldown.returnValues['drilldown'] = iter([('datelevel1', iter([('2008',13),('2007',10)]))])
++        multi.addObserver(drilldown)
++        observable.addObserver(multi)
++
++        result = list(compose(observable.any.multiLevelDrilldown(bitMatrixRow, ['date'])))
++
++        self.assertEquals(1, len(drilldown.calledMethods))
++        drilldownMethod = drilldown.calledMethods[0]
++        self.assertEquals('drilldown', drilldownMethod.name)
++        self.assertEquals((bitMatrixRow, [('datelevel1', 10, False)]), drilldownMethod.args)
++        self.assertEquals(1, len(result))
++        (inputFieldName, realFieldName), termCounts = result[0]
++        self.assertEquals('date', inputFieldName)
++        self.assertEquals('datelevel1', realFieldName)
++        self.assertEquals([('2008',13),('2007',10)], list(termCounts))
++
++    def testTwoFieldNamesCalled(self):
++        multi = MultiLevelDrilldown(
++            {'date':[('datelevel2',3, False),('datelevel1', 10, False)],
++             'genre':[('type', 10, False)]
++            }
++        )
++        drilldown = CallTrace('Drilldown')
++        doDrilldownArguments = []
++        def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
++            doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
++            self.assertEquals(1, len(fieldNamesAndMaxResults))
++            levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
++            if 'datelevel2' == levelField:
++                return iter([('datelevel2', iter([('2008',13),('2007',10)][:levelMax]))])
++            else:
++                return iter([('type', iter([('literature',43),('donaldduck',30)][:levelMax]))])
++        drilldown.drilldown = doDrilldown
++        multi.addObserver(drilldown)
++
++        result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date', 'genre'])))
++
++        self.assertEquals(2, len(doDrilldownArguments))
++        self.assertEquals(('bitMatrixRow', [('datelevel2', 3, False)]), doDrilldownArguments[0])
++        self.assertEquals(('bitMatrixRow', [('type', 10, False)]), doDrilldownArguments[1])
++        self.assertEquals(2, len(result))
++        self.assertEquals([('date', 'datelevel2'),('genre', 'type')], [(inField, realField) for (inField, realField), termCounts in result])
++
++    def testFieldWithMultiLevel(self):
++        multi = MultiLevelDrilldown(
++            {'date':[('yearAndMonth', 2, False), ('year', 2, False)]
++            }
++        )
++        drilldown = CallTrace('Drilldown')
++        doDrilldownArguments = []
++        def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
++            doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
++            self.assertEquals(1, len(fieldNamesAndMaxResults))
++            levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
++            if levelField == 'yearAndMonth':
++                return iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))])
++            else:
++                return iter([('year', iter([('2008',13),('2003',10),('2007',10)][:levelMax]))])
++        drilldown.drilldown = doDrilldown
++        multi.addObserver(drilldown)
++
++        result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
++
++        self.assertEquals(2, len(doDrilldownArguments))
++        self.assertEquals(('bitMatrixRow', [('yearAndMonth', 2, False)]), doDrilldownArguments[0])
++        self.assertEquals(('bitMatrixRow', [('year', 2, False)]), doDrilldownArguments[1])
++        self.assertEquals(1, len(result))
++        (inField, realField), termCounts = result[0]
++        self.assertEquals('year', realField)
++        self.assertEquals([('2008',13),('2003',10)], list(termCounts))
++
++    def testFieldDoesNotExist(self):
++        bitMatrixRow = CallTrace('BitMatrixRow')
++        multi = MultiLevelDrilldown(
++            {'date':[('datelevel1', 10, False)]}
++        )
++        drilldown = CallTrace('Drilldown')
++        drilldown.returnValues['drilldown'] = iter([('datelevel1', iter([('2008',13),('2007',10)]))])
++        multi.addObserver(drilldown)
++
++        try:
++            result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['doesNotExist'])))
++            self.fail()
++        except MultiLevelDrilldownException, e:
++            self.assertTrue('doesNotExist' in str(e), e)
++
++    def testLastOneDoesnotReturnValue(self):
++        multi = MultiLevelDrilldown(
++            {'date':[('yearAndMonth', 2, False), ('year', 2, False)]
++            }
++        )
++        drilldown = CallTrace('Drilldown')
++        doDrilldownArguments = []
++        def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
++            doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
++            self.assertEquals(1, len(fieldNamesAndMaxResults))
++            levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
++            if levelField == 'yearAndMonth':
++                return iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))])
++            else:
++                return iter([('year', iter([]))])
++        drilldown.drilldown = doDrilldown
++        multi.addObserver(drilldown)
++
++        result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
++
++        self.assertEquals(2, len(doDrilldownArguments))
++        self.assertEquals(('bitMatrixRow', [('yearAndMonth', 2, False)]), doDrilldownArguments[0])
++        self.assertEquals(('bitMatrixRow', [('year', 2, False)]), doDrilldownArguments[1])
++        self.assertEquals(1, len(result))
++        (inField, realField), termCounts = result[0]
++        self.assertEquals('yearAndMonth', realField)
++        self.assertEquals([('2008-01',11),('2008-02',2)], list(termCounts))
++
++    def testLastZeroReturnValue(self):
++        multi = MultiLevelDrilldown(
++            {'date':[('yearAndMonth', 2, False), ('year', 2, False)]
++            }
++        )
++        drilldown = CallTrace('Drilldown')
++        doDrilldownArguments = []
++        def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
++            doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
++            self.assertEquals(1, len(fieldNamesAndMaxResults))
++            levelField, levelMax, sorted = fieldNamesAndMaxResults[0]
++            if levelField == 'yearAndMonth':
++                return iter([('yearAndMonth', iter([]))])
++            else:
++                return iter([('year', iter([]))])
++        drilldown.drilldown = doDrilldown
++        multi.addObserver(drilldown)
++
++        result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
++
++        self.assertEquals(1, len(result))
++        (inField, realField), termCounts = result[0]
++        self.assertEquals(None, realField)
++
++    def testWithSorting(self):
++        mockData = {
++            'yearAndMonth': [('2008-01',1),('2008-02',2),('2007-12',11)],
++            'year': [('2008',13),('2003',10),('2005',9), ('2007', 15)]
++        }
++        drilldown = CallTrace('Drilldown')
++        def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
++            levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
++            data = mockData[levelField]
++            if levelSorted:
++                data = sorted(data, cmp=lambda (term0, card0), (term1, card1): cmp(card1, card0))
++            if levelMax > 0:
++                data = data[:levelMax]
++            return iter([(levelField, iter(data))])
++
++        drilldown.drilldown = doDrilldown
++
++        multi = MultiLevelDrilldown({'date':[('yearAndMonth', 2, False), ('year', 3, True)]})
++        multi.addObserver(drilldown)
++        result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
++        self.assertEquals([(('date', 'year'), [('2007', 15), ('2008', 13), ('2003', 10)])], result)
++
++        multi = MultiLevelDrilldown({'date':[('yearAndMonth', 4, False), ('year', 3, False)]})
++        multi.addObserver(drilldown)
++
++        result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
++        self.assertEquals([(('date', 'yearAndMonth'), [('2008-01',1),('2008-02',2),('2007-12',11)])], result)
++
++
++
