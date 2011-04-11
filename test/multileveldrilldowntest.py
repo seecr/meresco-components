@@ -28,9 +28,9 @@
 from cq2utils import CallTrace
 from unittest import TestCase
 from meresco.core import Observable
-from weightless import compose
+from weightless.core import compose
 
-from delfttilburg.multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
+from meresco.components import MultiLevelDrilldown, MultiLevelDrilldownException
 
 class MultiLevelDrilldownTest(TestCase):
     def testOne(self):

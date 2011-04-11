@@ -57,3 +57,4 @@ from filelist import SortedFileList, FileList
 from persistentsortedintegerlist import PersistentSortedIntegerList
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from inbox import Inbox
+from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
