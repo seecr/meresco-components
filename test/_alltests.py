@@ -53,6 +53,7 @@ from filelisttest import FileListTest
 from inboxtest import InboxTest
 from logcomponenttest import LogComponentTest
 from logobservertest import LogObserverTest
+from multileveldrilldowntest import MultiLevelDrilldownTest
 from packertest import PackerTest
 from parsecqltest import ParseCQLTest
 from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
