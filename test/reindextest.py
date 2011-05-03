@@ -92,7 +92,7 @@ class ReindexTest(CQ2TestCase):
         self.assertTrue(isdir(directory))
         files = listdir(directory)
         self.assertEquals(1, len(files))
-        identifiers = list(identifier for identifier in open(join(directory, files[0])).read().split('\n') if identifier != '')
+        identifiers = sorted(list(identifier for identifier in open(join(directory, files[0])).read().split('\n') if identifier != ''))
         self.assertEquals(['id:1', 'id:2', 'id:3'], identifiers)
 
     def testCreateIdentifierFilesInBatches(self):
@@ -130,10 +130,13 @@ class ReindexTest(CQ2TestCase):
 
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '+id:2\n', '+id:3\n', '=batches left: 0'], result)
+        self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', result[0])
+        self.assertEquals('=batches left: 0', result[-1])
+        for i in ['+id:1\n', '+id:2\n', '+id:3\n' ]:
+            self.assertTrue(i in result)
 
         self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
-        self.assertEquals(['id:1','id:2','id:3'], [m.kwargs['identifier'] for m in observer.calledMethods])
+        self.assertEquals(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
         self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
         self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 
@@ -174,8 +177,6 @@ class ReindexTest(CQ2TestCase):
     def testProcessGivesError(self):
         storage = self.setupStorage([
             dict(identifier='id:1', partname='part',  data='data1'),
-            dict(identifier='id:2', partname='part', data='data2'),
-            dict(identifier='id:3', partname='part', data='data3'),
         ])
         reindex, observer = self.setupDna(storage)
         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
