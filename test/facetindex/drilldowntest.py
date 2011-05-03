@@ -411,6 +411,18 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals(('field_0', 'field_1'), field)
         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
 
+    def testCompoundFieldReusesPreviousDrilldown(self):
+        self.createDrilldown(['field_0', ('field_0', 'field_1')])
+        called = []
+        def _docSetListFromTermEnumForField(field, indexReader, docIdMapping):
+            called.append(field)
+            return DocSetList()
+        self.drilldown._docSetListFromTermEnumForField = _docSetListFromTermEnumForField
+        index = CallTrace(name="index", returnValues=dict(getIndexReader=CallTrace(), getDocIdMapping=None))
+        self.drilldown._determineDrilldownFields = lambda *args: ['field_0']
+        self.drilldown.indexStarted(index)
+        self.assertEquals(['field_0', 'field_1'], called)
+
     def testDetermineDrilldownFieldnamesWithoutStars(self):
         self.addUntokenized([('id0', {
             'prefix.field_0': 'this is term_0',
