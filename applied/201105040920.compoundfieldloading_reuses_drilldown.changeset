@@ -1,0 +1,82 @@
+Changeset created on Wed May  4 09:20:10 CEST 2011 by Seek You Too
+
+Description: Compoundfield loading reuses previously loaded drilldown
+
+    The fields used in a compoundfield that were previously loaded for a drilldown
+    will be reused, read-only, for merging into the compoundfield. This reduces
+    startup time as the terms do not have to be loaded from the index again.
+
+Baseline version: meresco-components/workingsets/3.4.7.1-TUD/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/facetindex/drilldown.py version_0-compoundfieldloading_reuses_drilldown/meresco/components/facetindex/drilldown.py
+--- version_0/meresco/components/facetindex/drilldown.py	2011-05-03 16:11:15.000000000 +0200
++++ version_0-compoundfieldloading_reuses_drilldown/meresco/components/facetindex/drilldown.py	2011-05-04 09:15:35.000000000 +0200
+@@ -124,7 +124,8 @@
+             self._docsetlists[field] = self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
+         for compoundField in self._compoundFields:
+             for field in compoundField:
+-                self._docsetlists[compoundField].merge(self._docSetListFromTermEnumForField(field, indexReader, docIdMapping))
++                docsetlist = self._docsetlists[field] if field in self._docsetlists else self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
++                self._docsetlists[compoundField].merge(docsetlist)
+ 
+         #print 'indexStarted (ms)', (time()-t0)*1000
+         #print self.measure()
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/facetindex/drilldowntest.py version_0-compoundfieldloading_reuses_drilldown/test/facetindex/drilldowntest.py
+--- version_0/test/facetindex/drilldowntest.py	2011-05-03 16:11:14.000000000 +0200
++++ version_0-compoundfieldloading_reuses_drilldown/test/facetindex/drilldowntest.py	2011-05-04 09:15:32.000000000 +0200
+@@ -411,6 +411,18 @@
+         self.assertEquals(('field_0', 'field_1'), field)
+         self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
+ 
++    def testCompoundFieldReusesPreviousDrilldown(self):
++        self.createDrilldown(['field_0', ('field_0', 'field_1')])
++        called = []
++        def _docSetListFromTermEnumForField(field, indexReader, docIdMapping):
++            called.append(field)
++            return DocSetList()
++        self.drilldown._docSetListFromTermEnumForField = _docSetListFromTermEnumForField
++        index = CallTrace(name="index", returnValues=dict(getIndexReader=CallTrace(), getDocIdMapping=None))
++        self.drilldown._determineDrilldownFields = lambda *args: ['field_0']
++        self.drilldown.indexStarted(index)
++        self.assertEquals(['field_0', 'field_1'], called)
++
+     def testDetermineDrilldownFieldnamesWithoutStars(self):
+         self.addUntokenized([('id0', {
+             'prefix.field_0': 'this is term_0',
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/reindextest.py version_0-compoundfieldloading_reuses_drilldown/test/reindextest.py
+--- version_0/test/reindextest.py	2011-05-03 16:11:14.000000000 +0200
++++ version_0-compoundfieldloading_reuses_drilldown/test/reindextest.py	2011-05-04 09:15:33.000000000 +0200
+@@ -92,7 +92,7 @@
+         self.assertTrue(isdir(directory))
+         files = listdir(directory)
+         self.assertEquals(1, len(files))
+-        identifiers = list(identifier for identifier in open(join(directory, files[0])).read().split('\n') if identifier != '')
++        identifiers = sorted(list(identifier for identifier in open(join(directory, files[0])).read().split('\n') if identifier != ''))
+         self.assertEquals(['id:1', 'id:2', 'id:3'], identifiers)
+ 
+     def testCreateIdentifierFilesInBatches(self):
+@@ -130,10 +130,13 @@
+ 
+         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
+-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+id:1\n', '+id:2\n', '+id:3\n', '=batches left: 0'], result)
++        self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', result[0])
++        self.assertEquals('=batches left: 0', result[-1])
++        for i in ['+id:1\n', '+id:2\n', '+id:3\n' ]:
++            self.assertTrue(i in result)
+ 
+         self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
+-        self.assertEquals(['id:1','id:2','id:3'], [m.kwargs['identifier'] for m in observer.calledMethods])
++        self.assertEquals(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
+         self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
+         self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+ 
+@@ -174,8 +177,6 @@
+     def testProcessGivesError(self):
+         storage = self.setupStorage([
+             dict(identifier='id:1', partname='part',  data='data1'),
+-            dict(identifier='id:2', partname='part', data='data2'),
+-            dict(identifier='id:3', partname='part', data='data3'),
+         ])
+         reindex, observer = self.setupDna(storage)
+         observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
