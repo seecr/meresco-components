@@ -30,7 +30,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from os.path import isfile, isdir, join
 from os import listdir
 
-from meresco.components.logging import QueryLog, QueryLogHelper, DirectoryLog
+from meresco.components.logging import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog
 from meresco.components.logging.directorylog import NR_OF_FILES_KEPT
 
 from meresco.core import Observable
@@ -108,22 +108,34 @@ class QueryLogTest(CQ2TestCase):
     def testLogQueryParameters(self):
         class HandleRequestObserver(Observable):
             def handleRequest(self, **kwargs):
-                self.ctx.queryArguments.update({'a':'A', 'b':'B', 'c':'C', 'd':'D'})
+                self.ctx.queryArguments.update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
                 yield 'result'
         self.queryLog.addObserver(HandleRequestObserver())
         result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
         self.assertEquals('result', result)
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru a=A&b=B&c=C&d=D\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
-    def testQueryLogHelper(self):
+    def testQueryLogHelperForSru(self):
         __callstack_var_queryArguments__ = {}
-        helper = QueryLogHelper()
+        helper = QueryLogHelperForSru()
         observer = CallTrace('observer')
         helper.addObserver(observer)
         observer.returnValues['searchRetrieve'] = 'result'
         helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})
         self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryArguments__)
         
+    def testQueryLogHelper(self):
+        __callstack_var_queryArguments__ = {}
+        helper = QueryLogHelper()
+        observer = CallTrace('observer')
+        helper.addObserver(observer)
+        observer.returnValues['handleRequest'] = 'result'
+        result = list(helper.handleRequest(arguments={'key':['value'], 'key2':['value1', 'value2']}, path='path'))
+        self.assertEquals(['result'], result)
+        self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryArguments__)
+        self.assertEquals([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])
+
+
     def testRemoveOldLogs(self):
         for filename in ("%03d" % r for r in range(NR_OF_FILES_KEPT)):
             open(join(self.tempdir, filename), 'w').close()

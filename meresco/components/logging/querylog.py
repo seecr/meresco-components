@@ -31,9 +31,8 @@ from time import time
 from urllib import urlencode
 
 class QueryLog(Observable):
-    """Story 4-4: QueryLogger
-
-    Log incoming SRU/W queries with ip-address, path, size, timestamp, duration
+    """
+    Log incoming http queries with ip-address, path, size, timestamp, duration
     """
 
     def __init__(self, log, loggedPaths):
@@ -73,7 +72,7 @@ SKIP_ARGS = ['sortBy', 'sortDescending']
 def duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
     return '_' in key and key.replace('_','-') in kwargs
 
-class QueryLogHelper(Observable):
+class QueryLogHelperForSru(Observable):
     def searchRetrieve(self, **kwargs):
         queryArguments = self.ctx.queryArguments
         for key, value in kwargs.items():
@@ -83,3 +82,9 @@ class QueryLogHelper(Observable):
                 continue
             queryArguments[key] = value
         return self.any.searchRetrieve(**kwargs)
+
+class QueryLogHelper(Observable):
+    def handleRequest(self, arguments, **kwargs):
+        queryArguments = self.ctx.queryArguments
+        queryArguments.update(arguments)
+        return self.all.handleRequest(arguments=arguments, **kwargs)
