@@ -41,7 +41,7 @@ class QueryLogFileServerTest(CQ2TestCase):
         
         self.logDir = join(self.tempdir, 'log')
         directoryLog = DirectoryLog(self.logDir)
-        self.qlfs = QueryLogFileServer(directoryLog, basepath='/log')
+        self.qlfs = QueryLogFileServer("Fancy <name>", directoryLog, basepath='/log')
     
     def testGenerateEmptyHtmlFileLinkListing(self):
         headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF+CRLF)
@@ -50,8 +50,8 @@ class QueryLogFileServerTest(CQ2TestCase):
         self.assertTrue(body.startswith('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html>'), body)
         self.assertTrue(body.rfind('</body>\n</html>') != -1, body)
         
-        self.assertTrue('<title>Edurep SMB Query Logging</title>' in body, body)
-        self.assertTrue('Query Logging - logfile listing' in body, body)
+        self.assertTrue('<title>"Fancy &lt;name&gt;" Logging</title>' in body, body)
+        self.assertTrue('Logging - logfile listing' in body, body)
     
     def testEmptyDirectoryEmptyHtmlResult(self):
         headers, body = "".join(self.qlfs.handleRequest(path="/")).split(CRLF+CRLF)
