@@ -33,7 +33,7 @@ from cgi import escape as _escapeHtml
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
-class QueryLogFileServer(object):
+class LogFileServer(object):
     """
     Serve the logs through http and show a filelisting when not
     requesting a specific path.

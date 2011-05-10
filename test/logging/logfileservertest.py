@@ -33,15 +33,15 @@ from os import mkdir, listdir
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF, notFoundHtml
 
-from meresco.components.logging import QueryLogFileServer, DirectoryLog
+from meresco.components.logging import LogFileServer, DirectoryLog
 
-class QueryLogFileServerTest(CQ2TestCase):
+class LogFileServerTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         
         self.logDir = join(self.tempdir, 'log')
         directoryLog = DirectoryLog(self.logDir)
-        self.qlfs = QueryLogFileServer("Fancy <name>", directoryLog, basepath='/log')
+        self.qlfs = LogFileServer("Fancy <name>", directoryLog, basepath='/log')
     
     def testGenerateEmptyHtmlFileLinkListing(self):
         headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF+CRLF)

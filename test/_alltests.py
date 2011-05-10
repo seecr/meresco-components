@@ -89,7 +89,7 @@ from http.sessionhandlertest import SessionHandlerTest
 from http.timeddictionarytest import TimedDictionaryTest
 from http.utilstest import UtilsTest
 
-from logging.querylogfileservertest import QueryLogFileServerTest
+from logging.logfileservertest import LogFileServerTest
 from logging.querylogtest import QueryLogTest
 
 from numeric.converttest import ConvertTest

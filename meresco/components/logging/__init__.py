@@ -24,6 +24,6 @@
 # 
 ## end license ##
 
-from querylogfileserver import QueryLogFileServer
+from logfileserver import LogFileServer
 from querylog import QueryLog, QueryLogHelper
 from directorylog import DirectoryLog
