@@ -34,16 +34,16 @@ def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
 class QueryLogFileServer(object):
-    """Story 4-4: QueryLogger
-
+    """
     Serve the logs through http and show a filelisting when not
     requesting a specific path.
     """
     
-    def __init__(self, log, basepath):
+    def __init__(self, name, log, basepath):
         self._indexPaths = ['', '/']
         self._basepath = basepath        
         self._log = log
+        self._name = name
     
     def handleRequest(self, path, **kwargs):
         if path in [self._basepath + p for p in self._indexPaths]:
@@ -55,7 +55,7 @@ class QueryLogFileServer(object):
     
     def _generateIndex(self, path):
         yield httputils.okHtml
-        yield HTML_PAGE_TOP
+        yield HTML_PAGE_TOP % {'name': escapeHtml(self._name)}
         for log in sorted(self._log.listlogs(), reverse=True):
             yield '<li><a href="%s/%s">%s</a></li>' % (self._basepath, escapeHtml(log), escapeHtml(log))
         yield HTML_PAGE_BOTTOM
@@ -72,10 +72,10 @@ class QueryLogFileServer(object):
 HTML_PAGE_TOP = """<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html>
 <head>
-    <title>Edurep SMB Query Logging</title>
+    <title>"%(name)s" Logging</title>
 </head>
 <body>
-    <h1>Query Logging - logfile listing</h1>
+    <h1>Logging - logfile listing</h1>
     <ul>
 """
 

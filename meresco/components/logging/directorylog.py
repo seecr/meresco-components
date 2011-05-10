@@ -32,7 +32,7 @@ from os import makedirs, listdir, remove
 
 NR_OF_FILES_KEPT = 14
 
-# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s /edurep/sru query=query&operation=searchRetrieve&version=1.1\n'
+# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s /sru query=query&operation=searchRetrieve&version=1.1\n'
 logtemplate = '%(strTimestamp)s %(ipAddress)s %(size).1fK %(duration).3fs %(path)s %(queryArguments)s\n'
 
 class DirectoryLog(object):
