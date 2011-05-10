@@ -69,6 +69,14 @@ class QueryLogTest(CQ2TestCase):
         ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
 
         self.assertEquals(2, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
+
+    def testLogCanReturnCallables(self):
+        observer= CallTrace('observer')
+        observer.returnValues['handleRequest'] = (f for f in ['1', lambda: None,'3'])
+        self.queryLog.addObserver(observer)
+        list(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+
+        self.assertEquals(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
         
     def testNewDayNewLogfile(self):
         observer = CallTrace('observer')

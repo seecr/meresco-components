@@ -52,7 +52,8 @@ class QueryLog(Observable):
         ipAddress = Client[0]
         sizeInBytes = 0
         for response in self.all.handleRequest(Client=Client, path=path, **kwargs):
-            sizeInBytes += len(response)
+            if hasattr(response, '__len__'):
+                sizeInBytes += len(response)
             yield response
         size = sizeInBytes / 1024.0
         duration = self._time() - timestamp
