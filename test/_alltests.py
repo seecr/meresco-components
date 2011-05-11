@@ -79,6 +79,7 @@ from autocomplete.autocompletetest import AutocompleteTest
 from http.apacheloggertest import ApacheLoggerTest
 from http.argumentsinsessiontest import ArgumentsInSessionTest
 from http.basicauthenticationtest import BasicAuthenticationTest
+from http.deproxytest import DeproxyTest
 from http.fileservertest import FileServerTest
 from http.handlerequestfiltertest import HandleRequestFilterTest
 from http.ipfiltertest import IpFilterTest
