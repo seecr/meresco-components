@@ -26,15 +26,23 @@
 ## end license ##
 
 from meresco.core import Observable
+from ipfilter import IpFilter
 
 class Deproxy(Observable):
+    def __init__(self, deproxyForIps=None, deproxyForIpRanges=None):
+        Observable.__init__(self)
+        if not (deproxyForIps or deproxyForIpRanges):
+            raise ValueError('Expected ipaddresses to deproxy for.')
+        self._ipfilter = IpFilter(allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges)
+
     def handleRequest(self, Client, Headers, **kwargs):
         clientHost, clientPort = Client
-        clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
+        if self._ipfilter.filterIpAddress(clientHost):
+            clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
 
-        host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
-        if host != '':
-            Headers['Host'] = host
+            host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
+            if host != '':
+                Headers['Host'] = host
 
         return self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, **kwargs)
 
