@@ -13,6 +13,17 @@ Description: QueryLog from Edurep project
 
 Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.11-Edurep/version_0
 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_3.4.11/setup.py version_3.4.12/setup.py
+--- version_3.4.11/setup.py	2011-04-13 09:38:03.000000000 +0200
++++ version_3.4.12/setup.py	2011-05-12 15:32:02.000000000 +0200
+@@ -132,6 +132,7 @@
+         'meresco.components.facetindex',
+         'meresco.components.facetindex.tools',
+         'meresco.components.http',
++        'meresco.components.logging',
+         'meresco.components.ngram',
+         'meresco.components.numeric',
+         'meresco.components.msgbox',
 diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/__init__.py version_1/meresco/components/__init__.py
 --- version_0/meresco/components/__init__.py	2011-04-21 14:50:20.000000000 +0200
 +++ version_1/meresco/components/__init__.py	2011-05-11 08:09:11.000000000 +0200

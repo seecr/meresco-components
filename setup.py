@@ -132,6 +132,7 @@ setup(
         'meresco.components.facetindex',
         'meresco.components.facetindex.tools',
         'meresco.components.http',
+        'meresco.components.logging',
         'meresco.components.ngram',
         'meresco.components.numeric',
         'meresco.components.msgbox',
