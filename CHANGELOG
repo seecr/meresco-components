@@ -1,6 +1,41 @@
 CHANGELOG Meresco-Components
 ============================
 
+version: 3.4.11 -> 3.4.12
+date:    2011-05-12
+
+
+Deproxy component from Edurep
+-----------------------------
+Only deproxy for given ipaddresses and ipranges. Copied deproxy component from
+Edurep.
+(2011-05-11, 3.4.11-Edurep)
+
+QueryLog from Edurep project
+----------------------------
+Component QueryLog created for the Edurep project from Kennisnet
+(http://www.kennisnet.nl) is now added to the Meresco Components Suite. The new
+module meresco.components.logging contains several components to provide users
+with a detailed log of e.g. the SRU queries. Some of the components are: -
+LogFileServer: is a HTTP services serving the created log files. - QueryLog:
+will log the requested query - QueryLogHelperForSru: is a helper to fill the
+exact details of the requested query. Works together with the QueryLog.
+(2011-05-11, 3.4.11-Edurep)
+
+==============================================================================
+
+version: 3.4.10 -> 3.4.11
+date:    2011-04-11
+
+
+Multi-Level drilldown
+---------------------
+Multi-Level drilldown allows for drilldown to change granularity based on number
+of results for the given docset.
+(2011-04-11, 3.4.10-MWE)
+
+==============================================================================
+
 version: 3.4.9 -> 3.4.10
 date:    2011-03-30
 
