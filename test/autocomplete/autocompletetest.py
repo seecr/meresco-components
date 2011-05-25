@@ -4,7 +4,7 @@
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
 #    Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 #    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 #
 #    This file is part of Meresco Components.
@@ -46,7 +46,18 @@ class AutocompleteTest(CQ2TestCase):
 </root>""", body)
         self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
         self.assertEquals({'prefix':'t', 'fieldname':'field0', 'maxresults':50}, observer.calledMethods[0].kwargs)
-    
+
+    def testFieldMapping(self):
+        auto = Autocomplete(path='/some/path', maxresults=50, inputs=[('mainsearchinput', 'alias')], fieldMapping={'alias': ('field1', 'field2')})
+        observer = CallTrace('observer')
+        auto.addObserver(observer)
+        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+
+        head,body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['t'], 'fieldname':['alias']}))).split('\r\n'*2)
+
+        self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'prefix':'t', 'fieldname':('field1', 'field2'), 'maxresults':50}, observer.calledMethods[0].kwargs)
+
     def testPrefixWithLabel(self):
         auto = Autocomplete(
             path='/some/path', 

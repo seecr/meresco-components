@@ -124,7 +124,8 @@ class Drilldown(object):
             self._docsetlists[field] = self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
         for compoundField in self._compoundFields:
             for field in compoundField:
-                self._docsetlists[compoundField].merge(self._docSetListFromTermEnumForField(field, indexReader, docIdMapping))
+                docsetlist = self._docsetlists[field] if field in self._docsetlists else self._docSetListFromTermEnumForField(field, indexReader, docIdMapping)
+                self._docsetlists[compoundField].merge(docsetlist)
 
         #print 'indexStarted (ms)', (time()-t0)*1000
         #print self.measure()

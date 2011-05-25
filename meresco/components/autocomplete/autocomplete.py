@@ -2,8 +2,8 @@
 #
 #    Meresco Components are components to build searchengines, repositories
 #    and archives, based on Meresco Core.
-#    Copyright (C) 2009-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
+#    Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 #
 #    This file is part of Meresco Components.
 #
@@ -36,13 +36,14 @@ def _date(offset=0):
     return formatdate(mktime(gmtime()) - timezone + offset)
 
 class Autocomplete(Observable):
-    def __init__(self, path, inputs, maxresults, labelMapping=None, delay=100):
+    def __init__(self, path, inputs, maxresults, labelMapping=None, fieldMapping=None, delay=100):
         Observable.__init__(self)
         self._path = path
         self._maxresults = maxresults
         self._delay = delay
         self._inputs = inputs
         self._labelMapping = labelMapping if labelMapping else {}
+        self._fieldMapping = fieldMapping if fieldMapping else {}
         self._fileServer = FileServer(documentRoot=javascriptDir)
 
     def handleRequest(self, arguments, path, **kwargs):
@@ -56,6 +57,8 @@ class Autocomplete(Observable):
 
     def _prefixSearch(self, arguments):
         fieldname = arguments['fieldname'][0]
+        if fieldname in self._fieldMapping:
+            fieldname = self._fieldMapping[fieldname]
         prefix = arguments['prefix'][0]
         label = None
         if '=' in prefix:
