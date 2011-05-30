@@ -90,8 +90,8 @@ from http.sessionhandlertest import SessionHandlerTest
 from http.timeddictionarytest import TimedDictionaryTest
 from http.utilstest import UtilsTest
 
-from logging.logfileservertest import LogFileServerTest
-from logging.querylogtest import QueryLogTest
+from log.logfileservertest import LogFileServerTest
+from log.querylogtest import QueryLogTest
 
 from numeric.converttest import ConvertTest
 from numeric.numbercomparitorfieldlettest import NumberComparitorFieldletTest

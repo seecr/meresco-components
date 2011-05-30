@@ -20,7 +20,10 @@ python-storage (>=5.1.7)
 python-storage (<<5.2)
 python-weightless-core (>= 0.5)
 python-weightless-core (<< 0.6)
-liblucene-core2-gcj9 (>= 2.2.0)
-liblucene-core2-gcj9 (< 2.4.0)
-libgcj9-0
+#lenny:liblucene-core2-gcj9 (>= 2.2.0)
+#lenny:liblucene-core2-gcj9 (< 2.4.0)
+#squeeze:liblucene-core2-gcj10 (>= 2.2.0)
+#squeeze:liblucene-core2-gcj10 (< 2.4.0)
+#lenny:libgcj9-0
+#squeeze:libgcj10
 lsof

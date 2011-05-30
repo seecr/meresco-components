@@ -33,7 +33,7 @@ from os import mkdir, listdir
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF, notFoundHtml
 
-from meresco.components.logging import LogFileServer, DirectoryLog
+from meresco.components.log import LogFileServer, DirectoryLog
 
 class LogFileServerTest(CQ2TestCase):
     def setUp(self):

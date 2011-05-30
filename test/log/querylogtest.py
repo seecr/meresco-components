@@ -30,8 +30,8 @@ from cq2utils import CQ2TestCase, CallTrace
 from os.path import isfile, isdir, join
 from os import listdir
 
-from meresco.components.logging import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog
-from meresco.components.logging.directorylog import NR_OF_FILES_KEPT
+from meresco.components.log import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog
+from meresco.components.log.directorylog import NR_OF_FILES_KEPT
 
 from meresco.core import Observable
 
