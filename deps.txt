@@ -22,5 +22,5 @@ python-weightless-core (>= 0.5)
 python-weightless-core (<< 0.6)
 liblucene-core2-gcj9 (>= 2.2.0)
 liblucene-core2-gcj9 (< 2.4.0)
-libgcj9-0
+libgcj9-0 | libgcj10
 lsof
