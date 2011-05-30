@@ -1,5 +1,5 @@
 python-dev (>= 2.5)
-python-dev (<< 2.6)
+python-dev (<< 2.7)
 libglib2.0-dev (>= 2.16.6-2)
 libglib2.0-dev (<< 2.16.7)
 #lenny:g++-4.3 (>= 4.3.2-1.1)
