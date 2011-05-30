@@ -31,6 +31,7 @@
 import sys
 import os
 import string
+from re import compile
 from types import ListType, TupleType
 from distutils.core import setup
 from distutils.extension import Extension
@@ -105,6 +106,10 @@ class gcj_build_ext(build_ext):
     def oFileForJava(self, source, output_dir):
         return "%s/%s.o" % (output_dir, os.path.splitext(source)[0])
 
+    def gcj_command(self):
+        r = compile("gcj-[0-9].[0-9]")
+        return [x for x in os.listdir("/usr/bin") if r.match(x)][0]
+
     def compileJava(self, sources, output_dir):
         for sourceFile in sources:
             oFile = self.oFileForJava(sourceFile, output_dir)
@@ -112,7 +117,7 @@ class gcj_build_ext(build_ext):
                 os.makedirs(os.path.dirname(oFile))
             except OSError:
                 pass
-            cl = "CLASSPATH=%s gcj-4.3 -fPIC -c %s -o %s" % (CLASSPATH, sourceFile, oFile)
+            cl = "CLASSPATH=%s %s -fPIC -c %s -o %s" % (CLASSPATH, self.gcj_command(), sourceFile, oFile)
             log.info(cl)
             rv = os.system(cl)
             if rv != 0:
@@ -132,7 +137,7 @@ setup(
         'meresco.components.facetindex',
         'meresco.components.facetindex.tools',
         'meresco.components.http',
-        'meresco.components.logging',
+        'meresco.components.log',
         'meresco.components.ngram',
         'meresco.components.numeric',
         'meresco.components.msgbox',
