@@ -8,6 +8,7 @@
 #       http://www.kennisnetictopschool.nl
 #    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 #    Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+#    Copyright (C) 2011 Seecr http://seecr.nl
 #
 #    This file is part of Meresco Components.
 #
