@@ -39,10 +39,10 @@ SUCCESS = "SUCCESS"
 
 class SruParserTest(CQ2TestCase):
 
-    def testExplain(self):
-        component = SruParser(host='TEST_SERVER_HOST', port='TEST_SERVER_PORT', description='TEST_SERVER_DESCRIPTION', modifiedDate='TEST_SERVER_DATE', database='DATABASE')
+    def testExplainWithPresetValues(self):
+        component = SruParser(host='TEST_SERVER_HOST', port='TEST_SERVER_PORT', description='TEST_SERVER_DESCRIPTION', modifiedDate='TEST_SERVER_DATE', database='DATABASE', wsdl='http://somewhe.re/wsdl')
 
-        result = "".join(list(component.handleRequest(arguments={})))
+        result = "".join(list(component.handleRequest(arguments={}, Headers={'Host': '1.2.3.4:80'}, RequestURI="/sru")))
         self.assertEqualsWS("""HTTP/1.0 200 OK
 Content-Type: text/xml; charset=utf-8
 
@@ -55,7 +55,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
     <srw:recordSchema>http://explain.z3950.org/dtd/2.0/</srw:recordSchema>
     <srw:recordData>
         <zr:explain>
-            <zr:serverInfo wsdl="http://TEST_SERVER_HOST:TEST_SERVER_PORT/DATABASE" protocol="SRU" version="1.1">
+            <zr:serverInfo wsdl="http://somewhe.re/wsdl" protocol="SRU" version="1.1">
                 <host>TEST_SERVER_HOST</host>
                 <port>TEST_SERVER_PORT</port>
                 <database>DATABASE</database>
@@ -67,6 +67,37 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
             <zr:metaInfo>
                 <dateModified>TEST_SERVER_DATE</dateModified>
             </zr:metaInfo>
+        </zr:explain>
+    </srw:recordData>
+</srw:record>
+</srw:explainResponse>
+""", result)
+
+    def testExplainWithoutPresetValues(self):
+        component = SruParser()
+
+        result = "".join(list(component.handleRequest(arguments={'operation': ['explain'], 'version': ['1.2']}, Headers={'Host': '1.2.3.4:8080'}, RequestURI="/sru?operation=explain&version=1.2")))
+        self.assertEqualsWS("""HTTP/1.0 200 OK
+Content-Type: text/xml; charset=utf-8
+
+<?xml version="1.0" encoding="UTF-8"?>
+<srw:explainResponse xmlns:srw="http://www.loc.gov/zing/srw/"
+xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+<srw:version>1.2</srw:version>
+<srw:record>
+    <srw:recordPacking>xml</srw:recordPacking>
+    <srw:recordSchema>http://explain.z3950.org/dtd/2.0/</srw:recordSchema>
+    <srw:recordData>
+        <zr:explain>
+            <zr:serverInfo protocol="SRU" version="1.2">
+                <host>1.2.3.4</host>
+                <port>8080</port>
+                <database>sru</database>
+            </zr:serverInfo>
+            <zr:databaseInfo>
+                <title lang="en" primary="true">SRU Database</title>
+                <description lang="en" primary="true">Meresco SRU</description>
+            </zr:databaseInfo>
         </zr:explain>
     </srw:recordData>
 </srw:record>

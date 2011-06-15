@@ -80,7 +80,7 @@ class SruMandatoryParameterNotSuppliedException(SruException):
 
 class SruParser(Observable):
 
-    def __init__(self, host='', port=0, description='Meresco SRU', modifiedDate='1970-01-01T00:00:00Z', database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None):
+    def __init__(self, host=None, port=None, description='Meresco SRU', modifiedDate=None, database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None, wsdl=None):
         Observable.__init__(self)
         self._host = host
         self._port = port
@@ -90,6 +90,7 @@ class SruParser(Observable):
         self._defaultRecordSchema = defaultRecordSchema
         self._defaultRecordPacking = defaultRecordPacking
         self._maximumMaximumRecords = maximumMaximumRecords
+        self._wsdl = wsdl
 
     def handleRequest(self, arguments, **kwargs):
         yield httputils.okXml
@@ -100,7 +101,7 @@ class SruParser(Observable):
             operationMethod = self._explain
             if operation == 'searchRetrieve':
                 operationMethod = self._searchRetrieve
-            for data in compose(operationMethod(arguments)):
+            for data in compose(operationMethod(arguments, **kwargs)):
                 yield data
         except SruException, e:
             yield DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
@@ -112,7 +113,7 @@ class SruParser(Observable):
             yield str(e)
             raise e
 
-    def _searchRetrieve(self, arguments):
+    def _searchRetrieve(self, arguments, **kwargs):
         sruArgs = self.parseSruArgs(arguments)
         arguments.update(sruArgs)
         return self.any.searchRetrieve(**arguments)
@@ -196,13 +197,14 @@ class SruParser(Observable):
         except UnicodeDecodeError:
             raise SruException(UNSUPPORTED_PARAMETER_VALUE, "Parameters are not properly 'utf-8' encoded.")
 
-    def _explain(self, arguments):
-        version = arguments['version'][0]
-        host = self._host
-        port = self._port
+    def _explain(self, arguments, RequestURI, Headers, **kwargs):
+        version = arguments['version'][0]        
+        host = self._host or Headers['Host'].split(':')[0]
+        port = self._port or Headers['Host'][len(host) + 1:] or '80'
+        database = self._database or RequestURI.lstrip('/').split('?')[0]
         description = self._description
         modifiedDate = self._modifiedDate
-        database = self._database
+
         yield """<srw:explainResponse xmlns:srw="http://www.loc.gov/zing/srw/"
    xmlns:zr="http://explain.z3950.org/dtd/2.0/">
     <srw:version>%(version)s</srw:version>
@@ -211,7 +213,10 @@ class SruParser(Observable):
         <srw:recordSchema>http://explain.z3950.org/dtd/2.0/</srw:recordSchema>
         <srw:recordData>
             <zr:explain>
-                <zr:serverInfo wsdl="http://%(host)s:%(port)s/%(database)s" protocol="SRU" version="%(version)s">
+                <zr:serverInfo """ % locals()
+        if self._wsdl:
+            yield """wsdl="%s" """ % self._wsdl
+        yield """protocol="SRU" version="%(version)s">
                     <host>%(host)s</host>
                     <port>%(port)s</port>
                     <database>%(database)s</database>
@@ -219,14 +224,17 @@ class SruParser(Observable):
                 <zr:databaseInfo>
                     <title lang="en" primary="true">SRU Database</title>
                     <description lang="en" primary="true">%(description)s</description>
-                </zr:databaseInfo>
+                </zr:databaseInfo>""" % locals()
+        if modifiedDate:
+            yield """
                 <zr:metaInfo>
                     <dateModified>%(modifiedDate)s</dateModified>
-                </zr:metaInfo>
+                </zr:metaInfo>""" % locals()
+        yield """
             </zr:explain>
         </srw:recordData>
     </srw:record>
-</srw:explainResponse>""" % locals()
+</srw:explainResponse>"""
 
     def searchRetrieve(self, *args, **kwargs):
         return self.any.searchRetrieve(*args, **kwargs)
