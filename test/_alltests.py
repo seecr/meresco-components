@@ -49,6 +49,7 @@ from cqlconversiontest import CQLConversionTest
 from crosswalktest import CrosswalkTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
+from fields2xmlfieldstest import Fields2XmlFieldsTest
 from filelisttest import FileListTest
 from inboxtest import InboxTest
 from multileveldrilldowntest import MultiLevelDrilldownTest

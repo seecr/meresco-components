@@ -34,6 +34,7 @@ from contextset import ContextSetList, ContextSet
 
 from fieldlets import RenameField, TransformFieldValue, FilterField, AddField
 from fields2xml import Fields2XmlTx
+from fields2xmlfields import Fields2XmlFields
 from crosswalk import Crosswalk
 from xsltcrosswalk import XsltCrosswalk
 from xmlxpath import XmlXPath
