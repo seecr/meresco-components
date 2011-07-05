@@ -52,7 +52,7 @@ class SruHandler(Observable):
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
         try:
-            total, recordIds = self.any.executeCQL(
+            total, recordIds = yield self.asyncany.executeCQL(
                 cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                 start=start,
                 stop=start + maximumRecords,
