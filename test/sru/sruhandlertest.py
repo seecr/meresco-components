@@ -130,7 +130,7 @@ class SruHandlerTest(CQ2TestCase):
 
     def testNextRecordPosition(self):
         observer = CallTrace()
-        observer.returnValues['executeCQL'] = (100, range(11, 26))
+        observer.exceptions['executeCQL'] = StopIteration([100, range(11, 26)])
         observer.returnValues['yieldRecord'] = "record"
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
@@ -149,7 +149,7 @@ class SruHandlerTest(CQ2TestCase):
         arguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        observer.returnValues['executeCQL'] = (100, range(11, 13))
+        observer.exceptions['executeCQL'] = StopIteration([100, range(11, 13)])
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -237,7 +237,7 @@ class SruHandlerTest(CQ2TestCase):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        observer.returnValues['executeCQL'] = (100, range(11, 13))
+        observer.exceptions['executeCQL'] = StopIteration([100, range(11, 13)])
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -341,7 +341,7 @@ class SruHandlerTest(CQ2TestCase):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        observer.returnValues['executeCQL'] = (100, [11])
+        observer.exceptions['executeCQL'] = StopIteration([100, [11]])
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -417,7 +417,7 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(sruHandler)
         observer = CallTrace('observer')
         sruHandler.addObserver(observer)
-        observer.returnValues['executeCQL'] = (2, ['id0', 'id1'])
+        observer.exceptions['executeCQL'] = StopIteration([2, ['id0', 'id1']])
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['yieldRecord'] = lambda *args, **kwargs: '<bike/>'

@@ -127,8 +127,8 @@ Content-Type: text/xml; charset=utf-8
 
     def testContentType(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (1, [0])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData', 'yieldRecord'])
+        observer.exceptions['executeCQL'] = StopIteration([1, [0]])
         self.sruHandler.addObserver(observer)
 
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
@@ -138,13 +138,11 @@ Content-Type: text/xml; charset=utf-8
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
         observer = CallTrace(
-            returnValues={
-                'executeCQL': (1, ['recordId']),
-            },
             methods={
                 'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeCQL'] = StopIteration([1, ['recordId']])
 
         self.sruHandler.addObserver(observer)
 
@@ -179,13 +177,11 @@ Content-Type: text/xml; charset=utf-8
 </SOAP:Envelope>"""
 
         observer = CallTrace(
-            returnValues={
-                'executeCQL': (1, ['recordId']),
-            },
             methods={
                 'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeCQL'] = StopIteration([1, ['recordId']])
         self.sruHandler.addObserver(observer)
         response = "".join(self.srw.handleRequest(Body=request))
 
@@ -211,10 +207,10 @@ Content-Type: text/xml; charset=utf-8
         sruParser.addObserver(self.sruHandler)
         observer = CallTrace(
             returnValues={
-                'executeCQL': (1, [1]),
                 'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeCQL'] = StopIteration([1, [1]])
 
         self.sruHandler.addObserver(observer)
         response = "".join(srw.handleRequest(Body=request))

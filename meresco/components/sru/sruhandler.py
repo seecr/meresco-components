@@ -51,6 +51,7 @@ class SruHandler(Observable):
 
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
+
         try:
             total, recordIds = yield self.asyncany.executeCQL(
                 cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
@@ -94,15 +95,22 @@ class SruHandler(Observable):
         yield '</srw:echoedSearchRetrieveRequest>'
 
     def _writeExtraResponseData(self, cqlAbstractSyntaxTree=None, **kwargs):
-        return decorate('<srw:extraResponseData>',
-            self._extraResponseDataTryExcept(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs),
-            '</srw:extraResponseData>')
+        response = compose(self._extraResponseDataTryExcept(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs))
+        headerWritten = False
+        for line in response:
+            if callable(line):
+                yield line
+                continue
+            if line and not headerWritten:
+                yield '<srw:extraResponseData>'
+                headerWritten = True
+            yield line
+        if headerWritten:
+            yield '</srw:extraResponseData>'
 
     def _extraResponseDataTryExcept(self, cqlAbstractSyntaxTree=None, **kwargs):
         try:
-            stuffs = compose(self.all.extraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs))
-            for stuff in stuffs:
-                yield stuff
+            yield self.all.extraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs)
         except Exception, e:
             yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape(str(e))])
 
