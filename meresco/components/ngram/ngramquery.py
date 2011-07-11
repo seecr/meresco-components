@@ -45,11 +45,11 @@ class NGramQuery(Observable):
         self._fieldForSorting = fieldForSorting
 
     def executeNGramQuery(self, query, maxResults, fieldname=None):
-        total, recordIds =  self.any.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=self._samples)
+        total, recordIds = yield self.asyncany.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=self._samples)
         sortedRecordIds = recordIds
         if self._fieldForSorting and maxResults < total and maxResults < self._samples:
             sortedRecordIds = sorted(recordIds, key=self._wordCardinality, reverse=True)
-        return islice((word.rsplit('$', 1)[0] for word in sortedRecordIds), maxResults)
+        raise StopIteration(islice((word.rsplit('$', 1)[0] for word in sortedRecordIds), maxResults))
 
     def _wordCardinality(self, word):
         return self.any.docsetlist(self._fieldForSorting).cardinality(word.rsplit('$', 1)[0])

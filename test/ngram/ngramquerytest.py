@@ -29,35 +29,64 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
+from meresco.core import be, Observable
 from meresco.components.ngram import NGramQuery
+from weightless.core import compose
+
+class Interceptor(Observable):
+    def executeNGramQuery(self, *args, **kwargs):
+        result = yield self.asyncany.executeNGramQuery(*args, **kwargs)
+        yield result
 
 class NGramQueryTest(CQ2TestCase):
     def testOne(self):
         observer = CallTrace('observer')
-        q = NGramQuery(2)
-        q.addObserver(observer)
-        observer.returnValues['executeQuery'] = (120, ['word%s$' % d for d in range(50)] )
+        ngramQuery = NGramQuery(2)
+        dna = be((Observable(),
+            (Interceptor(),
+                (ngramQuery,
+                    (observer,)
+                )
+            )
+        ))
+        observer.exceptions['executeQuery'] = StopIteration([120, ['word%s$' % d for d in range(50)] ])
 
-        suggestions = q.executeNGramQuery('word', 2)
+        composedGenerator = compose(dna.any.executeNGramQuery('word', 2))
+        suggestions = composedGenerator.next()
 
         self.assertEquals(['word0', 'word1'], list(suggestions))
 
     def testNGramQuery(self):
-        ngramindex = CallTrace('ngramindex', returnValues = {'executeQuery': (2, ['term0$', 'term1$'])})
+        ngramindex = CallTrace('ngramindex')
+        ngramindex.exceptions['executeQuery'] = StopIteration([2, ['term0$', 'term1$']])
         ngramQuery = NGramQuery(2)
-        ngramQuery.addObserver(ngramindex)
-        suggestions = ngramQuery.executeNGramQuery('term0', 1234)
+        dna = be((Observable(),
+            (Interceptor(),
+                (ngramQuery,
+                    (ngramindex,)
+                )
+            )
+        ))
+        composedGenerator = compose(dna.any.executeNGramQuery('term0', 1234))
+        suggestions = composedGenerator.next()
         self.assertEquals(['term0', 'term1'], list(suggestions))
         self.assertEquals('+field:ngrams$ +(ngrams:te ngrams:er ngrams:rm ngrams:m0)', str(ngramindex.calledMethods[0].args[0]))
-        ngramindex.returnValues['executeQuery'] = (2, ['term2', 'term9'])
-        suggestions = ngramQuery.executeNGramQuery('term0',87655)
+        ngramindex.exceptions['executeQuery'] = StopIteration([2, ['term2', 'term9']])
+        suggestions = compose(dna.any.executeNGramQuery('term0',87655)).next()
         self.assertEquals(['term2', 'term9'], list(suggestions))
 
     def testNgramQueryFieldname(self):
-        ngramindex = CallTrace('ngramindex', returnValues = {'executeQuery': (2, ['term0$some_fieldname', 'term1$some_fieldname'])})
+        ngramindex = CallTrace('ngramindex')
+        ngramindex.exceptions['executeQuery'] = StopIteration([2, ['term0$some_fieldname', 'term1$some_fieldname']])
         ngramQuery = NGramQuery(2, fieldnames=['some_fieldname'])
-        ngramQuery.addObserver(ngramindex)
-        suggestions = ngramQuery.executeNGramQuery('term0',9876, fieldname='some_fieldname')
+        dna = be((Observable(),
+            (Interceptor(),
+                (ngramQuery,
+                    (ngramindex,)
+                )
+            )
+        ))
+        suggestions = compose(dna.any.executeNGramQuery('term0',9876, fieldname='some_fieldname')).next()
         self.assertEquals(['term0', 'term1'], list(suggestions))
         self.assertEquals('+field:ngrams$some_fieldname +(ngrams:te ngrams:er ngrams:rm ngrams:m0)', str(ngramindex.calledMethods[0].args[0]))
 
@@ -65,16 +94,22 @@ class NGramQueryTest(CQ2TestCase):
         docsetlist = CallTrace('docsetlist')
         drilldown = CallTrace('drilldownAndIndex')
         ngramQuery = NGramQuery(2, samples=50, fieldForSorting='fieldForSorting')
-        ngramQuery.addObserver(drilldown)
+        dna = be((Observable(),
+            (Interceptor(),
+                (ngramQuery,
+                    (drilldown,)
+                )
+            )
+        ))
         drilldown.returnValues['docsetlist'] = docsetlist
-        drilldown.returnValues['executeQuery'] = (100, ['term%s$' % i for i in range(50)])
+        drilldown.exceptions['executeQuery'] = StopIteration([100, ['term%s$' % i for i in range(50)]])
         cardinalities = dict(('term%s' % i, 1) for i in range(100))
         cardinalities['term0'] = 10
         cardinalities['term10'] = 2
         cardinalities['term20'] = 20
         docsetlist.methods['cardinality'] = lambda term: cardinalities.get(term, 0)
 
-        suggestions = ngramQuery.executeNGramQuery('term', maxResults=5)
+        suggestions = compose(dna.any.executeNGramQuery('term', maxResults=5)).next()
 
         self.assertEquals(['term20', 'term0', 'term10', 'term1', 'term2'], list(suggestions))
         self.assertEquals(['cardinality']*50, [m.name for m in docsetlist.calledMethods])

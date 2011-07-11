@@ -40,10 +40,12 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.facetindex import Document, IDFIELD, LuceneIndex
 from meresco.components.facetindex import CQL2LuceneQuery
 from meresco.components.facetindex.merescolucene import Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery
+from meresco.core import be, Observable
 
 from cqlparser import parseString
 
 from weightless.io import Reactor
+from weightless.core import compose
 
 class LuceneTest(CQ2TestCase):
 
@@ -54,6 +56,14 @@ class LuceneTest(CQ2TestCase):
     def tearDown(self):
         self._luceneIndex.close()
         CQ2TestCase.tearDown(self)
+
+    def executeQuery(self, *args, **kwargs):
+        try:
+            gen = self._luceneIndex.executeQuery(*args, **kwargs)
+            while True:
+                gen.next()
+        except StopIteration, e:
+            return e.message
 
     def testCreation(self):
         self.assertEquals(os.path.isdir(self.tempdir), True)
@@ -67,7 +77,7 @@ class LuceneTest(CQ2TestCase):
         self.assertEquals(1, self._luceneIndex._writer.numDocs())
         self.assertEquals(1, self._luceneIndex.docCount())
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(1, len(hits))
         self.assertEquals(['0123456789'], list(hits))
 
@@ -78,10 +88,10 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(len(hits), 1)
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'sub')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'sub')))
         self.assertEquals(len(hits), 1)
 
     def testAddTwoDocuments(self):
@@ -94,7 +104,7 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(2, len(hits))
 
     def testAddDocumentWithTwoValuesForOneField(self):
@@ -106,7 +116,7 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
 
         def check(value):
-            total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', value)))
+            total, hits = self.executeQuery(TermQuery(Term('field1', value)))
             self.assertEquals(1, len(hits))
         check('value_1')
         check('value_2')
@@ -154,16 +164,16 @@ class LuceneTest(CQ2TestCase):
         self.addDocument('2', title='een titel')
         self._luceneIndex.commit()
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(2, len(hits))
 
         self._luceneIndex.delete('1')
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(2, len(hits))
 
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         self.assertEquals(1, len(hits))
 
     def testAddDeleteWithoutCommitInBetween(self):
@@ -172,7 +182,7 @@ class LuceneTest(CQ2TestCase):
         self.addDocument('1', exists='true')
         self._luceneIndex.delete('1')
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('exists', 'true')))
+        total, hits = self.executeQuery(TermQuery(Term('exists', 'true')))
         self.assertEquals(0, len(hits))
         #self.assertEquals(0, self._luceneIndex._tracker.nrOfDocs())
         for i in range(100):
@@ -192,7 +202,7 @@ class LuceneTest(CQ2TestCase):
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel')))
+        total, hits = self.executeQuery(TermQuery(Term('title', 'titel')))
         # keep ref to hits, while refreshing/reopening the index after timeout
         self._luceneIndex.commit()
         # now try to get the results,
@@ -214,14 +224,29 @@ class LuceneTest(CQ2TestCase):
         self.assertFalse(isfile(self.tempdir + '/x/write.lock'))
 
     def testCQLConversionIntegration(self):
+        class MockSruHandler(Observable):
+            def executeCQL(self, query):
+                total2, hits2 = yield self.asyncany.executeCQL(query)
+                yield total2, hits2
+
+        dna = be(
+            (Observable(), 
+                (MockSruHandler(),
+                    (CQL2LuceneQuery([]),
+                        (self._luceneIndex,)
+                    )
+                )
+            )
+        )
+        
         queryConvertor = CQL2LuceneQuery([])
         queryConvertor.addObserver(self._luceneIndex)
         myDocument = Document('0123456789')
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
-        total1, hits1 = list(self._luceneIndex.executeQuery(TermQuery(Term('title', 'titel'))))
-        total2, hits2 = list(queryConvertor.executeCQL(parseString("title = titel")))
+        total1, hits1 = self.executeQuery(TermQuery(Term('title', 'titel')))
+        total2, hits2 = compose(dna.any.executeCQL(parseString("title = titel"))).next()
         self.assertEquals(len(hits1), len(hits2))
         self.assertEquals(['0123456789'], hits1)
         self.assertEquals(['0123456789'], hits2)
@@ -258,13 +283,13 @@ class LuceneTest(CQ2TestCase):
         add('1')
         self._luceneIndex.commit()
         self._luceneIndex.addObserver(observer)
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        total, hits = self.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
 
         add('2')
         add('3')
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        total, hits = self.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
         self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'addDocument'], [m.name for m in observer.calledMethods])
         self.assertEquals([0,1,1,2], [m.kwargs['docId'] for m in observer.calledMethods])
@@ -284,7 +309,7 @@ class LuceneTest(CQ2TestCase):
         add('2')
         delete()
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        total, hits = self.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(0, total)
 
         self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument'], [m.name for m in observer.calledMethods])
@@ -305,7 +330,7 @@ class LuceneTest(CQ2TestCase):
         add('3')
         delete()
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        total, hits = self.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(0, total)
 
         self.assertEquals(['deleteDocument', 'addDocument', 'deleteDocument', 'addDocument', 'deleteDocument'], [m.name for m in observer.calledMethods])
@@ -325,7 +350,7 @@ class LuceneTest(CQ2TestCase):
         deleteSameDoc()
         addSameDoc()
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
+        total, hits = self.executeQuery(TermQuery(Term('__id__', 'theIdIsTheSame')))
         self.assertEquals(1, total)
         self.assertEquals(total, self._luceneIndex._currentTracker.nrOfDocs())
         methodNames = [m.name for m in observer.calledMethods]
@@ -353,12 +378,12 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'a')))
+        total, hits = self.executeQuery(TermQuery(Term('field', 'a')))
         self.assertEquals(1, total)
         self.assertEquals(1, len(hits))
         self.assertEquals(['id0'], list(hits))
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field', 'value')))
+        total, hits = self.executeQuery(TermQuery(Term('field', 'value')))
         self.assertEquals(len(hits), 1)
         self.assertEquals(['id0'], list(hits))
 
@@ -373,11 +398,11 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', 'one')), sortBy='field2', sortDescending=False)
+        total, hits = self.executeQuery(TermQuery(Term('field1', 'one')), sortBy='field2', sortDescending=False)
         self.assertEquals(len(hits), 2)
         self.assertEquals(['id0', 'id1'], list(hits))
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', 'one')), sortBy='field2', sortDescending=True)
+        total, hits = self.executeQuery(TermQuery(Term('field1', 'one')), sortBy='field2', sortDescending=True)
         self.assertEquals(len(hits), 2)
         self.assertEquals(['id1', 'id0'], list(hits))
 
@@ -390,7 +415,7 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('field1', 'one')), sortBy='doesNotExist', sortDescending=False)
+        total, hits = self.executeQuery(TermQuery(Term('field1', 'one')), sortBy='doesNotExist', sortDescending=False)
         self.assertEquals(len(hits), 2)
         self.assertEquals(['id0', 'id1'], list(hits))
 
@@ -402,7 +427,7 @@ class LuceneTest(CQ2TestCase):
         for n in range(20):
             addDoc(n)
         self._luceneIndex.commit()
-        total, hits = self._luceneIndex.executeQuery(MatchAllDocsQuery(), 3, 7)
+        total, hits = self.executeQuery(MatchAllDocsQuery(), 3, 7)
         self.assertEquals(7-3, len(hits))
         self.assertEquals(['3', '4', '5', '6'], hits)
 
@@ -417,15 +442,15 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.commit()
         filter = [3, 4, 5, 9, 11, 12, 13]
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=[])
+        total, hits = self.executeQuery(TermQuery(Term('findable', 'true')), docfilter=[])
         self.assertEquals([], hits)
         self.assertEquals(0, total)
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), docfilter=filter)
+        total, hits = self.executeQuery(TermQuery(Term('findable', 'true')), docfilter=filter)
         self.assertEquals([str(i) for i in filter if i < 20], hits)
         self.assertEquals(7, total)
 
-        total, hits = self._luceneIndex.executeQuery(TermQuery(Term('findable', 'true')), 2, 5, docfilter=filter)
+        total, hits = self.executeQuery(TermQuery(Term('findable', 'true')), 2, 5, docfilter=filter)
         self.assertEquals(5-2, len(hits))
         self.assertEquals([str(i) for i in filter if i < 20][2:5], hits)
         self.assertEquals(7, total)
@@ -540,17 +565,17 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex._writer.optimize()
         self._luceneIndex.close()
 
-        luceneIndex = LuceneIndex(directoryName=self.tempdir)
+        self._luceneIndex = LuceneIndex(directoryName=self.tempdir)
 
-        total, hits = luceneIndex.executeQuery(MatchAllDocsQuery())
+        total, hits = self.executeQuery(MatchAllDocsQuery())
         self.assertEquals(2, total)
 
-        luceneIndex.delete('identifier')
-        luceneIndex.commit()
+        self._luceneIndex.delete('identifier')
+        self._luceneIndex.commit()
 
-        total, hits = luceneIndex.executeQuery(MatchAllDocsQuery())
+        total, hits = self.executeQuery(MatchAllDocsQuery())
         self.assertEquals(0, total)
-        self.assertEquals(0, luceneIndex._currentTracker.nrOfDocs())
+        self.assertEquals(0, self._luceneIndex._currentTracker.nrOfDocs())
 
     def testAssertionErrorInCaseTrackerOutOfSync(self):
         from meresco.components.facetindex.lucenedocidtracker import LuceneDocIdTracker

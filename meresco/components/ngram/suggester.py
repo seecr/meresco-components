@@ -51,12 +51,12 @@ class _Suggestion(Observable):
         """
         word = unicode(word)
         fieldname = unicode(fieldname) if fieldname else None
-        candidates = self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
+        candidates = yield self.asyncany.executeNGramQuery(word, self._samples, fieldname=fieldname)
         results = sorted(candidates, key=lambda term: self.sortKey(term, word, fieldname))
 
         inclusive = 1 if results and results[0] == word else 0
         result = islice(results, inclusive, self._maxResults + inclusive)
-        return bool(inclusive), [str(term) for term in result if self.threshold(term, word, fieldname)]
+        raise StopIteration([bool(inclusive), [str(term) for term in result if self.threshold(term, word, fieldname)]])
 
 class LevenshteinSuggester(_Suggestion):
     """ (see http://en.wikipedia.org/wiki/Levenshtein_distance for details). """

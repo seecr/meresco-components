@@ -68,7 +68,7 @@ class NumberComparitorTest(CQ2TestCase):
                 )
             )
         ))
-        total, recordIds = dna.any.executeCQL(cqlAbstractSyntaxTree=parseString(query))
+        total, recordIds = yield dna.asyncany.executeCQL(cqlAbstractSyntaxTree=parseString(query))
         self.assertEquals(expectedResult, sorted(recordIds))
         
     def testGTE_1_Decimal(self):

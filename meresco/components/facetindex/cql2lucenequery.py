@@ -30,8 +30,8 @@
 from meresco.core import Observable
 
 from meresco.components.statistics import Logger
-from cqlparsetreetolucenequery import LuceneQueryComposer
-from clausecollector import ClauseCollector
+from meresco.components.facetindex.cqlparsetreetolucenequery import LuceneQueryComposer
+from meresco.components.facetindex.clausecollector import ClauseCollector
 
 class CQL2LuceneQuery(Observable, Logger):
 
@@ -41,7 +41,7 @@ class CQL2LuceneQuery(Observable, Logger):
 
     def executeCQL(self, cqlAbstractSyntaxTree, *args, **kwargs):
         ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
-        return self.any.executeQuery(
+        return self.asyncany.executeQuery(
                 pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
                 *args, **kwargs
             )
@@ -52,3 +52,11 @@ class CQL2LuceneQuery(Observable, Logger):
                 pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
                 *args, **kwargs
             )
+
+    def drilldown(self, cqlAbstractSyntaxTree, *args, **kwargs):
+        ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
+        return self.asyncany.drilldown(
+                pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
+                *args, **kwargs
+            )
+        

@@ -95,7 +95,7 @@ class DrilldownTest(CQ2TestCase):
             ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('3', {'field_0': 'this is term_2', 'field_1': 'cannotbefound'})])
         query = TermQuery(Term("field_1", "inquery"))
-        total, queryResults = self.index.executeQuery(query)
+        total, queryResults = self.executeQuery(query)
         self.assertEquals(3, total)
         self.assertEquals(['0', '1', '2'], queryResults)
         queryDocset = self.index.docsetFromQuery(query)
@@ -219,7 +219,7 @@ class DrilldownTest(CQ2TestCase):
         #self.drilldown.indexStarted(self.index)
 
         query = TermQuery(Term("title", "dogs"))
-        total, queryResults = self.index.executeQuery(query)
+        total, queryResults = self.executeQuery(query)
         queryDocset = self.index.docsetFromQuery(query)
         jaccardIndices = list(self.drilldown.jaccard(queryDocset, [("title", 0, 100)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('dogs',100),('mice', 66),('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
@@ -462,3 +462,11 @@ class DrilldownTest(CQ2TestCase):
     def testCompoundFieldWithSameTermInDifferentFields(self):
         drilldown = Drilldown([('field_0', 'field_1')])
         drilldown._add(0, {'field_0': ['value'], 'field_1': ['value']}) # had a bug causing: "non-increasing docid" error
+
+    def executeQuery(self, *args, **kwargs):
+        try:
+            gen = self.index.executeQuery(*args, **kwargs)
+            while True:
+                gen.next()
+        except StopIteration, e:
+            return e.message

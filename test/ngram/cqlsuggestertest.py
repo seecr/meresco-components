@@ -31,42 +31,72 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from cqlparser import parseString
+from meresco.core import be, Observable
 from meresco.components.cqlsuggester import CqlSuggester
 from meresco.components.ngram import LevenshteinSuggester
-
+from weightless.core import compose
 
 class MockNGramQuery(object):
     def __init__(self, results):
         self._results = results
     def executeNGramQuery(self, query, maxResults, fieldname=None):
-        return self._results[:maxResults]
+        raise StopIteration(self._results[:maxResults])
+        yield
+
+class Interceptor(Observable):
+    def suggestionsFor(self, *args, **kwargs):
+        result = yield self.asyncany.suggestionsFor(*args, **kwargs)
+        yield result
+
+    def suggestForCql(self, *args, **kwargs):
+        result = yield self.asyncany.suggestForCql(*args, **kwargs)
+        yield result
 
 class CqlSuggesterTest(TestCase):
-
     def testTwoWords(self):
         suggester = CallTrace('suggester')
+        dna = be((Observable(),
+            (Interceptor(),
+                (CqlSuggester(),
+                    (suggester,)
+                )
+            )
+        ))
         def suggestionsFor(term):
-            return ['wordy']
+            raise StopIteration(['wordy'])
+            yield
         suggester.suggestionsFor = suggestionsFor
         cqlquery = parseString('word0 and word1')
-        cqlsuggester = CqlSuggester()
-        cqlsuggester.addObserver(suggester)
-        result = cqlsuggester.suggestForCql(cqlAST=cqlquery)
-        self.assertEquals(['wordy'], result)
+        result = compose(dna.any.suggestForCql(cqlAST=cqlquery))
+        self.assertEquals(['wordy'], result.next())
 
     def testTwoWordsWithRealSuggester(self):
         ngramQuery = MockNGramQuery([u'wordy', u'wordx'])
-        self.assertEquals(['wordy', 'wordx'], ngramQuery.executeNGramQuery('nonsense', 99))
         suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
-        suggester.addObserver(ngramQuery)
-        self.assertEquals((False, ['wordy', 'wordx']), suggester.suggestionsFor('wordz'))
-        self.assertEquals((True, ['wordx']), suggester.suggestionsFor('wordy'))
-        cqlsuggester = CqlSuggester()
-        cqlsuggester.addObserver(suggester)
+        dna = be((Observable(),
+            (Interceptor(),
+                (suggester,
+                    (ngramQuery,),
+                )
+            )
+        ))
+        self.assertEquals([False, ['wordy', 'wordx']], compose(dna.any.suggestionsFor('wordz')).next())
+        self.assertEquals([True, ['wordx']], compose(dna.any.suggestionsFor('wordy')).next())
+
+    def testCqlSuggester(self):
+        ngramQuery = MockNGramQuery([u'wordy', u'wordx'])
+        suggester = LevenshteinSuggester(samples=50, threshold=10, maxResults=5)
+        dna = be((Observable(),
+            (Interceptor(),
+                (CqlSuggester(),
+                    (suggester,
+                        (ngramQuery,),
+                    )
+                )
+            )
+        ))
         cqlAST = parseString('wordz and wordy')
         self.assertEquals('wordz', cqlAST.children[0].children[0].children[0].children[0].children[0].children[0])
-        result = cqlsuggester.suggestForCql(cqlAST)
-        self.assertEquals((False, ['wordy', 'wordx']), result)
-
-
+        result = compose(dna.any.suggestForCql(cqlAST))
+        self.assertEquals([False, ['wordy', 'wordx']], result.next())
 

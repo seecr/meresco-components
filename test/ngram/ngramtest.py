@@ -34,6 +34,8 @@ from meresco.components.ngram.ngram import ngrams
 from meresco.components.ngram.suggester import _Suggestion
 from meresco.components.ngram import NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
 
+from weightless.core import compose
+
 from Levenshtein import distance, ratio
 from lxml.etree import parse
 from StringIO import StringIO
@@ -41,6 +43,11 @@ from StringIO import StringIO
 from os.path import join
 
 PUCH_WORDS = [u'capuche', u'capuches', u'Capuchin', u'capuchins', u'Mapuche', u'Pampuch', u'puchera', u'pucherite', u'capuched', u'capuchin', u'puchero', u'PUC', u'Kampuchea', u'kampuchea', u'Puchanahua', u'sepuchral', u'puca', u'puce', u'puces', u'Puck', u'puck', u'pucka', u'pucks', u'Pupuluca', u'Puccini', u'puccini', u'puccoon', u'puceron', u'Pucida', u'pucker', u'puckish', u'puckle', u'SPUCDL', u'Chuch', u'Punch', u'punch', u'cappuccino', u'capucine', u'catapuce', u'catepuce', u'depucel', u'leucopus', u'mucopus', u'praepuce', u'prepuce', u'prepuces', u'Puccinia', u'puccinoid', u'puccoons', u'pucelage', u'pucellas', u'pucelle', u'puckball', u'puckered', u'puckerel', u'puckerer', u'puckering', u'puckers', u'puckery', u'Puckett', u'puckfist', u'puckfoist', u'puckishly', u'pucklike', u'puckling', u'puckrel', u'pucksey', u'puckster', u'sapucaia', u'unpucker', u'Vespucci', u'vespucci', u'Chucho', u'aneuch', u'aucht', u'bauch', u'bouch', u'Bruch', u'Buch', u'Buchan', u'buch', u'cauch', u'Chuck', u'chuck', u'couch', u'Cuchan', u'duchan', u'duchy', u'Eucha', u'Fauch', u'fuchi', u'Fuchs', u'heuch', u'hucho', u'Jauch', u'kauch', u'leuch', u'louch', u'Lucho', u'Manouch', u'mouch', u'much', u'nauch', u'nonsuch', u'nouche', u'nucha', u'ouch', u'pouch', u'Rauch', u'ruche', u'sauch', u'snouch', u'such', u'teuch', u'touch', u'touch-', u'touche', u'touchy', u'tuchis', u'tuchit', u'Uchean', u'Uchee', u'Uchish', u'vouch', u'wauch']
+
+class MockDidYouMean(Observable):
+    def suggestionsFor(self, *args, **kwargs):
+        result = yield self.asyncany.suggestionsFor(*args, **kwargs)
+        yield result 
 
 class NGramTest(CQ2TestCase):
     def setUp(self):
@@ -80,14 +87,16 @@ class NGramTest(CQ2TestCase):
         ))
         self.indexingDna.once.observer_init()
         suggesterDna = be((Observable(),
-            (NoOpSuggester(),
-                (NGramQuery(2, samples=50, fieldnames=['field0', 'field1'], fieldForSorting='allfields'),
-                    (ngramIndex,),
-                    (allfieldsDrilldown,)
+            (MockDidYouMean(),
+                (NoOpSuggester(),
+                    (NGramQuery(2, samples=50, fieldnames=['field0', 'field1'], fieldForSorting='allfields'),
+                        (ngramIndex,),
+                        (allfieldsDrilldown,)
+                    )
                 )
             )
         ))
-        self.suggestionsFor = lambda word, fieldname=None: suggesterDna.any.suggestionsFor(word, fieldname=fieldname)
+        self.suggestionsFor = lambda word, fieldname=None: tuple(compose(suggesterDna.any.suggestionsFor(word, fieldname=fieldname)).next())
 
         def addWord(word, fieldname='field'):
             global identifierNr
@@ -187,10 +196,17 @@ class NGramTest(CQ2TestCase):
     def assertSuggestions(self, expected, term, suggester, ngramQuerySamples):
         ngramindex = CallTrace('ngramindex')
         def executeQuery(query, start, stop, *args):
-            return (len(PUCH_WORDS), PUCH_WORDS[:stop])
+            raise StopIteration([len(PUCH_WORDS), PUCH_WORDS[:stop]])
         ngramindex.executeQuery = executeQuery
         ngramQuery = NGramQuery(2, samples=ngramQuerySamples)
-        ngramQuery.addObserver(ngramindex)
-        suggester.addObserver(ngramQuery)
-        inclusive, results = suggester.suggestionsFor(term)
+        suggesterDna = be((Observable(),
+            (MockDidYouMean(),
+                (suggester,
+                    (ngramQuery,
+                        (ngramindex,),
+                    )
+                )
+            )
+        ))
+        inclusive, results = compose(suggesterDna.any.suggestionsFor(term)).next()
         self.assertEquals(expected, list(results))

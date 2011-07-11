@@ -140,7 +140,8 @@ class LuceneIndex(Observable):
             hits = (hit for hit in hits if self._lucene2docId[hit.getId()] in docfilter)
             nrOfResults = len(docfilter)
         results = islice(hits, start, stop)
-        return nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]
+        raise StopIteration([nrOfResults, [hit.getDocument().get(IDFIELD) for hit in results]])
+        yield
 
     def getIndexReader(self):
         return self._reader
