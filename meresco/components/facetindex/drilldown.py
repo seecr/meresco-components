@@ -151,12 +151,15 @@ class Drilldown(object):
             drilldownFieldnamesAndMaximumResults = [
                 (fieldname, defaultMaximumResults, defaultSorting)
                 for fieldname in self._docsetlists]
-        for fieldname, maximumResults, howToSort in drilldownFieldnamesAndMaximumResults:
-            if not self._isDrilldownField(fieldname):
-                raise NoFacetIndexException(fieldname, self.listFields())
+        def results():
+            for fieldname, maximumResults, howToSort in drilldownFieldnamesAndMaximumResults:
+                if not self._isDrilldownField(fieldname):
+                    raise NoFacetIndexException(fieldname, self.listFields())
 
-            docsetlist = self._docsetlists[fieldname]
-            yield fieldname, docsetlist.termCardinalities(docset, maximumResults or maxint, howToSort)
+                docsetlist = self._docsetlists[fieldname]
+                yield fieldname, docsetlist.termCardinalities(docset, maximumResults or maxint, howToSort)
+        raise StopIteration(list(results()))
+        yield
 
     def hierarchicalDrilldown(self, docset, drilldownFieldnamesAndMaximumResults=None, defaultMaximumResults=0, defaultSorting=False):
         if not drilldownFieldnamesAndMaximumResults:

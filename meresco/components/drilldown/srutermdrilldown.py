@@ -1,6 +1,7 @@
 from meresco.core import Observable, decorateWith
 from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from xml.sax.saxutils import escape as xmlEscape, quoteattr
+from traceback import print_exc
 
 from meresco.components.sru.diagnostic import generalSystemError
 
@@ -27,6 +28,7 @@ class SRUTermDrilldown(Observable):
                 fieldMaxTuples)
             yield self._termDrilldown(drilldownResults)
         except Exception, e:
+            print_exc()
             yield DRILLDOWN_HEADER + "<dd:term-drilldown>"
             yield generalSystemError(xmlEscape(e.message))
             yield "</dd:term-drilldown>" + DRILLDOWN_FOOTER

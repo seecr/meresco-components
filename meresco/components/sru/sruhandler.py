@@ -53,14 +53,17 @@ class SruHandler(Observable):
         cqlAbstractSyntaxTree = parseCQL(query)
 
         try:
-            total, recordIds = yield self.asyncany.executeCQL(
+            response = yield self.asyncany.executeCQL(
                 cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                 start=start,
                 stop=start + maximumRecords,
                 sortBy=sortBy,
                 sortDescending=sortDescending,
                 **kwargs)
-            docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
+            total, recordIds = response.total, response.recordIds
+            drilldowndata = response.drilldowndata if response.drilldowndata else None
+            if not drilldowndata:
+                docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
