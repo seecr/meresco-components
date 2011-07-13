@@ -32,23 +32,27 @@ from weightless.core import compose
 
 from meresco.components.sru.diagnostic import generalSystemError
 
-from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
-
+from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+from meresco.components.drilldown import SRUTermDrilldown
 
 class SRUTermDrilldownTest(CQ2TestCase):
     def testSRUTermDrilldown(self):
         sruTermDrilldown = SRUTermDrilldown()
 
         observer = CallTrace("Drilldown")
-        observer.returnValues['drilldown'] = iter([
+        drilldownResult = iter([
                 ('field0', iter([('value0_0', 14)])),
                 ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
                 ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))])
+        observer.exceptions['drilldown'] = StopIteration(drilldownResult)
 
         sruTermDrilldown.addObserver(observer)
-        docset = 'docset'
+        cqltree = 'cqltree'
 
-        result = compose(sruTermDrilldown.extraResponseData(docset, x_term_drilldown=["field0:1,field1:2,field2"]))
+        response = ''.join(compose(sruTermDrilldown.extraResponseData(
+                cqltree, x_term_drilldown=["field0:1,field1:2,field2"])))
+
+        
         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:term-drilldown><dd:navigator name="field0">
     <dd:item count="14">value0_0</dd:item>
 </dd:navigator>
@@ -60,9 +64,9 @@ class SRUTermDrilldownTest(CQ2TestCase):
     <dd:item count="3">value2_0</dd:item>
     <dd:item count="2">value2_1</dd:item>
     <dd:item count="1">value2_2</dd:item>
-</dd:navigator></dd:term-drilldown></dd:drilldown>""", "".join(result))
+</dd:navigator></dd:term-drilldown></dd:drilldown>""", response)
         self.assertEquals(['drilldown'], [m.name for m in observer.calledMethods])
-        self.assertEquals('docset', observer.calledMethods[0].args[0])
+        self.assertEquals('cqltree', observer.calledMethods[0].args[0])
         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].args[1]))
 
     def testDrilldownCallRaisesAnError(self):
@@ -96,12 +100,12 @@ class SRUTermDrilldownTest(CQ2TestCase):
         drilldownResults = iter([
                 ('field0', iter([])),
             ])
-        observer.returnValues["drilldown"] = drilldownResults
+        observer.exceptions['drilldown'] = StopIteration(drilldownResults)
         sruTermDrilldown.addObserver(observer)
 
         cqlAbstractSyntaxTree = 'ignored'
 
-        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
+        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree, x_term_drilldown=["fieldignored:1"]))
         result = "".join(composedGenerator)
 
         expected = DRILLDOWN_HEADER + """
@@ -121,7 +125,7 @@ class SRUTermDrilldownTest(CQ2TestCase):
                 ('field0', iter([('value0_0', 14)])),
                 ('field1', raiser()),
             ])
-        observer.returnValues["drilldown"] = drilldownResults
+        observer.exceptions['drilldown'] = StopIteration(drilldownResults)
         sruTermDrilldown.addObserver(observer)
 
         cqlAbstractSyntaxTree = 'ignored'
