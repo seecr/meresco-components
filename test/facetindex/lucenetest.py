@@ -45,7 +45,17 @@ from meresco.core import be, Observable
 from cqlparser import parseString
 
 from weightless.io import Reactor
-from weightless.core import compose
+from weightless.core import compose, tostring
+
+
+def asyncreturn(func, *args, **kwargs):
+    try:
+        g = compose(func(*args, **kwargs))
+        while True:
+            g.next()
+    except StopIteration, e:
+        return e.args[0]
+    raise Exception("no async return function")
 
 class LuceneTest(CQ2TestCase):
 
@@ -58,12 +68,7 @@ class LuceneTest(CQ2TestCase):
         CQ2TestCase.tearDown(self)
 
     def executeQuery(self, *args, **kwargs):
-        try:
-            gen = self._luceneIndex.executeQuery(*args, **kwargs)
-            while True:
-                gen.next()
-        except StopIteration, e:
-            return e.message
+        return asyncreturn(self._luceneIndex.executeQuery, *args, **kwargs)
 
     def testCreation(self):
         self.assertEquals(os.path.isdir(self.tempdir), True)
@@ -227,12 +232,12 @@ class LuceneTest(CQ2TestCase):
         class MockSruHandler(Observable):
             def executeCQL(self, query):
                 response = yield self.asyncany.executeCQL(query)
-                yield response.total, response.hits
+                raise StopIteration(response)
 
         dna = be(
             (Observable(), 
                 (MockSruHandler(),
-                    (CQL2LuceneQuery([]),
+                    (CQL2LuceneQuery([('a',1)]),
                         (self._luceneIndex,)
                     )
                 )
@@ -246,7 +251,7 @@ class LuceneTest(CQ2TestCase):
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
         response1 = self.executeQuery(TermQuery(Term('title', 'titel')))
-        response2 = compose(dna.any.executeCQL(parseString("title = titel"))).next()
+        response2 = asyncreturn(dna.any.executeCQL, parseString("title = titel"))
         self.assertEquals(len(response1.hits), len(response2.hits))
         self.assertEquals(['0123456789'], response1.hits)
         self.assertEquals(['0123456789'], response2.hits)
