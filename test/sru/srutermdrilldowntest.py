@@ -39,19 +39,12 @@ class SRUTermDrilldownTest(CQ2TestCase):
     def testSRUTermDrilldown(self):
         sruTermDrilldown = SRUTermDrilldown()
 
-        observer = CallTrace("Drilldown")
-        drilldownResult = iter([
+        drilldownData = iter([
                 ('field0', iter([('value0_0', 14)])),
                 ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
                 ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))])
-        observer.exceptions['drilldown'] = StopIteration(drilldownResult)
 
-        sruTermDrilldown.addObserver(observer)
-        cqltree = 'cqltree'
-
-        response = ''.join(compose(sruTermDrilldown.extraResponseData(
-                cqltree, x_term_drilldown=["field0:1,field1:2,field2"])))
-
+        response = ''.join(compose(sruTermDrilldown.extraResponseData(drilldownData)))
         
         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:term-drilldown><dd:navigator name="field0">
     <dd:item count="14">value0_0</dd:item>
@@ -65,47 +58,15 @@ class SRUTermDrilldownTest(CQ2TestCase):
     <dd:item count="2">value2_1</dd:item>
     <dd:item count="1">value2_2</dd:item>
 </dd:navigator></dd:term-drilldown></dd:drilldown>""", response)
-        self.assertEquals(['drilldown'], [m.name for m in observer.calledMethods])
-        self.assertEquals('cqltree', observer.calledMethods[0].args[0])
-        self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].args[1]))
-
-    def testDrilldownCallRaisesAnError(self):
-        sruTermDrilldown = SRUTermDrilldown()
-        observer = CallTrace("Drilldown")
-        def mockDrilldown(*args):
-            raise Exception("Some Exception")
-            yield "Some thing"
-        observer.methods["drilldown"] = mockDrilldown
-        sruTermDrilldown.addObserver(observer)
-
-        cqlAbstractSyntaxTree = 'ignored'
-        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
-        result = "".join(composedGenerator)
-
-        expected = DRILLDOWN_HEADER + """
-            <dd:term-drilldown>
-                <diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
-                    <uri>info://srw/diagnostics/1/1</uri>
-                    <details>General System Error</details>
-                    <message>Some Exception</message>
-                </diagnostic>
-            </dd:term-drilldown>
-        """ + DRILLDOWN_FOOTER
-        self.assertEqualsWS(expected, result)
 
 
     def testDrilldownNoResults(self):
         sruTermDrilldown = SRUTermDrilldown()
-        observer = CallTrace("Drilldown")
-        drilldownResults = iter([
+        drilldownData = iter([
                 ('field0', iter([])),
             ])
-        observer.exceptions['drilldown'] = StopIteration(drilldownResults)
-        sruTermDrilldown.addObserver(observer)
 
-        cqlAbstractSyntaxTree = 'ignored'
-
-        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree, x_term_drilldown=["fieldignored:1"]))
+        composedGenerator = compose(sruTermDrilldown.extraResponseData(drilldownData))
         result = "".join(composedGenerator)
 
         expected = DRILLDOWN_HEADER + """
@@ -117,20 +78,15 @@ class SRUTermDrilldownTest(CQ2TestCase):
 
     def testDrilldownInternalRaisesExceptionNotTheFirst(self):
         sruTermDrilldown = SRUTermDrilldown()
-        observer = CallTrace("Drilldown")
         def raiser(*args):
             raise Exception("Some Exception")
             yield
-        drilldownResults = iter([
+        drilldownData = iter([
                 ('field0', iter([('value0_0', 14)])),
                 ('field1', raiser()),
             ])
-        observer.exceptions['drilldown'] = StopIteration(drilldownResults)
-        sruTermDrilldown.addObserver(observer)
 
-        cqlAbstractSyntaxTree = 'ignored'
-
-        composedGenerator = compose(sruTermDrilldown.extraResponseData(cqlAbstractSyntaxTree    , x_term_drilldown=["fieldignored:1"]))
+        composedGenerator = compose(sruTermDrilldown.extraResponseData(drilldownData))
         result = "".join(composedGenerator)
 
         expected = DRILLDOWN_HEADER + """
@@ -149,7 +105,7 @@ class SRUTermDrilldownTest(CQ2TestCase):
 
 
     def testEchoedExtraRequestData(self):
-        component =SRUTermDrilldown()
+        component = SRUTermDrilldown()
 
         result = "".join(list(component.echoedExtraRequestData(x_term_drilldown=['field0,field1'], version='1.1')))
         

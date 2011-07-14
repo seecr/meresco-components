@@ -32,19 +32,25 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.facetindex import DrilldownFieldnames
 from meresco.components.facetindex.drilldown import NoFacetIndexException
 from testutils import generators2lists
+from weightless.core import compose
 
 class DrilldownFieldnamesTest(CQ2TestCase):
 
     def testDrilldownFieldnames(self):
         d = DrilldownFieldnames(lookup=lambda name: 'drilldown.'+name)
         observer = CallTrace('drilldown')
-        observer.returnValues['drilldown'] = [('drilldown.field1', [('term1',1)]),('drilldown.field2', [('term2', 2)])]
+        observer.exceptions['drilldown'] = StopIteration([('drilldown.field1', [('term1',1)]),('drilldown.field2', [('term2', 2)])])
         d.addObserver(observer)
 
-        result = list(d.drilldown('docset', [('field1', 0, True),('field2', 3, False)]))
+        try:
+            composedGenerator = compose(d.drilldown('docset', [('field1', 0, True),('field2', 3, False)]))
+            while True:
+                composedGenerator.next()
+        except StopIteration, e:
+            result = e.args[0]
 
         self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals([('drilldown.field1', 0, True),('drilldown.field2', 3, False)], list(observer.calledMethods[0].args[1]))
+        self.assertEquals([('drilldown.field1', 0, True),('drilldown.field2', 3, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
 
         self.assertEquals([('field1', [('term1',1)]),('field2', [('term2', 2)])], result)
 
@@ -83,7 +89,7 @@ class DrilldownFieldnamesTest(CQ2TestCase):
         d.addObserver(observer)
 
         try:
-            d.drilldown('docset', [('wrongfield',0,True)])
+            list(compose(d.drilldown('docset', [('wrongfield',0,True)])))
             self.fail()
         except NoFacetIndexException, e:
             self.assertEquals("No facetindex for field 'wrongfield'. Available fields: 'field0', 'field1'", str(e))

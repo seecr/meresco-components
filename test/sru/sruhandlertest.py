@@ -31,7 +31,7 @@
 from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException
 
 from meresco.components.sru import SruHandler, SruParser
-from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
 from meresco.components.facetindex import Response
@@ -118,16 +118,56 @@ class SruHandlerTest(CQ2TestCase):
 
         sruHandler = SruHandler()
         sruTermDrilldown = SRUTermDrilldown()
-        observer = CallTrace("Drilldown")
-        observer.exceptions['drilldown'] = StopIteration(iter([
+        drilldownData = iter([
                 ('field0', iter([('value0_0', 14)])),
                 ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
                 ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))
-            ]))
-        sruTermDrilldown.addObserver(observer)
+            ])
         sruHandler.addObserver(sruTermDrilldown)
-        result = "".join(sruHandler._writeExtraResponseData(docset='docset', **arguments))
+        result = "".join(sruHandler._writeExtraResponseData(drilldownData=drilldownData, **arguments))
         self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.org/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
+
+    def testDrilldown(self):
+        observer = CallTrace()
+        response = Response(total=100, hits=range(11, 26))
+        drilldownData = iter([
+            ('field0', iter([('value0_0', 14)])),
+            ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
+            ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))]) 
+        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['drilldown'] = StopIteration(drilldownData)
+        observer.returnValues['docsetFromQuery'] = "cqltree"
+        observer.returnValues['yieldRecord'] = "record"
+        observer.returnValues['extraResponseData'] = 'extraResponseData'
+        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+
+        component = SruHandler(extraRecordDataNewStyle=True)
+        component.addObserver(observer)
+
+        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
+        self.assertEquals(['executeCQL', 'docsetFromQuery', 'drilldown'], [m.name for m in observer.calledMethods][:3])
+        self.assertEquals('cqltree', observer.calledMethods[2].kwargs['docset'])
+        self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[2].kwargs['fieldnamesAndMaximums']))
+
+    def testDrilldownCallRaisesAnError(self):
+        observer = CallTrace()
+        def mockDrilldown(*args, **kwargs):
+            raise Exception("Some Exception")
+            yield "Some thing"
+        observer.methods["drilldown"] = mockDrilldown
+        response = Response(total=100, hits=range(11, 26))
+        observer.exceptions['executeCQL'] = StopIteration(response)
+        sruHandler = SruHandler(extraRecordDataNewStyle=True)
+        sruHandler.addObserver(observer)
+        result = "".join(compose(sruHandler.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
+
+        expected = """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<srw:version>1.1</srw:version><srw:numberOfRecords>0</srw:numberOfRecords><srw:diagnostics><diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
+<uri>info://srw/diagnostics/1/48</uri>
+<details>Query Feature Unsupported</details>
+<message>Some Exception</message>
+</diagnostic></srw:diagnostics></srw:searchRetrieveResponse>"""
+        self.assertEqualsWS(expected, result)
 
     def testNextRecordPosition(self):
         observer = CallTrace()
@@ -337,9 +377,9 @@ class SruHandlerTest(CQ2TestCase):
 """, result)
         
         self.assertEquals((), echoedExtraRequestDataMethod.args)
-        self.assertEquals(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking'], echoedExtraRequestDataMethod.kwargs.keys())
+        self.assertEquals(['version', 'x_term_drilldown', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking'], echoedExtraRequestDataMethod.kwargs.keys())
         self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'docset']), set(extraResponseDataMethod.kwargs.keys()))
+        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'docset', 'drilldownData']), set(extraResponseDataMethod.kwargs.keys()))
 
     def testExtraRecordDataOldStyle(self):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
