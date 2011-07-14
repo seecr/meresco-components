@@ -45,7 +45,8 @@ class NGramQuery(Observable):
         self._fieldForSorting = fieldForSorting
 
     def executeNGramQuery(self, query, maxResults, fieldname=None):
-        total, recordIds = yield self.asyncany.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=self._samples)
+        response = yield self.asyncany.executeQuery(self.ngramQuery(query, fieldname=fieldname), start=0, stop=self._samples)
+        total, recordIds = response.total, response.hits
         sortedRecordIds = recordIds
         if self._fieldForSorting and maxResults < total and maxResults < self._samples:
             sortedRecordIds = sorted(recordIds, key=self._wordCardinality, reverse=True)

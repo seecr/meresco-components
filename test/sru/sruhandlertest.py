@@ -34,6 +34,7 @@ from meresco.components.sru import SruHandler, SruParser
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
+from meresco.components.facetindex import Response
 
 from os.path import join
 
@@ -130,7 +131,8 @@ class SruHandlerTest(CQ2TestCase):
 
     def testNextRecordPosition(self):
         observer = CallTrace()
-        observer.exceptions['executeCQL'] = StopIteration([100, range(11, 26)])
+        response = Response(total=100, hits=range(11, 26))
+        observer.exceptions['executeCQL'] = StopIteration(response)
         observer.returnValues['yieldRecord'] = "record"
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
@@ -149,7 +151,8 @@ class SruHandlerTest(CQ2TestCase):
         arguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        observer.exceptions['executeCQL'] = StopIteration([100, range(11, 13)])
+        response = Response(total=100, hits=range(11, 13))
+        observer.exceptions['executeCQL'] = StopIteration(response)
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -237,7 +240,8 @@ class SruHandlerTest(CQ2TestCase):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        observer.exceptions['executeCQL'] = StopIteration([100, range(11, 13)])
+        response = Response(total=100, hits=range(11, 13))
+        observer.exceptions['executeCQL'] = StopIteration(response)
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -341,7 +345,8 @@ class SruHandlerTest(CQ2TestCase):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        observer.exceptions['executeCQL'] = StopIteration([100, [11]])
+        response = Response(total=100, hits=[11])
+        observer.exceptions['executeCQL'] = StopIteration(response)
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -417,7 +422,8 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(sruHandler)
         observer = CallTrace('observer')
         sruHandler.addObserver(observer)
-        observer.exceptions['executeCQL'] = StopIteration([2, ['id0', 'id1']])
+        response = Response(total=2, hits=['id0', 'id1'])
+        observer.exceptions['executeCQL'] = StopIteration(response)
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['yieldRecord'] = lambda *args, **kwargs: '<bike/>'
@@ -425,10 +431,10 @@ class SruHandlerTest(CQ2TestCase):
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
-        self.assertTrue('<bike/>' in body)
+        self.assertTrue('<bike/>' in body, body)
         
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
-        self.assertTrue('diagnostic' in body)
+        self.assertTrue('diagnostic' in body, body)
 

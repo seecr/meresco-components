@@ -47,5 +47,6 @@ from trie import Trie
 from cql2lucenequery import CQL2LuceneQuery
 from fields2lucenedocument import Fields2LuceneDocumentTx
 from clausecollector import ClauseCollector
+from response import Response
 import merescolucene
 

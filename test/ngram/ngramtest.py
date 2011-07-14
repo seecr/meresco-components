@@ -29,7 +29,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import Observable, TransactionScope, ResourceManager, be, Transaction
 from meresco.components import Xml2Fields
 
-from meresco.components.facetindex import LuceneIndex, Fields2LuceneDocumentTx, Document, Drilldown
+from meresco.components.facetindex import LuceneIndex, Fields2LuceneDocumentTx, Document, Drilldown, Response
 from meresco.components.ngram.ngram import ngrams
 from meresco.components.ngram.suggester import _Suggestion
 from meresco.components.ngram import NGramQuery, LevenshteinSuggester, RatioSuggester, NGramIndex
@@ -196,7 +196,8 @@ class NGramTest(CQ2TestCase):
     def assertSuggestions(self, expected, term, suggester, ngramQuerySamples):
         ngramindex = CallTrace('ngramindex')
         def executeQuery(query, start, stop, *args):
-            raise StopIteration([len(PUCH_WORDS), PUCH_WORDS[:stop]])
+            response = Response(total=len(PUCH_WORDS), hits=PUCH_WORDS[:stop])
+            raise StopIteration(response)
         ngramindex.executeQuery = executeQuery
         ngramQuery = NGramQuery(2, samples=ngramQuerySamples)
         suggesterDna = be((Observable(),

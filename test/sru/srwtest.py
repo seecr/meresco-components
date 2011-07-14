@@ -30,6 +30,7 @@ from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
+from meresco.components.facetindex import Response
 
 httpResponse = """HTTP/1.0 200 OK
 Content-Type: text/xml; charset=utf-8
@@ -142,7 +143,8 @@ Content-Type: text/xml; charset=utf-8
                 'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeCQL'] = StopIteration([1, ['recordId']])
+        response = Response(total=1, hits=['recordId'])
+        observer.exceptions['executeCQL'] = StopIteration(response)
 
         self.sruHandler.addObserver(observer)
 
@@ -181,7 +183,8 @@ Content-Type: text/xml; charset=utf-8
                 'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeCQL'] = StopIteration([1, ['recordId']])
+        response = Response(total=1, hits=['recordId'])
+        observer.exceptions['executeCQL'] = StopIteration(response)
         self.sruHandler.addObserver(observer)
         response = "".join(self.srw.handleRequest(Body=request))
 
@@ -210,7 +213,8 @@ Content-Type: text/xml; charset=utf-8
                 'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeCQL'] = StopIteration([1, [1]])
+        response = Response(total=1, hits=[1])
+        observer.exceptions['executeCQL'] = StopIteration(response)
 
         self.sruHandler.addObserver(observer)
         response = "".join(srw.handleRequest(Body=request))

@@ -60,8 +60,8 @@ class SruHandler(Observable):
                 sortBy=sortBy,
                 sortDescending=sortDescending,
                 **kwargs)
-            total, recordIds = response.total, response.recordIds
-            drilldowndata = response.drilldowndata if response.drilldowndata else None
+            total, recordIds = response.total, response.hits
+            drilldowndata = getattr(response, "drilldowndata", None)
             if not drilldowndata:
                 docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
         except Exception, e:

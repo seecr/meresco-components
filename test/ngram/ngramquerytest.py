@@ -31,6 +31,7 @@ from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.core import be, Observable
 from meresco.components.ngram import NGramQuery
+from meresco.components.facetindex import Response
 from weightless.core import compose
 
 class Interceptor(Observable):
@@ -49,7 +50,8 @@ class NGramQueryTest(CQ2TestCase):
                 )
             )
         ))
-        observer.exceptions['executeQuery'] = StopIteration([120, ['word%s$' % d for d in range(50)] ])
+        response = Response(total=120, hits=['word%s$' % d for d in range(50)])
+        observer.exceptions['executeQuery'] = StopIteration(response)
 
         composedGenerator = compose(dna.any.executeNGramQuery('word', 2))
         suggestions = composedGenerator.next()
@@ -58,7 +60,8 @@ class NGramQueryTest(CQ2TestCase):
 
     def testNGramQuery(self):
         ngramindex = CallTrace('ngramindex')
-        ngramindex.exceptions['executeQuery'] = StopIteration([2, ['term0$', 'term1$']])
+        response = Response(total=2, hits=['term0$', 'term1$'])
+        ngramindex.exceptions['executeQuery'] = StopIteration(response)
         ngramQuery = NGramQuery(2)
         dna = be((Observable(),
             (Interceptor(),
@@ -71,13 +74,15 @@ class NGramQueryTest(CQ2TestCase):
         suggestions = composedGenerator.next()
         self.assertEquals(['term0', 'term1'], list(suggestions))
         self.assertEquals('+field:ngrams$ +(ngrams:te ngrams:er ngrams:rm ngrams:m0)', str(ngramindex.calledMethods[0].args[0]))
-        ngramindex.exceptions['executeQuery'] = StopIteration([2, ['term2', 'term9']])
+        response = Response(total=2, hits=['term2', 'term9'])
+        ngramindex.exceptions['executeQuery'] = StopIteration(response)
         suggestions = compose(dna.any.executeNGramQuery('term0',87655)).next()
         self.assertEquals(['term2', 'term9'], list(suggestions))
 
     def testNgramQueryFieldname(self):
         ngramindex = CallTrace('ngramindex')
-        ngramindex.exceptions['executeQuery'] = StopIteration([2, ['term0$some_fieldname', 'term1$some_fieldname']])
+        response = Response(total=2, hits=['term0$some_fieldname', 'term1$some_fieldname'])
+        ngramindex.exceptions['executeQuery'] = StopIteration(response)
         ngramQuery = NGramQuery(2, fieldnames=['some_fieldname'])
         dna = be((Observable(),
             (Interceptor(),
@@ -102,7 +107,8 @@ class NGramQueryTest(CQ2TestCase):
             )
         ))
         drilldown.returnValues['docsetlist'] = docsetlist
-        drilldown.exceptions['executeQuery'] = StopIteration([100, ['term%s$' % i for i in range(50)]])
+        response = Response(total=100, hits=['term%s$' % i for i in range(50)])
+        drilldown.exceptions['executeQuery'] = StopIteration(response)
         cardinalities = dict(('term%s' % i, 1) for i in range(100))
         cardinalities['term0'] = 10
         cardinalities['term10'] = 2

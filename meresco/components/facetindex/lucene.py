@@ -44,6 +44,7 @@ from meresco.core import Observable
 from docset import DocSet
 from functioncommand import FunctionCommand
 from lucenedocidtracker import LuceneDocIdTracker
+from response import Response
 
 IndexReader_FieldOption_ALL = IndexReader.FieldOption.ALL
 
@@ -140,10 +141,7 @@ class LuceneIndex(Observable):
             hits = (hit for hit in hits if self._lucene2docId[hit.getId()] in docfilter)
             nrOfResults = len(docfilter)
         results = islice(hits, start, stop)
-        class Response(object): pass
-        response = Response()
-        response.total = nrOfResults
-        response.hits = [hit.getDocument().get(IDFIELD) for hit in results]
+        response = Response(total=nrOfResults, hits=[hit.getDocument().get(IDFIELD) for hit in results])
         raise StopIteration(response)
         yield
 

@@ -83,9 +83,10 @@ class DrilldownTest(CQ2TestCase):
         self.createDrilldown(['field_0'])
         self.addUntokenized([('id', {'field_0': 'this is term_0'})])
 
-        field, results = self.drilldown.drilldown(DocSet(data=[0]), [('field_0', 10, False)]).next()
+        results = self.doDrilldown(DocSet(data=[0]), [('field_0', 10, False)])
+        field, termCounts = results[0]
         self.assertEquals('field_0', field)
-        self.assertEquals([('this is term_0', 1)], list(results))
+        self.assertEquals([('this is term_0', 1)], list(termCounts))
 
     def testDrilldown(self):
         self.createDrilldown(['field_0', 'field_1'])
@@ -95,11 +96,12 @@ class DrilldownTest(CQ2TestCase):
             ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('3', {'field_0': 'this is term_2', 'field_1': 'cannotbefound'})])
         query = TermQuery(Term("field_1", "inquery"))
-        total, queryResults = self.executeQuery(query)
+        response = self.executeQuery(query)
+        total, queryResults = response.total, response.hits
         self.assertEquals(3, total)
         self.assertEquals(['0', '1', '2'], queryResults)
         queryDocset = self.index.docsetFromQuery(query)
-        drilldownResult = list(self.drilldown.drilldown(queryDocset, [('field_0', 0, False), ('field_1', 0, False)]))
+        drilldownResult = self.doDrilldown(queryDocset, [('field_0', 0, False), ('field_1', 0, False)])
         self.assertEquals(2, len(drilldownResult))
         result = dict(drilldownResult)
         self.assertEquals(['field_0', 'field_1'], result.keys())
@@ -146,9 +148,9 @@ class DrilldownTest(CQ2TestCase):
             ('2', {'field0': 'term2'}),
             ('3', {'field0': 'term0'})])
         hits = self.index.docsetFromQuery(MatchAllDocsQuery())
-        ddData = list(self.drilldown.drilldown(hits, [('field0', 0, False)]))
+        ddData = self.doDrilldown(hits, [('field0', 0, False)])
         self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
-        result = list(self.drilldown.drilldown(hits, [('field0', 0, True)]))
+        result = self.doDrilldown(hits, [('field0', 0, True)])
         self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
 
     def testDefaultSorting(self):
@@ -159,9 +161,9 @@ class DrilldownTest(CQ2TestCase):
             ('2', {'field0': 'term2'}),
             ('3', {'field0': 'term0'})])
         hits = self.index.docsetFromQuery(MatchAllDocsQuery())
-        ddData = list(self.drilldown.drilldown(hits, defaultSorting=False))
+        ddData = self.doDrilldown(hits, defaultSorting=False)
         self.assertEquals([('term0',1), ('term1',2), ('term2',1)], list(ddData[0][1]))
-        result = list(self.drilldown.drilldown(hits, defaultSorting=True))
+        result = self.doDrilldown(hits, defaultSorting=True)
         self.assertEquals([('term1',2), ('term0',1), ('term2',1)], list(result[0][1]))
 
     def testDefaultMaximumResults(self):
@@ -172,7 +174,7 @@ class DrilldownTest(CQ2TestCase):
             ('2', {'field0': 'term2'}),
             ('3', {'field0': 'term0'})])
         hits = self.index.docsetFromQuery(MatchAllDocsQuery())
-        ddData = list(self.drilldown.drilldown(hits, defaultMaximumResults=2))
+        ddData = self.doDrilldown(hits, defaultMaximumResults=2)
         self.assertEquals([('term0',1), ('term1',2)], list(ddData[0][1]))
 
     def testDynamicDrilldownFields(self):
@@ -183,9 +185,9 @@ class DrilldownTest(CQ2TestCase):
             ('2', {'field_0': 'this is term_1', 'field_1': 'inquery'}),
             ('3', {'__private_field': 'this is term_2', 'field_1': 'cannotbefound'})])
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        results = list(self.drilldown.drilldown(docset, [('field_0', 0, False)]))
+        results = self.doDrilldown(docset, [('field_0', 0, False)])
         self.assertEquals('field_0', results[0][0])
-        results = list(self.drilldown.drilldown(docset))
+        results = self.doDrilldown(docset)
         self.assertEquals('field_0', results[0][0])
         self.assertEquals('field_1', results[1][0])
         self.assertEquals(2, len(results))
@@ -196,14 +198,14 @@ class DrilldownTest(CQ2TestCase):
             ('0', {'field_0': 'this is term_0'})
         ])
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        results = list(self.drilldown.drilldown(docset))
+        results = self.doDrilldown(docset)
         self.assertEquals('field_0', results[0][0])
         self.assertEquals(1, len(results))
         self.addUntokenized([
             ('1', {'field_0': 'this is term_0', 'field_1': 'inquery'})
         ])
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        results = list(self.drilldown.drilldown(docset))
+        results = self.doDrilldown(docset)
         self.assertEquals(2, len(results))
         self.assertEquals('field_0', results[0][0])
         self.assertEquals('field_1', results[1][0])
@@ -219,7 +221,8 @@ class DrilldownTest(CQ2TestCase):
         #self.drilldown.indexStarted(self.index)
 
         query = TermQuery(Term("title", "dogs"))
-        total, queryResults = self.executeQuery(query)
+        response = self.executeQuery(query)
+        total, queryResults = response.total, response.hits
         queryDocset = self.index.docsetFromQuery(query)
         jaccardIndices = list(self.drilldown.jaccard(queryDocset, [("title", 0, 100)], algorithm=JACCARD_ONLY))
         self.assertEquals([('title', [('dogs',100),('mice', 66),('cats',50)])], list((fieldname, list(items)) for fieldname, items in jaccardIndices))
@@ -348,57 +351,57 @@ class DrilldownTest(CQ2TestCase):
         self.assertEquals([0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88], drilldownDocIds)
 
     def testIntersect(self):
-        drilldown = Drilldown(['field_0', 'field_1'])
-        drilldown.addDocument(0, {'field_0': ['this is term_0'], 'field_1': ['inquery']})
-        drilldown.addDocument(1, {'field_0': ['this is term_1'], 'field_1': ['inquery']})
-        drilldown.addDocument(2, {'field_0': ['this is term_1'], 'field_1': ['inquery']})
-        drilldown.addDocument(3, {'field_0': ['this is term_2'], 'field_1': ['cannotbefound']})
-        drilldown.commit()
-        dsl0 = drilldown.intersect('field_0', DocSet([0,1,2,3]))
+        self.createDrilldown(['field_0', 'field_1'])
+        self.drilldown.addDocument(0, {'field_0': ['this is term_0'], 'field_1': ['inquery']})
+        self.drilldown.addDocument(1, {'field_0': ['this is term_1'], 'field_1': ['inquery']})
+        self.drilldown.addDocument(2, {'field_0': ['this is term_1'], 'field_1': ['inquery']})
+        self.drilldown.addDocument(3, {'field_0': ['this is term_2'], 'field_1': ['cannotbefound']})
+        self.drilldown.commit()
+        dsl0 = self.drilldown.intersect('field_0', DocSet([0,1,2,3]))
         self.assertEquals([[0], [1,2], [3]], list(dsl0))
-        dsl1 = drilldown.intersect('field_1', DocSet([0,1,2,3]))
+        dsl1 = self.drilldown.intersect('field_1', DocSet([0,1,2,3]))
         self.assertEquals([[0,1,2],[3]], list(dsl1))
 
     def testMultiFieldDrilldown(self):
-        drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
-        drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
-        drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
-        drilldown.commit()
-        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        self.createDrilldown(['field_0', ('keyword', 'title'), 'field_1'])
+        self.drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+        self.drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
+        self.drilldown.commit()
+        results = self.doDrilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)])
         self.assertEquals(('keyword', 'title'), results[0][0])
         resultTerms = list(results[0][1])
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
 
         # test order (cardinality)
-        drilldown.addDocument(2, {'keyword': ['economics'], 'description': ['making a fortune of bad loans']})
-        drilldown.addDocument(3, {'keyword': ['economics'], 'title': ['mathematics for dummies']})
-        drilldown.commit()
-        results = list(drilldown.drilldown(DocSet([0,1,2,3]), [(('keyword', 'title'), 0, True)]))
+        self.drilldown.addDocument(2, {'keyword': ['economics'], 'description': ['making a fortune of bad loans']})
+        self.drilldown.addDocument(3, {'keyword': ['economics'], 'title': ['mathematics for dummies']})
+        self.drilldown.commit()
+        results = self.doDrilldown(DocSet([0,1,2,3]), [(('keyword', 'title'), 0, True)])
         resultTerms = list(results[0][1])
         self.assertEquals([('economics', 3), ('mathematics for dummies', 2), ('math', 1)], resultTerms)
 
     def testMultiFieldDrilldownWithRepeatedTerms(self):
-        drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
-        drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
-        drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
-        drilldown.addDocument(2, {'keyword': ['economics','economics'], 'title': ['ecocs']})
-        drilldown.commit()
-        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        self.createDrilldown(['field_0', ('keyword', 'title'), 'field_1'])
+        self.drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+        self.drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
+        self.drilldown.addDocument(2, {'keyword': ['economics','economics'], 'title': ['ecocs']})
+        self.drilldown.commit()
+        results = self.doDrilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)])
         resultTerms = list(results[0][1])
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
 
     def testMultiFieldDrilldownAfterDelete(self):
-        drilldown = Drilldown(['field_0', ('keyword', 'title'), 'field_1'])
-        drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
-        drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
-        drilldown.commit()
-        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        self.createDrilldown(['field_0', ('keyword', 'title'), 'field_1'])
+        self.drilldown.addDocument(0, {'keyword': ['math'], 'title': ['mathematics for dummies']})
+        self.drilldown.addDocument(1, {'keyword': ['economics'], 'description': ['cheating with numbers']})
+        self.drilldown.commit()
+        results = self.doDrilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)])
         resultTerms = list(results[0][1])
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1), ('economics', 1)]), set(resultTerms))
 
-        drilldown.deleteDocument(1)
-        drilldown.commit()
-        results = list(drilldown.drilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)]))
+        self.drilldown.deleteDocument(1)
+        self.drilldown.commit()
+        results = self.doDrilldown(DocSet([0,1]), [(('keyword', 'title'), 0, False)])
         resultTerms = list(results[0][1])
         self.assertEquals(set([('math', 1), ('mathematics for dummies', 1)]), set(resultTerms))
 
@@ -407,9 +410,10 @@ class DrilldownTest(CQ2TestCase):
         self.addUntokenized([('id0', {'field_0': 'this is term_0'})])
         self.addUntokenized([('id1', {'field_1': 'this is term_1'})])
 
-        field, results = self.drilldown.drilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)]).next()
+        results = self.doDrilldown(DocSet(data=[0,1]), [(('field_0', 'field_1'), 10, False)])
+        field, termCounts = results[0]
         self.assertEquals(('field_0', 'field_1'), field)
-        self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(results))
+        self.assertEquals([('this is term_0', 1), ('this is term_1', 1)], list(termCounts))
 
     def testCompoundFieldReusesPreviousDrilldown(self):
         self.createDrilldown(['field_0', ('field_0', 'field_1')])
@@ -456,17 +460,24 @@ class DrilldownTest(CQ2TestCase):
             'prefix.field_0': 'this is term_0',
             'prefix.field_1': 'this is term_1',
             'field_2': 'this is term_2'})])
-        field, results = self.drilldown.drilldown(DocSet(data=[0]), [('prefix.field_0', 10, False)]).next()
-        self.assertEquals([('this is term_0', 1)], list(results))
+        results = self.doDrilldown(DocSet(data=[0]), [('prefix.field_0', 10, False)])
+        field, termCounts = results[0]
+        self.assertEquals([('this is term_0', 1)], list(termCounts))
 
     def testCompoundFieldWithSameTermInDifferentFields(self):
         drilldown = Drilldown([('field_0', 'field_1')])
         drilldown._add(0, {'field_0': ['value'], 'field_1': ['value']}) # had a bug causing: "non-increasing docid" error
 
     def executeQuery(self, *args, **kwargs):
-        try:
-            gen = self.index.executeQuery(*args, **kwargs)
-            while True:
-                gen.next()
-        except StopIteration, e:
-            return e.message
+        return asyncreturn(self.index.executeQuery, *args, **kwargs)
+
+    def doDrilldown(self, *args, **kwargs):
+        return asyncreturn(self.drilldown.drilldown, *args, **kwargs)
+
+def asyncreturn(func, *args, **kwargs):
+    try:
+        gen = func(*args, **kwargs)
+        while True:
+            gen.next()
+    except StopIteration, e:
+        return e.args[0]

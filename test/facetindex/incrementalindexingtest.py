@@ -53,13 +53,13 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.index.commit()
         self.drilldown.commit()
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        result = list(self.drilldown.drilldown(docset, [('field0', 0, False)]))
+        result = self.doDrilldown(docset, [('field0', 0, False)])
         self.assertEquals([('term0',1)], list(result[0][1]))
         self.index.delete('1')
         self.index.commit()
         self.drilldown.commit()
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        result = list(self.drilldown.drilldown(docset, [('field0', 0, False)]))
+        result = self.doDrilldown(docset, [('field0', 0, False)])
         self.assertEquals([], list(result[0][1]))
 
         for identifier in xrange(30):
@@ -72,7 +72,7 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.drilldown.commit()
 
         docset = self.index.docsetFromQuery(MatchAllDocsQuery())
-        result = list(self.drilldown.drilldown(docset, [('field0', 0, False)]))
+        result = self.doDrilldown(docset, [('field0', 0, False)])
         sets = list(result[0][1])
         self.assertEquals([('term0', 29)], list(sorted(sets)))
 
@@ -154,6 +154,18 @@ class IncrementalIndexingTest(CQ2TestCase):
         self.addDocument('1', field0='othervalue') # dodId 1 (Should delete docId 0)
         self.index.commit()
         self.drilldown.commit()
-        fieldname, results = self.drilldown.drilldown(DocSet([0L, 1L]), [('field0', 0, False)]).next()
+        results = self.doDrilldown(DocSet([0L, 1L]), [('field0', 0, False)])
+        fieldname, termCounts = results[0]
         self.assertEquals('field0', fieldname)
-        self.assertEquals([('othervalue', 1)], list(results))
+        self.assertEquals([('othervalue', 1)], list(termCounts))
+
+    def doDrilldown(self, *args, **kwargs):
+        return asyncreturn(self.drilldown.drilldown, *args, **kwargs)
+
+def asyncreturn(func, *args, **kwargs):
+    try:
+        gen = func(*args, **kwargs)
+        while True:
+            gen.next()
+    except StopIteration, e:
+        return e.args[0]
