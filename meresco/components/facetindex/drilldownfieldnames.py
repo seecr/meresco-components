@@ -36,17 +36,17 @@ class DrilldownFieldnames(Observable):
         Observable.__init__(self)
         self.lookup = lookup
 
-    def drilldown(self, docNumbers, fieldsAndMaximums):
+    def drilldown(self, docset, fieldnamesAndMaximums):
         reverseLookup = {}
         translatedFields = []
-        for field, maximum, sort in fieldsAndMaximums:
+        for field, maximum, sort in fieldnamesAndMaximums:
             translated = self.lookup(field)
             translatedFields.append((translated, maximum, sort))
             reverseLookup[translated] = field
         try:
-            drilldownResults = self.any.drilldown(docNumbers, translatedFields)
-            return [(reverseLookup[field], termCounts)
-                for field, termCounts in drilldownResults]
+            drilldownResults = yield self.asyncany.drilldown(docset=docset, fieldnamesAndMaximums=translatedFields)
+            raise StopIteration([(reverseLookup[field], termCounts)
+                for field, termCounts in drilldownResults])
         except NoFacetIndexException, e:
             raise NoFacetIndexException(reverseLookup[e.field], e.fields)
            

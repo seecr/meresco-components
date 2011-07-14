@@ -53,10 +53,3 @@ class CQL2LuceneQuery(Observable, Logger):
                 *args, **kwargs
             )
 
-    def drilldown(self, cqlAbstractSyntaxTree, *args, **kwargs):
-        ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
-        return self.asyncany.drilldown(
-                pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
-                *args, **kwargs
-            )
-        

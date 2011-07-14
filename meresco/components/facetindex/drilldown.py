@@ -146,13 +146,13 @@ class Drilldown(object):
     def listFields(self):
         return self._docsetlists.keys()
 
-    def drilldown(self, docset, drilldownFieldnamesAndMaximumResults=None, defaultMaximumResults=0, defaultSorting=False):
-        if not drilldownFieldnamesAndMaximumResults:
-            drilldownFieldnamesAndMaximumResults = [
+    def drilldown(self, docset, fieldnamesAndMaximums=None, defaultMaximumResults=0, defaultSorting=False):
+        if not fieldnamesAndMaximums:
+            fieldnamesAndMaximums = [
                 (fieldname, defaultMaximumResults, defaultSorting)
                 for fieldname in self._docsetlists]
         def results():
-            for fieldname, maximumResults, howToSort in drilldownFieldnamesAndMaximumResults:
+            for fieldname, maximumResults, howToSort in fieldnamesAndMaximums:
                 if not self._isDrilldownField(fieldname):
                     raise NoFacetIndexException(fieldname, self.listFields())
 

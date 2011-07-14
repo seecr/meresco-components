@@ -6,27 +6,12 @@ from traceback import print_exc
 from meresco.components.sru.diagnostic import generalSystemError
 
 class SRUTermDrilldown(Observable):
-    def __init__(self, sortedByTermCount=False):
-        Observable.__init__(self)
-        self._sortedByTermCount = sortedByTermCount
                 
-    def extraResponseData(self, cqlAbstractSyntaxTree, x_term_drilldown=None, **kwargs):
-        if x_term_drilldown == None or len(x_term_drilldown) != 1:
+    def extraResponseData(self, drilldownData, **kwargs):
+        if drilldownData is None:
             return
-        def splitTermAndMaximum(s):
-            l = s.split(":")
-            if len(l) == 1:
-                return l[0], DEFAULT_MAXIMUM_TERMS, self._sortedByTermCount
-            return l[0], int(l[1]), self._sortedByTermCount
-
-        fieldsAndMaximums = x_term_drilldown[0].split(",")
-        fieldMaxTuples = (splitTermAndMaximum(s) for s in fieldsAndMaximums)
-
         try:
-            drilldownResults = yield self.asyncany.drilldown(
-                cqlAbstractSyntaxTree,
-                fieldMaxTuples)
-            yield self._termDrilldown(drilldownResults)
+            yield self._termDrilldown(drilldownData)
         except Exception, e:
             print_exc()
             yield DRILLDOWN_HEADER + "<dd:term-drilldown>"
@@ -35,8 +20,8 @@ class SRUTermDrilldown(Observable):
             return
 
     @decorateWith(DRILLDOWN_HEADER + "<dd:term-drilldown>", "</dd:term-drilldown>" + DRILLDOWN_FOOTER)
-    def _termDrilldown(self, drilldownResults):
-        for fieldname, termCounts in drilldownResults:
+    def _termDrilldown(self, drilldownData):
+        for fieldname, termCounts in drilldownData:
             yield self._dd_navigator(fieldname, termCounts)
 
     def _dd_navigator(self, fieldname, termCounts):

@@ -29,7 +29,7 @@
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
 from meresco.core import Observable, decorate, decorateWith
-from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 
 from cqlparser import parseString as parseCQL
 from weightless.core import compose
@@ -40,17 +40,20 @@ from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATU
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet', 'x-recordSchema']
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=False):
+    def __init__(self, extraRecordDataNewStyle=False, drilldownSortedByTermCount=False):
         Observable.__init__(self)
+        self._drilldownSortedByTermCount = drilldownSortedByTermCount
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
         if not extraRecordDataNewStyle:
             warn("""Old style extraRecordData is used, this is deprecated and will be removed in the future.""", DeprecationWarning)
 
-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, **kwargs):
+    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
+
+        drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(x_term_drilldown)
 
         try:
             response = yield self.asyncany.executeCQL(
@@ -61,9 +64,13 @@ class SruHandler(Observable):
                 sortDescending=sortDescending,
                 **kwargs)
             total, recordIds = response.total, response.hits
-            drilldowndata = getattr(response, "drilldowndata", None)
-            if not drilldowndata:
+            drilldownData = getattr(response, "drilldownData", None)
+            if not drilldownData:
                 docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
+                if drilldownFieldnamesAndMaximums is not None:
+                    drilldownData = yield self.asyncany.drilldown(
+                        docset=docset,
+                        fieldnamesAndMaximums=drilldownFieldnamesAndMaximums)
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
@@ -82,8 +89,8 @@ class SruHandler(Observable):
             if nextRecordPosition < total:
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
-        yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, **kwargs)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, docset=docset, **kwargs)
+        yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, docset=docset, drilldownData=drilldownData, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
@@ -97,8 +104,8 @@ class SruHandler(Observable):
             yield chunk
         yield '</srw:echoedSearchRetrieveRequest>'
 
-    def _writeExtraResponseData(self, cqlAbstractSyntaxTree=None, **kwargs):
-        response = compose(self._extraResponseDataTryExcept(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs))
+    def _writeExtraResponseData(self, **kwargs):
+        response = compose(self._extraResponseDataTryExcept(**kwargs))
         headerWritten = False
         for line in response:
             if callable(line):
@@ -111,9 +118,9 @@ class SruHandler(Observable):
         if headerWritten:
             yield '</srw:extraResponseData>'
 
-    def _extraResponseDataTryExcept(self, cqlAbstractSyntaxTree=None, **kwargs):
+    def _extraResponseDataTryExcept(self, **kwargs):
         try:
-            yield self.all.extraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs)
+            yield self.all.extraResponseData(**kwargs)
         except Exception, e:
             yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape(str(e))])
 
@@ -182,3 +189,15 @@ class SruHandler(Observable):
                 yield xmlEscape(data)
         else:
             raise Exception("Unknown Record Packing: %s" % recordPacking)
+
+    def _parseDrilldownArgs(self, x_term_drilldown):
+        if x_term_drilldown == None or len(x_term_drilldown) != 1:
+            return
+        def splitTermAndMaximum(s):
+            l = s.split(":")
+            if len(l) == 1:
+                return l[0], DEFAULT_MAXIMUM_TERMS, self._drilldownSortedByTermCount
+            return l[0], int(l[1]), self._drilldownSortedByTermCount
+
+        fieldsAndMaximums = x_term_drilldown[0].split(",")
+        return (splitTermAndMaximum(s) for s in fieldsAndMaximums)
