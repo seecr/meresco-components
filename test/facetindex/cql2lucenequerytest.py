@@ -30,11 +30,17 @@ from unittest import TestCase
 from cq2utils import CallTrace
 from cqlparser import parseString
 from meresco.components.facetindex import CQL2LuceneQuery
+from meresco.core import be, Observable
 
 class Cql2LuceneQueryTest(TestCase):
     def setUp(self):
-        self.convertor = CQL2LuceneQuery({})
-        self.convertor.addObserver(CallTrace('Query responder'))
+        self.convertor = CQL2LuceneQuery([('field', 1.0)])
+        self.observer = CallTrace('Query responder')
+        self.dna = be((Observable(),
+            (self.convertor, 
+                (self.observer,),
+            )
+        ))
         self.loggedClauses = []
         def logShunt(clause, **kwargs):
             self.loggedClauses.append(clause)
@@ -42,11 +48,15 @@ class Cql2LuceneQueryTest(TestCase):
 
     def assertLog(self, expectedClauses, query):
         self.loggedClauses = []
-        self.convertor.executeCQL(parseString(query))
+        list(self.dna.any.executeQuery(cqlAbstractSyntaxTree=parseString(query)))
         self.assertEquals(expectedClauses, self.loggedClauses)
 
     def testOneTerm(self):
         self.assertLog(['term'], 'term')
+        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEquals("executeQuery", self.observer.calledMethods[0].name)
+        self.assertEquals("org.apache.lucene.search.TermQuery", self.observer.calledMethods[0].kwargs['pyLuceneQuery'].__class__.__name__)
+        self.assertEquals("field:term", str(self.observer.calledMethods[0].kwargs['pyLuceneQuery']))
 
     def testIndexRelationTerm(self):
         self.assertLog(['field = term'], 'field=term')

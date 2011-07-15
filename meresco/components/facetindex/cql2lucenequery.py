@@ -35,21 +35,17 @@ from meresco.components.facetindex.clausecollector import ClauseCollector
 
 class CQL2LuceneQuery(Observable, Logger):
 
-    def __init__(self, unqualifiedFields):
-        Observable.__init__(self)
+    def __init__(self, unqualifiedFields, name=None):
+        Observable.__init__(self, name=name)
         self._cqlComposer = LuceneQueryComposer(unqualifiedFields)
 
-    def executeCQL(self, cqlAbstractSyntaxTree, *args, **kwargs):
-        ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
-        return self.asyncany.executeQuery(
-                pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
-                *args, **kwargs
-            )
+    def executeQuery(self, cqlAbstractSyntaxTree, *args, **kwargs):
+        return self.asyncany.executeQuery(pyLuceneQuery=self._convert(cqlAbstractSyntaxTree), *args, **kwargs)
 
     def docsetFromQuery(self, cqlAbstractSyntaxTree, *args, **kwargs):
-        ClauseCollector(cqlAbstractSyntaxTree, self.log).visit()
-        return self.any.docsetFromQuery(
-                pyLuceneQuery=self._cqlComposer.compose(cqlAbstractSyntaxTree),
-                *args, **kwargs
-            )
+        return self.any.docsetFromQuery(pyLuceneQuery=self._convert(cqlAbstractSyntaxTree), *args, **kwargs)
+
+    def _convert(self, ast):
+        ClauseCollector(ast, self.log).visit()
+        return self._cqlComposer.compose(ast)
 

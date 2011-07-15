@@ -30,6 +30,8 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase
+from utils import asyncreturn
+
 from meresco.components.facetindex import LuceneIndex, Drilldown, Document, DocSet
 from meresco.components.facetindex.merescolucene import MatchAllDocsQuery
 
@@ -162,10 +164,3 @@ class IncrementalIndexingTest(CQ2TestCase):
     def doDrilldown(self, *args, **kwargs):
         return asyncreturn(self.drilldown.drilldown, *args, **kwargs)
 
-def asyncreturn(func, *args, **kwargs):
-    try:
-        gen = func(*args, **kwargs)
-        while True:
-            gen.next()
-    except StopIteration, e:
-        return e.args[0]

@@ -27,11 +27,16 @@
 #
 ## end license ##
 
+from cq2utils import CQ2TestCase, CallTrace
+from utils import asyncreturn
+
 from StringIO import StringIO
 
-from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import be, decorateWith
+from meresco.components.facetindex import Response
 from meresco.components.drilldown import SRUFieldDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+
+from weightless.core import compose
 
 from cqlparser import parseString
 
@@ -56,12 +61,11 @@ class SRUFieldDrilldownTest(CQ2TestCase):
     def testDrilldown(self):
         adapter = SRUFieldDrilldown()
         observer = CallTrace("Observer")
-        observer.returnValues["executeCQL"] = (16, range(16))
+        observer.exceptions["executeQuery"] = StopIteration(Response(total=16, hits=range(16)))
         adapter.addObserver(observer)
-        result = list(adapter.drilldown('original', 'term', ['field0', 'field1']))
-
+        result = list(compose(adapter.drilldown('original', 'term', ['field0', 'field1'])))
         self.assertEquals(2, len(observer.calledMethods))
-        self.assertEquals("executeCQL(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
+        self.assertEquals("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
         self.assertEquals(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
         self.assertEquals([("field0", 16), ("field1", 16)], result)
 

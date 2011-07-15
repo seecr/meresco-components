@@ -56,7 +56,7 @@ class SruHandler(Observable):
         drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(x_term_drilldown)
 
         try:
-            response = yield self.asyncany.executeCQL(
+            response = yield self.asyncany.executeQuery(
                 cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                 start=start,
                 stop=start + maximumRecords,

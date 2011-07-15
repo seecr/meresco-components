@@ -109,7 +109,7 @@ class Rss(Observable):
         yield """</rss>"""
 
     def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False, **kwargs):
-        total, hits = self.any.executeCQL(
+        response = yield self.asyncany.executeQuery(
             cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
             start=start,
             stop=stop,
@@ -117,6 +117,6 @@ class Rss(Observable):
             sortDescending=sortDescending,
             **kwargs
         )
-
+        total, hits = response.total, response.hits
         for recordId in hits:
             yield self.any.getRecord(recordId)

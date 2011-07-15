@@ -31,4 +31,4 @@ from cqlparser import parseString
 
 class ParseCQL(Observable):
     def executeCQLString(self, cqlString, *args, **kwargs):
-        return self.any.executeCQL(cqlAbstractSyntaxTree=parseString(cqlString), *args, **kwargs)
+        return self.any.executeQuery(cqlAbstractSyntaxTree=parseString(cqlString), *args, **kwargs)

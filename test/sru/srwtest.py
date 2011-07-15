@@ -129,7 +129,7 @@ Content-Type: text/xml; charset=utf-8
     def testContentType(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData', 'yieldRecord'])
-        observer.exceptions['executeCQL'] = StopIteration([1, [0]])
+        observer.exceptions['executeQuery'] = StopIteration([1, [0]])
         self.sruHandler.addObserver(observer)
 
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
@@ -144,7 +144,7 @@ Content-Type: text/xml; charset=utf-8
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=['recordId'])
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
 
         self.sruHandler.addObserver(observer)
 
@@ -184,7 +184,7 @@ Content-Type: text/xml; charset=utf-8
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=['recordId'])
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
         self.sruHandler.addObserver(observer)
         response = "".join(self.srw.handleRequest(Body=request))
 
@@ -214,7 +214,7 @@ Content-Type: text/xml; charset=utf-8
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=[1])
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
 
         self.sruHandler.addObserver(observer)
         response = "".join(srw.handleRequest(Body=request))

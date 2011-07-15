@@ -134,7 +134,7 @@ class SruHandlerTest(CQ2TestCase):
             ('field0', iter([('value0_0', 14)])),
             ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
             ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))]) 
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
         observer.exceptions['drilldown'] = StopIteration(drilldownData)
         observer.returnValues['docsetFromQuery'] = "cqltree"
         observer.returnValues['yieldRecord'] = "record"
@@ -145,7 +145,7 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-        self.assertEquals(['executeCQL', 'docsetFromQuery', 'drilldown'], [m.name for m in observer.calledMethods][:3])
+        self.assertEquals(['executeQuery', 'docsetFromQuery', 'drilldown'], [m.name for m in observer.calledMethods][:3])
         self.assertEquals('cqltree', observer.calledMethods[2].kwargs['docset'])
         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[2].kwargs['fieldnamesAndMaximums']))
 
@@ -156,7 +156,7 @@ class SruHandlerTest(CQ2TestCase):
             yield "Some thing"
         observer.methods["drilldown"] = mockDrilldown
         response = Response(total=100, hits=range(11, 26))
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
         sruHandler = SruHandler(extraRecordDataNewStyle=True)
         sruHandler.addObserver(observer)
         result = "".join(compose(sruHandler.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
@@ -172,7 +172,7 @@ class SruHandlerTest(CQ2TestCase):
     def testNextRecordPosition(self):
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 26))
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
         observer.returnValues['yieldRecord'] = "record"
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
@@ -192,7 +192,7 @@ class SruHandlerTest(CQ2TestCase):
 
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 13))
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -281,7 +281,7 @@ class SruHandlerTest(CQ2TestCase):
 
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 13))
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -296,10 +296,10 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(**arguments)))
-        self.assertEquals(['executeCQL', 'docsetFromQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        executeCQLMethod, docsetFromQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
-        self.assertEquals('executeCQL', executeCQLMethod.name)
-        methodKwargs = executeCQLMethod.kwargs
+        self.assertEquals(['executeQuery', 'docsetFromQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        executeQueryMethod, docsetFromQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+        self.assertEquals('executeQuery', executeQueryMethod.name)
+        methodKwargs = executeQueryMethod.kwargs
         self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
         self.assertEquals(0, methodKwargs['start'])
         self.assertEquals(2, methodKwargs['stop'])
@@ -386,7 +386,7 @@ class SruHandlerTest(CQ2TestCase):
 
         observer = CallTrace()
         response = Response(total=100, hits=[11])
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
 
         yieldRecordCalls = []
         def yieldRecord(recordId, recordSchema):
@@ -448,7 +448,7 @@ class SruHandlerTest(CQ2TestCase):
 
     def testDiagnosticOnExecuteCql(self):
         class RaisesException(object):
-            def executeCQL(self, *args, **kwargs):
+            def executeQuery(self, *args, **kwargs):
                 raise Exception("Test Exception")
         component = SruHandler(extraRecordDataNewStyle=True)
         component.addObserver(RaisesException())
@@ -463,7 +463,7 @@ class SruHandlerTest(CQ2TestCase):
         observer = CallTrace('observer')
         sruHandler.addObserver(observer)
         response = Response(total=2, hits=['id0', 'id1'])
-        observer.exceptions['executeCQL'] = StopIteration(response)
+        observer.exceptions['executeQuery'] = StopIteration(response)
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['yieldRecord'] = lambda *args, **kwargs: '<bike/>'

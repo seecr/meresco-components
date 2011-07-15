@@ -29,6 +29,9 @@
 #
 ## end license ##
 
+from cq2utils import CQ2TestCase, CallTrace
+from utils import asyncreturn
+
 from tempfile import mkdtemp, gettempdir
 from time import sleep
 import os
@@ -36,7 +39,6 @@ from os.path import isfile, join
 from os import listdir
 from shutil import rmtree
 
-from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.facetindex import Document, IDFIELD, LuceneIndex
 from meresco.components.facetindex import CQL2LuceneQuery
 from meresco.components.facetindex.merescolucene import Field, IndexReader, IndexWriter, Term, TermQuery, MatchAllDocsQuery
@@ -45,17 +47,7 @@ from meresco.core import be, Observable
 from cqlparser import parseString
 
 from weightless.io import Reactor
-from weightless.core import compose, tostring
 
-
-def asyncreturn(func, *args, **kwargs):
-    try:
-        g = compose(func(*args, **kwargs))
-        while True:
-            g.next()
-    except StopIteration, e:
-        return e.args[0]
-    raise Exception("no async return function")
 
 class LuceneTest(CQ2TestCase):
 
@@ -230,8 +222,8 @@ class LuceneTest(CQ2TestCase):
 
     def testCQLConversionIntegration(self):
         class MockSruHandler(Observable):
-            def executeCQL(self, query):
-                response = yield self.asyncany.executeCQL(query)
+            def executeQuery(self, query):
+                response = yield self.asyncany.executeQuery(cqlAbstractSyntaxTree=query)
                 raise StopIteration(response)
 
         dna = be(
@@ -244,14 +236,12 @@ class LuceneTest(CQ2TestCase):
             )
         )
         
-        queryConvertor = CQL2LuceneQuery([])
-        queryConvertor.addObserver(self._luceneIndex)
         myDocument = Document('0123456789')
         myDocument.addIndexedField('title', 'een titel')
         self._luceneIndex.addDocument(myDocument)
         self._luceneIndex.commit()
         response1 = self.executeQuery(TermQuery(Term('title', 'titel')))
-        response2 = asyncreturn(dna.any.executeCQL, parseString("title = titel"))
+        response2 = asyncreturn(dna.asyncany.executeQuery, parseString("title = titel"))
         self.assertEquals(len(response1.hits), len(response2.hits))
         self.assertEquals(['0123456789'], response1.hits)
         self.assertEquals(['0123456789'], response2.hits)

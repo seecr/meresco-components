@@ -30,9 +30,11 @@
 #
 ## end license ##
 
-from struct import calcsize
-from testutils import generators2lists
 from cq2utils import CQ2TestCase, CallTrace
+from utils import asyncreturn
+from testutils import generators2lists
+
+from struct import calcsize
 
 from meresco.components.facetindex.merescolucene import Term, TermQuery, IndexReader, MatchAllDocsQuery
 from meresco.components.facetindex.document import Document
@@ -474,10 +476,3 @@ class DrilldownTest(CQ2TestCase):
     def doDrilldown(self, *args, **kwargs):
         return asyncreturn(self.drilldown.drilldown, *args, **kwargs)
 
-def asyncreturn(func, *args, **kwargs):
-    try:
-        gen = func(*args, **kwargs)
-        while True:
-            gen.next()
-    except StopIteration, e:
-        return e.args[0]

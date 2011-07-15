@@ -31,6 +31,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from amara.binderytools import bind_string
 from urllib import urlencode
 
+from meresco.components.facetindex import Response
 from meresco.components.rss import Rss
 
 from cqlparser import parseString as parseCql
@@ -55,8 +56,8 @@ class RssTest(CQ2TestCase):
 
     def testNoResults(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
 
         rss = Rss(
             title = 'Test title',
@@ -72,13 +73,11 @@ class RssTest(CQ2TestCase):
 
     def testOneResult(self):
         observer = CallTrace(
-            returnValues={
-                'executeCQL': (1, [1]),
-            },
             methods={
                 'getRecord': lambda recordId: (g for g in ['<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>']),
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=1, hits=[1]))
 
         rss = Rss(
             title = 'Test title',
@@ -98,8 +97,8 @@ class RssTest(CQ2TestCase):
 
     def testError(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
         rss = Rss(
             title = 'Test title',
             description = 'Test description',
@@ -137,9 +136,12 @@ class RssTest(CQ2TestCase):
             recordIds.append(recordId)
             return '<item/>'
 
+        def executeQuery(start, stop, *args, **kwargs):
+            response = Response(total=50, hits=range(start, stop))
+            raise StopIteration(response)
         observer = CallTrace(
             methods={
-                'executeCQL': lambda start=0, stop=10, *args, **kwargs: (50, range(start, stop)),
+                'executeQuery': executeQuery,
                 'getRecord': getRecord,
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
@@ -148,7 +150,7 @@ class RssTest(CQ2TestCase):
         result = "".join(list(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs))))
 
         method = observer.calledMethods[0]
-        self.assertEquals('executeCQL', method.name)
+        self.assertEquals('executeQuery', method.name)
         self.assertEquals(sortKey, method.kwargs['sortBy'])
         self.assertEquals(sortDirection, method.kwargs['sortDescending'])
         self.assertEquals(maximumRecords, len(recordIds))
@@ -165,7 +167,7 @@ class RssTest(CQ2TestCase):
 
     def testContentType(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
+            returnValues={'executeQuery': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
@@ -175,42 +177,42 @@ class RssTest(CQ2TestCase):
 
     def testWebQueryUsage(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
         result = "".join(rss.handleRequest(RequestURI='/?query=one+two'))
-        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
 
     def testAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
         rss.addObserver(observer)
 
         result = "".join(rss.handleRequest(RequestURI='/?query=not+fiets'))
         
-        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
         self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
-        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
 
         self.assertCql(parseCql("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryIgnoresWrongFilters(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration([0, []])
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
