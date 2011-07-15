@@ -62,10 +62,13 @@ class SruHandler(Observable):
                 stop=start + maximumRecords,
                 sortBy=sortBy,
                 sortDescending=sortDescending,
+                fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
                 **kwargs)
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)
-            if not drilldownData:
+            # If drilldownData is not found on response object but drilldownFieldnamesAndMaximums 
+            # is set assume Meresco-Lucene is used, so do an extra Meresco-Lucene style drilldown call
+            if not drilldownData and drilldownFieldnamesAndMaximums is not None:
                 docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
                 if drilldownFieldnamesAndMaximums is not None:
                     drilldownData = yield self.asyncany.drilldown(
@@ -90,7 +93,7 @@ class SruHandler(Observable):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, docset=docset, drilldownData=drilldownData, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
