@@ -37,7 +37,7 @@ from tempfile import NamedTemporaryFile
 
 from meresco.core import Observable
 from cq2utils import DirectoryWatcher
-from weightless.http import Suspend
+from weightless.io import Suspend
 from escaping import escapeFilename, unescapeFilename
 
 
