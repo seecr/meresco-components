@@ -38,32 +38,39 @@ from meresco.components.drilldown import SRUFieldDrilldown, DRILLDOWN_HEADER, DR
 
 from weightless.core import compose
 
-from cqlparser import parseString
+from cqlparser import parseString, cql2string
 
 class SRUFieldDrilldownTest(CQ2TestCase):
 
     def testSRUParamsAndXMLOutput(self):
+        firstCall = []
+        def executeQuery(**kwargs):
+            if not firstCall:
+                firstCall.append(True)
+                raise StopIteration(Response(total=5, hits=range(5)))
+            else:
+                raise StopIteration(Response(total=10, hits=range(10)))
         sruFieldDrilldown = SRUFieldDrilldown()
-        sruFieldDrilldown.drilldown = self.drilldown
+        observer = CallTrace("observer")
+        sruFieldDrilldown.addObserver(observer)
+        observer.methods["executeQuery"] = executeQuery
 
-        self.drilldownCall = None
-        result = sruFieldDrilldown.extraResponseData(x_field_drilldown=['term'], x_field_drilldown_fields=['field0,field1'], query='original')
+        result = compose(sruFieldDrilldown.extraResponseData(x_field_drilldown=['term'], x_field_drilldown_fields=['field0,field1'], query='original'))
         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:field-drilldown>
 <dd:field name="field0">5</dd:field>
 <dd:field name="field1">10</dd:field></dd:field-drilldown></dd:drilldown>""", "".join(result))
 
-        self.assertEquals(('original', 'term', ['field0', 'field1']), self.drilldownCall)
-
-    def drilldown(self, query, term, fields):
-        self.drilldownCall = (query, term, fields)
-        return [('field0', 5),('field1', 10)]
+        self.assertEquals(['executeQuery', 'executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['cqlAbstractSyntaxTree', 'cqlAbstractSyntaxTree'], [','.join((m.kwargs.keys())) for m in observer.calledMethods])
+        self.assertEquals('(original) AND field0=term', cql2string(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEquals('(original) AND field1=term', cql2string(observer.calledMethods[1].kwargs['cqlAbstractSyntaxTree']))
 
     def testDrilldown(self):
         adapter = SRUFieldDrilldown()
         observer = CallTrace("Observer")
         observer.exceptions["executeQuery"] = StopIteration(Response(total=16, hits=range(16)))
         adapter.addObserver(observer)
-        result = list(compose(adapter.drilldown('original', 'term', ['field0', 'field1'])))
+        result = asyncreturn(adapter.drilldown, 'original', 'term', ['field0', 'field1'])
         self.assertEquals(2, len(observer.calledMethods))
         self.assertEquals("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
         self.assertEquals(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])

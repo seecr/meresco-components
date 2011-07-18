@@ -39,7 +39,6 @@ from weightless.core import compose
 from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 
 class SRUFieldDrilldown(Observable):
-    @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
     def extraResponseData(self, query=None, x_field_drilldown=None, x_field_drilldown_fields=None, **kwargs):
         if not x_field_drilldown or len(x_field_drilldown) != 1:
             return
@@ -49,17 +48,16 @@ class SRUFieldDrilldown(Observable):
         term = x_field_drilldown[0]
         fields = x_field_drilldown_fields[0].split(',')
 
-        drilldownResults = self.drilldown(query, term, fields)
-        yield "<dd:field-drilldown>"
-        for field, count in drilldownResults:
-            yield '<dd:field name=%s>%s</dd:field>' % (quoteattr(escape(str(field))), escape(str(count)))
-        yield "</dd:field-drilldown>"
-
+        drilldownResults = yield self.drilldown(query, term, fields)
+        yield _fieldDrilldown(drilldownResults)
+        
     def drilldown(self, query, term, fields):
+        drilldownResult = []
         for field in fields:
             cqlString = '(%s) AND %s=%s' % (query, field, term)
             response = yield self.asyncany.executeQuery(cqlAbstractSyntaxTree=parseCQL(cqlString))
-            yield field, response.total
+            drilldownResult.append((field, response.total))
+        raise StopIteration(drilldownResult)
 
     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
     def echoedExtraRequestData(self, x_field_drilldown=None, x_field_drilldown_fields=None, **kwargs):
@@ -71,3 +69,9 @@ class SRUFieldDrilldown(Observable):
             yield "<dd:field-drilldown-fields>"
             yield escape(x_field_drilldown_fields[0])
             yield "</dd:field-drilldown-fields>"
+
+@decorateWith(DRILLDOWN_HEADER + "<dd:field-drilldown>", "</dd:field-drilldown>" + DRILLDOWN_FOOTER)
+def _fieldDrilldown(drilldownResults):
+    for field, count in drilldownResults:
+        yield '<dd:field name=%s>%s</dd:field>' % (quoteattr(escape(str(field))), escape(str(count)))
+
