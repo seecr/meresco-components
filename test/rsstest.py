@@ -198,6 +198,18 @@ class RssTest(CQ2TestCase):
         self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
         self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
+    def testEmptyQueryWithAntiUnaryClauseIsPassedToWebQuery(self):
+        observer = CallTrace(
+            returnValues={'executeCQL': (0, [])},
+            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
+        rss.addObserver(observer)
+
+        result = "".join(rss.handleRequest(RequestURI='/?query='))
+        
+        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertCql(parseCql("antiunary"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])

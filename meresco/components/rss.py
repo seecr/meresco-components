@@ -76,7 +76,7 @@ class Rss(Observable):
             filters = arguments.get('filter', [])
             startRecord = 1
 
-            if not query:
+            if not query and not self._antiUnaryClause:
                 raise SruMandatoryParameterNotSuppliedException("query")
             webquery = WebQuery(query, antiUnaryClause=self._antiUnaryClause)
             for filter in filters:
