@@ -29,6 +29,7 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
+from utils import asyncreturn
 from amara.binderytools import bind_string
 from urllib import urlencode
 
@@ -200,14 +201,14 @@ class RssTest(CQ2TestCase):
 
     def testEmptyQueryWithAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
-            returnValues={'executeCQL': (0, [])},
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
         rss.addObserver(observer)
 
-        result = "".join(rss.handleRequest(RequestURI='/?query='))
+        result = asyncreturn(rss.handleRequest, RequestURI='/?query=')
         
-        self.assertEquals(["executeCQL(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
         self.assertCql(parseCql("antiunary"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryUsesFilters(self):
