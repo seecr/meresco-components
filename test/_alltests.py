@@ -10,6 +10,7 @@
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -50,6 +51,7 @@ from crosswalktest import CrosswalkTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from filelisttest import FileListTest
+from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from packertest import PackerTest
