@@ -36,10 +36,17 @@ class CombineParts(Observable):
         if not partname in self._combinations.keys():
             yield self.all.yieldRecord(identifier=identifier, partname=partname)
             return
-        yield '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document">' 
+
+        substuff = []
         for subpart in self._combinations[partname]:
+            subgenerator = self.all.yieldRecord(identifier=identifier, partname=subpart)
+            substuff.append((subpart, subgenerator.next(), subgenerator))
+
+        yield '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document">' 
+        for subpart, firstResult, remaining in substuff:
             yield '<doc:part name="%s">' % xmlEscape(subpart)
-            yield self.all.yieldRecord(identifier=identifier, partname=subpart)
+            yield firstResult
+            yield remaining
             yield '</doc:part>'
         yield '</doc:document>'
 
