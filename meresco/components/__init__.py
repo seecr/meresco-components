@@ -59,3 +59,4 @@ from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from inbox import Inbox
 from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
 from filterpartbyname import FilterPartByName
+from combineparts import CombineParts
