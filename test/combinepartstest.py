@@ -50,12 +50,23 @@ class CombinePartsTest(TestCase):
         self.assertEquals(['yieldRecord', 'yieldRecord'], [m.name for m in self.observer.calledMethods])
         self.assertEquals([dict(identifier='identifier', partname='one'), dict(identifier='identifier', partname='two')], [m.kwargs for m in self.observer.calledMethods])
 
-    def testTogetherWithOnePartMissing(self):
+    def testTogetherWithOnePartMissingAllowed(self):
+        self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=True)
+        self.combine.addObserver(self.observer)
         def yieldRecord(identifier, partname):
             if partname == 'two': 
-                raise KeyError('two')
+                raise IOError('two')
+            yield '<%s/>' % partname
+        self.observer.methods['yieldRecord'] = yieldRecord
+        result = ''.join(compose(self.combine.yieldRecord(identifier='identifier', partname='together')))
+        self.assertEquals('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
+
+    def testTogetherWithOnePartMissingNotAllowed(self):
+        def yieldRecord(identifier, partname):
+            if partname == 'two': 
+                raise IOError('two')
             yield '<%s/>' % partname
         self.observer.methods['yieldRecord'] = yieldRecord
         generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
-        self.assertRaises(KeyError, generator.next)
+        self.assertRaises(IOError, generator.next)
 
