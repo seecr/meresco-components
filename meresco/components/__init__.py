@@ -49,6 +49,7 @@ from rewritepartname import RewritePartname
 from filtermessages import FilterMessages
 from reindex import Reindex
 from parsecql import ParseCQL
+from periodicdownload import PeriodicDownload
 from cqlconversion import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
 from renamecqlindex import RenameCqlIndex
 from statisticsxml import StatisticsXml
