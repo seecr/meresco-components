@@ -28,10 +28,10 @@ from meresco.core import Observable
 from xml.sax.saxutils import escape as xmlEscape
 
 class CombineParts(Observable):
-    def __init__(self, combinations, allowMissingParts=False):
+    def __init__(self, combinations, allowMissingParts=None):
         Observable.__init__(self)
         self._combinations = combinations
-        self._failOnMissingParts = not allowMissingParts
+        self._allowMissingParts = allowMissingParts or []
 
     def yieldRecord(self, identifier, partname):
         if not partname in self._combinations.keys():
@@ -44,7 +44,7 @@ class CombineParts(Observable):
             try: 
                 substuff.append((subpart, subgenerator.next(), subgenerator))
             except IOError:
-                if self._failOnMissingParts:
+                if subpart not in self._allowMissingParts:
                     raise
 
         yield '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document">' 

@@ -51,7 +51,7 @@ class CombinePartsTest(TestCase):
         self.assertEquals([dict(identifier='identifier', partname='one'), dict(identifier='identifier', partname='two')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogetherWithOnePartMissingAllowed(self):
-        self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=True)
+        self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
         self.combine.addObserver(self.observer)
         def yieldRecord(identifier, partname):
             if partname == 'two': 
@@ -65,6 +65,17 @@ class CombinePartsTest(TestCase):
         def yieldRecord(identifier, partname):
             if partname == 'two': 
                 raise IOError('two')
+            yield '<%s/>' % partname
+        self.observer.methods['yieldRecord'] = yieldRecord
+        generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
+        self.assertRaises(IOError, generator.next)
+
+    def testTogetherWithGivenMissingPartsAllowed(self):
+        self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
+        self.combine.addObserver(self.observer)
+        def yieldRecord(identifier, partname):
+            if partname == 'one': 
+                raise IOError('one')
             yield '<%s/>' % partname
         self.observer.methods['yieldRecord'] = yieldRecord
         generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
