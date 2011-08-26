@@ -54,6 +54,13 @@ class IpFilter(HandleRequestFilter):
 
         return False
 
+    def updateIps(self, ipAddresses=None, ipRanges=None):
+        if ipAddresses is not None:
+            self._allowedIps = ipAddresses
+        if ipRanges is not None:
+            self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
+                for start,end in ipRanges]
+
     @staticmethod
     def convertToNumber(ip):
         a,b,c,d = [int(x) for x in ip.split('.')]
