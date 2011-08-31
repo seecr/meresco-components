@@ -1,0 +1,187 @@
+Changeset created on Wed Aug 31 14:57:38 CEST 2011 by Seek You Too
+
+Description: Cache component for MWE
+
+    Cache results
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.11-MWE/version_0
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/cachecomponent.py version_0-cache_component/meresco/components/cachecomponent.py
+--- version_0/meresco/components/cachecomponent.py	1970-01-01 01:00:00.000000000 +0100
++++ version_0-cache_component/meresco/components/cachecomponent.py	2011-04-27 12:19:09.000000000 +0200
+@@ -0,0 +1,45 @@
++## begin license ##
++#
++#    Meresco Components are components to build searchengines, repositories
++#    and archives, based on Meresco Core.
++#    Copyright (C) 2011 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from meresco.core import Transparant
++from timeddictionary import TimedDictionary
++
++class CacheComponent(Transparant):
++
++    def __init__(self, timeout, methodName, keyKwarg):
++        Transparant.__init__(self)
++        self._methodName = methodName
++        self._keyKwarg = keyKwarg
++        self._cache = TimedDictionary(timeout=timeout)
++
++    def unknown(self, method, *args, **kwargs):
++        if self._methodName == method and self._keyKwarg in kwargs:
++            keyValue = kwargs[self._keyKwarg]
++            if not keyValue in self._cache:
++                self._cache[keyValue] = self.any.unknown(method, *args, **kwargs)
++            yield self._cache[keyValue]
++            return
++
++        for i in self.all.unknown(method, *args, **kwargs):
++            yield i
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/meresco/components/__init__.py version_0-cache_component/meresco/components/__init__.py
+--- version_0/meresco/components/__init__.py	2011-04-18 16:50:55.000000000 +0200
++++ version_0-cache_component/meresco/components/__init__.py	2011-04-18 16:50:59.000000000 +0200
+@@ -58,3 +58,4 @@
+ from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
+ from inbox import Inbox
+ from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
++from cachecomponent import CacheComponent
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/_alltests.py version_0-cache_component/test/_alltests.py
+--- version_0/test/_alltests.py	2011-04-18 16:50:51.000000000 +0200
++++ version_0-cache_component/test/_alltests.py	2011-04-18 16:50:57.000000000 +0200
+@@ -44,6 +44,7 @@
+ import unittest
+ 
+ from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
++from cachecomponenttest import CacheComponentTest
+ from contextsettest import ContextSetTest
+ from cqlconversiontest import CQLConversionTest
+ from crosswalktest import CrosswalkTest
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_0/test/cachecomponenttest.py version_0-cache_component/test/cachecomponenttest.py
+--- version_0/test/cachecomponenttest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_0-cache_component/test/cachecomponenttest.py	2011-04-19 10:17:04.000000000 +0200
+@@ -0,0 +1,107 @@
++## begin license ##
++#
++#    Meresco Components are components to build searchengines, repositories
++#    and archives, based on Meresco Core.
++#    Copyright (C) 2011 Seek You Too (CQ2) http://www.cq2.nl
++#
++#    This file is part of Meresco Components.
++#
++#    Meresco Components is free software; you can redistribute it and/or modify
++#    it under the terms of the GNU General Public License as published by
++#    the Free Software Foundation; either version 2 of the License, or
++#    (at your option) any later version.
++#
++#    Meresco Components is distributed in the hope that it will be useful,
++#    but WITHOUT ANY WARRANTY; without even the implied warranty of
++#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#    GNU General Public License for more details.
++#
++#    You should have received a copy of the GNU General Public License
++#    along with Meresco Components; if not, write to the Free Software
++#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++## end license ##
++
++from meresco.core import be, Observable
++
++from meresco.components import CacheComponent
++
++from cq2utils import CQ2TestCase, CallTrace
++from time import sleep
++
++class CacheComponentTest(CQ2TestCase):
++    def setUp(self):
++        CQ2TestCase.setUp(self)
++        self.cacheComponent = CacheComponent(timeout=10, methodName="someMethod", keyKwarg="argument")
++        self.observer = CallTrace(returnValues=dict(someMethod="result", anotherMethod="anotherResult"))
++
++        self.dna = be(
++            (Observable(),
++                (self.cacheComponent,
++                    (self.observer,)
++                )
++            )
++        )
++
++    def testPassThrough(self):
++        result = self.dna.any.anotherMethod(1, True, argument="first")
++        self.assertEquals("anotherResult", result)
++        self.assertEquals(["anotherMethod(1, <class True>, argument='first')"], [str(x) for x in self.observer.calledMethods])
++        
++    def testPassThrough2(self):
++        self.observer.ignoredAttributes = ['yetAnotherMethod']
++        try:
++            result = self.dna.any.yetAnotherMethod(1, True, argument="first")
++            self.fail()
++        except AttributeError, e:
++            self.assertEquals("None of the 1 observers responds to any.yetAnotherMethod(...)", str(e))
++
++    def testPlayNicelyWithOthers(self):
++        cacheComponent = CacheComponent(timeout=10, methodName="someMethod", keyKwarg="argument")
++        observer1 = CallTrace("One")
++        observer1.ignoredAttributes = ['someMethod']
++        observer2 = CallTrace("Two")
++        observer2.returnValues['someMethod'] = 'someResult'
++        observer3 = CallTrace("Three")
++        observer3.returnValues['someMethod'] = 'someOtherResult'
++
++        dna = be(
++            (Observable(),
++                (observer1,),
++                (cacheComponent,
++                    (observer2,)
++                ),
++                (observer3,)
++            )
++        )
++       
++        result = dna.any.someMethod(argument="value")
++        self.assertEquals('someResult', result)
++        
++        result = list(dna.all.someMethod(argument="value"))
++        self.assertEquals(['someResult', 'someOtherResult'], result)
++
++
++    def testCaching(self):
++        result = self.dna.any.someMethod(argument="first")
++        self.assertEquals("result", result)
++        self.assertEquals(1, len(self.observer.calledMethods))
++        result = self.dna.any.someMethod(argument="first")
++        self.assertEquals("result", result)
++        self.assertEquals(1, len(self.observer.calledMethods))
++
++    def testKeysTimeOut(self):
++        self.cacheComponent._cache._timeout=1
++        counter = []
++        def someMethod(argument):
++            counter.append(True)
++            return len(counter)
++        self.observer.someMethod=someMethod
++        result = self.dna.any.someMethod(argument="first")
++        self.assertEquals(1, result)
++        result = self.dna.any.someMethod(argument="first")
++        self.assertEquals(1, result)
++        self.cacheComponent._cache._timeout=.1
++        sleep(.2)
++        result = self.dna.any.someMethod(argument="first")
++        self.assertEquals(2, result)
