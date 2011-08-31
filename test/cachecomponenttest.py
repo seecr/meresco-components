@@ -47,6 +47,39 @@ class CacheComponentTest(CQ2TestCase):
         result = self.dna.any.anotherMethod(1, True, argument="first")
         self.assertEquals("anotherResult", result)
         self.assertEquals(["anotherMethod(1, <class True>, argument='first')"], [str(x) for x in self.observer.calledMethods])
+        
+    def testPassThrough2(self):
+        self.observer.ignoredAttributes = ['yetAnotherMethod']
+        try:
+            result = self.dna.any.yetAnotherMethod(1, True, argument="first")
+            self.fail()
+        except AttributeError, e:
+            self.assertEquals("None of the 1 observers responds to any.yetAnotherMethod(...)", str(e))
+
+    def testPlayNicelyWithOthers(self):
+        cacheComponent = CacheComponent(timeout=10, methodName="someMethod", keyKwarg="argument")
+        observer1 = CallTrace("One")
+        observer1.ignoredAttributes = ['someMethod']
+        observer2 = CallTrace("Two")
+        observer2.returnValues['someMethod'] = 'someResult'
+        observer3 = CallTrace("Three")
+        observer3.returnValues['someMethod'] = 'someOtherResult'
+
+        dna = be(
+            (Observable(),
+                (observer1,),
+                (cacheComponent,
+                    (observer2,)
+                ),
+                (observer3,)
+            )
+        )
+       
+        result = dna.any.someMethod(argument="value")
+        self.assertEquals('someResult', result)
+        
+        result = list(dna.all.someMethod(argument="value"))
+        self.assertEquals(['someResult', 'someOtherResult'], result)
 
 
     def testCaching(self):

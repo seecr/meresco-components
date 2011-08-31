@@ -39,5 +39,7 @@ class CacheComponent(Transparant):
             if not keyValue in self._cache:
                 self._cache[keyValue] = self.any.unknown(method, *args, **kwargs)
             yield self._cache[keyValue]
+            return
 
-        yield self.any.unknown(method, *args, **kwargs)
+        for i in self.all.unknown(method, *args, **kwargs):
+            yield i
