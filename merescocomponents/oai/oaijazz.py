@@ -131,7 +131,7 @@ class OaiJazz(object):
 
     def getAllSets(self):
         return self._sets.keys()
-        
+
     def getNrOfRecords(self, prefix='oai_dc'):
         return len(self._prefixes.get(prefix, []))
 
