@@ -109,26 +109,6 @@ from sru.srwtest import SrwTest
 
 from xml_generic.validatetest import ValidateTest
 
-from facetindex.clausecollectortest import ClauseCollectorTest
-from facetindex.cql2lucenequerytest import Cql2LuceneQueryTest
-from facetindex.cqlparsetreetolucenequerytest import CqlParseTreeToLuceneQueryTest
-from facetindex.docsetlisttest import DocSetListTest
-from facetindex.docsetlistintersecttest import DocSetListIntersectTest
-from facetindex.docsettest import DocSetTest
-from facetindex.documenttest import DocumentTest
-from facetindex.drilldowntest import DrilldownTest
-from facetindex.drilldownfieldnamestest import DrilldownFieldnamesTest
-from facetindex.fields2lucenedocumenttest import Fields2LuceneDocumentTest
-from facetindex.incrementalindexingtest import IncrementalIndexingTest
-from facetindex.integerlisttest import IntegerListTest
-from facetindex.libfacetindextest import LibFacetIndexTest
-from facetindex.lucenedocidtrackertest import LuceneDocIdTrackerTest
-from facetindex.lucenetest import LuceneTest
-from facetindex.pooltest import PoolTest
-from facetindex.tools.lucenetoolstest import LuceneToolsTest
-from facetindex.triedicttest import TrieDictTest
-from facetindex.trietest import TrieTest
-
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
 from ngram.ngramindextest import NGramIndexTest

@@ -38,17 +38,6 @@ if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
         sys.exit(status)                                     #DO_NOT_DISTRIBUTE
                                                              #DO_NOT_DISTRIBUTE
 
-from lucene import LuceneIndex
-from drilldown import Drilldown
-from drilldownfieldnames import DrilldownFieldnames
-from document import Document, IDFIELD, DocumentException
-from docset import DocSet
-from docsetlist import DocSetList
 from integerlist import IntegerList
-from trie import Trie
-from cql2lucenequery import CQL2LuceneQuery
-from fields2lucenedocument import Fields2LuceneDocumentTx
-from clausecollector import ClauseCollector
 from response import Response
-import merescolucene
 
