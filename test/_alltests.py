@@ -96,9 +96,6 @@ from log.logfileservertest import LogFileServerTest
 from log.querylogtest import QueryLogTest
 
 from numeric.converttest import ConvertTest
-from numeric.numbercomparitorfieldlettest import NumberComparitorFieldletTest
-from numeric.numbercomparitormodifiertest import NumberComparitorModifierTest
-from numeric.numbercomparitortest import NumberComparitorTest
 
 from sru.srufielddrilldowntest import SRUFieldDrilldownTest
 from sru.sruhandlertest import SruHandlerTest
@@ -111,9 +108,6 @@ from xml_generic.validatetest import ValidateTest
 
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
-from ngram.ngramindextest import NGramIndexTest
-from ngram.ngramquerytest import NGramQueryTest
-from ngram.ngramtest import NGramTest
 
 from msgbox.msgboxtest import MsgboxTest
 from msgbox.updateadaptertest import UpdateAdapterTest
