@@ -6,8 +6,6 @@ python-escaping (>= 0.1)
 python-escaping (<< 0.2)
 python-cq2utils (>= 5.4.14)
 python-cq2utils (<< 5.5)
-python-jtool (>= 0.4)
-python-jtool (<< 0.6)
 python-levenshtein
 python-lxml (>=2.1)
 python-lxml (<<3.0)
@@ -20,10 +18,4 @@ python-storage (>=5.1.7)
 python-storage (<<5.2)
 python-weightless-core (>= 0.6.2)
 python-weightless-core (<< 0.7)
-#lenny:liblucene-core2-gcj9 (>= 2.2.0)
-#lenny:liblucene-core2-gcj9 (< 2.4.0)
-#squeeze:liblucene-core2-gcj10 (>= 2.2.0)
-#squeeze:liblucene-core2-gcj10 (< 2.4.0)
-#lenny:libgcj9-0
-#squeeze:libgcj10
 lsof
