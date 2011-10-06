@@ -1,2 +1,2 @@
-#squeeze:g++ (>= 4.4.5-8)
+#squeeze:g++ (>= 4.4.5)
 #squeeze:g++ (<< 4.5)
