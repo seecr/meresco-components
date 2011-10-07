@@ -185,7 +185,7 @@ class SruHandler(Observable):
         yield '</srw:extraRecordData>'
 
     def _yieldRecordForRecordPacking(self, recordId=None, recordSchema=None, recordPacking=None):
-        generator = compose(self.all.yieldRecord(recordId, recordSchema))
+        generator = compose(self.all.yieldRecord(identifier=recordId, partname=recordSchema))
         if recordPacking == 'xml':
             for data in generator:
                 yield data

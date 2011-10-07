@@ -216,9 +216,9 @@ class SruHandlerTest(CQ2TestCase):
         observer.exceptions['executeQuery'] = StopIteration(response)
 
         yieldRecordCalls = []
-        def yieldRecord(recordId, recordSchema):
+        def yieldRecord(identifier, partname):
             yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (recordId, recordSchema)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
         observer.yieldRecord = yieldRecord
 
         observer.returnValues['extraResponseData'] = 'extraResponseData'
@@ -305,9 +305,9 @@ class SruHandlerTest(CQ2TestCase):
         observer.exceptions['executeQuery'] = StopIteration(response)
 
         yieldRecordCalls = []
-        def yieldRecord(recordId, recordSchema):
+        def yieldRecord(identifier, partname):
             yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (recordId, recordSchema)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
         observer.yieldRecord = yieldRecord
 
         observer.returnValues['extraResponseData'] = 'extraResponseData'
@@ -410,9 +410,9 @@ class SruHandlerTest(CQ2TestCase):
         observer.exceptions['executeQuery'] = StopIteration(response)
 
         yieldRecordCalls = []
-        def yieldRecord(recordId, recordSchema):
+        def yieldRecord(identifier, partname):
             yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (recordId, recordSchema)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
         observer.yieldRecord = yieldRecord
 
         observer.returnValues['extraResponseData'] = 'extraResponseData'

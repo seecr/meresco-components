@@ -47,11 +47,13 @@ import unittest
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from contextsettest import ContextSetTest
 from cqlconversiontest import CQLConversionTest
+from combinepartstest import CombinePartsTest
 from crosswalktest import CrosswalkTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
 from filelisttest import FileListTest
+from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from packertest import PackerTest

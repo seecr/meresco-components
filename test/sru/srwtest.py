@@ -8,6 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -141,7 +142,7 @@ Content-Type: text/xml; charset=utf-8
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
         observer = CallTrace(
             methods={
-                'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
+                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=['recordId'])
@@ -181,7 +182,7 @@ Content-Type: text/xml; charset=utf-8
 
         observer = CallTrace(
             methods={
-                'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
+                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=['recordId'])
@@ -211,7 +212,7 @@ Content-Type: text/xml; charset=utf-8
         sruParser.addObserver(self.sruHandler)
         observer = CallTrace(
             returnValues={
-                'yieldRecord': lambda recordId, recordSchema: (g for g in ["<DATA>%s-%s</DATA>" % (recordId, recordSchema)])
+                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=[1])
