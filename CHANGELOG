@@ -1,6 +1,98 @@
 CHANGELOG Meresco-Components
 ============================
 
+==============================================================================
+
+version: 3.4.18 -> 4.0-beta1
+date:    2011-10-07
+
+
+Removed Lucene Dependency
+-------------------------
+Meresco 4 makes the move to Solr and therefore direct dependencies on Lucene are
+no longer desirable within Meresco-Components. Modules/components that have been
+removed: LuceneIndex, facetindex, ngram, NumberComparitor
+(2011-10-05, 4.0beta1-Seecr)
+
+Meresco components now also works with Solr
+-------------------------------------------
+Query and drilldown handling is now asynchronous for both Lucene and Solr. In
+case of Solr the drilldown and quering are combined in one request.
+(2011-07-21, 3.4.15-Seecr)
+
+==============================================================================
+
+version: 3.4.14 -> 3.4.18
+date:    2011-09-02
+
+
+Update IpFilter
+---------------
+With updateIps all ipAddresses and ipRanges will be replaced with the given
+values
+(2011-09-01, 3.4.17-Edurep)
+
+Added CombineParts and FilterByPartName component
+-------------------------------------------------
+New CombineParts component to combine multiple parts in your oai-response
+FilterByPartName yields records only for the given parts
+(2011-09-01, 3.4.17-Edurep)
+
+Added PeriodicDownload component
+--------------------------------
+PeriodicDownload is moved from meresco-oai to meresco-components
+(2011-09-01, 3.4.17-Edurep)
+
+Sanatized SRU explain
+---------------------
+Explain operation for SRU now only shows given options. Host, port and database
+are extracted from handleRequest arguments (only if not given)
+(2011-06-15, 3.4.14.1-Natag)
+
+Rss accept empty query if antiUnaryClause is given
+--------------------------------------------------
+The RSS component now only raises an SruMandatoryParameterNotSuppliedException
+if both query and antiUnaryClause are empty. If one of them is given the query
+is valid.
+(2011-06-08, 3.4.14-HBO-Kennisbank)
+
+==============================================================================
+
+version: 3.4.13 -> 3.4.14
+date:    2011-05-30
+
+
+Upgrade to gcj 4.4 and libgcj10
+-------------------------------
+Meresco components now also runs on gcj 4.4 and libgcj 10. Some dependencies are
+updated; Due to a new pyinotify which uses a logging modlue the logging module
+in meresco components is renamed to log
+(2011-05-30, 3.4.13
+)
+
+==============================================================================
+
+version: 3.4.12 -> 3.4.13
+date:    2011-05-05
+
+
+Fieldname mapping for autocomplete
+----------------------------------
+With the fieldname mapping functionality an autocomplete component can map an
+externally exposed fieldname to an internally used fieldname. This is useful for
+mapping a fieldname to a compound drilldown field.
+(2011-05-05, 3.4.7.1-TUD)
+
+Compoundfield loading reuses previously loaded drilldown
+--------------------------------------------------------
+The fields used in a compoundfield that were previously loaded for a drilldown
+will be reused, read-only, for merging into the compoundfield. This reduces
+startup time as the terms do not have to be loaded from the index again.
+(2011-05-04, 3.4.7.1-TUD)
+
+
+==============================================================================
+
 version: 3.4.11 -> 3.4.12
 date:    2011-05-12
 
