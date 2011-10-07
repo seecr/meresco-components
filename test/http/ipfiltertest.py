@@ -114,3 +114,30 @@ class IpFilterTest(TestCase):
 
         self.assertEquals(3232235776, iprange.convertToNumber('192.168.1.0'))
         self.assertEquals(0, iprange.convertToNumber('0.0.0.0'))
+
+    def testUpdateIpFilter(self):
+        observer = CallTrace()
+        ipf = IpFilter(allowedIps=['192.168.1.1'], allowedIpRanges=[('10.0.0.1', '10.0.0.2')])
+
+        dna = be(
+            (Observable(),
+                (ipf,
+                    (observer,)
+                )
+            )
+        )
+
+        list(dna.all.handleRequest(Client=('127.0.0.1',), Headers={}))
+        list(dna.all.handleRequest(Client=('10.0.0.10',), Headers={}))
+        self.assertEquals(0, len(observer.calledMethods))
+        list(dna.all.handleRequest(Client=('192.168.1.1',), Headers={}))
+        self.assertEquals(1, len(observer.calledMethods))
+
+        del observer.calledMethods[:]
+        
+        ipf.updateIps(ipAddresses=['127.0.0.1'], ipRanges=[('10.0.0.1', '10.0.0.255')])
+        list(dna.all.handleRequest(Client=('192.168.1.1',), Headers={}))
+        self.assertEquals(0, len(observer.calledMethods))
+        list(dna.all.handleRequest(Client=('127.0.0.1',), Headers={}))
+        list(dna.all.handleRequest(Client=('10.0.0.10',), Headers={}))
+        self.assertEquals(2, len(observer.calledMethods))

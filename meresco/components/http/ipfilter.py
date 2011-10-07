@@ -7,6 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
@@ -31,8 +32,8 @@ from handlerequestfilter import HandleRequestFilter
 
 class IpFilter(HandleRequestFilter):
 
-    def __init__(self, allowedIps=None, allowedIpRanges=None):
-        HandleRequestFilter.__init__(self, self._filter)
+    def __init__(self, name=None, allowedIps=None, allowedIpRanges=None):
+        super(IpFilter, self).__init__(name=name, filterMethod=self._filter)
         self._allowedIps = allowedIps if allowedIps else []
         self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
             for start,end in allowedIpRanges] if allowedIpRanges else []
@@ -53,6 +54,13 @@ class IpFilter(HandleRequestFilter):
                 return True
 
         return False
+
+    def updateIps(self, ipAddresses=None, ipRanges=None):
+        if ipAddresses is not None:
+            self._allowedIps = ipAddresses
+        if ipRanges is not None:
+            self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
+                for start,end in ipRanges]
 
     @staticmethod
     def convertToNumber(ip):
