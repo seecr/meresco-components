@@ -1,0 +1,72 @@
+Changeset created on Mon Oct 10 06:43:26 CET 2011 by Seecr (Seek You Too B.V.)
+
+Description: Provide optional x-parameters to SRU
+
+    Provide extra X-Parameters to use in your echoedSearchRetrieveRequest.
+    Default x-recordSchema is added to your ECHOED_PARAMETER_NAMES
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.18-Edurep/version_0
+
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/sru/sruhandler.py version_1/meresco/components/sru/sruhandler.py
+--- version_0/meresco/components/sru/sruhandler.py	2011-10-04 11:13:04.000000000 +0200
++++ version_1/meresco/components/sru/sruhandler.py	2011-10-04 11:26:44.000000000 +0200
+@@ -39,14 +39,16 @@
+ 
+ from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
+ 
+-ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet', 'x-recordSchema']
++ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
+ 
+ class SruHandler(Observable):
+-    def __init__(self, extraRecordDataNewStyle=False):
++    def __init__(self, extraRecordDataNewStyle=False, extraXParameters=None):
+         Observable.__init__(self)
+         self._extraRecordDataNewStyle = extraRecordDataNewStyle
+         if not extraRecordDataNewStyle:
+             warn("""Old style extraRecordData is used, this is deprecated and will be removed in the future.""", DeprecationWarning)
++        self._extraXParameters = set(extraXParameters or [])
++        self._extraXParameters.add("x-recordSchema")
+ 
+     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, **kwargs):
+         SRU_IS_ONE_BASED = 1
+@@ -86,11 +88,12 @@
+ 
+     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
+         yield '<srw:echoedSearchRetrieveRequest>'
+-        for parameterName in ECHOED_PARAMETER_NAMES:
+-            value = kwargs.get(parameterName.replace('-', '_'), [])
+-            for v in (value if isinstance(value, list) else [value]):
+-                aValue = xmlEscape(str(v))
+-                yield '<srw:%(parameterName)s>%(aValue)s</srw:%(parameterName)s>' % locals()
++        for paramSets in ECHOED_PARAMETER_NAMES, self._extraXParameters:
++            for parameterName in paramSets:
++                value = kwargs.get(parameterName.replace('-', '_'), [])
++                for v in (value if isinstance(value, list) else [value]):
++                    aValue = xmlEscape(str(v))
++                    yield '<srw:%(parameterName)s>%(aValue)s</srw:%(parameterName)s>' % locals()
+         for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(**kwargs)), '</srw:extraRequestData>'):
+             yield chunk
+         yield '</srw:echoedSearchRetrieveRequest>'
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/test/sru/sruhandlertest.py version_1/test/sru/sruhandlertest.py
+--- version_0/test/sru/sruhandlertest.py	2011-10-04 11:13:03.000000000 +0200
++++ version_1/test/sru/sruhandlertest.py	2011-10-04 11:31:36.000000000 +0200
+@@ -62,6 +62,19 @@
+     <srw:recordSchema>schema</srw:recordSchema>
+ </srw:echoedSearchRetrieveRequest>""", result)
+ 
++    def testEchoedSearchRetrieveRequestWithExtraXParameters(self):
++        arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_link_filter': 'True'}
++        component = SruHandler(extraRecordDataNewStyle=True, extraXParameters=['x-link-filter'])
++
++        result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
++        self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
++    <srw:version>1.1</srw:version>
++    <srw:query>query &gt;= 3</srw:query>
++    <srw:recordPacking>string</srw:recordPacking>
++    <srw:recordSchema>schema</srw:recordSchema>
++    <srw:x-link-filter>True</srw:x-link-filter>
++</srw:echoedSearchRetrieveRequest>""", result)
++
+     def testEchoedSearchRetrieveRequestWithExtraRequestData(self):
+         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_term_drilldown':['field0,field1']}
+         observer = CallTrace('ExtraRequestData', returnValues={'echoedExtraRequestData': '<some>extra request data</some>'})
