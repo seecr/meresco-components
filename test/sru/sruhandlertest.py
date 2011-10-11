@@ -248,7 +248,7 @@ class SruHandlerTest(CQ2TestCase):
 """, result)
 
     def testSearchRetrieveVersion12(self):
-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
+        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
 
         observer = CallTrace()
         observer.returnValues['executeCQL'] = (100, range(11, 13))
@@ -273,6 +273,9 @@ class SruHandlerTest(CQ2TestCase):
         self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
         self.assertEquals(0, methodKwargs['start'])
         self.assertEquals(2, methodKwargs['stop'])
+
+        self.assertEquals(parseString('field=value'), docsetFromQueryMethod.kwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals('extraValue', docsetFromQueryMethod.kwargs['x_extra_key'])
 
         self.assertEquals(6, sum(yieldRecordCalls))
 
@@ -347,9 +350,9 @@ class SruHandlerTest(CQ2TestCase):
 """, result)
         
         self.assertEquals((), echoedExtraRequestDataMethod.args)
-        self.assertEquals(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking'], echoedExtraRequestDataMethod.kwargs.keys())
+        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x_extra_key']), set(echoedExtraRequestDataMethod.kwargs.keys()))
         self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'docset']), set(extraResponseDataMethod.kwargs.keys()))
+        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'docset', 'x_extra_key']), set(extraResponseDataMethod.kwargs.keys()))
 
     def testExtraRecordDataOldStyle(self):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
