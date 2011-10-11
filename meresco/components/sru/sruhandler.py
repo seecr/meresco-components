@@ -63,7 +63,7 @@ class SruHandler(Observable):
                 sortBy=sortBy,
                 sortDescending=sortDescending,
                 **kwargs)
-            docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
+            docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, **kwargs)
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
