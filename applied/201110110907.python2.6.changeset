@@ -1,0 +1,18 @@
+Changeset created on Tue Oct 11 09:07:36 UTC 2011 by Seecr (Seek You Too B.V.)
+
+Description: Added python2.6 support
+
+    Added python 2.6 support
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/4.0-beta1-Seecr/version_2
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_2/test/alltests.sh version_3/test/alltests.sh
+--- version_2/test/alltests.sh	2011-10-11 10:07:00.000000000 +0200
++++ version_3/test/alltests.sh	2011-10-11 10:06:51.000000000 +0200
+@@ -24,4 +24,5 @@
+ ## end license ##
+ export LANG=en_US.UTF-8
+ export PYTHONPATH=.:"$PYTHONPATH"
+-python2.5 _alltests.py "$@"
++pyversion="$(pyversions --default)"
++${pyversion} _alltests.py "$@"
