@@ -24,12 +24,12 @@
 # 
 ## end license ##
 
-from meresco.core import Observable
+from meresco.core import Transparant
 from xml.sax.saxutils import escape as xmlEscape
 
-class CombineParts(Observable):
+class CombineParts(Transparant):
     def __init__(self, combinations, allowMissingParts=None):
-        Observable.__init__(self)
+        Transparant.__init__(self)
         self._combinations = combinations
         self._allowMissingParts = allowMissingParts or []
 
