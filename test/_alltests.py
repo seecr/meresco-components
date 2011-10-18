@@ -46,6 +46,7 @@ import unittest
 
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from contextsettest import ContextSetTest
+from clausecollectortest import ClauseCollectorTest
 from cqlconversiontest import CQLConversionTest
 from combinepartstest import CombinePartsTest
 from crosswalktest import CrosswalkTest
