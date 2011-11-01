@@ -61,7 +61,7 @@ class SRUTermDrilldown(Observable):
             yield '<dd:navigator name=%s/>' % quoteattr(fieldname)
             return
         except Exception, e:
-            yield generalSystemError(xmlEscape(e.message))
+            yield generalSystemError(xmlEscape(str(e)))
             return
         
     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
