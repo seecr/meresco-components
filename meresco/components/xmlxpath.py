@@ -27,6 +27,7 @@
 #
 ## end license ##
 
+from copy import copy
 from meresco.core import Observable
 from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
 from StringIO import StringIO
@@ -79,4 +80,9 @@ class XmlXPath(Observable):
                 if type(element) in [_ElementStringResult, _ElementUnicodeResult]:
                     yield element
                 else:
-                    yield ElementTree(element)
+                    yield self._buildNewTree(element)
+
+    def _buildNewTree(self, element):
+        newElement = copy(element)
+        newElement.tail = None
+        return ElementTree(newElement)

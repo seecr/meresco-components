@@ -41,7 +41,6 @@ import sys
 class XmlXPathTest(CQ2TestCase):
 
     def createXmlXPath(self, xpathList, nsMap):
-        self.observable = Observable()
         self.observer = CallTrace('observer',ignoredAttributes=['start'] )
         self.observable = be(
             (Observable(),
@@ -73,7 +72,8 @@ class XmlXPathTest(CQ2TestCase):
     def testSimpleXPath(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observable.do.test('een tekst', data='<root><path><to>me</to></path></root>')
+        xml = '<root><path><to>me</to></path>\n</root>'
+        self.observable.do.test('een tekst', data=xml)
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
@@ -81,6 +81,7 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEquals(1, len(method.args))
         self.assertEquals('een tekst', method.args[0])
         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
 
     def testSimpleXPathWithUnicodeChars(self):
         self.createXmlXPath(['/root/text()'], {})
@@ -165,7 +166,7 @@ class XmlXPathTest(CQ2TestCase):
         except AssertionError, e:
             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
 
-    def testDoNotChangesArgs(self):
+    def testDoNotChangeArgs(self):
         xmlXPath = XmlXPath(['/a'])
         arg = parse(StringIO('<a>a</a>'))
         xmlXPath.unknown('message', arg)
@@ -238,4 +239,40 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEquals(1, len(observer.calledMethods))
         result = observer.calledMethods[0].kwargs
         self.assertEquals({'lxmlNode': 'some text & some <entities>'}, result)
+
+    def testTailTakeCareOfWithoutAffectingOriginal(self):
+        observer = CallTrace('observer')
+        observable = be(
+            (Observable(),
+                (XmlXPath(
+                        ['/myns:root/myns:path'],
+                        {'myns': 'http://myns.org/'}
+                    ),
+                    (observer, ),
+                )
+            )
+        )
+
+        XML = """\
+<root xmlns:myns="http://myns.org/" xmlns="http://myns.org/">
+    <myns:path>
+        <to>me</to>
+    </myns:path>\n
+</root>"""
+
+        lxmlNode = parse(StringIO(XML))
+        self.assertEquals(XML, tostring(lxmlNode))
+        list(observable.all.test('een tekst', lxmlNode=lxmlNode))
+
+        self.assertEquals(1, len(observer.calledMethods))
+        method = observer.calledMethods[0]
+        self.assertEquals('test', method.name)
+        self.assertEqualsWS('<myns:path xmlns:myns="http://myns.org/" xmlns="http://myns.org/"><to>me</to></myns:path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEquals("""\
+<myns:path xmlns:myns="http://myns.org/" xmlns="http://myns.org/">
+        <to>me</to>
+    </myns:path>""", tostring(method.kwargs['lxmlNode']))
+
+        self.assertEquals(XML, tostring(lxmlNode))
+
 
