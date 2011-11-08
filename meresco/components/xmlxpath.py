@@ -80,9 +80,15 @@ class XmlXPath(Observable):
                 if type(element) in [_ElementStringResult, _ElementUnicodeResult]:
                     yield element
                 else:
-                    yield self._buildNewTree(element)
+                    yield ElementTree(lxmlElementUntail(element))
 
-    def _buildNewTree(self, element):
-        newElement = copy(element)
-        newElement.tail = None
-        return ElementTree(newElement)
+
+def lxmlElementUntail(element):
+    """Utility that works around a problem in lxml.
+Should be applied to Elements that are taken out of one ElementTree to be wrapped in a new ElementTree and fed to an XSLT transformation (which would otherwise sometimes segfault)."""
+
+    if not element.tail is None:
+        element = copy(element)
+        element.tail = None
+    return element
+

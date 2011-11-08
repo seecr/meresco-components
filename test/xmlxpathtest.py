@@ -32,10 +32,10 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import Observable, be
 
 from meresco.components import XmlXPath, XmlParseLxml
+from meresco.components.xmlxpath import lxmlElementUntail
 from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType, tostring
 from StringIO import StringIO
 import sys
-
 
 
 class XmlXPathTest(CQ2TestCase):
@@ -275,4 +275,19 @@ class XmlXPathTest(CQ2TestCase):
 
         self.assertEquals(XML, tostring(lxmlNode))
 
+
+    def testLxmlElementUntail(self):
+        lxmlNode = parse(StringIO('<myns:root xmlns:myns="http://myns.org/" xmlns="http://myns.org/"><a>b</a></myns:root>'))
+        element = lxmlNode.xpath('/myns:root/myns:a', namespaces={'myns': 'http://myns.org/'})[0]
+        self.assertEquals(None, element.tail)
+        newElement = lxmlElementUntail(element)
+        self.assertTrue(newElement is element)
+
+        lxmlNode = parse(StringIO('<myns:root xmlns:myns="http://myns.org/" xmlns="http://myns.org/"><a><b>c</b>\n\n</a>\n\n\n\n</myns:root>'))
+        element = lxmlNode.xpath('/myns:root/myns:a', namespaces={'myns': 'http://myns.org/'})[0]
+        self.assertEquals('\n\n\n\n', element.tail)
+        newElement = lxmlElementUntail(element)
+        self.assertFalse(newElement is element)
+        self.assertEquals(None, newElement.tail)
+        self.assertEquals('<a xmlns="http://myns.org/"><b>c</b>\n\n</a>', tostring(newElement))
 

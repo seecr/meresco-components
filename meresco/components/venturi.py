@@ -27,9 +27,13 @@
 #
 ## end license ##
 
-from meresco.core import Observable
 from lxml.etree import _Element, ElementTree, parse, XMLParser
 from StringIO import StringIO
+
+from meresco.core import Observable
+
+from meresco.components.xmlxpath import lxmlElementUntail
+
 
 class Venturi(Observable):
     def __init__(self, should=[], could=[], namespaceMap={}):
@@ -54,26 +58,25 @@ class Venturi(Observable):
             if part != None:
                 yield self.all.add(identifier=identifier, partname=couldPartname, lxmlNode=part)
 
+    def delete(self, identifier):
+        self.ctx.tx.locals['id'] = identifier
+        yield self.asyncdo.delete(identifier=identifier)
+
     def _findPart(self, identifier, partname, lxmlNode, partXPath):
         matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
         if len(matches) > 1:
             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
         if len(matches) == 1:
-            return self._convert(matches[0])
-        else:
-            if self.any.isAvailable(identifier, partname) == (True, True):
-                return parse(self.any.getStream(identifier, partname))
-            else:
-                return None
+            return self._nodeOrText2ElementTree(matches[0])
+        if self.any.isAvailable(identifier, partname) == (True, True):
+            return parse(self.any.getStream(identifier, partname))
+        return None
 
-    def _convert(self, anObject):
-        if type(anObject) == _Element:
-            return ElementTree(anObject)
-        return parse(StringIO(anObject))
+    def _nodeOrText2ElementTree(self, nodeOrText):
+        if type(nodeOrText) == _Element:
+            return ElementTree(lxmlElementUntail(nodeOrText))
+        return parse(StringIO(nodeOrText))
 
-    def delete(self, identifier):
-        self.ctx.tx.locals['id'] = identifier
-        yield self.asyncdo.delete(identifier=identifier)
 
 class VenturiException(Exception):
     pass
