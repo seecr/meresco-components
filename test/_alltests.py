@@ -62,6 +62,7 @@ from parsecqltest import ParseCQLTest
 from periodicdownloadtest import PeriodicDownloadTest
 from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
+from renamefieldforexacttest import RenameFieldForExactTest
 from renamecqlindextest import RenameCqlIndexTest
 from requestscopetest import RequestScopeTest
 from rewritepartnametest import RewritePartnameTest

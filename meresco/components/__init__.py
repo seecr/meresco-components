@@ -46,6 +46,7 @@ from venturi import Venturi
 from configuration import Configuration, readConfig
 from xml2fields import Xml2Fields
 from xpath2field import XPath2Field
+from renamefieldforexact import RenameFieldForExact
 from rewritepartname import RewritePartname
 from filtermessages import FilterMessages
 from reindex import Reindex
