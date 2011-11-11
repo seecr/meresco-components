@@ -1,0 +1,148 @@
+Changeset created on Fri Nov 11 12:54:55 UTC 2011 by Seecr (Seek You Too B.V.)
+
+Description: RenameFieldForExact component added
+
+    RenameFieldForExact renames fields in an SRU query by added a predefined prefix 
+    if the fieldname is in a predefined list.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/4.0-beta1-Seecr/version_5
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_5/meresco/components/__init__.py version_6/meresco/components/__init__.py
+--- version_5/meresco/components/__init__.py	2011-11-01 14:06:07.568871565 +0100
++++ version_6/meresco/components/__init__.py	2011-11-11 13:54:43.900916034 +0100
+@@ -46,6 +46,7 @@
+ from configuration import Configuration, readConfig
+ from xml2fields import Xml2Fields
+ from xpath2field import XPath2Field
++from renamefieldforexact import RenameFieldForExact
+ from rewritepartname import RewritePartname
+ from filtermessages import FilterMessages
+ from reindex import Reindex
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_5/meresco/components/renamefieldforexact.py version_6/meresco/components/renamefieldforexact.py
+--- version_5/meresco/components/renamefieldforexact.py	1970-01-01 01:00:00.000000000 +0100
++++ version_6/meresco/components/renamefieldforexact.py	2011-11-11 13:54:43.872929911 +0100
+@@ -0,0 +1,55 @@
++## begin license ##
++# 
++# "Edurep" is a service for searching in educational repositories.
++# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
++# Seek You Too (http://www.cq2.nl). The project is based on the opensource
++# project Meresco (http://www.meresco.com). 
++# 
++# Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Edurep"
++# 
++# "Edurep" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Edurep" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Edurep"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++class RenameFieldForExact(object):
++    def __init__(self, untokenizedFields, untokenizedPrefix):
++        self._untokenizedFields = [f for f in untokenizedFields if not f.endswith('*')]
++        self._untokenizedFieldPrefixes = [f[:-1] for f in untokenizedFields if f.endswith('*')]
++        self._untokenizedPrefix = untokenizedPrefix
++
++    def canModify(self, node):
++        #SEARCH_CLAUSE(INDEX(...), RELATION(COMPARITOR('exact')), SEARCH_TERM(..))
++        if len(node.children) == 3 and \
++                node.children[1].children[0].children[0] == 'exact' and \
++                self._hasUntokenizedRenaming(node.children[0].children[0].children[0]):
++            return True
++        return False
++
++    def modify(self, node):
++        term = node.children[0].children[0]
++        term.children = (self._untokenizedPrefix + term.children[0],)
++        return node
++
++    def _hasUntokenizedRenaming(self, fieldname):
++        untokenizedField = self._untokenizedPrefix + fieldname
++        return untokenizedField in self._untokenizedFields or any(untokenizedField.startswith(prefix) for prefix in self._untokenizedFieldPrefixes)
++
++    def filterAndModifier(self):
++        return self.canModify, self.modify
++
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_5/test/_alltests.py version_6/test/_alltests.py
+--- version_5/test/_alltests.py	2011-11-01 14:06:06.108915676 +0100
++++ version_6/test/_alltests.py	2011-11-11 13:54:41.833165972 +0100
+@@ -62,6 +62,7 @@
+ from periodicdownloadtest import PeriodicDownloadTest
+ from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
+ from reindextest import ReindexTest
++from renamefieldforexacttest import RenameFieldForExactTest
+ from renamecqlindextest import RenameCqlIndexTest
+ from requestscopetest import RequestScopeTest
+ from rewritepartnametest import RewritePartnameTest
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_5/test/renamefieldforexacttest.py version_6/test/renamefieldforexacttest.py
+--- version_5/test/renamefieldforexacttest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_6/test/renamefieldforexacttest.py	2011-11-11 13:54:41.985166267 +0100
+@@ -0,0 +1,54 @@
++## begin license ##
++# 
++# "Edurep" is a service for searching in educational repositories.
++# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
++# Seek You Too (http://www.cq2.nl). The project is based on the opensource
++# project Meresco (http://www.meresco.com). 
++# 
++# Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Edurep"
++# 
++# "Edurep" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Edurep" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Edurep"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++from unittest import TestCase
++
++from cqlparser import cql2string, parseString
++from meresco.components import CqlMultiSearchClauseConversion, RenameFieldForExact
++
++
++class RenameFieldForExactTest(TestCase):
++    def testNothingToBeDone(self):
++        self.assertEquals('field=value', self.convert('field=value'))
++
++    def testRenameField(self):
++        self.assertEquals('untokenized.field exact value', self.convert('field exact value'))
++
++    def testDoNotRenameField(self):
++        self.assertEquals('otherfield exact value', self.convert('otherfield exact value'))
++
++    def testRenameFieldThatMatchesPrefix(self):
++        self.assertEquals('untokenized.prefix.certainfield exact value', self.convert('prefix.certainfield exact value'))
++
++    def convert(self, cqlString):
++        converter = CqlMultiSearchClauseConversion([
++                RenameFieldForExact(['untokenized.field', 'untokenized.prefix.*'], 'untokenized.').filterAndModifier()
++            ], fromKwarg="cqlAbstractSyntaxTree")
++        return cql2string(converter._convert(parseString(cqlString)))
++
