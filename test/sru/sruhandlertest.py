@@ -63,6 +63,19 @@ class SruHandlerTest(CQ2TestCase):
     <srw:recordSchema>schema</srw:recordSchema>
 </srw:echoedSearchRetrieveRequest>""", result)
 
+    def testEchoedSearchRetrieveRequestWithExtraXParameters(self):
+        arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_link_filter': 'True'}
+        component = SruHandler(extraRecordDataNewStyle=True, extraXParameters=['x-link-filter'])
+
+        result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
+        self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
+    <srw:version>1.1</srw:version>
+    <srw:query>query &gt;= 3</srw:query>
+    <srw:recordPacking>string</srw:recordPacking>
+    <srw:recordSchema>schema</srw:recordSchema>
+    <srw:x-link-filter>True</srw:x-link-filter>
+</srw:echoedSearchRetrieveRequest>""", result)
+
     def testEchoedSearchRetrieveRequestWithExtraRequestData(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_term_drilldown':['field0,field1']}
         observer = CallTrace('ExtraRequestData', returnValues={'echoedExtraRequestData': '<some>extra request data</some>'})

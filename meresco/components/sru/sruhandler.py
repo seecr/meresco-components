@@ -39,15 +39,17 @@ from warnings import warn
 
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
 
-ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet', 'x-recordSchema']
+ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=False, drilldownSortedByTermCount=False):
+    def __init__(self, extraRecordDataNewStyle=False, drilldownSortedByTermCount=False, extraXParameters=None):
         Observable.__init__(self)
         self._drilldownSortedByTermCount = drilldownSortedByTermCount
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
         if not extraRecordDataNewStyle:
             warn("""Old style extraRecordData is used, this is deprecated and will be removed in the future.""", DeprecationWarning)
+        self._extraXParameters = set(extraXParameters or [])
+        self._extraXParameters.add("x-recordSchema")
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
         SRU_IS_ONE_BASED = 1
@@ -100,11 +102,12 @@ class SruHandler(Observable):
 
     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
         yield '<srw:echoedSearchRetrieveRequest>'
-        for parameterName in ECHOED_PARAMETER_NAMES:
-            value = kwargs.get(parameterName.replace('-', '_'), [])
-            for v in (value if isinstance(value, list) else [value]):
-                aValue = xmlEscape(str(v))
-                yield '<srw:%(parameterName)s>%(aValue)s</srw:%(parameterName)s>' % locals()
+        for paramSets in ECHOED_PARAMETER_NAMES, self._extraXParameters:
+            for parameterName in paramSets:
+                value = kwargs.get(parameterName.replace('-', '_'), [])
+                for v in (value if isinstance(value, list) else [value]):
+                    aValue = xmlEscape(str(v))
+                    yield '<srw:%(parameterName)s>%(aValue)s</srw:%(parameterName)s>' % locals()
         for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(**kwargs)), '</srw:extraRequestData>'):
             yield chunk
         yield '</srw:echoedSearchRetrieveRequest>'
