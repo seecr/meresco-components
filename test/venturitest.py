@@ -1,3 +1,4 @@
+# -*- coding=utf-8 -*-
 ## begin license ##
 #
 #    Meresco Components are components to build searchengines, repositories
@@ -193,4 +194,27 @@ class VenturiTest(CQ2TestCase):
         v.add = add
         v.addDocumentPart(identifier='x', partname='y', lxmlNode='dummy')
         self.assertEquals([{'args': (), 'kwargs': dict(identifier='x', partname='y', lxmlNode='dummy')}], addInvocations)
+
+    def testNoLxmlTailOnPart(self):
+        inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>message</second>\n\n\n\n</part></document>""")
+        interceptor = CallTrace('Interceptor')
+        v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
+        list(v.all.add('identifier', 'document', inputEvent))
+
+        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
+        self.assertEquals('<second>message</second>', tostring(secondXml))
+
+    def testPartsWithUnicodeChars(self):
+        inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;t€xt&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>t€xt</second>\n\n\n\n</part></document>""")
+        interceptor = CallTrace('Interceptor')
+        v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
+        list(v.all.add('identifier', 'document', inputEvent))
+
+        firstXml = interceptor.calledMethods[1].kwargs['lxmlNode']
+        self.assertEquals('<some>t&#8364;xt</some>', tostring(firstXml))
+        self.assertEquals('t€xt', firstXml.getroot().text)
+        secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
+        self.assertEquals('<second>t&#8364;xt</second>', tostring(secondXml))
+        self.assertEquals('t€xt', secondXml.getroot().text)
 

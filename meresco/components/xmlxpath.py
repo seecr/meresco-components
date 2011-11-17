@@ -27,6 +27,7 @@
 #
 ## end license ##
 
+from copy import copy
 from meresco.core import Observable
 from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
 from StringIO import StringIO
@@ -79,4 +80,15 @@ class XmlXPath(Observable):
                 if type(element) in [_ElementStringResult, _ElementUnicodeResult]:
                     yield element
                 else:
-                    yield ElementTree(element)
+                    yield ElementTree(lxmlElementUntail(element))
+
+
+def lxmlElementUntail(element):
+    """Utility that works around a problem in lxml.
+Should be applied to Elements that are taken out of one ElementTree to be wrapped in a new ElementTree and fed to an XSLT transformation (which would otherwise sometimes segfault)."""
+
+    if not element.tail is None:
+        element = copy(element)
+        element.tail = None
+    return element
+
