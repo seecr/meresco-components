@@ -42,12 +42,10 @@ from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATU
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=False, drilldownSortedByTermCount=False, extraXParameters=None):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None):
         Observable.__init__(self)
         self._drilldownSortedByTermCount = drilldownSortedByTermCount
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
-        if not extraRecordDataNewStyle:
-            warn("""Old style extraRecordData is used, this is deprecated and will be removed in the future.""", DeprecationWarning)
         self._extraXParameters = set(extraXParameters or [])
         self._extraXParameters.add("x-recordSchema")
 

@@ -53,7 +53,7 @@ class SruHandlerTest(CQ2TestCase):
 
     def testEchoedSearchRetrieveRequest(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string'}
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
 
         result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
         self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
@@ -65,7 +65,7 @@ class SruHandlerTest(CQ2TestCase):
 
     def testEchoedSearchRetrieveRequestWithExtraXParameters(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_link_filter': 'True'}
-        component = SruHandler(extraRecordDataNewStyle=True, extraXParameters=['x-link-filter'])
+        component = SruHandler(extraXParameters=['x-link-filter'])
 
         result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
         self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
@@ -79,7 +79,7 @@ class SruHandlerTest(CQ2TestCase):
     def testEchoedSearchRetrieveRequestWithExtraRequestData(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_term_drilldown':['field0,field1']}
         observer = CallTrace('ExtraRequestData', returnValues={'echoedExtraRequestData': '<some>extra request data</some>'})
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(SRUTermDrilldown())
         component.addObserver(observer)
 
@@ -97,7 +97,7 @@ class SruHandlerTest(CQ2TestCase):
 </srw:echoedSearchRetrieveRequest>""" % drilldownRequestData, result)
 
     def testExtraResponseDataHandlerNoHandler(self):
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
         self.assertEquals('' , result)
 
@@ -106,7 +106,7 @@ class SruHandlerTest(CQ2TestCase):
             def extraResponseData(self, *args, **kwargs):
                 return (f for f in [])
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(TestHandler())
         result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
         self.assertEquals('' , result)
@@ -120,7 +120,7 @@ class SruHandlerTest(CQ2TestCase):
                 kwargsUsed.append(kwargs)
                 return (f for f in ["<someD", "ata/>"])
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(TestHandler())
         result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
         self.assertEquals('<srw:extraResponseData><someData/></srw:extraResponseData>' , result)
@@ -155,7 +155,7 @@ class SruHandlerTest(CQ2TestCase):
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
@@ -176,7 +176,7 @@ class SruHandlerTest(CQ2TestCase):
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
@@ -191,7 +191,7 @@ class SruHandlerTest(CQ2TestCase):
         observer.methods["drilldown"] = mockDrilldown
         response = Response(total=100, hits=range(11, 26))
         observer.exceptions['executeQuery'] = StopIteration(response)
-        sruHandler = SruHandler(extraRecordDataNewStyle=True)
+        sruHandler = SruHandler()
         sruHandler.addObserver(observer)
         result = "".join(compose(sruHandler.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
 
@@ -211,7 +211,7 @@ class SruHandlerTest(CQ2TestCase):
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
@@ -237,7 +237,7 @@ class SruHandlerTest(CQ2TestCase):
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(**arguments)))
@@ -326,7 +326,7 @@ class SruHandlerTest(CQ2TestCase):
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
 
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(**arguments)))
@@ -457,7 +457,7 @@ class SruHandlerTest(CQ2TestCase):
     def testIOErrorInWriteRecordData(self):
         observer = CallTrace()
         observer.exceptions["yieldRecord"] = IOError()
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
         self.assertTrue("diagnostic" in result, result)
@@ -466,7 +466,7 @@ class SruHandlerTest(CQ2TestCase):
     def testExceptionInWriteRecordData(self):
         observer = CallTrace()
         observer.exceptions["yieldRecord"] = Exception("Test Exception")
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
         self.assertTrue("diagnostic" in result, result)
@@ -476,7 +476,7 @@ class SruHandlerTest(CQ2TestCase):
         class RaisesException(object):
             def extraResponseData(self, *args, **kwargs):
                 raise Exception("Test Exception")
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(RaisesException())
         result = "".join(compose(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
         self.assertTrue("diagnostic" in result)
@@ -485,7 +485,7 @@ class SruHandlerTest(CQ2TestCase):
         class RaisesException(object):
             def executeQuery(self, *args, **kwargs):
                 raise Exception("Test Exception")
-        component = SruHandler(extraRecordDataNewStyle=True)
+        component = SruHandler()
         component.addObserver(RaisesException())
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
         self.assertTrue("diagnostic" in result)
