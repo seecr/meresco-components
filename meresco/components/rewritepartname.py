@@ -25,12 +25,12 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from meresco.core import Transparant
+from meresco.core import Transparent
 
-class RewritePartname(Transparant):
+class RewritePartname(Transparent):
 
     def __init__(self, partname):
-        Transparant.__init__(self)
+        Transparent.__init__(self)
         self._partname = partname
 
     def add(self, identifier, partname, **kwargs):

@@ -26,10 +26,10 @@
 #
 ## end license ##
 
-from meresco.core import Transparant
-class PathRename(Transparant):
+from meresco.core import Transparent
+class PathRename(Transparent):
     def __init__(self, rename):
-        Transparant.__init__(self)
+        Transparent.__init__(self)
         self._rename = rename
 
     def handleRequest(self, path, *args, **kwargs):

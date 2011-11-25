@@ -27,7 +27,7 @@
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.core import be, Transparant
+from meresco.core import be, Transparent
 
 from weightless.io import Reactor
 
@@ -95,7 +95,7 @@ class InboxTest(CQ2TestCase):
         self.moveInRecord(identifier='repo:ident:3')
         inbox = Inbox(self.reactor, inboxDirectory=self.inboxDirectory, doneDirectory=self.doneDirectory)
         dna = be(
-            (Transparant(),
+            (Transparent(),
                 (inbox,)
             )
         )

@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-from meresco.core import Transparant
+from meresco.core import Transparent
 from time import strftime, gmtime
 from urlparse import urlsplit
 
@@ -39,9 +39,9 @@ class DevNull(object):
         pass
 
 logline = '%(ipaddress)s - %(user)s [%(timestamp)s] "%(Method)s %(path)s%(query)s HTTP/1.0" %(status)s %(responseSize)s "%(Referer)s" "%(UserAgent)s"\n'
-class ApacheLogger(Transparant):
+class ApacheLogger(Transparent):
     def __init__(self, outputStream=DevNull()):
-        Transparant.__init__(self)
+        Transparent.__init__(self)
         self._outputStream = outputStream
         
     def handleRequest(self, *args, **kwargs):

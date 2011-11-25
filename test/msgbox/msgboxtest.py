@@ -27,7 +27,7 @@
 from __future__ import with_statement
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.core import be, Transparant
+from meresco.core import be, Transparent
 
 from weightless.io import Reactor
 

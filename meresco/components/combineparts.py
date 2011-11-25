@@ -24,12 +24,12 @@
 # 
 ## end license ##
 
-from meresco.core import Transparant
+from meresco.core import Transparent
 from xml.sax.saxutils import escape as xmlEscape
 
-class CombineParts(Transparant):
+class CombineParts(Transparent):
     def __init__(self, combinations, allowMissingParts=None):
-        Transparant.__init__(self)
+        Transparent.__init__(self)
         self._combinations = combinations
         self._allowMissingParts = allowMissingParts or []
 

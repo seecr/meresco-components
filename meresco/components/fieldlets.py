@@ -27,11 +27,11 @@
 # 
 ## end license ##
 
-from meresco.core import Transparant, Observable
+from meresco.core import Transparent, Observable
 
-class _Fieldlet(Transparant):
+class _Fieldlet(Transparent):
     def __init__(self, method):
-        Transparant.__init__(self)
+        Transparent.__init__(self)
         self._method = method
 
 class FilterFieldValue(_Fieldlet):
