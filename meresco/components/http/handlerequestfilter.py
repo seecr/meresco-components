@@ -37,5 +37,5 @@ class HandleRequestFilter(Observable):
     
     def handleRequest(self, **kwargs):
         if self._filter(**kwargs):
-            return self.all.handleRequest(**kwargs)
-        return (f for f in [])
+            yield self.all.handleRequest(**kwargs)
+

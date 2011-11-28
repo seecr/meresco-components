@@ -33,6 +33,8 @@ from cq2utils import CallTrace
 from meresco.core import be, Observable
 from meresco.components.http import IpFilter
 
+from weightless.core import compose
+
 class IpFilterTest(TestCase):
 
     def assertValidIp(self,  address, ipranges=[], ips=[], headers={}):
@@ -53,7 +55,7 @@ class IpFilterTest(TestCase):
             )
         )
 
-        list(dna.all.handleRequest(Client=(address,), Headers=headers))
+        list(compose(dna.all.handleRequest(Client=(address,), Headers=headers)))
         if passed:
             self.assertEquals(1, len(self.observer.calledMethods))
             self.assertEquals('handleRequest', self.observer.calledMethods[0].name)
@@ -79,7 +81,7 @@ class IpFilterTest(TestCase):
             )
         )
 
-        list(dna.all.handleRequest(Client=('127.0.0.1',), Headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'}))
+        list(compose(dna.all.handleRequest(Client=('127.0.0.1',), Headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'})))
 
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals((), observer.calledMethods[0].args)
@@ -127,17 +129,18 @@ class IpFilterTest(TestCase):
             )
         )
 
-        list(dna.all.handleRequest(Client=('127.0.0.1',), Headers={}))
-        list(dna.all.handleRequest(Client=('10.0.0.10',), Headers={}))
+        list(compose(dna.all.handleRequest(Client=('127.0.0.1',), Headers={})))
+        list(compose(dna.all.handleRequest(Client=('10.0.0.10',), Headers={})))
         self.assertEquals(0, len(observer.calledMethods))
-        list(dna.all.handleRequest(Client=('192.168.1.1',), Headers={}))
+        list(compose(dna.all.handleRequest(Client=('192.168.1.1',), Headers={})))
         self.assertEquals(1, len(observer.calledMethods))
 
         del observer.calledMethods[:]
         
         ipf.updateIps(ipAddresses=['127.0.0.1'], ipRanges=[('10.0.0.1', '10.0.0.255')])
-        list(dna.all.handleRequest(Client=('192.168.1.1',), Headers={}))
+        list(compose(dna.all.handleRequest(Client=('192.168.1.1',), Headers={})))
         self.assertEquals(0, len(observer.calledMethods))
-        list(dna.all.handleRequest(Client=('127.0.0.1',), Headers={}))
-        list(dna.all.handleRequest(Client=('10.0.0.10',), Headers={}))
+        list(compose(dna.all.handleRequest(Client=('127.0.0.1',), Headers={})))
+        list(compose(dna.all.handleRequest(Client=('10.0.0.10',), Headers={})))
         self.assertEquals(2, len(observer.calledMethods))
+
