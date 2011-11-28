@@ -31,5 +31,5 @@ from meresco.core import Observable
 class RequestScope(Observable):
     def handleRequest(self, *args, **kwargs):
         __callstack_var_requestScope__ = {}
-        for stuff in self.all.handleRequest(*args, **kwargs):
-            yield stuff
+        yield self.all.handleRequest(*args, **kwargs)
+

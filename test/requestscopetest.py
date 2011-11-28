@@ -30,6 +30,8 @@ from cq2utils import CQ2TestCase
 from meresco.core import Observable
 from meresco.components import RequestScope
 
+from weightless.core import compose
+
 class RequestScopeTest(CQ2TestCase):
     def testEverythingIsPassed(self):
         usedArgsKwargs=[]
@@ -40,7 +42,7 @@ class RequestScopeTest(CQ2TestCase):
         r = RequestScope()
         r.addObserver(MyObserver())
 
-        result = list(r.handleRequest("an arg", RequestURI='http://www.example.org/path'))
+        result = list(compose(r.handleRequest("an arg", RequestURI='http://www.example.org/path')))
 
         self.assertEquals(['result'], result)
         self.assertEquals([(("an arg",), dict(RequestURI='http://www.example.org/path'))], usedArgsKwargs)
@@ -63,7 +65,7 @@ class RequestScopeTest(CQ2TestCase):
         myObserver.addObserver(GetArgObserver())
         r.addObserver(myObserver)
 
-        result = list(r.handleRequest("a request"))
+        result = list(compose(r.handleRequest("a request")))
 
         self.assertEquals(['value'], result)
 
@@ -85,8 +87,8 @@ class RequestScopeTest(CQ2TestCase):
         myObserver.addObserver(GetArgObserver())
         r.addObserver(myObserver)
 
-        result0 = list(r.handleRequest("key0", "value0"))
-        result1 = list(r.handleRequest("key1", "value1"))
+        result0 = list(compose(r.handleRequest("key0", "value0")))
+        result1 = list(compose(r.handleRequest("key1", "value1")))
 
         self.assertEquals(['key0=value0'], result0)
         self.assertEquals(['key1=value1'], result1)
