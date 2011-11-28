@@ -60,7 +60,7 @@ class Venturi(Observable):
 
     def delete(self, identifier):
         self.ctx.tx.locals['id'] = identifier
-        yield self.asyncdo.delete(identifier=identifier)
+        yield self.all.delete(identifier=identifier)
 
     def _findPart(self, identifier, partname, lxmlNode, partXPath):
         matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
