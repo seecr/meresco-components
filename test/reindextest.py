@@ -30,13 +30,13 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
-from meresco.core import be, Observable
+from meresco.core import Observable
 from lxml.etree import tostring
 from escaping import unescapeFilename, escapeFilename
 
 from os.path import join, isdir
 from os import listdir
-from weightless.core import compose
+from weightless.core import compose, be
 
 class ReindexTest(CQ2TestCase):
     def _path(self, subdir):

@@ -24,6 +24,7 @@
 ## end license ##
 
 from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox, Msgbox
+from weightless.core import compose
 from cq2utils import CallTrace, CQ2TestCase
 from lxml.etree import parse, tostring
 from StringIO import StringIO
@@ -43,7 +44,7 @@ class UpdateAdapterTest(CQ2TestCase):
         adapter = UpdateAdapterToMsgbox()
         adapter.addObserver(self.msgbox)
         
-        list(adapter.add(identifier='identifier', partname='partname', data='data'))
+        list(compose(adapter.add(identifier='identifier', partname='partname', data='data')))
         
         self.assertEquals('data', open(join(self.outdir, 'identifier.add')).read()) 
 
@@ -51,7 +52,7 @@ class UpdateAdapterTest(CQ2TestCase):
         adapter = UpdateAdapterToMsgbox()
         adapter.addObserver(self.msgbox)
         
-        list(adapter.delete(identifier='identifier'))
+        list(compose(adapter.delete(identifier='identifier')))
         
         self.assertEquals('', open(join(self.outdir, 'identifier.delete')).read()) 
 

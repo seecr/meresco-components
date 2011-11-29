@@ -37,7 +37,8 @@ from StringIO import StringIO
 from os.path import join
 
 from cq2utils import CQ2TestCase, CallTrace
-from meresco.core import Observable, be
+from weightless.core import be
+from meresco.core import Observable
 from meresco.components.http.utils import CRLF
 from meresco.components import PeriodicDownload
 

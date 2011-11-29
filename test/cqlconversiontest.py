@@ -29,7 +29,8 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
-from meresco.core import Observable, be
+from meresco.core import Observable
+from weightless.core import be
 from cqlparser import parseString, cql2string
 from cqlparser.cqlparser import SEARCH_TERM, SEARCH_CLAUSE, TERM
 

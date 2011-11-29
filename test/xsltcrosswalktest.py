@@ -30,7 +30,8 @@ from cq2utils import CQ2TestCase
 from os.path import join
 from lxml.etree import parse, tostring, _ElementTree
 
-from meresco.core import Observable, be
+from weightless.core import be
+from meresco.core import Observable
 from meresco.components import XsltCrosswalk
 
 xmlCode = """<?xml version="1.0"?>

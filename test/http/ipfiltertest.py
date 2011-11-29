@@ -30,10 +30,10 @@
 from unittest import TestCase
 
 from cq2utils import CallTrace
-from meresco.core import be, Observable
+from meresco.core import Observable
 from meresco.components.http import IpFilter
 
-from weightless.core import compose
+from weightless.core import compose, be
 
 class IpFilterTest(TestCase):
 

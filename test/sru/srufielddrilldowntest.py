@@ -33,11 +33,11 @@ from utils import asyncreturn
 
 from StringIO import StringIO
 
-from meresco.core import be, decorateWith
+from meresco.core import decorateWith
 from meresco.components.facetindex import Response
 from meresco.components.drilldown import SRUFieldDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 
-from weightless.core import compose
+from weightless.core import compose, be
 
 from cqlparser import parseString, cql2string
 

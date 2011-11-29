@@ -29,7 +29,8 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.core import be, Observable
+from weightless.core import be
+from meresco.core import Observable
 from meresco.components import RenameField, TransformFieldValue, FilterField, AddField, Xml2Fields, FilterFieldValue
 from lxml.etree import parse
 from StringIO import StringIO

@@ -44,7 +44,24 @@ class Validate(Observable):
             raise
 
 
-    def unknown(self, *args, **kwargs):
+    def all_unknown(self, message, *args, **kwargs):
+        self._detectAndValidate(*args, **kwargs)
+        yield self.all.unknown(message, *args, **kwargs)
+
+    def do_unknown(self, message, *args, **kwargs):
+        self._detectAndValidate(*args, **kwargs)
+        return self.do.unknown(message, *args, **kwargs)
+
+    def any_unknown(self, message, *args, **kwargs):
+        self._detectAndValidate(*args, **kwargs)
+        response = yield self.any.unknown(message, *args, **kwargs)
+        raise StopIteration(response)
+
+    def call_unknown(self, message, *args, **kwargs):
+        self._detectAndValidate(*args, **kwargs)
+        return self.call.unknown(message, *args, **kwargs)
+
+    def _detectAndValidate(self, *args, **kwargs):
         allArguments = list(args) + kwargs.values()
         for arg in allArguments:
             if type(arg) == _ElementTree:
@@ -53,7 +70,7 @@ class Validate(Observable):
                     exception = ValidateException(formatException(self._schema, arg))
                     self.do.logException(exception)
                     raise exception
-        return self.all.unknown(*args, **kwargs)
+
 
 def assertValid(xmlString, schemaPath):
     schema = XMLSchema(parse(open(schemaPath)))

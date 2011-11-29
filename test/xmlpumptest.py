@@ -29,8 +29,9 @@
 ## end license ##
 
 from StringIO import StringIO
-from meresco.core.observable import Observable, be
+from meresco.core import Observable
 from cq2utils import CallTrace, CQ2TestCase
+from weightless.core import be
 from amara import binderytools
 from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult, _ElementUnicodeResult
 

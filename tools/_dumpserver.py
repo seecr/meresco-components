@@ -36,13 +36,14 @@ for directory in glob('../deps.d/*'):
     path.insert(0, directory)
 path.insert(0, '..')
 
+from weightless.core import be
 from weightless.io import Reactor
 from sys import stdout
 from os.path import abspath, dirname, join, isdir, basename
 from os import makedirs
 from meresco.components.http import ObservableHttpServer
 from meresco.components.sru.srurecordupdate import RESPONSE_XML, DIAGNOSTIC_XML, escapeXml, bind_string
-from meresco.core import Observable, be
+from meresco.core import Observable
 from re import compile
 from traceback import format_exc
 

@@ -33,10 +33,10 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from cqlparser import parseString
-from meresco.core import be, Observable
+from meresco.core import Observable
 from meresco.components.cqlsuggester import CqlSuggester
 from meresco.components.ngram import LevenshteinSuggester
-from weightless.core import compose
+from weightless.core import compose, be
 
 class MockNGramQuery(object):
     def __init__(self, results):

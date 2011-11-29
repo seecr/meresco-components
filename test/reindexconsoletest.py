@@ -28,7 +28,8 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import ReindexConsole
-from meresco.core import be, Observable
+from meresco.core import Observable
+from weightless.core import be
 
 class ReindexConsoleTest(CQ2TestCase):
 

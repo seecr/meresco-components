@@ -27,8 +27,9 @@
 from __future__ import with_statement
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.core import be, Transparent
+from meresco.core import Transparent
 
+from weightless.core import be
 from weightless.io import Reactor
 
 from os.path import join, isfile, basename
@@ -39,8 +40,6 @@ from shutil import rmtree
 from stat import S_IXUSR, S_IRUSR, S_IWUSR
 from time import sleep
 from traceback import format_exc
-
-from threading import Thread
 
 from meresco.components.msgbox import Msgbox
 from meresco.components.msgbox.msgbox import File

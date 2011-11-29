@@ -30,17 +30,17 @@ class UpdateAdapterFromMsgbox(Observable):
     def add(self, identifier, filedata):
         identifier, extension = identifier.rsplit('.', 1)
         if extension == "delete":
-            self.do.delete(identifier=identifier)
+            yield self.all.delete(identifier=identifier)
         elif extension == "add":
-            self.do.add(identifier=identifier, partname=None, filedata=filedata)
+            yield self.all.add(identifier=identifier, partname=None, filedata=filedata)
         else:
             raise ValueError('Expected add or delete as file extension')
 
 class UpdateAdapterToMsgbox(Observable):
 
     def add(self, identifier, data, **kwargs):
-        return self.all.add(identifier='%s.add' % identifier, filedata=data, **kwargs)
+        yield self.all.add(identifier='%s.add' % identifier, filedata=data, **kwargs)
 
     def delete(self, identifier):
-        return self.all.add(identifier='%s.delete' % identifier, filedata='')
+        yield self.all.add(identifier='%s.delete' % identifier, filedata='')
 

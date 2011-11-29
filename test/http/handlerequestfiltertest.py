@@ -29,7 +29,9 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.components.http import HandleRequestFilter
-from meresco.core import be, Observable
+from meresco.core import Observable
+
+from weightless.core import be
 
 class HandleRequestFilterTest(CQ2TestCase):
     def setUp(self):

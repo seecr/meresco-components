@@ -39,6 +39,7 @@ from tempfile import NamedTemporaryFile
 
 from meresco.core import Observable
 from cq2utils import DirectoryWatcher
+from weightless.core import compose
 from weightless.io import Suspend
 from escaping import escapeFilename, unescapeFilename
 
@@ -49,7 +50,7 @@ class Msgbox(Observable):
     supports a standardized mechanism for sending files.
 
     Msgbox monitors its inDirectory for files being moved into it. Each moved in file is
-    read and passed on to the observers of Msgbox using self.do.add(filedata=<File>).
+    read and passed on to the observers of Msgbox using self.all.add(filedata=<File>).
     By default a Msgbox writes an acknowledgment (.ack) file to its outDirectory as
     soon as the 'add' call returns. When an exception was raised an error (.error)
     file is written instead, which contains the full traceback for the error.
@@ -60,7 +61,7 @@ class Msgbox(Observable):
     file.
 
     An asynchronous Msgbox differs from the default synchronous Msgbox in that it doesn't
-    write the .ack file when the self.do.add call returns. Rather, an explicit
+    write the .ack file when the self.all.add call returns. Rather, an explicit
     acknowledgement (or error notification) is expected in the form of a request to
     send an acknowledgement (or error) file (by way of the previously
     described Msgbox.add method).
@@ -131,7 +132,12 @@ class Msgbox(Observable):
         else:
             identifier = unescapeFilename(filename)
             try:
-                self.do.add(identifier=identifier, filedata=File(filepath))
+                composed = compose(self.all.add(identifier=identifier, filedata=File(filepath)))
+                try:
+                    while True:
+                        composed.next()
+                except StopIteration, e:
+                    pass
                 needToAck = self._synchronous and not ackOrError
             except Exception, e:
                 if not self._impliesInputError(e):

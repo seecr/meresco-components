@@ -34,9 +34,9 @@ from cq2utils import CQ2TestCase, CallTrace
 from lxml.etree import parse, tostring
 
 from meresco.components.venturi import Venturi, VenturiException
-from meresco.core import TransactionScope, be, Observable
+from meresco.core import TransactionScope, Observable
 
-from weightless.core import compose
+from weightless.core import compose, be
 
 
 def fromstring(aString):

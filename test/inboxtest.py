@@ -27,8 +27,9 @@
 ## end license ##
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.core import be, Transparent
+from meresco.core import Transparent
 
+from weightless.core import be
 from weightless.io import Reactor
 
 from os.path import join, isfile
