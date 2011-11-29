@@ -28,6 +28,8 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.fields2xmlfields import Fields2XmlFields, generateXml
+from meresco.core import Observable, TransactionScope
+from weightless.core import compose, be
 
 NAMESPACE="http://example.org/namespace"
 
@@ -36,7 +38,7 @@ class Fields2XmlFieldsTest(CQ2TestCase):
         CQ2TestCase.setUp(self)
 
         ctx = CallTrace('CTX')
-        tx = CallTrace('TX')
+        tx = CallTrace('TX', returnValues={'getId': 1234})
         tx.locals = {'id': 'identifier'}
         tx.name = "tsName"
         self.fxf = Fields2XmlFields("tsName", "fields-partname", namespace=NAMESPACE)
@@ -46,9 +48,9 @@ class Fields2XmlFieldsTest(CQ2TestCase):
         self.fxf.addObserver(self.observer)
 
     def testAddField(self):
-        self.fxf.begin()
+        self.fxf.begin(name='tsName')
         self.fxf.addField("key.sub", "value")
-        self.fxf.commit()
+        list(compose(self.fxf.commit(id=1234)))
         self.assertEquals(["add"], [m.name for m in self.observer.calledMethods])
         kwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals("identifier", kwargs['identifier'])
@@ -58,9 +60,9 @@ class Fields2XmlFieldsTest(CQ2TestCase):
             </fields>""" % NAMESPACE, kwargs['data'])
 
     def testAddFieldWithXmlInKeyAndValue(self):
-        self.fxf.begin()
+        self.fxf.begin(name='tsName')
         self.fxf.addField("""<name>"&'""", """<value>"&'""")
-        self.fxf.commit()
+        list(compose(self.fxf.commit(id=1234)))
         self.assertEquals(["add"], [m.name for m in self.observer.calledMethods])
         kwargs = self.observer.calledMethods[0].kwargs
         self.assertEqualsWS("""<fields xmlns="%s">
@@ -68,17 +70,50 @@ class Fields2XmlFieldsTest(CQ2TestCase):
             </fields>""" % NAMESPACE, kwargs['data'])
 
     def testNoCommitWhenAddFieldNotCalled(self):
-        self.fxf.begin()
-        self.fxf.commit()
+        self.fxf.begin(name='tsName')
+        list(compose(self.fxf.commit(id=1234)))
         self.assertEquals([], self.observer.calledMethods)
 
+    def testWorksWithRealTransactionScope(self):
+        intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'])
+        class MockVenturi(Observable):
+            def all_unknown(self, message, *args, **kwargs):
+                self.ctx.tx.locals['id'] = 'an:identifier'
+                yield self.all.unknown(message, *args, **kwargs)
+        class MockMultiFielder(Observable):
+            def add(self, *args, **kwargs):
+                self.do.addField('field.name', 'MyName')
+                self.do.addField('field.name', 'AnotherName')
+                self.do.addField('field.title', 'MyDocument')
+                yield 'ok'
+        mockMultiFielder = MockMultiFielder()
+        root = be(
+            (Observable(),
+                (TransactionScope(transactionName='xmlDocument'),
+                    (MockVenturi(),
+                        (mockMultiFielder,
+                            (Fields2XmlFields(transactionName='xmlDocument', partname='partname'),
+                                (intercept,),
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        list(compose(root.all.add('some', 'arguments')))
+        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
+        method = intercept.calledMethods[0]
+        expectedXml = '<fields><field name="field.name">MyName</field><field name="field.name">AnotherName</field><field name="field.title">MyDocument</field></fields>'
+        self.assertEquals(((), {'identifier': 'an:identifier', 'partname': 'partname', 'data': expectedXml}), (method.args, method.kwargs))
+
     def testSameAddFieldGeneratedTwoTimes(self):
-        self.fxf.begin()
+        self.fxf.begin(name='tsName')
         self.fxf.addField("key.sub", "value")
         self.fxf.addField("key.sub", "othervalue")
         self.fxf.addField("key.sub", "value")
         self.fxf.addField("key.sub", "separatedbyvalue")
-        self.fxf.commit()
+        list(compose(self.fxf.commit(id=1234)))
 
         self.assertEquals(['add'], [m.name for m in self.observer.calledMethods])
         self.assertEqualsWS("""<fields xmlns="%s">
@@ -90,7 +125,7 @@ class Fields2XmlFieldsTest(CQ2TestCase):
 
     def testEmptyNamespace(self):
         ctx = CallTrace('CTX')
-        tx = CallTrace('TX')
+        tx = CallTrace('TX', returnValues={'getId': 1234})
         tx.locals = {'id': 'identifier'}
         tx.name = "tsName"
         fxf = Fields2XmlFields("tsName", "fields-partname")
@@ -99,9 +134,9 @@ class Fields2XmlFieldsTest(CQ2TestCase):
         observer = CallTrace()
         fxf.addObserver(observer)
         
-        fxf.begin()
+        fxf.begin(name='tsName')
         fxf.addField("key.sub", "value")
-        fxf.commit()
+        list(compose(fxf.commit(id=1234)))
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         self.assertEqualsWS("""<fields>
