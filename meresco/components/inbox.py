@@ -25,6 +25,7 @@
 #
 ## end license ##
 from meresco.core import Observable
+from weightless.core import compose
 
 from cq2utils import DirectoryWatcher
 from lxml.etree import parse
@@ -41,7 +42,7 @@ class Inbox(Observable):
     Inbox monitors a directory for files XML files being moved into it.  Each
     file moved into the directory is assumed to be in XML format.  It is read,
     parsed (using lxml) and passed on to the observers of Inbox using
-    self.do.add(identifier=filename, lxmlNode=<parsed xml>). When the add()
+    self.all.add(identifier=filename, lxmlNode=<parsed xml>). When the add()
     calls succeeds, the file is moved to another directory.
 
     Parameters
@@ -97,7 +98,12 @@ class Inbox(Observable):
         errorFilename = join(self._doneDirectory, filename + ".error")
         try:
             lxmlNode = parse(open(join(self._inboxDirectory, filename)))
-            self.do.add(identifier=filename, lxmlNode=lxmlNode)
+            composed = compose(self.all.add(identifier=filename, lxmlNode=lxmlNode))
+            try:
+                while True:
+                    composed.next()
+            except StopIteration, e:
+                pass
         except Exception, e:
             open(errorFilename, 'w').write(format_exc())
 
