@@ -35,28 +35,37 @@ from xml.sax.saxutils import escape as escapeXml
 
 correctNameRe = compile(r'^\w+$')
 
-class Fields2XmlTx(Observable):
-    def __init__(self, resourceManager, partName, namespace=None):
+class Fields2Xml(Observable):
+    def __init__(self, partName, namespace=None):
         Observable.__init__(self)
         if not correctNameRe.match(partName):
             raise Fields2XmlException('Invalid name: "%s"' % partName)
         self._identifier = None
-        self._fields = []
         self._partName = partName
-        self._resourceManager = resourceManager
         self._namespace = namespace
 
-    def addField(self, name, value):
-        self._fields.append((name, value))
+    def beginTransaction(self):
+        raise StopIteration(Fields2Xml.Fields2XmlTx(self, self._partName, self._namespace))
+        yield
 
-    def commit(self):
-        if not self._fields:
-            return
-        ns = self._namespace != None and ' xmlns="%s"' % self._namespace or ''
-        xml = '<%s%s>%s</%s>' % (self._partName, ns, generateXml(self._fields), self._partName)
+    class Fields2XmlTx(object):
+        def __init__(self, resource, partName, namespace):
+            self._fields = []
+            self._partName = partName
+            self._namespace = namespace
+            self._resource = resource
 
-        identifier = self._resourceManager.ctx.tx.locals['id']
-        self._resourceManager.do.add(identifier, self._partName, xml)
+        def addField(self, name, value):
+            self._fields.append((name, value))
+
+        def commit(self):
+            if not self._fields:
+                return
+            ns = self._namespace != None and ' xmlns="%s"' % self._namespace or ''
+            xml = '<%s%s>%s</%s>' % (self._partName, ns, generateXml(self._fields), self._partName)
+
+            identifier = self._resource.ctx.tx.locals['id']
+            yield self._resource.all.add(identifier=identifier, partname=self._partName, data=xml)
 
 def splitName(name):
     result = name.split('.')

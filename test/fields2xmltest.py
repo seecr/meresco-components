@@ -29,112 +29,140 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 
-from meresco.components import Fields2XmlTx
+from meresco.components import Fields2Xml
 from meresco.components.fields2xml import Fields2XmlException, generateXml
+from meresco.core import Observable, TransactionScope, ResourceManager
+from weightless.core import be, compose
 from amara.binderytools import bind_string
 from StringIO import StringIO
 from lxml.etree import parse
 
 class Fields2XmlTest(CQ2TestCase):
     def testOne(self):
-        transaction = CallTrace('Transaction')
-        ctx = CallTrace('CTX')
-        tx = CallTrace('TX')
-        tx.locals = {'id': 'identifier'}
-        transaction.ctx = ctx
-        transaction.ctx.tx = tx
-        transactionDo = CallTrace('TransactionDo')
-        transaction.do = transactionDo
-        
-        f = Fields2XmlTx(transaction, 'extra')
-        f.addField('key.sub', 'value')
-        f.commit()
+        __callstack_var_tx__ = CallTrace('TX')
+        __callstack_var_tx__.locals = {'id': 'identifier'}
 
-        self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
-        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
+        intercept = CallTrace()
+        fields2Xml = Fields2Xml('extra')
+        fields2Xml.addObserver(intercept)
+        def f():
+            f = yield fields2Xml.beginTransaction()
+            yield f
+        f = compose(f()).next()
+        f.addField('key.sub', 'value')
+        list(compose(f.commit()))
+
+        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
+        self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
 
     def testAddNotCalledWhenNoAddFields(self):
-        transaction = CallTrace('Transaction')
-        ctx = CallTrace('CTX')
-        tx = CallTrace('TX')
-        tx.locals = {'id': 'identifier'}
-        transaction.ctx = ctx
-        transaction.ctx.tx = tx
-        transactionDo = CallTrace('TransactionDo')
-        transaction.do = transactionDo
-        
-        f = Fields2XmlTx(transaction, 'extra')
+        intercept = CallTrace()
+        fields2Xml = Fields2Xml('extra')
+        fields2Xml.addObserver(intercept)
+        def f():
+            f = yield fields2Xml.beginTransaction()
+            yield f
+        f = compose(f()).next()
         f.commit()
 
-        self.assertEquals([], [m.name for m in transactionDo.calledMethods])
+        self.assertEquals([], [m.name for m in intercept.calledMethods])
     
     def testSameAddFieldGeneratedTwoTimes(self):
-        transaction = CallTrace('Transaction')
-        ctx = CallTrace('CTX')
-        tx = CallTrace('TX')
-        tx.locals = {'id': 'identifier'}
-        transaction.ctx = ctx
-        transaction.ctx.tx = tx
-        transactionDo = CallTrace('TransactionDo')
-        transaction.do = transactionDo
-        
-        f = Fields2XmlTx(transaction, 'extra')
+        __callstack_var_tx__ = CallTrace('TX')
+        __callstack_var_tx__.locals = {'id': 'identifier'}
+        intercept = CallTrace()
+        fields2Xml = Fields2Xml('extra')
+        fields2Xml.addObserver(intercept)
+        def f():
+            f = yield fields2Xml.beginTransaction()
+            yield f
+        f = compose(f()).next()
         f.addField('key.sub', 'value')
         f.addField('key.sub', 'othervalue')
         f.addField('key.sub', 'value')
         f.addField('key.sub', 'separatedbyvalue')
-        f.commit()
+        list(compose(f.commit()))
 
-        self.assertEquals(['add'], [m.name for m in transactionDo.calledMethods])
-        self.assertEquals(('identifier', 'extra', '<extra><key><sub>value</sub></key><key><sub>othervalue</sub></key><key><sub>value</sub></key><key><sub>separatedbyvalue</sub></key></extra>'), transactionDo.calledMethods[0].args)
-
+        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
+        self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key><key><sub>othervalue</sub></key><key><sub>value</sub></key><key><sub>separatedbyvalue</sub></key></extra>'), intercept.calledMethods[0].kwargs)
         # Filtering of duplicate keys is removed. (Was introduced in 3.4.4)
         # The generated XML will eventually create a LuceneDocument, the sequence of values is important
         # for phrasequeries.
 
+    def testWorksWithRealTransactionScope(self):
+        intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'])
+        class MockVenturi(Observable):
+            def all_unknown(self, message, *args, **kwargs):
+                self.ctx.tx.locals['id'] = 'an:identifier'
+                yield self.all.unknown(message, *args, **kwargs)
+        class MockMultiFielder(Observable):
+            def add(self, *args, **kwargs):
+                self.do.addField('field.name', 'MyName')
+                self.do.addField('field.name', 'AnotherName')
+                self.do.addField('field.title', 'MyDocument')
+                yield 'ok'
+        root = be(
+            (Observable(),
+                (TransactionScope(transactionName="xmlDocument"),
+                    (MockVenturi(),
+                        (MockMultiFielder(),
+                            (ResourceManager("xmlDocument"),
+                                (Fields2Xml(partName="partname"),
+                                    (intercept,),
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        list(compose(root.all.add('some', 'arguments')))
+        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
+        method = intercept.calledMethods[0]
+        expectedXml = "<partname><field><name>MyName</name></field><field><name>AnotherName</name></field><field><title>MyDocument</title></field></partname>"
+        self.assertEquals(((), {'identifier': 'an:identifier', 'partname': 'partname', 'data': expectedXml}), (method.args, method.kwargs))
+
 
     def testPartNameIsDefinedAtInitialization(self):
-        transaction = CallTrace('Transaction')
-        ctx = CallTrace('CTX')        
-        tx = CallTrace('TX')
-        tx.locals = {'id': 'otherIdentifier'}
-        transaction.ctx = ctx
-        transaction.ctx.tx = tx
-        transactionDo = CallTrace('TransactionDo')
-        transaction.do = transactionDo
-        
-        f = Fields2XmlTx(transaction, 'partName')
+        __callstack_var_tx__ = CallTrace('TX')
+        __callstack_var_tx__.locals = {'id': 'otherIdentifier'}
+        intercept = CallTrace()
+        fields2Xml = Fields2Xml('partName')
+        fields2Xml.addObserver(intercept)
+        def f():
+            f = yield fields2Xml.beginTransaction()
+            yield f
+        f = compose(f()).next()
         f.addField('key.sub', 'value')
-        f.commit()
+        list(compose(f.commit()))
         
-        self.assertEquals('otherIdentifier', transactionDo.calledMethods[0].args[0])
-        self.assertEquals('partName', transactionDo.calledMethods[0].args[1])
-        xml = bind_string(transactionDo.calledMethods[0].args[2])
+        self.assertEquals('otherIdentifier', intercept.calledMethods[0].kwargs['identifier'])
+        self.assertEquals('partName', intercept.calledMethods[0].kwargs['partname'])
+        xml = bind_string(intercept.calledMethods[0].kwargs['data'])
         self.assertEquals('partName', str(xml.childNodes[0].localName))
 
     def testNamespace(self):
-        transaction = CallTrace('Transaction')
-        ctx = CallTrace('CTX')         
-        tx = CallTrace('TX')
-        tx.locals = {'id': 'identifier'}
-        transaction.ctx = ctx
-        transaction.ctx.tx = tx  
-        transactionDo = CallTrace('TransactionDo')
-        transaction.do = transactionDo
-        
-        f = Fields2XmlTx(transaction, 'extra', namespace="http://meresco.org/namespace/fields/extra")
+        __callstack_var_tx__ = CallTrace('TX')
+        __callstack_var_tx__.locals = {'id': 'identifier'}
+        intercept = CallTrace()
+        fields2Xml = Fields2Xml('extra', namespace="http://meresco.org/namespace/fields/extra")
+        fields2Xml.addObserver(intercept)
+        def f():
+            f = yield fields2Xml.beginTransaction()
+            yield f
+        f = compose(f()).next()
         f.addField('key.sub', 'value')
-        f.commit()
+        list(compose(f.commit()))
         
-        self.assertEquals(('identifier', 'extra', '<extra xmlns="http://meresco.org/namespace/fields/extra"><key><sub>value</sub></key></extra>'), transactionDo.calledMethods[0].args)
+        self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra xmlns="http://meresco.org/namespace/fields/extra"><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
 
     def testIllegalPartNameRaisesException(self):
-        for name in ['this is wrong', '%%@$%*^$^', '/slash', 'dot.dot']:
+        for partname in ['this is wrong', '%%@$%*^$^', '/slash', 'dot.dot']:
             try:
-                Fields2XmlTx('ignored', name)
-                self.fail('Expected error for ' + name)
+                Fields2Xml(partname)
+                self.fail('Expected error for ' + partname)
             except Fields2XmlException, e:
-                self.assertTrue(name in str(e))
+                self.assertTrue(partname in str(e))
 
     def testGenerateOneKeyXml(self):
         self.assertEquals('<key>value</key>', generateXml([('key','value')]))
