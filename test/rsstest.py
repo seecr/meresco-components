@@ -29,12 +29,13 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
-from utils import asyncreturn
 from amara.binderytools import bind_string
 from urllib import urlencode
 
 from meresco.components.facetindex import Response
 from meresco.components.rss import Rss
+
+from weightless.core import compose
 
 from cqlparser import parseString as parseCql
 
@@ -59,7 +60,10 @@ class RssTest(CQ2TestCase):
     def testNoResults(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
 
         rss = Rss(
             title = 'Test title',
@@ -70,7 +74,7 @@ class RssTest(CQ2TestCase):
         )
         rss.addObserver(observer)
 
-        result = "".join(list(rss.handleRequest(RequestURI='/?query=aQuery')))
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery')))
         self.assertEqualsWS(RSS % '', result)
 
     def testOneResult(self):
@@ -79,7 +83,10 @@ class RssTest(CQ2TestCase):
                 'getRecord': lambda recordId: (g for g in ['<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>']),
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=1, hits=[1]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=1, hits=[1]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
 
         rss = Rss(
             title = 'Test title',
@@ -90,7 +97,7 @@ class RssTest(CQ2TestCase):
         )
         rss.addObserver(observer)
 
-        result = "".join(list(rss.handleRequest(RequestURI='/?query=aQuery')))
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery')))
         self.assertEqualsWS(RSS % """<item>
         <title>Test Title</title>
         <link>Test Identifier</link>
@@ -100,14 +107,17 @@ class RssTest(CQ2TestCase):
     def testError(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
         rss = Rss(
             title = 'Test title',
             description = 'Test description',
             link = 'http://www.example.org',
         )
         rss.addObserver(observer)
-        result = "".join(list(rss.handleRequest(RequestURI='/?query=aQuery%29'))) #%29 == ')'
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery%29'))) #%29 == ')'
 
         xml = bind_string(result[result.index("<?xml"):])
         self.assertEquals('Test title', str(xml.rss.channel.title))
@@ -119,7 +129,7 @@ class RssTest(CQ2TestCase):
             description = 'Test description',
             link = 'http://www.example.org',
         )
-        result = "".join(list(rss.handleRequest(RequestURI='/')))
+        result = "".join(compose(rss.handleRequest(RequestURI='/')))
 
         xml = bind_string(result[result.index("<?xml"):])
         self.assertEquals('ERROR Test title', str(xml.rss.channel.title))
@@ -141,6 +151,7 @@ class RssTest(CQ2TestCase):
         def executeQuery(start, stop, *args, **kwargs):
             response = Response(total=50, hits=range(start, stop))
             raise StopIteration(response)
+            yield
         observer = CallTrace(
             methods={
                 'executeQuery': executeQuery,
@@ -149,7 +160,7 @@ class RssTest(CQ2TestCase):
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         rss.addObserver(observer)
 
-        result = "".join(list(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs))))
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs))))
 
         method = observer.calledMethods[0]
         self.assertEquals('executeQuery', method.name)
@@ -180,47 +191,74 @@ class RssTest(CQ2TestCase):
     def testWebQueryUsage(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
-        result = "".join(rss.handleRequest(RequestURI='/?query=one+two'))
-        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two')))
+        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
 
     def testAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
         rss.addObserver(observer)
 
-        result = "".join(rss.handleRequest(RequestURI='/?query=not+fiets'))
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=not+fiets')))
         
-        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
         self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testEmptyQueryWithAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
         rss.addObserver(observer)
 
-        result = asyncreturn(rss.handleRequest, RequestURI='/?query=')
+        result = ''.join(compose(rss.handleRequest(RequestURI='/?query=')))
         
-        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
+        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
         self.assertCql(parseCql("antiunary"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        observer.exceptions['executeQuery'] = StopIteration(Response(total=0, hits=[]))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer.methods['executeQuery'] = executeQuery
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
-        result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
-        self.assertEquals(["executeQuery(stop=10, cqlAbstractSyntaxTree=<class CQL_QUERY>, sortDescending=None, sortBy=None, start=0)"], [str(m) for m in observer.calledMethods])
-
+        result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2')))
+        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
         self.assertCql(parseCql("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
 
     def testWebQueryIgnoresWrongFilters(self):

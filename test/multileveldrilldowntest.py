@@ -40,11 +40,14 @@ class MultiLevelDrilldownTest(TestCase):
             {'date':[('datelevel1', 10, False)]}
         )
         drilldown = CallTrace('Drilldown')
-        drilldown.returnValues['drilldown'] = iter([('datelevel1', iter([('2008',13),('2007',10)]))])
+        def dd(*args, **kwargs):
+            raise StopIteration(iter([('datelevel1', iter([('2008',13),('2007',10)]))]))
+            yield
+        drilldown.methods['drilldown'] = dd
         multi.addObserver(drilldown)
         observable.addObserver(multi)
 
-        result = list(compose(observable.any.multiLevelDrilldown(bitMatrixRow, ['date'])))
+        result = list(compose(observable.call.multiLevelDrilldown(bitMatrixRow, ['date'])))
 
         self.assertEquals(1, len(drilldown.calledMethods))
         drilldownMethod = drilldown.calledMethods[0]
@@ -69,9 +72,10 @@ class MultiLevelDrilldownTest(TestCase):
             self.assertEquals(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             if 'datelevel2' == levelField:
-                return iter([('datelevel2', iter([('2008',13),('2007',10)][:levelMax]))])
+                raise StopIteration(iter([('datelevel2', iter([('2008',13),('2007',10)][:levelMax]))]))
             else:
-                return iter([('type', iter([('literature',43),('donaldduck',30)][:levelMax]))])
+                raise StopIteration(iter([('type', iter([('literature',43),('donaldduck',30)][:levelMax]))]))
+            yield
         drilldown.drilldown = doDrilldown
         multi.addObserver(drilldown)
 
@@ -95,9 +99,10 @@ class MultiLevelDrilldownTest(TestCase):
             self.assertEquals(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             if levelField == 'yearAndMonth':
-                return iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))])
+                raise StopIteration(iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))]))
             else:
-                return iter([('year', iter([('2008',13),('2003',10),('2007',10)][:levelMax]))])
+                raise StopIteration(iter([('year', iter([('2008',13),('2003',10),('2007',10)][:levelMax]))]))
+            yield
         drilldown.drilldown = doDrilldown
         multi.addObserver(drilldown)
 
@@ -138,9 +143,10 @@ class MultiLevelDrilldownTest(TestCase):
             self.assertEquals(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             if levelField == 'yearAndMonth':
-                return iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))])
+                raise StopIteration(iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))]))
             else:
-                return iter([('year', iter([]))])
+                raise StopIteration(iter([('year', iter([]))]))
+            yield
         drilldown.drilldown = doDrilldown
         multi.addObserver(drilldown)
 
@@ -166,9 +172,10 @@ class MultiLevelDrilldownTest(TestCase):
             self.assertEquals(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, sorted = fieldNamesAndMaxResults[0]
             if levelField == 'yearAndMonth':
-                return iter([('yearAndMonth', iter([]))])
+                raise StopIteration(iter([('yearAndMonth', iter([]))]))
             else:
-                return iter([('year', iter([]))])
+                raise StopIteration(iter([('year', iter([]))]))
+            yield
         drilldown.drilldown = doDrilldown
         multi.addObserver(drilldown)
 
@@ -191,8 +198,8 @@ class MultiLevelDrilldownTest(TestCase):
                 data = sorted(data, cmp=lambda (term0, card0), (term1, card1): cmp(card1, card0))
             if levelMax > 0:
                 data = data[:levelMax]
-            return iter([(levelField, iter(data))])
-
+            raise StopIteration(iter([(levelField, iter(data))]))
+            yield
         drilldown.drilldown = doDrilldown
 
         multi = MultiLevelDrilldown({'date':[('yearAndMonth', 2, False), ('year', 3, True)]})

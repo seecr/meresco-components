@@ -29,7 +29,6 @@
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
-from utils import asyncreturn
 
 from StringIO import StringIO
 
@@ -51,6 +50,7 @@ class SRUFieldDrilldownTest(CQ2TestCase):
                 raise StopIteration(Response(total=5, hits=range(5)))
             else:
                 raise StopIteration(Response(total=10, hits=range(10)))
+            yield
         sruFieldDrilldown = SRUFieldDrilldown()
         observer = CallTrace("observer")
         sruFieldDrilldown.addObserver(observer)
@@ -69,9 +69,15 @@ class SRUFieldDrilldownTest(CQ2TestCase):
     def testDrilldown(self):
         adapter = SRUFieldDrilldown()
         observer = CallTrace("Observer")
-        observer.exceptions["executeQuery"] = StopIteration(Response(total=16, hits=range(16)))
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=16, hits=range(16)))
+            yield
+        observer.methods['executeQuery'] = executeQuery
         adapter.addObserver(observer)
-        result = asyncreturn(adapter.drilldown, 'original', 'term', ['field0', 'field1'])
+        def dd():
+            result = yield adapter.drilldown('original', 'term', ['field0', 'field1'])
+            yield result
+        result = compose(dd()).next()
         self.assertEquals(2, len(observer.calledMethods))
         self.assertEquals("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
         self.assertEquals(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])

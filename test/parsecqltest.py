@@ -30,6 +30,7 @@
 from unittest import TestCase
 from cq2utils import CallTrace
 from meresco.components import ParseCQL
+from weightless.core import compose
 
 class ParseCQLTest(TestCase):
     def testOne(self):
@@ -37,7 +38,7 @@ class ParseCQLTest(TestCase):
         observer = CallTrace('observer')
         s.addObserver(observer)
 
-        s.executeCQLString('term1')
+        list(compose(s.executeCQLString('term1')))
 
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term1')))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))

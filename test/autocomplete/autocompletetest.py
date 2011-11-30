@@ -35,7 +35,10 @@ class AutocompleteTest(CQ2TestCase):
         auto = Autocomplete(path='/some/path', maxresults=50, inputs=[('mainsearchinput', 'drilldown.dc.subject')])
         observer = CallTrace('observer')
         auto.addObserver(observer)
-        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+        def prefixSearch(**kwargs):
+            raise StopIteration([('term0', 1),('term<1>', 3)])
+            yield
+        observer.methods['prefixSearch'] = prefixSearch
 
         head,body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['t'], 'fieldname':['field0']}))).split('\r\n'*2)
 
@@ -51,7 +54,10 @@ class AutocompleteTest(CQ2TestCase):
         auto = Autocomplete(path='/some/path', maxresults=50, inputs=[('mainsearchinput', 'alias')], fieldMapping={'alias': ('field1', 'field2')})
         observer = CallTrace('observer')
         auto.addObserver(observer)
-        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+        def prefixSearch(**kwargs):
+            raise StopIteration([('term0', 1),('term<1>', 3)])
+            yield
+        observer.methods['prefixSearch'] = prefixSearch
 
         head,body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['t'], 'fieldname':['alias']}))).split('\r\n'*2)
 
@@ -67,7 +73,10 @@ class AutocompleteTest(CQ2TestCase):
             )
         observer = CallTrace('observer')
         auto.addObserver(observer)
-        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+        def prefixSearch(**kwargs):
+            raise StopIteration([('term0', 1),('term<1>', 3)])
+            yield
+        observer.methods['prefixSearch'] = prefixSearch
 
         head,body = ''.join(compose(auto.handleRequest(
             path='/path', 
@@ -92,7 +101,10 @@ class AutocompleteTest(CQ2TestCase):
             labelMapping={'author': 'some.field.with.authors'}
             )
         observer = CallTrace('observer')
-        observer.returnValues['prefixSearch'] = [('term0', 1),('term<1>', 3)]
+        def prefixSearch(**kwargs):
+            raise StopIteration([('term0', 1),('term<1>', 3)])
+            yield
+        observer.methods['prefixSearch'] = prefixSearch
         auto.addObserver(observer)
 
         result = ''.join(compose(auto.handleRequest(

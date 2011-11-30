@@ -34,6 +34,8 @@ from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
 from meresco.components.facetindex import Response
 
+from weightless.core import compose
+
 httpResponse = """HTTP/1.0 200 OK
 Content-Type: text/xml; charset=utf-8
 
@@ -146,11 +148,15 @@ Content-Type: text/xml; charset=utf-8
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=['recordId'])
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
 
         self.sruHandler.addObserver(observer)
 
-        result = "".join(self.srw.handleRequest(Body=request))
+        print list(compose(self.srw.handleRequest(Body=request)))
+        result = "".join(compose(self.srw.handleRequest(Body=request)))
 
         self.assertEqualsWS(httpResponse % soapEnvelope % wrappedMockAnswer % ('recordId', 'dc.author = "jones" and  dc.title = "smith"'), result)
 

@@ -69,8 +69,8 @@ class Autocomplete(Observable):
         
         yield httputils.okXml
         yield '<?xml version="1.0" encoding="utf-8"?><root>'
-        for item, count in self.any.prefixSearch(fieldname=fieldname, prefix=prefix,
-                maxresults=self._maxresults):
+        itemCounts = yield self.any.prefixSearch(fieldname=fieldname, prefix=prefix, maxresults=self._maxresults)
+        for item, count in itemCounts:
             escapedItem = escapeXml(item)
             yield """<item count="%s">%s</item>""" % (count, '%s=%s' % (label, escapedItem) if label else escapedItem)
         yield '</root>'

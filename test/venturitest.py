@@ -83,7 +83,7 @@ class VenturiTest(CQ2TestCase):
 
     def testReadFromStorage(self):
         inputEvent = fromstring('<document/>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown'], verbose=True)
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'], verbose=True)
         storage = CallTrace('Storage', ignoredAttributes=['add'])
         storage.returnValues['isAvailable'] = (True, True)
         storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')
@@ -95,7 +95,7 @@ class VenturiTest(CQ2TestCase):
 
     def testCouldHave(self):
         inputEvent = fromstring('<document><one/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'all_unknown', 'any_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
         v = createVenturiHelix([], [('one', '/document/one')], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
@@ -103,7 +103,7 @@ class VenturiTest(CQ2TestCase):
 
     def testCouldHaveInStorage(self):
         inputEvent = fromstring('<document><other/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
         storage = CallTrace('Storage', ignoredAttributes=['add'])
         storage.returnValues['isAvailable'] = (True, True)
         storage.returnValues['getStream'] = StringIO('<one/>')
@@ -115,7 +115,7 @@ class VenturiTest(CQ2TestCase):
 
     def testCouldHaveButDoesnot(self):
         inputEvent = fromstring('<document><other/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
         storage = CallTrace('Storage', ignoredAttributes=['add'])
         storage.exceptions['getStream'] = KeyError('Part not available')
         v = createVenturiHelix([('other', '/document/other')], [('one', '/document/one')], interceptor, storage)
@@ -161,7 +161,7 @@ class VenturiTest(CQ2TestCase):
 
     def testPartInShouldDoesNotExist(self):
         inputEvent = fromstring('<document/>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['begin', 'isAvailable', 'getStream', 'all_unknown', 'any_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['begin', 'isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
         storage = CallTrace('Storage', ignoredAttributes=['begin', 'add'])
         storage.returnValues['isAvailable'] = (False, False)
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor, storage)

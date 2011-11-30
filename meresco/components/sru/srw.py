@@ -79,9 +79,9 @@ class Srw(Observable):
         yield httputils.okXml
 
         try:
-            operation, arguments = self.any._parseArguments(arguments)
+            operation, arguments = self.call._parseArguments(arguments)
             self._srwSpecificValidation(operation, arguments)
-            sruArgs = self.any.parseSruArgs(arguments)
+            sruArgs = self.call.parseSruArgs(arguments)
             arguments.update(sruArgs)
         except SruException, e:
             yield SOAP % DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))

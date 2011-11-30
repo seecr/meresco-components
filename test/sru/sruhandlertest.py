@@ -148,8 +148,14 @@ class SruHandlerTest(CQ2TestCase):
             ('field0', iter([('value0_0', 14)])),
             ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
             ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))]) 
-        observer.exceptions['executeQuery'] = StopIteration(response)
-        observer.exceptions['drilldown'] = StopIteration(drilldownData)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        def drilldown(**kwargs):
+            raise StopIteration(drilldownData)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+        observer.methods['drilldown'] = drilldown
         observer.returnValues['docsetFromQuery'] = "cqltree"
         observer.returnValues['yieldRecord'] = "record"
         observer.returnValues['extraResponseData'] = 'extraResponseData'
@@ -159,7 +165,7 @@ class SruHandlerTest(CQ2TestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-        self.assertEquals(['executeQuery', 'docsetFromQuery', 'drilldown'], [m.name for m in observer.calledMethods][:3])
+        self.assertEquals(['executeQuery', 'docsetFromQuery', 'drilldown'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals('cqltree', observer.calledMethods[2].kwargs['docset'])
         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[2].kwargs['fieldnamesAndMaximums']))
 
@@ -171,7 +177,10 @@ class SruHandlerTest(CQ2TestCase):
             ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
             ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))]) 
         response.drilldownData = drilldownData
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
         observer.returnValues['yieldRecord'] = "record"
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
@@ -190,7 +199,10 @@ class SruHandlerTest(CQ2TestCase):
             yield "Some thing"
         observer.methods["drilldown"] = mockDrilldown
         response = Response(total=100, hits=range(11, 26))
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
         sruHandler = SruHandler()
         sruHandler.addObserver(observer)
         result = "".join(compose(sruHandler.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
@@ -206,7 +218,10 @@ class SruHandlerTest(CQ2TestCase):
     def testNextRecordPosition(self):
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 26))
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
         observer.returnValues['yieldRecord'] = "record"
         observer.returnValues['extraResponseData'] = 'extraResponseData'
         observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
@@ -226,7 +241,10 @@ class SruHandlerTest(CQ2TestCase):
 
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 13))
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
 
         yieldRecordCalls = []
         def yieldRecord(identifier, partname):
@@ -315,7 +333,10 @@ class SruHandlerTest(CQ2TestCase):
 
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 13))
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
 
         yieldRecordCalls = []
         def yieldRecord(identifier, partname):
@@ -421,7 +442,10 @@ class SruHandlerTest(CQ2TestCase):
 
         observer = CallTrace()
         response = Response(total=100, hits=[11])
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
 
         yieldRecordCalls = []
         def yieldRecord(identifier, partname):
@@ -498,7 +522,10 @@ class SruHandlerTest(CQ2TestCase):
         observer = CallTrace('observer')
         sruHandler.addObserver(observer)
         response = Response(total=2, hits=['id0', 'id1'])
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['yieldRecord'] = lambda *args, **kwargs: '<bike/>'
