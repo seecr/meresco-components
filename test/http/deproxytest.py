@@ -103,11 +103,23 @@ class DeproxyTest(TestCase):
             "Host": "1.1.1.1:11111",
             "X-Forwarded-Host": "2.2.2.2:22222,3.3.3.3:33333,4.4.4.4:44444"
         }
-        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), Headers=Headers))
+        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
 
         self.assertEquals(1, len(observer.calledMethods))
         handleRequestCallKwargs = observer.calledMethods[0].kwargs
         self.assertEquals("2.2.2.2:22222", handleRequestCallKwargs['Headers']['Host'])
+        self.assertEquals("22222", handleRequestCallKwargs['port'])
+
+        Headers={
+            "Host": "1.1.1.1:11111",
+            "X-Forwarded-Host": "2.2.2.2,3.3.3.3:33333,4.4.4.4:44444"
+        }
+        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
+
+        self.assertEquals(2, len(observer.calledMethods))
+        handleRequestCallKwargs = observer.calledMethods[1].kwargs
+        self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
+        self.assertEquals("80", handleRequestCallKwargs['port'])
 
     def testDeproxyMustHaveIps(self):
         self.assertRaises(ValueError, Deproxy)
@@ -128,3 +140,4 @@ class DeproxyTest(TestCase):
         handleRequestCallKwargs = observer.calledMethods[0].kwargs
         self.assertEquals("1.1.1.1", handleRequestCallKwargs['Client'][0])
         self.assertEquals({"X-Forwarded-For": "2.2.2.2"}, handleRequestCallKwargs['Headers'])
+
