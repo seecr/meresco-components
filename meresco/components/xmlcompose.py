@@ -56,4 +56,4 @@ class XmlCompose(Observable):
         return self._template % dict(((k, xmlEscape(v)) for k,v in data.items()))
 
     def _getPart(self, recordId, partname):
-        return parse(self.any.getStream(recordId, partname))
+        return parse(self.call.getStream(recordId, partname))

@@ -92,25 +92,23 @@ class Rss(Observable):
             yield "<description>An error occurred '%s'</description>" % xmlEscape(str(e))
             yield """</channel></rss>"""
             raise StopIteration()
-
         yield '<title>%s</title>' % xmlEscape(self._title)
         yield '<description>%s</description>' % xmlEscape(self._description)
         yield '<link>%s</link>' % xmlEscape(self._link)
 
         SRU_IS_ONE_BASED = 1 #And our RSS plugin is closely based on SRU
-        for data in compose(self._yieldResults(
+        yield self._yieldResults(
                 cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                 start=startRecord - SRU_IS_ONE_BASED,
                 stop=startRecord - SRU_IS_ONE_BASED+maximumRecords,
                 sortBy=sortBy,
-                sortDescending=sortDescending )):
-            yield data
+                sortDescending=sortDescending)
 
         yield """</channel>"""
         yield """</rss>"""
 
     def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False, **kwargs):
-        response = yield self.asyncany.executeQuery(
+        response = yield self.any.executeQuery(
             cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
             start=start,
             stop=stop,
@@ -120,4 +118,4 @@ class Rss(Observable):
         )
         total, hits = response.total, response.hits
         for recordId in hits:
-            yield self.any.getRecord(recordId)
+            yield self.call.getRecord(recordId)

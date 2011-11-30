@@ -60,7 +60,7 @@ class PeriodicDownload(Observable):
     def loop(self):
         while True:
             sok = yield self._tryConnect()
-            sok.send(self.any.buildRequest())
+            sok.send(self.call.buildRequest())
             sok.shutdown(SHUT_WR)
             self._reactor.addReader(sok, self._loop.next, prio=self._prio)
             responses = []

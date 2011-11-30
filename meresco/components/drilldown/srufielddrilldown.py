@@ -56,7 +56,7 @@ class SRUFieldDrilldown(Observable):
         drilldownResult = []
         for field in fields:
             cqlString = '(%s) AND %s=%s' % (query, field, term)
-            response = yield self.asyncany.executeQuery(cqlAbstractSyntaxTree=parseCQL(cqlString))
+            response = yield self.any.executeQuery(cqlAbstractSyntaxTree=parseCQL(cqlString))
             drilldownResult.append((field, response.total))
         raise StopIteration(drilldownResult)
 

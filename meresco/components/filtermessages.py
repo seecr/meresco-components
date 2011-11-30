@@ -37,6 +37,10 @@ class FilterMessages(Observable):
         else:
             self._allowedMessage = lambda message: message not in disallowed
 
-    def unknown(self, message, *args, **kwargs):
+    def all_unknown(self, message, *args, **kwargs):
         if self._allowedMessage(message):
-            return self.all.unknown(message, *args, **kwargs)
+            yield self.all.unknown(message, *args, **kwargs)
+
+    def call_unknown(self, message, *args, **kwargs):
+        if self._allowedMessage(message):
+            return self.call.unknown(message, *args, **kwargs)

@@ -41,10 +41,10 @@ class BasicAuthentication(Observable):
             yield REQUEST_AUTHENTICATION_RESPONSE % (self._realm, 'Please give username and password.')
             return
         username, password = self._parseHeader(relevantHeader)
-        if not self.any.isValidLogin(username, password):
+        if not self.call.isValidLogin(username, password):
             yield REQUEST_AUTHENTICATION_RESPONSE % (self._realm, 'Username or password are not valid.')
             return
-        user = self.any.getUser(username)
+        user = self.call.getUser(username)
         yield self.all.handleRequest(Headers=Headers, user=user, *args, **kwargs)
 
     def _parseHeader(self, header):

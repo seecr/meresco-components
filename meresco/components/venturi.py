@@ -68,8 +68,8 @@ class Venturi(Observable):
             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
         if len(matches) == 1:
             return self._nodeOrText2ElementTree(matches[0])
-        if self.any.isAvailable(identifier, partname) == (True, True):
-            return parse(self.any.getStream(identifier, partname))
+        if self.call.isAvailable(identifier, partname) == (True, True):
+            return parse(self.call.getStream(identifier, partname))
         return None
 
     def _nodeOrText2ElementTree(self, nodeOrText):

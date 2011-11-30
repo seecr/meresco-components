@@ -44,7 +44,8 @@ class MultiLevelDrilldown(Observable):
                 raise MultiLevelDrilldownException("No drilldown fields defined for '%s'." % field)
             resultFieldName, resultTermCounts = None, []
             for levelField, maximumCount, sorted in self._multiLevelFields[field]:
-                fieldName, termCounts = self.any.drilldown(docset, [(levelField, maximumCount, sorted)]).next()
+                drilldownResult = yield self.any.drilldown(docset, [(levelField, maximumCount, sorted)])
+                fieldName, termCounts = drilldownResult.next()
                 termCounts = list(termCounts)
                 if len(termCounts) > 0:
                     resultFieldName, resultTermCounts = fieldName, termCounts

@@ -32,9 +32,9 @@ from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
 from meresco.core import Observable, decorate, decorateWith
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+from weightless.core import compose
 
 from cqlparser import parseString as parseCQL
-from weightless.core import compose
 from warnings import warn
 
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
@@ -58,7 +58,7 @@ class SruHandler(Observable):
         drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(x_term_drilldown)
 
         try:
-            response = yield self.asyncany.executeQuery(
+            response = yield self.any.executeQuery(
                 cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                 start=start,
                 stop=start + maximumRecords,
@@ -73,7 +73,7 @@ class SruHandler(Observable):
             if not drilldownData and drilldownFieldnamesAndMaximums is not None:
                 docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
                 if drilldownFieldnamesAndMaximums is not None:
-                    drilldownData = yield self.asyncany.drilldown(
+                    drilldownData = yield self.any.drilldown(
                         docset=docset,
                         fieldnamesAndMaximums=drilldownFieldnamesAndMaximums)
         except Exception, e:

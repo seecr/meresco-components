@@ -238,4 +238,5 @@ class SruParser(Observable):
 </srw:explainResponse>"""
 
     def searchRetrieve(self, *args, **kwargs):
-        return self.any.searchRetrieve(*args, **kwargs)
+        response = yield self.any.searchRetrieve(*args, **kwargs)
+        raise StopIteration(response)
