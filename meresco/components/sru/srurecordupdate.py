@@ -45,9 +45,9 @@ class SRURecordUpdate(Observable):
             if action == prefix + "replace" or action == prefix + "create":
                 record = updateRequest.record
                 recordSchema = str(record.recordSchema)
-                yield self.asyncdo.add(identifier=recordId, partname=recordSchema, amaraNode=record.recordData.childNodes[0])
+                yield self.all.add(identifier=recordId, partname=recordSchema, amaraNode=record.recordData.childNodes[0])
             elif action == prefix + "delete":
-                yield self.asyncdo.delete(recordId)
+                yield self.all.delete(recordId)
             else:
                 raise Exception("Unknown action: " + action)
             answer = RESPONSE_XML % {

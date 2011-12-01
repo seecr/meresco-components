@@ -26,17 +26,18 @@
 
 from cq2utils import CallTrace
 from unittest import TestCase
-from meresco.core import Observable
+from meresco.core import Observable, fakeGenerator
 
 from meresco.components import RewritePartname
 from weightless.core import compose
 
 class RewritePartnameTest(TestCase):
     def testAddPartname(self):
+        @fakeGenerator
+        def add(**kwargs):
+            pass
         observable = Observable()
-        observer = CallTrace('observer')
-        callable = lambda: 42
-        observer.returnValues['add'] = callable
+        observer = CallTrace('observer', methods={'add': add})
         rewrite = RewritePartname('newPartname')
         rewrite.addObserver(observer)
         observable.addObserver(rewrite)
@@ -45,5 +46,5 @@ class RewritePartnameTest(TestCase):
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
-        self.assertEquals([callable], result)
+        self.assertEquals([], result)
         

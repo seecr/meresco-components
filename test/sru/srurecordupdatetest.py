@@ -33,6 +33,7 @@ from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
+from meresco.core import fakeGenerator
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -63,7 +64,10 @@ class SRURecordUpdateTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.sruRecordUpdate = SRURecordUpdate()
-        self.observer = CallTrace("Observer")
+        @fakeGenerator
+        def addOrDelete(*args, **kwargs):
+            pass
+        self.observer = CallTrace("Observer", methods={'add': addOrDelete, 'delete': addOrDelete})
         self.sruRecordUpdate.addObserver(self.observer)
 
     def createRequestBody(self, action=CREATE, recordData="<dc>empty</dc>"):
@@ -126,7 +130,7 @@ class SRURecordUpdateTest(CQ2TestCase):
     def testPassCallableObjectForAdd(self):
         def callable():
             pass
-        self.observer.returnValues['add'] = (f for f in ['a', callable, 'b'])
+        self.observer.returnValues['add'] = (f for f in [callable])
         requestBody = self.createRequestBody(action=REPLACE)
         result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         self.assertTrue(callable in result)
@@ -141,7 +145,7 @@ class SRURecordUpdateTest(CQ2TestCase):
     def testPassCallableObjectForDelete(self):
         def callable():
             pass
-        self.observer.returnValues['delete'] = (f for f in ['a', callable, 'b'])
+        self.observer.returnValues['delete'] = (f for f in [callable])
         requestBody = self.createRequestBody(action=DELETE)
         result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         self.assertTrue(callable in result)

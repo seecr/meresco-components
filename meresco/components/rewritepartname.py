@@ -34,4 +34,4 @@ class RewritePartname(Transparent):
         self._partname = partname
 
     def add(self, identifier, partname, **kwargs):
-        yield self.asyncdo.add(identifier=identifier, partname=self._partname, **kwargs)
+        yield self.all.add(identifier=identifier, partname=self._partname, **kwargs)
