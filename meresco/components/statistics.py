@@ -274,7 +274,7 @@ class AggregatorNode(object):
             if len(q) >= 3:
                 toDo = q[0]
                 q.remove(toDo)
-                toall_Do._aggregate()
+                toDo._aggregate()
 
     def get(self, result, fromTime, toTime):
         if not fromTime and not toTime:

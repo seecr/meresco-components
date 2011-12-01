@@ -83,7 +83,7 @@ class VenturiTest(CQ2TestCase):
 
     def testReadFromStorage(self):
         inputEvent = fromstring('<document/>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'], verbose=True)
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
         storage = CallTrace('Storage', ignoredAttributes=['add'])
         storage.returnValues['isAvailable'] = (True, True)
         storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')

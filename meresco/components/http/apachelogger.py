@@ -29,6 +29,7 @@
 ## end license ##
 
 from meresco.core import Transparent
+from weightless.core import compose
 from time import strftime, gmtime
 from urlparse import urlsplit
 
@@ -46,7 +47,7 @@ class ApacheLogger(Transparent):
         
     def handleRequest(self, *args, **kwargs):
         status = 0
-        for line in self.all.handleRequest(*args, **kwargs):
+        for line in compose(self.all.handleRequest(*args, **kwargs)):
             if callable(line):
                 yield line
                 continue

@@ -25,6 +25,7 @@
 ## end license ##
 
 from meresco.core import Transparent
+from weightless.core import compose
 from xml.sax.saxutils import escape as xmlEscape
 
 class CombineParts(Transparent):
@@ -40,7 +41,7 @@ class CombineParts(Transparent):
 
         substuff = []
         for subpart in self._combinations[partname]:
-            subgenerator = self.all.yieldRecord(identifier=identifier, partname=subpart)
+            subgenerator = compose(self.all.yieldRecord(identifier=identifier, partname=subpart))
             try: 
                 substuff.append((subpart, subgenerator.next(), subgenerator))
             except IOError:
@@ -51,7 +52,8 @@ class CombineParts(Transparent):
         for subpart, firstResult, remaining in substuff:
             yield '<doc:part name="%s">' % xmlEscape(subpart)
             yield firstResult
-            yield remaining
+            for data in remaining:
+                yield data
             yield '</doc:part>'
         yield '</doc:document>'
 

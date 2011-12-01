@@ -29,6 +29,7 @@
 
 from meresco.core import Observable
 from meresco.components import TimedDictionary
+from weightless.core import compose
 from utils import insertHeader
 from hashlib import md5
 from time import time
@@ -73,7 +74,7 @@ class SessionHandler(Observable):
 
         extraHeader = 'Set-Cookie: session%s=%s; path=/' % (self._nameSuffix, sessionid)
 
-        result = self.all.handleRequest(session=session, arguments=arguments, RequestURI=RequestURI, Client=Client, Headers=Headers, *args, **kwargs)
+        result = compose(self.all.handleRequest(session=session, arguments=arguments, RequestURI=RequestURI, Client=Client, Headers=Headers, *args, **kwargs))
 
         for response in insertHeader(result, extraHeader) :
             yield response
