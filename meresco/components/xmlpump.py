@@ -45,17 +45,22 @@ except:
 class Converter(Observable):
     def __init__(self, name=None, fromKwarg=None, toKwarg=None):
         Observable.__init__(self, name=name)
-        if fromKwarg is None:
-            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
 
-    def unknown(self, msg, *args, **kwargs):
+    def all_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        yield self.all.unknown(msg, *newArgs, **newKwargs)
+
+    def do_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        self.do.unknown(msg, *newArgs, **newKwargs)
+
+    def _convertArgs(self, *args, **kwargs):
         if self._fromKwarg is None:
             newArgs = [self._detectAndConvert(arg) for arg in args]
             newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
-            return self.all.unknown(msg, *newArgs, **newKwargs)
-
+            return newArgs, newKwargs
         try:
             oldvalue = kwargs[self._fromKwarg]
         except KeyError:
@@ -63,22 +68,10 @@ class Converter(Observable):
         else:
             del kwargs[self._fromKwarg]
             kwargs[self._toKwarg] = self._convert(oldvalue)
-
-        return self.all.unknown(msg, *args, **kwargs)
+        return args, kwargs
 
     def _convert(self, anObject):
         raise NotImplementedError()
-
-    def _canConvert(self, anObject):
-        "deprecated"
-        raise NotImplementedError()
-
-    def _detectAndConvert(self, anObject):
-        "deprecated"
-        if self._canConvert(anObject):
-            return self._convert(anObject)
-        return anObject
-
 
 xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
 def isXmlString(anObject):

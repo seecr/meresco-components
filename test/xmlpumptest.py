@@ -31,7 +31,7 @@
 from StringIO import StringIO
 from meresco.core import Observable
 from cq2utils import CallTrace, CQ2TestCase
-from weightless.core import be
+from weightless.core import be, compose
 from amara import binderytools
 from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult, _ElementUnicodeResult
 
@@ -108,7 +108,7 @@ class XmlPumpTest(CQ2TestCase):
         amara2lxml = Amara2Lxml(fromKwarg='amaraNode', toKwarg='lxmlNode')
         amara2lxml.addObserver(Observer())
         amaraNode = binderytools.bind_string('<a><b>“c</b></a>')
-        list(amara2lxml.unknown('ape', amaraNode=amaraNode))
+        list(compose(amara2lxml.all_unknown('ape', amaraNode=amaraNode)))
         self.assertEquals(_ElementTree, type(self.lxmlNode))
         self.assertEquals('<a><b>“c</b></a>', tostring(self.lxmlNode, encoding='utf-8'))
 
@@ -119,7 +119,7 @@ class XmlPumpTest(CQ2TestCase):
         lxml2amara = Lxml2Amara(fromKwarg='lxmlNode', toKwarg='amaraNode')
         lxml2amara.addObserver(Observer())
         lxmlNode = parse(StringIO('<a><b>“c</b></a>'))
-        list(lxml2amara.unknown('ape', lxmlNode=lxmlNode))
+        list(compose(lxml2amara.all_unknown('ape', lxmlNode=lxmlNode)))
         self.assertEquals('<a><b>“c</b></a>', self.amaraNode.xml())
 
     def testXmlParseAmaraRespondsToEveryMessage(self):
