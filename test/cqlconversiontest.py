@@ -48,11 +48,6 @@ class CQLConversionTest(CQ2TestCase):
         self.assertEquals('whatever', observer.calledMethods[0].name)
         self.assertEquals({'cqlAst': parseString('anotherQuery')}, observer.calledMethods[0].kwargs)
 
-    def testCQLCanConvert(self):
-        c = CQLConversion(lambda ast: ast, fromKwarg="cqlAst")
-        self.assertTrue(c._canConvert(parseString('field = value')))
-        self.assertFalse(c._canConvert('other object'))
-
     def testCQLConvert(self):
         converter = CallTrace('Converter')
         converter.returnValues['convert'] = parseString('ast')
@@ -64,7 +59,7 @@ class CQLConversionTest(CQ2TestCase):
         ast = parseString('field=value')
         modifier = CallTrace('SearchClauseModifier')
         conversion = CqlSearchClauseConversion(lambda node: False, modifier.modify, fromKwarg="cqlAst")
-        result = conversion._detectAndConvert(ast)
+        result = conversion._convert(ast)
         self.assertEquals('field=value', cql2string(result))
         self.assertEquals(0, len(modifier.calledMethods))
 
@@ -76,7 +71,7 @@ class CQLConversionTest(CQ2TestCase):
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
-        result = conversion._detectAndConvert(ast)
+        result = conversion._convert(ast)
         self.assertEquals('newvalue', cql2string(result))
 
     def testReplaceSubtree(self):
@@ -86,7 +81,7 @@ class CQLConversionTest(CQ2TestCase):
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
-        result = conversion._detectAndConvert(ast)
+        result = conversion._convert(ast)
         self.assertEquals('field1=value1 AND newvalue', cql2string(result))
 
     def testReplacementMustBeSearchClause(self):
@@ -94,7 +89,7 @@ class CQLConversionTest(CQ2TestCase):
         canModify = lambda node: True
         modify = lambda node: TERM('wrong')
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
-        self.assertRaises(AssertionError, conversion._detectAndConvert, ast)
+        self.assertRaises(AssertionError, conversion._convert, ast)
 
     def testMultipleSearchClauseReplacements(self):
         ast = parseString('term1 AND term2 AND term3')

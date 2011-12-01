@@ -28,22 +28,13 @@
 #
 ## end license ##
 
-from meresco.core.observable import Observable
+from meresco.core import Observable
 from amara.binderytools import bind_string
-from amara.bindery import is_element
-from lxml.etree import parse, _ElementTree, tostring, _XSLTResultTree
-from cStringIO import StringIO
-from re import compile
-from warnings import warn
-
-try:
-    from lxml.etree import _ElementStringResult, _ElementUnicodeResult
-except:
-    _ElementStringResult = str
-    _ElementUnicodeResult = unicode
+from lxml.etree import parse, tostring
+from StringIO import StringIO
 
 class Converter(Observable):
-    def __init__(self, name=None, fromKwarg=None, toKwarg=None):
+    def __init__(self, fromKwarg, toKwarg=None, name=None):
         Observable.__init__(self, name=name)
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
@@ -57,10 +48,6 @@ class Converter(Observable):
         self.do.unknown(msg, *newArgs, **newKwargs)
 
     def _convertArgs(self, *args, **kwargs):
-        if self._fromKwarg is None:
-            newArgs = [self._detectAndConvert(arg) for arg in args]
-            newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
-            return newArgs, newKwargs
         try:
             oldvalue = kwargs[self._fromKwarg]
         except KeyError:
@@ -73,59 +60,31 @@ class Converter(Observable):
     def _convert(self, anObject):
         raise NotImplementedError()
 
-xmlStringRegexp = compile(r'(?s)^\s*<.*>\s*$')
-def isXmlString(anObject):
-    return type(anObject) in [str, _ElementStringResult, unicode, _ElementUnicodeResult] and xmlStringRegexp.match(anObject)
-
 class XmlParseAmara(Converter):
-    def _canConvert(self, anObject):
-        return isXmlString(anObject)
-
     def _convert(self, anObject):
         return bind_string(anObject.encode('UTF-8')).childNodes[0]
 
 class XmlPrintAmara(Converter):
-    def _canConvert(self, anObject):
-        return is_element(anObject)
-
     def _convert(self, anObject):
         return anObject.xml()
 
 class FileParseLxml(Converter):
-    def _canConvert(self, anObject):
-        return hasattr(anObject, 'read') and hasattr(anObject, 'readline')
-
     def _convert(self, anObject):
         return parse(anObject)
 
 class XmlParseLxml(Converter):
-    def _canConvert(self, anObject):
-        return isXmlString(anObject)
-
     def _convert(self, anObject):
         return parse(StringIO(anObject.encode('UTF-8')))
         
 class XmlPrintLxml(Converter):
-    def _canConvert(self, anObject):
-        return type(anObject) == _ElementTree
-
     def _convert(self, anObject):
         return tostring(anObject, pretty_print = True, encoding="UTF-8")
 
 class Amara2Lxml(Converter):
-    def _canConvert(self, anObject):
-        return is_element(anObject)
-
     def _convert(self, anObject):
         return parse(StringIO(anObject.xml()))
 
 class Lxml2Amara(Converter):
-    def _canConvert(self, anObject):
-        return type(anObject) in [_ElementTree, _XSLTResultTree]
-
     def _convert(self, anObject):
         return bind_string(tostring(anObject, encoding="UTF-8")).childNodes[0]
 
-# backwards compatible
-XmlInflate = XmlParseAmara
-XmlDeflate = XmlPrintAmara

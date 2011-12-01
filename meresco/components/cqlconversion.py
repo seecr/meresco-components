@@ -33,12 +33,9 @@ from cqlparser.cqlparser import CQLAbstractSyntaxNode
 from cqlparser import CqlVisitor
 
 class CQLConversion(Converter):
-    def __init__(self, astConversion, name=None, fromKwarg=None, toKwarg=None):
+    def __init__(self, astConversion, fromKwarg, toKwarg=None, name=None):
         Converter.__init__(self, name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
         self._astConversion = astConversion
-
-    def _canConvert(self, anObject):
-        return isinstance(anObject, CQLAbstractSyntaxNode)
 
     def _convert(self, cqlAst):
         return self._astConversion(cqlAst)
