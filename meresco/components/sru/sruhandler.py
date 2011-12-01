@@ -68,14 +68,6 @@ class SruHandler(Observable):
                 **kwargs)
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)
-            # If drilldownData is not found on response object but drilldownFieldnamesAndMaximums 
-            # is set assume Meresco-Lucene is used, so do an extra Meresco-Lucene style drilldown call
-            if not drilldownData and drilldownFieldnamesAndMaximums is not None:
-                docset = self.any.docsetFromQuery(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree)
-                if drilldownFieldnamesAndMaximums is not None:
-                    drilldownData = yield self.any.drilldown(
-                        docset=docset,
-                        fieldnamesAndMaximums=drilldownFieldnamesAndMaximums)
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return

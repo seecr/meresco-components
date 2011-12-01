@@ -141,34 +141,6 @@ class SruHandlerTest(CQ2TestCase):
         result = "".join(sruHandler._writeExtraResponseData(drilldownData=drilldownData, **arguments))
         self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.org/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
 
-    def testMerescoLuceneDrilldown(self):
-        observer = CallTrace()
-        response = Response(total=100, hits=range(11, 26))
-        drilldownData = iter([
-            ('field0', iter([('value0_0', 14)])),
-            ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
-            ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))]) 
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        def drilldown(**kwargs):
-            raise StopIteration(drilldownData)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-        observer.methods['drilldown'] = drilldown
-        observer.returnValues['docsetFromQuery'] = "cqltree"
-        observer.returnValues['yieldRecord'] = "record"
-        observer.returnValues['extraResponseData'] = 'extraResponseData'
-        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
-
-        component = SruHandler()
-        component.addObserver(observer)
-
-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-        self.assertEquals(['executeQuery', 'docsetFromQuery', 'drilldown'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        self.assertEquals('cqltree', observer.calledMethods[2].kwargs['docset'])
-        self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[2].kwargs['fieldnamesAndMaximums']))
-
     def testDrilldownResultInExecuteQuery(self):
         observer = CallTrace()
         response = Response(total=100, hits=range(11, 26))
@@ -191,29 +163,6 @@ class SruHandlerTest(CQ2TestCase):
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
         self.assertEquals(['executeQuery', 'yieldRecord'], [m.name for m in observer.calledMethods][:2])
         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
-
-    def testDrilldownCallRaisesAnError(self):
-        observer = CallTrace()
-        def mockDrilldown(*args, **kwargs):
-            raise Exception("Some Exception")
-            yield "Some thing"
-        observer.methods["drilldown"] = mockDrilldown
-        response = Response(total=100, hits=range(11, 26))
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-        sruHandler = SruHandler()
-        sruHandler.addObserver(observer)
-        result = "".join(compose(sruHandler.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-
-        expected = """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
-<srw:version>1.1</srw:version><srw:numberOfRecords>0</srw:numberOfRecords><srw:diagnostics><diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
-<uri>info://srw/diagnostics/1/48</uri>
-<details>Query Feature Unsupported</details>
-<message>Some Exception</message>
-</diagnostic></srw:diagnostics></srw:searchRetrieveResponse>"""
-        self.assertEqualsWS(expected, result)
 
     def testNextRecordPosition(self):
         observer = CallTrace()
