@@ -47,11 +47,11 @@ class MockNGramQuery(object):
 
 class Interceptor(Observable):
     def suggestionsFor(self, *args, **kwargs):
-        result = yield self.asyncany.suggestionsFor(*args, **kwargs)
+        result = yield self.any.suggestionsFor(*args, **kwargs)
         yield result
 
     def suggestForCql(self, *args, **kwargs):
-        result = yield self.asyncany.suggestForCql(*args, **kwargs)
+        result = yield self.any.suggestForCql(*args, **kwargs)
         yield result
 
 class CqlSuggesterTest(TestCase):

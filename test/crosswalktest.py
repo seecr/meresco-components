@@ -39,6 +39,7 @@ from os import remove
 from meresco.components import Crosswalk
 from meresco.components.crosswalk import rewriteRules
 from meresco.components.xml_generic import Validate, __file__ as xml_genericpath
+from weightless.core import compose
 from os.path import join, dirname, abspath
 
 def readRecord(name):
@@ -55,7 +56,7 @@ class CrosswalkTest(CQ2TestCase):
         self.validate.addObserver(self.observer)
 
     def testOne(self):
-        list(self.crosswalk.unknown('crosswalk', 'id', 'metadata', theXmlRecord=parse(readRecord('imsmd_v1p2-1.xml'))))
+        list(compose(self.crosswalk.all_unknown('crosswalk', 'id', 'metadata', theXmlRecord=parse(readRecord('imsmd_v1p2-1.xml')))))
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals(2, len(self.observer.calledMethods[0].args))
         arguments = self.observer.calledMethods[0].args
@@ -63,17 +64,16 @@ class CrosswalkTest(CQ2TestCase):
         self.assertEquals("metadata", arguments[1])
 
     def testValidate(self):
-        list(self.validate.unknown('methodname', 'id', 'metadata', parse(readRecord('lom-cc-nbc.xml'))))
-
+        list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('lom-cc-nbc.xml')))))
         try:
-            list(self.validate.unknown('methodname', 'id', 'metadata', parse(readRecord('imsmd_v1p2-1.xml'))))
+            list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('imsmd_v1p2-1.xml')))))
             self.fail('must raise exception')
         except Exception, e:
             self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://dpc.uba.uva.nl/schema/lom/triplel}lom': No matching global declaration available for the validation root." in str(e), str(e))
 
     def testTripleLExample(self):
         try:
-            self.crosswalk.unknown('methodname', 'id', 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))
+            list(compose(self.crosswalk.all_unknown('methodname', 'id', 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
         except Exception, e:
             message = readRecord('triple-lrecord.xml').read()
             for n, line in enumerate(message.split('\n')):
@@ -81,7 +81,7 @@ class CrosswalkTest(CQ2TestCase):
             raise
 
     def testNormalize(self):
-        list(self.crosswalk.unknown('add', None, 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml'))))
+        list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertFalse('2006-11-28 19:00' in tostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
 

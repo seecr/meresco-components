@@ -29,13 +29,14 @@
 from cq2utils import CQ2TestCase, CallTrace
 
 from meresco.components.http import PathFilter
+from weightless.core import compose
 
 class PathFilterTest(CQ2TestCase):
     def testSimplePath(self):
         f = PathFilter('/path')
         interceptor = CallTrace('Interceptor')
         f.addObserver(interceptor)
-        list(f.handleRequest(path='/path', otherArgument='value'))
+        list(compose(f.handleRequest(path='/path', otherArgument='value')))
         self.assertEquals(1, len(interceptor.calledMethods))
         self.assertEquals('handleRequest', interceptor.calledMethods[0].name)
         self.assertEquals({'path':'/path', 'otherArgument':'value'}, interceptor.calledMethods[0].kwargs)
@@ -44,21 +45,21 @@ class PathFilterTest(CQ2TestCase):
         f = PathFilter('/path')
         interceptor = CallTrace('Interceptor')
         f.addObserver(interceptor)
-        list(f.handleRequest(path='/other/path'))
+        list(compose(f.handleRequest(path='/other/path')))
         self.assertEquals(0, len(interceptor.calledMethods))
 
     def testPaths(self):
         f = PathFilter(['/path', '/other/path'])
         interceptor = CallTrace('Interceptor')
         f.addObserver(interceptor)
-        list(f.handleRequest(path='/other/path'))
+        list(compose(f.handleRequest(path='/other/path')))
         self.assertEquals(1, len(interceptor.calledMethods))
 
     def testExcludingPaths(self):
         f = PathFilter('/path', excluding=['/path/not/this'])
         interceptor = CallTrace('Interceptor')
         f.addObserver(interceptor)
-        list(f.handleRequest(path='/path/not/this/path'))
+        list(compose(f.handleRequest(path='/path/not/this/path')))
         self.assertEquals(0, len(interceptor.calledMethods))
-        list(f.handleRequest(path='/path/other'))
+        list(compose(f.handleRequest(path='/path/other')))
         self.assertEquals(1, len(interceptor.calledMethods))

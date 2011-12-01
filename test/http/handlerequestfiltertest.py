@@ -31,7 +31,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.http import HandleRequestFilter
 from meresco.core import Observable
 
-from weightless.core import be
+from weightless.core import be, compose
 
 class HandleRequestFilterTest(CQ2TestCase):
     def setUp(self):
@@ -55,7 +55,7 @@ class HandleRequestFilterTest(CQ2TestCase):
     def testPasses(self):
         self.result = True
         inputKwargs = dict(path='path', Method='GET')
-        list(self.dna.all.handleRequest(**inputKwargs))
+        list(compose(self.dna.all.handleRequest(**inputKwargs)))
 
         self.assertEquals([('handleRequest', inputKwargs)], [(m.name, m.kwargs) for m in self.observer.calledMethods])
         self.assertEquals([inputKwargs], self.usedKwargs)
@@ -64,7 +64,7 @@ class HandleRequestFilterTest(CQ2TestCase):
         """Fly you fools!"""
         self.result = False
         inputKwargs = dict(path='path', Method='GET')
-        list(self.dna.all.handleRequest(**inputKwargs))
+        list(compose(self.dna.all.handleRequest(**inputKwargs)))
 
         self.assertEquals([], [m.name for m in self.observer.calledMethods])
         self.assertEquals([inputKwargs], self.usedKwargs)

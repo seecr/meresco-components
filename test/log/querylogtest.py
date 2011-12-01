@@ -35,6 +35,8 @@ from meresco.components.log.directorylog import NR_OF_FILES_KEPT
 
 from meresco.core import Observable
 
+from weightless.core import compose
+
 class QueryLogTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
@@ -50,7 +52,7 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')))
 
         self.assertEquals('123', result)
         self.assertEquals(['handleRequest'], [m.name for m in observer.calledMethods])
@@ -66,7 +68,7 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')))
 
         self.assertEquals(2, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
 
@@ -74,7 +76,7 @@ class QueryLogTest(CQ2TestCase):
         observer= CallTrace('observer')
         observer.returnValues['handleRequest'] = (f for f in ['1', lambda: None,'3'])
         self.queryLog.addObserver(observer)
-        list(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        list(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')))
 
         self.assertEquals(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
         
@@ -82,10 +84,10 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')))
         self._timeNow += 24 * 60 *60
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')))
 
         self.assertEquals(['2009-11-02-query.log', '2009-11-03-query.log'], sorted(listdir(self.tempdir)))
 
@@ -93,7 +95,7 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/not/included', otherArg='value'))
+        result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/not/included', otherArg='value')))
 
         self.assertEquals('123', result)
         self.assertEquals(0, len(listdir(self.tempdir)))
@@ -103,7 +105,7 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru/extended/path', otherArg='value'))
+        ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru/extended/path', otherArg='value')))
         self.assertEquals(1, len(listdir(self.tempdir)))
         
     def testLogDirCreated(self):
@@ -119,7 +121,7 @@ class QueryLogTest(CQ2TestCase):
                 self.ctx.queryArguments.update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
                 yield 'result'
         self.queryLog.addObserver(HandleRequestObserver())
-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')))
         self.assertEquals('result', result)
         self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 

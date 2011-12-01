@@ -29,6 +29,7 @@ from unittest import TestCase
 from meresco.core import Observable
 
 from meresco.components import RewritePartname
+from weightless.core import compose
 
 class RewritePartnameTest(TestCase):
     def testAddPartname(self):
@@ -40,7 +41,7 @@ class RewritePartnameTest(TestCase):
         rewrite.addObserver(observer)
         observable.addObserver(rewrite)
 
-        result = list(observable.all.add(identifier='identifier', partname='oldPartname', data='data'))
+        result = list(compose(observable.all.add(identifier='identifier', partname='oldPartname', data='data')))
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)

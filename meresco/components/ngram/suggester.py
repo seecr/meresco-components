@@ -52,7 +52,7 @@ class _Suggestion(Observable):
         """
         word = unicode(word)
         fieldname = unicode(fieldname) if fieldname else None
-        candidates = yield self.asyncany.executeNGramQuery(word, self._samples, fieldname=fieldname)
+        candidates = yield self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
         results = sorted(candidates, key=lambda term: self.sortKey(term, word, fieldname))
 
         inclusive = 1 if results and results[0] == word else 0

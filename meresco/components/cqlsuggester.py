@@ -35,5 +35,6 @@ class CqlSuggester(Observable) :
     def suggestForCql(self, cqlAST) :
         termlist = getAllTerms(cqlAST)
         for term in termlist:
-            return self.asyncany.suggestionsFor(term)
+            suggestions = yield self.any.suggestionsFor(term)
+            raise StopIteration(suggestions)
            

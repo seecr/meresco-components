@@ -73,10 +73,10 @@ class Crosswalk(Observable):
             return self.convert(anObject)
         return anObject
 
-    def unknown(self, method, *args, **kwargs):
+    def all_unknown(self, method, *args, **kwargs):
         newArgs = [self._detectAndConvert(arg) for arg in args]
         newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
-        return self.all.unknown(method, *newArgs, **newKwargs)
+        yield self.all.unknown(method, *newArgs, **newKwargs)
 
     def convert(self, lxmlNode):
         if type(lxmlNode) == _ElementTree:
