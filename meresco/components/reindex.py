@@ -74,7 +74,7 @@ class Reindex(Observable):
         batch = []
         identifiersFound = False
 
-        for identifier in self.any.listIdentifiers(self._partName):
+        for identifier in self.call.listIdentifiers(self._partName):
             batch.append(escapeFilename(identifier))
             if len(batch) == batchSize:
                 identifiersFound = self._writeBatch(sessionDirectory, currentBatch, batch)
@@ -104,7 +104,7 @@ class Reindex(Observable):
 
         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
             try:
-                yield self.asyncdo.addDocumentPart(identifier=unescapeFilename(identifier), partname='ignoredName', lxmlNode=EMPTYDOC)
+                yield self.all.addDocumentPart(identifier=unescapeFilename(identifier), partname='ignoredName', lxmlNode=EMPTYDOC)
             except Exception, e:
                 yield '\n!error processing "%s": %s' % (identifier, str(e))
                 return
