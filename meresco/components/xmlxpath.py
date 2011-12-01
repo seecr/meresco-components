@@ -54,7 +54,15 @@ class XmlXPath(Observable):
         self._namespacesMap = oftenUsedNamespaces.copy()
         self._namespacesMap.update(namespaceMap or {})
 
-    def unknown(self, msg, *args, **kwargs):
+    def do_unknown(self, msg, *args, **kwargs):
+        for newArgs, newKwargs in self._convertArgs(*args, **kwargs):
+            self.do.unknown(msg, *newArgs, **newKwargs)
+
+    def all_unknown(self, msg, *args, **kwargs):
+        for newArgs, newKwargs in self._convertArgs(*args, **kwargs):
+            yield self.all.unknown(msg, *newArgs, **newKwargs)
+
+    def _convertArgs(self, *args, **kwargs):
         changeTheseArgs = [(position,arg) for position,arg in enumerate(args) if type(arg) == ElementTreeType]
         changeTheseKwargs = [(key,value) for key,value in kwargs.items() if type(value) == ElementTreeType]
         assert len(changeTheseArgs) + len(changeTheseKwargs) <= 1, 'Can only handle one ElementTree in argument list.'
@@ -64,15 +72,15 @@ class XmlXPath(Observable):
             for newTree in self._findNewTree(elementTree):
                 newArgs = [arg for arg in args]
                 newArgs[position] = newTree
-                yield self.all.unknown(msg, *newArgs, **kwargs)
+                yield newArgs, kwargs
         elif changeTheseKwargs:
             key, elementTree = changeTheseKwargs[0]
             for newTree in self._findNewTree(elementTree):
                 newKwargs = kwargs.copy()
                 newKwargs[key] = newTree
-                yield self.all.unknown(msg, *args, **newKwargs)
+                yield args, newKwargs
         else:
-            yield self.all.unknown(msg, *args, **kwargs)
+            yield args, kwargs
 
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:

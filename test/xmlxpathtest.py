@@ -31,7 +31,7 @@
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.core import Observable
 
-from weightless.core import be
+from weightless.core import be, compose
 
 from meresco.components import XmlXPath, XmlParseLxml
 from meresco.components.xmlxpath import lxmlElementUntail
@@ -53,23 +53,6 @@ class XmlXPathTest(CQ2TestCase):
                 )
             )
         )
-        strm = StringIO()
-        sys.stderr = strm
-        try:
-            self.observableWithoutKwarg = be(
-                (Observable(),
-                    (XmlParseLxml(),
-                        (XmlXPath(xpathList, nsMap),
-                            (self.observer, ),
-                        )
-                    )
-                )
-            )
-        finally:
-            sys.stderr = sys.__stderr__
-            msg = strm.getvalue()
-            if msg:
-                self.assertTrue('DeprecationWarning: This use of XmlParseLxml is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument.\n  warn("This use of %s is deprecated. Specify \'fromKwarg\' and \'toKwarg\' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)\n' in msg, msg)
 
     def testSimpleXPath(self):
         self.createXmlXPath(['/root/path'], {})
@@ -95,14 +78,14 @@ class XmlXPathTest(CQ2TestCase):
     def testElementInKwargs(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observableWithoutKwarg.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
+        self.observable.do.aMethod('otherArgument', data='<root><path><to>me</to></path></root>', otherKeyword='okay')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
         self.assertEquals('aMethod', method.name)
         self.assertEquals(1, len(method.args))
-        self.assertEquals(set(['aKeyword', 'otherKeyword']), set(method.kwargs.keys()))
-        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['aKeyword']))
+        self.assertEquals(set(['otherKeyword', 'lxmlNode']), set(method.kwargs.keys()))
+        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
 
     def testNoElementInArgumentsPassesOn(self):
         self.createXmlXPath(['/root/path'], {})
@@ -157,13 +140,13 @@ class XmlXPathTest(CQ2TestCase):
     def testXPathWithNoResults(self):
         self.createXmlXPath(['/does/not/exist'], {})
 
-        self.observableWithoutKwarg.do.aMethod("""<some><element>data</element></some>""")
+        self.observable.do.aMethod(data="""<some><element>data</element></some>""")
         self.assertEquals(0, len(self.observer.calledMethods))
 
     def testOnlyOneXMLAllowed(self):
         self.createXmlXPath('/root', {})
         try:
-            self.observableWithoutKwarg.do.aMethod("<somexml/>", data="<otherxml/>")
+            self.observable.do.aMethod(parse(StringIO("<somexml/>")), data="<otherxml/>")
             self.fail()
         except AssertionError, e:
             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
@@ -171,7 +154,7 @@ class XmlXPathTest(CQ2TestCase):
     def testDoNotChangeArgs(self):
         xmlXPath = XmlXPath(['/a'])
         arg = parse(StringIO('<a>a</a>'))
-        xmlXPath.unknown('message', arg)
+        list(compose(xmlXPath.all_unknown('message', arg)))
         self.assertEquals('<a>a</a>', tostring(arg))
 
     def testNamespaces(self):
@@ -196,12 +179,12 @@ class XmlXPathTest(CQ2TestCase):
     def testFindUsingMultipleXPaths(self):
         self.createXmlXPath(['/does/not/exist', '/a/b', '/a/b/c'], {})
 
-        self.observableWithoutKwarg.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
+        self.observable.do.test(data='<a><b><c>one</c></b><b><d>two</d></b></a>')
 
         self.assertEquals(3, len(self.observer.calledMethods))
         allResults = []
         for method in self.observer.calledMethods:
-            allResults.append(method.args[0])
+            allResults.append(method.kwargs['lxmlNode'])
         self.assertEqualsWS('<b><c>one</c></b>', tostring(allResults[0]))
         self.assertEqualsWS('<b><d>two</d></b>', tostring(allResults[1]))
         self.assertEqualsWS('<c>one</c>', tostring(allResults[2]))
@@ -209,24 +192,18 @@ class XmlXPathTest(CQ2TestCase):
     def testTestWithCondition(self):
         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
 
-        self.observableWithoutKwarg.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
+        self.observable.do.test(data='<a><b>zero</b><c>one</c><d>two</d></a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        allResults = []
-        for method in self.observer.calledMethods:
-            allResults.append(method.args[0])
-        self.assertEqualsWS('<d>two</d>', tostring(allResults[0]))
+        self.assertEqualsWS('<d>two</d>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
 
     def testTestWithConditionAndNS(self):
         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
 
-        self.observableWithoutKwarg.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
+        self.observable.do.test(data='<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        allResults = []
-        for method in self.observer.calledMethods:
-            allResults.append(method.args[0])
-        self.assertEqualsWS('two', allResults[0].xpath("text()")[0])
+        self.assertEqualsWS('two', self.observer.calledMethods[0].kwargs['lxmlNode'].xpath("text()")[0])
 
     def testXPathReturnsString(self):
         xpath = XmlXPath(['/a/t/text()'])
@@ -264,7 +241,7 @@ class XmlXPathTest(CQ2TestCase):
 
         lxmlNode = parse(StringIO(XML))
         self.assertEquals(XML, tostring(lxmlNode))
-        list(observable.all.test('een tekst', lxmlNode=lxmlNode))
+        list(compose(observable.all.test('een tekst', lxmlNode=lxmlNode)))
 
         self.assertEquals(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
