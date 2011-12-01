@@ -29,6 +29,7 @@
 from socket import socket
 from cq2utils import CQ2TestCase, CallTrace
 from weightless.io import Reactor
+from weightless.core import compose
 
 from meresco.components.http import ObservableHttpServer
 from meresco.components.http.utils import CRLF
@@ -39,7 +40,7 @@ class ObservableHttpServerTest(CQ2TestCase):
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)
         s.addObserver(observer)
 
-        list(s.handleRequest(RequestURI='http://localhost'))
+        list(compose(s.handleRequest(RequestURI='http://localhost')))
         self.assertEquals(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
         self.assertEquals('handleRequest', method.name)
@@ -51,7 +52,7 @@ class ObservableHttpServerTest(CQ2TestCase):
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)
         s.addObserver(observer)
 
-        list(s.handleRequest(RequestURI='http://localhost/path?key=value&emptykey#fragment'))
+        list(compose(s.handleRequest(RequestURI='http://localhost/path?key=value&emptykey#fragment')))
         self.assertEquals(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
         self.assertEquals('handleRequest', method.name)
@@ -123,6 +124,7 @@ class ObservableHttpServerTest(CQ2TestCase):
         sok = socket()
         sok.connect(('localhost', 2000))
         sok.send('GET / HTTP/1.0\r\n\r\n')
+        reactor.step()
         reactor.step()
         self.assertEquals([('read', 3)], prios)
         reactor.step().step()

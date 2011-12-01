@@ -29,7 +29,7 @@
 from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree, tostring
 from StringIO import StringIO
 
-from meresco.core import Observable
+from meresco.core import Observable, fakeGenerator
 
 class ValidateException(Exception):
     pass

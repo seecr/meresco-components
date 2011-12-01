@@ -28,6 +28,7 @@
 #
 ## end license ##
 from meresco.core import Observable
+from weightless.core import compose
 from weightless.http import HttpServer
 from cgi import parse_qs
 from urlparse import urlsplit
@@ -66,7 +67,7 @@ class ObservableHttpServer(Observable):
             self.startServer()
 
     def _connect(self, **kwargs):
-        return self.handleRequest(port=self._port, **kwargs)
+        return compose(self.handleRequest(port=self._port, **kwargs))
 
     def _error(self, **kwargs):
         yield serverUnavailableHtml +\
@@ -81,7 +82,7 @@ class ObservableHttpServer(Observable):
             'arguments': arguments,
             'RequestURI': RequestURI}
         requestArguments.update(kwargs)
-        return self.all.handleRequest(**requestArguments)
+        yield self.all.handleRequest(**requestArguments)
 
     def setMaxConnections(self, m):
         self._httpserver.setMaxConnections(m)

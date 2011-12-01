@@ -121,11 +121,9 @@ class Statistics(Observable):
     def merge(self, rhsStatistics):
         self._data.merge(rhsStatistics._data)
 
-    def unknown(self, message, *args, **kwargs):
+    def all_unknown(self, message, *args, **kwargs):
         __callstack_var_statisticsLog__ = {} 
-        responses = self.all.unknown(message, *args, **kwargs)
-        for response in responses:
-            yield response
+        yield self.all.unknown(message, *args, **kwargs)
         self._process(__callstack_var_statisticsLog__)
         self._snapshotIfNeeded()
 
@@ -276,7 +274,7 @@ class AggregatorNode(object):
             if len(q) >= 3:
                 toDo = q[0]
                 q.remove(toDo)
-                toDo._aggregate()
+                toall_Do._aggregate()
 
     def get(self, result, fromTime, toTime):
         if not fromTime and not toTime:

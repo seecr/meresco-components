@@ -82,10 +82,10 @@ class QueryLogHelperForSru(Observable):
             if key in SKIP_ARGS:
                 continue
             queryArguments[key] = value
-        return self.any.searchRetrieve(**kwargs)
+        yield self.all.searchRetrieve(**kwargs)
 
 class QueryLogHelper(Observable):
     def handleRequest(self, arguments, **kwargs):
         queryArguments = self.ctx.queryArguments
         queryArguments.update(arguments)
-        return self.all.handleRequest(arguments=arguments, **kwargs)
+        yield self.all.handleRequest(arguments=arguments, **kwargs)

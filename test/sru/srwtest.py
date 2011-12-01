@@ -33,6 +33,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
 from meresco.components.facetindex import Response
+from meresco.core import fakeGenerator
 
 from weightless.core import compose
 
@@ -131,31 +132,42 @@ Content-Type: text/xml; charset=utf-8
     </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
 
     def testContentType(self):
+        @fakeGenerator
+        def methodAsGenerator(**kwargs):
+            pass
+        def executeQuery(**kwargs):
+            raise StopIteration([1, [0]])
+            yield
         observer = CallTrace(
-            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData', 'yieldRecord'])
-        observer.exceptions['executeQuery'] = StopIteration([1, [0]])
+            methods={
+                'executeQuery': executeQuery,
+                'extraResponseData': methodAsGenerator,
+                'echoedExtraRequestData': methodAsGenerator,
+            })
         self.sruHandler.addObserver(observer)
 
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
-        response = "".join(self.srw.handleRequest(Body=request))
+        response = "".join(compose(self.srw.handleRequest(Body=request)))
         self.assertTrue('text/xml; charset=utf-8' in response, response)
 
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
-        observer = CallTrace(
-            methods={
-                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
-            },
-            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        @fakeGenerator
+        def methodAsGenerator(**kwargs):
+            pass
         response = Response(total=1, hits=['recordId'])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        observer.methods['executeQuery'] = executeQuery
-
+        observer = CallTrace(
+            methods={
+                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)]),
+                'executeQuery': executeQuery,
+                'extraResponseData': methodAsGenerator,
+                'echoedExtraRequestData': methodAsGenerator,
+            })
         self.sruHandler.addObserver(observer)
 
-        print list(compose(self.srw.handleRequest(Body=request)))
         result = "".join(compose(self.srw.handleRequest(Body=request)))
 
         self.assertEqualsWS(httpResponse % soapEnvelope % wrappedMockAnswer % ('recordId', 'dc.author = "jones" and  dc.title = "smith"'), result)
@@ -186,15 +198,22 @@ Content-Type: text/xml; charset=utf-8
   </SOAP:Body>
 </SOAP:Envelope>"""
 
+        @fakeGenerator
+        def methodAsGenerator(**kwargs):
+            pass
+        response = Response(total=1, hits=['recordId'])
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
         observer = CallTrace(
             methods={
-                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
-            },
-            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        response = Response(total=1, hits=['recordId'])
-        observer.exceptions['executeQuery'] = StopIteration(response)
+                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)]),
+                'executeQuery': executeQuery,
+                'extraResponseData': methodAsGenerator,
+                'echoedExtraRequestData': methodAsGenerator,
+            })
         self.sruHandler.addObserver(observer)
-        response = "".join(self.srw.handleRequest(Body=request))
+        response = "".join(compose(self.srw.handleRequest(Body=request)))
 
         echoRequest = """<srw:echoedSearchRetrieveRequest>
 <srw:version>1.1</srw:version>
@@ -216,15 +235,22 @@ Content-Type: text/xml; charset=utf-8
         sruParser = SruParser()
         srw.addObserver(sruParser)
         sruParser.addObserver(self.sruHandler)
-        observer = CallTrace(
-            returnValues={
-                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
-            },
-            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=1, hits=[1])
-        observer.exceptions['executeQuery'] = StopIteration(response)
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        @fakeGenerator
+        def methodAsGenerator(**kwargs):
+            pass
+        observer = CallTrace(
+            methods={
+                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)]),
+                'executeQuery': executeQuery,
+                'extraResponseData': methodAsGenerator,
+                'echoedExtraRequestData': methodAsGenerator,
+            })
 
         self.sruHandler.addObserver(observer)
-        response = "".join(srw.handleRequest(Body=request))
+        response = "".join(compose(srw.handleRequest(Body=request)))
         self.assertTrue("DEFAULT_RECORD_SCHEMA" in response, response)
         self.assertTrue("DEFAULT_RECORD_PACKING" in response, response)

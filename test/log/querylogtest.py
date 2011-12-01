@@ -130,8 +130,10 @@ class QueryLogTest(CQ2TestCase):
         helper = QueryLogHelperForSru()
         observer = CallTrace('observer')
         helper.addObserver(observer)
-        observer.returnValues['searchRetrieve'] = 'result'
-        helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})
+        def searchRetrieve(**kwargs):
+            yield 'result'
+        observer.methods['searchRetrieve'] = searchRetrieve
+        list(compose(helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})))
         self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryArguments__)
         
     def testQueryLogHelper(self):
@@ -139,8 +141,10 @@ class QueryLogTest(CQ2TestCase):
         helper = QueryLogHelper()
         observer = CallTrace('observer')
         helper.addObserver(observer)
-        observer.returnValues['handleRequest'] = 'result'
-        result = list(helper.handleRequest(arguments={'key':['value'], 'key2':['value1', 'value2']}, path='path'))
+        def handleRequest(**kwargs):
+            yield 'result'
+        observer.methods['handleRequest'] = handleRequest
+        result = list(compose(helper.handleRequest(arguments={'key':['value'], 'key2':['value1', 'value2']}, path='path')))
         self.assertEquals(['result'], result)
         self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryArguments__)
         self.assertEquals([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])

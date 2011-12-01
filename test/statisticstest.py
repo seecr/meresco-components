@@ -35,6 +35,7 @@ from os import makedirs, rename
 from os.path import isfile, join
 from meresco.components.statistics import Statistics, Logger, combinations, Aggregator, AggregatorException, Top100s, snapshotFilename, log
 from meresco.core import Observable
+from weightless.core import compose
 
 class StatisticsTest(CQ2TestCase):
 
@@ -194,8 +195,10 @@ class StatisticsTest(CQ2TestCase):
         stats = Statistics(self.tempdir, [('message',)])
         stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
         myObserver = MyObserver()
+        observable = Observable()
+        observable.addObserver(stats)
         stats.addObserver(myObserver)
-        list(stats.unknown("aMessage"))
+        list(compose(observable.all.aMessage()))
         self.assertEquals({('newValue',): 1}, stats.get(('message',)))
 
     def testSelfLogWithObservableAndDelegation(self):
@@ -206,8 +209,10 @@ class StatisticsTest(CQ2TestCase):
         stats = Statistics(self.tempdir, [('message',)])
         stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
         myObserver = MyObserver()
+        observable = Observable()
+        observable.addObserver(stats)
         stats.addObserver(myObserver)
-        list(stats.unknown("aMessage"))
+        list(compose(observable.all.aMessage()))
         self.assertEquals({('newValue',): 1}, stats.get(('message',)))
 
     def testLogWithoutStatistics(self):
@@ -242,8 +247,10 @@ class StatisticsTest(CQ2TestCase):
         stats = Statistics(self.tempdir, [('message',)])
         stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
         myObserver = MyObserver()
+        observable = Observable()
+        observable.addObserver(stats)
         stats.addObserver(myObserver)
-        list(stats.unknown("aMessage"))
+        list(compose(observable.all.aMessage()))
         self.assertEquals({('value1',): 1, ('value2',) : 1}, stats.get(('message',)))
 
     def testCatchErrorsAndCloseTxLog(self):

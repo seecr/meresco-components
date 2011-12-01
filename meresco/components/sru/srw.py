@@ -89,8 +89,7 @@ class Srw(Observable):
 
         try:
             yield SOAP_HEADER
-            for data in compose(self.any.searchRetrieve(**arguments)):
-                yield data
+            yield self.all.searchRetrieve(**arguments)
             yield SOAP_FOOTER
         except Exception, e:
             yield "Unexpected Exception:\n"
