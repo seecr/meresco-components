@@ -33,7 +33,7 @@ from cq2utils import CQ2TestCase, CallTrace
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
 from meresco.components.facetindex import Response
-from meresco.core import fakeGenerator
+from meresco.core import functionAsGenerator
 
 from weightless.core import compose
 
@@ -132,7 +132,7 @@ Content-Type: text/xml; charset=utf-8
     </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
 
     def testContentType(self):
-        @fakeGenerator
+        @functionAsGenerator
         def methodAsGenerator(**kwargs):
             pass
         def executeQuery(**kwargs):
@@ -152,7 +152,7 @@ Content-Type: text/xml; charset=utf-8
 
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
-        @fakeGenerator
+        @functionAsGenerator
         def methodAsGenerator(**kwargs):
             pass
         response = Response(total=1, hits=['recordId'])
@@ -198,7 +198,7 @@ Content-Type: text/xml; charset=utf-8
   </SOAP:Body>
 </SOAP:Envelope>"""
 
-        @fakeGenerator
+        @functionAsGenerator
         def methodAsGenerator(**kwargs):
             pass
         response = Response(total=1, hits=['recordId'])
@@ -239,7 +239,7 @@ Content-Type: text/xml; charset=utf-8
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        @fakeGenerator
+        @functionAsGenerator
         def methodAsGenerator(**kwargs):
             pass
         observer = CallTrace(

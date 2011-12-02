@@ -30,7 +30,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
-from meresco.core import Observable, fakeGenerator
+from meresco.core import Observable, functionAsGenerator
 from lxml.etree import tostring
 from escaping import unescapeFilename, escapeFilename
 
@@ -49,7 +49,7 @@ class ReindexTest(CQ2TestCase):
         return storage
 
     def setupDna(self, storage):
-        @fakeGenerator
+        @functionAsGenerator
         def addDocumentPart(**kwargs):
             pass
         observer = CallTrace('observer', methods={'addDocumentPart': addDocumentPart})

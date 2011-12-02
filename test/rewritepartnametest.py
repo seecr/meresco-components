@@ -26,14 +26,14 @@
 
 from cq2utils import CallTrace
 from unittest import TestCase
-from meresco.core import Observable, fakeGenerator
+from meresco.core import Observable, functionAsGenerator
 
 from meresco.components import RewritePartname
 from weightless.core import compose
 
 class RewritePartnameTest(TestCase):
     def testAddPartname(self):
-        @fakeGenerator
+        @functionAsGenerator
         def add(**kwargs):
             pass
         observable = Observable()

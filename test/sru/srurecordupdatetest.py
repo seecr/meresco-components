@@ -33,7 +33,7 @@ from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
-from meresco.core import fakeGenerator
+from meresco.core import functionAsGenerator
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -64,7 +64,7 @@ class SRURecordUpdateTest(CQ2TestCase):
     def setUp(self):
         CQ2TestCase.setUp(self)
         self.sruRecordUpdate = SRURecordUpdate()
-        @fakeGenerator
+        @functionAsGenerator
         def addOrDelete(*args, **kwargs):
             pass
         self.observer = CallTrace("Observer", methods={'add': addOrDelete, 'delete': addOrDelete})
