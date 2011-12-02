@@ -28,12 +28,13 @@
 from utils import notFoundHtml
 
 from meresco.core import Observable
+from weightless.core import compose
 
 class BasicHttpHandler(Observable):
 
     def handleRequest(self, *args, **kwargs):
         yielded = False
-        stuff = self.all.handleRequest(*args, **kwargs)
+        stuff = compose(self.all.handleRequest(*args, **kwargs))
         for x in stuff:
             yielded = True
             yield x
@@ -41,5 +42,5 @@ class BasicHttpHandler(Observable):
             yield notFoundHtml
             yield "<html><body>404 Not Found</body></html>"
 
-    def unknown(self, method, *args, **kwargs):
-        return self.all.unknown(method, *args, **kwargs)
+    def all_unknown(self, method, *args, **kwargs):
+        yield self.all.unknown(method, *args, **kwargs)

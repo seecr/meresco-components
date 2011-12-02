@@ -33,6 +33,8 @@ from cq2utils import CallTrace
 
 from meresco.components.http import Deproxy
 
+from weightless.core import compose
+
 
 class DeproxyTest(TestCase):
     def testClientInCaseNoXForwardedForHeader(self):
@@ -43,7 +45,7 @@ class DeproxyTest(TestCase):
         observable = Observable()
         observable.addObserver(clientfromxforwardedfor)
 
-        list(observable.any.handleRequest(Client=("1.1.1.1", 11111), Headers={}))
+        list(compose(observable.all.handleRequest(Client=("1.1.1.1", 11111), Headers={})))
 
         self.assertEquals(1, len(observer.calledMethods))
         handleRequestCallKwargs = observer.calledMethods[0].kwargs
@@ -59,9 +61,9 @@ class DeproxyTest(TestCase):
         observable = Observable()
         observable.addObserver(clientfromxforwardedfor)
 
-        list(observable.any.handleRequest(
+        list(compose(observable.all.handleRequest(
             Client=("1.1.1.1", 11111),
-            Headers={"X-Forwarded-For": "2.2.2.2"}))
+            Headers={"X-Forwarded-For": "2.2.2.2"})))
 
         self.assertEquals(1, len(observer.calledMethods))
         handleRequestCallKwargs = observer.calledMethods[0].kwargs
@@ -76,18 +78,18 @@ class DeproxyTest(TestCase):
         observable = Observable()
         observable.addObserver(clientfromxforwardedfor)
 
-        list(observable.any.handleRequest(
+        list(compose(observable.all.handleRequest(
              Client=("1.1.1.1", 11111),
-             Headers={"X-Forwarded-For": "2.2.2.2,3.3.3.3,4.4.4.4"}))
+             Headers={"X-Forwarded-For": "2.2.2.2,3.3.3.3,4.4.4.4"})))
 
         self.assertEquals(1, len(observer.calledMethods))
         handleRequestCallKwargs = observer.calledMethods[0].kwargs
         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
         self.assertEquals({"X-Forwarded-For": "2.2.2.2,3.3.3.3,4.4.4.4"}, handleRequestCallKwargs['Headers'])
 
-        list(observable.any.handleRequest(
+        list(compose(observable.all.handleRequest(
              Client=("1.1.1.1", 11111),
-             Headers={"X-Forwarded-For": " 2.2.2.2 , 3.3.3.3,4.4.4.4"}))
+             Headers={"X-Forwarded-For": " 2.2.2.2 , 3.3.3.3,4.4.4.4"})))
         self.assertEquals("2.2.2.2", observer.calledMethods[1].kwargs['Client'][0])
 
     def testHostFromXForwardedHost(self):
@@ -103,7 +105,7 @@ class DeproxyTest(TestCase):
             "Host": "1.1.1.1:11111",
             "X-Forwarded-Host": "2.2.2.2:22222,3.3.3.3:33333,4.4.4.4:44444"
         }
-        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), Headers=Headers))
+        list(compose(observable.all.handleRequest(Client=("9.9.9.9", 9999), Headers=Headers)))
 
         self.assertEquals(1, len(observer.calledMethods))
         handleRequestCallKwargs = observer.calledMethods[0].kwargs
@@ -120,9 +122,9 @@ class DeproxyTest(TestCase):
         observable = Observable()
         observable.addObserver(clientfromxforwardedfor)
 
-        list(observable.any.handleRequest(
+        list(compose(observable.all.handleRequest(
             Client=("1.1.1.1", 11111),
-            Headers={"X-Forwarded-For": "2.2.2.2"}))
+            Headers={"X-Forwarded-For": "2.2.2.2"})))
 
         self.assertEquals(1, len(observer.calledMethods))
         handleRequestCallKwargs = observer.calledMethods[0].kwargs

@@ -44,7 +44,7 @@ class Deproxy(Observable):
             if host != '':
                 Headers['Host'] = host
 
-        return self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, **kwargs)
+        yield self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, **kwargs)
 
 def _firstFromCommaSeparated(s):
     return s.split(",", 1)[0].strip()
