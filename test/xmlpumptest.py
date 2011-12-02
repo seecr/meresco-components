@@ -64,6 +64,15 @@ class XmlPumpTest(CQ2TestCase):
         self.assertEquals('tag', xmlNode.localName)
         self.assertEquals('content', xmlNode.content.localName)
 
+    def testInflate(self):
+        xmlString = """<tag><content>contents</content></tag>"""
+        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
+        self.observable.call.add(identifier="id", partname="partName", data=xmlString)
+        list(compose(self.observable.all.add(identifier="id", partname="partName", data=xmlString)))
+        list(compose(self.observable.any.add(identifier="id", partname="partName", data=xmlString)))
+
+        self.assertEquals(4, len(self.observer.calledMethods))
+
     def testInflateWithElementStringResult(self):
         xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)

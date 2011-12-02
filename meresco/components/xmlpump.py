@@ -43,9 +43,18 @@ class Converter(Observable):
         newArgs, newKwargs = self._convertArgs(*args, **kwargs)
         yield self.all.unknown(msg, *newArgs, **newKwargs)
 
+    def any_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        response = yield self.any.unknown(msg, *newArgs, **newKwargs)
+        raise StopIteration(response)
+
     def do_unknown(self, msg, *args, **kwargs):
         newArgs, newKwargs = self._convertArgs(*args, **kwargs)
         self.do.unknown(msg, *newArgs, **newKwargs)
+
+    def call_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        return self.call.unknown(msg, *newArgs, **newKwargs)
 
     def _convertArgs(self, *args, **kwargs):
         try:
