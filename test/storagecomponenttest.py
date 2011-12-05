@@ -33,29 +33,22 @@ from cq2utils.cq2testcase import CQ2TestCase
 from meresco.components.storagecomponent import StorageComponent
 from storage import HierarchicalStorage, Storage
 from cStringIO import StringIO
-from meresco.core.observable import Observable
+from meresco.core import Observable, sync
 from subprocess import Popen, PIPE
+from weightless.core import compose
 
 
 class StorageComponentTest(CQ2TestCase):
 
     def setUp(self):
         CQ2TestCase.setUp(self)
-        p = Popen("which ci 2>/dev/null", shell=True, stdin=PIPE, stdout=PIPE, close_fds=True)
-        (i, o) = (p.stdin, p.stdout)
-        self.revisionAvailable = o.read() != ''
 
-        self.storageComponent = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
+        self.storageComponent = StorageComponent(self.tempdir)
         self.storage = self.storageComponent._storage
 
     def testAdd(self):
-        if self.revisionAvailable:
-            old,new = self.storageComponent.add("id_0", "partName", "The contents of the part")
-        else:
-            self.storageComponent.add("id_0", "partName", "The contents of the part")
+        list(compose(self.storageComponent.add("id_0", "partName", "The contents of the part")))
         self.assertEquals('The contents of the part', self.storage.get(('id_0', 'partName')).read())
-        if self.revisionAvailable:
-            self.assertEquals((0,1), (old,new))
 
     def testIsAvailableIdAndPart(self):
         sink = self.storage.put(('some:thing:anId-123','somePartName'))
@@ -99,12 +92,12 @@ class StorageComponentTest(CQ2TestCase):
         identifier = ('some:thing:anId-123','somePartName')
         self.storage.put(identifier).close()
         self.assertTrue(identifier in self.storage)
-        self.storageComponent.delete('some:thing:anId-123')
+        list(compose(self.storageComponent.delete('some:thing:anId-123')))
         self.assertTrue(identifier in self.storage)
 
         self.storageComponent = StorageComponent(self.tempdir, partsRemovedOnDelete=['somePartName'])
         self.storage = self.storageComponent._storage
-        self.storageComponent.delete('some:thing:anId-123')
+        list(compose(self.storageComponent.delete('some:thing:anId-123')))
         self.assertFalse(identifier in self.storage)
 
 
@@ -116,51 +109,42 @@ class StorageComponentTest(CQ2TestCase):
 
     def testEnumerate(self):
         self.assertEquals(set([]), set(self.storageComponent.listIdentifiers()))
-        self.storageComponent.add('some:thing:anId-123','somePartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:anId-123','somePartName', 'data')))
         self.assertEquals(set(['some:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
-        self.storageComponent.add('some:thing:anId-123','anotherPartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:anId-123','anotherPartName', 'data')))
         self.assertEquals(set(['some:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
-        self.storageComponent.add('some:thing:anId-122','anotherPartName', 'data')
-        self.storageComponent.add('any:thing:anId-123','somePartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:anId-122','anotherPartName', 'data')))
+        list(compose(self.storageComponent.add('any:thing:anId-123','somePartName', 'data')))
         self.assertEquals(set(['some:thing:anId-123', 'some:thing:anId-122', 'any:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
         self.assertEquals(set(['some:thing:anId-123', 'any:thing:anId-123']), set(self.storageComponent.listIdentifiers('somePartName')))
 
     def testGlob(self):
         self.assertEquals(set([]), set(self.storageComponent.glob(('some:thing:anId-123', None))))
 
-        self.storageComponent.add('some:thing:anId-123','somePartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:anId-123','somePartName', 'data')))
         self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('so', None))))
         self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some', None))))
         self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing', None))))
         self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId', None))))
 
-        self.storageComponent.add('some:thing:anId-123','anotherPartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:anId-123','anotherPartName', 'data')))
         self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId', None))))
 
-        self.storageComponent.add('some:thing:anId-124','anotherPartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:anId-124','anotherPartName', 'data')))
         self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId-123', None))))
         self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId-123', 'somePartName'))))
 
         self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-124', 'anotherPartName')]), set(self.storageComponent.glob(('some:thing:anId', 'anotherPartName'))))
 
-        self.storageComponent.add('some:thing:else-1','anotherPartName', 'data')
+        list(compose(self.storageComponent.add('some:thing:else-1','anotherPartName', 'data')))
         self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-124', 'anotherPartName')]), set(self.storageComponent.glob(('some:thing:anId', 'anotherPartName'))))
 
-    def testAddDocumentPartCallsAdd(self):
-        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
-        addInvocations = []
-        def add(*args, **kwargs):
-            addInvocations.append(dict(args=args, kwargs=kwargs))
-        s.add = add
-        s.addDocumentPart(identifier='x', partname='y', data='dummy')
-        self.assertEquals([{'args':(), 'kwargs':dict(identifier='x', partname='y', data='dummy')}], addInvocations)
-
     def testObservableNameNotSet(self):
-        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable)
+        s = StorageComponent(self.tempdir)
         self.assertEquals(None, s.observable_name())
 
     def testObservableNameSet(self):
-        s = StorageComponent(self.tempdir, revisionControl=self.revisionAvailable, name="name")
+        s = StorageComponent(self.tempdir, name="name")
         self.assertEquals("name", s.observable_name())
 
 

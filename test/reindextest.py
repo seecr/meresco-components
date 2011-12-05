@@ -30,7 +30,7 @@
 
 from cq2utils import CQ2TestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
-from meresco.core import Observable, functionAsGenerator
+from meresco.core import Observable, asyncreturn
 from lxml.etree import tostring
 from escaping import unescapeFilename, escapeFilename
 
@@ -45,14 +45,14 @@ class ReindexTest(CQ2TestCase):
     def setupStorage(self, records):
         storage = StorageComponent(self._path('storage'))
         for record in records:
-            storage.add(**record)
+            list(compose(storage.add(**record)))
         return storage
 
     def setupDna(self, storage):
-        @functionAsGenerator
-        def addDocumentPart(**kwargs):
+        @asyncreturn
+        def add(**kwargs):
             pass
-        observer = CallTrace('observer', methods={'addDocumentPart': addDocumentPart})
+        observer = CallTrace('observer', methods={'add': add})
         reindex = be(
             (Reindex(filelistPath=self._path('reindex'), partName='part'),
                 (FilterMessages(allowed=['listIdentifiers']),
@@ -138,7 +138,7 @@ class ReindexTest(CQ2TestCase):
         for i in ['+id:1\n', '+id:2\n', '+id:3\n' ]:
             self.assertTrue(i in result)
 
-        self.assertEquals(['addDocumentPart']*3, [m.name for m in observer.calledMethods])
+        self.assertEquals(['add']*3, [m.name for m in observer.calledMethods])
         self.assertEquals(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
         self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
         self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
@@ -182,7 +182,7 @@ class ReindexTest(CQ2TestCase):
             dict(identifier='id:1', partname='part',  data='data1'),
         ])
         reindex, observer = self.setupDna(storage)
-        observer.exceptions['addDocumentPart'] = Exception('An Error Occured')
+        observer.exceptions['add'] = Exception('An Error Occured')
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
@@ -203,7 +203,7 @@ class ReindexTest(CQ2TestCase):
             dict(identifier='id:1', partname='part', data='data1'),
         ])
         reindex, observer = self.setupDna(storage)
-        observer.returnValues['addDocumentPart'] = (f for f in [str])
+        observer.returnValues['add'] = (f for f in [str])
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertTrue(str in result, result)
@@ -220,7 +220,7 @@ class ReindexTest(CQ2TestCase):
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+%s\n' % escapeFilename(identifier), '=batches left: 0'], result)
 
-        self.assertEquals(['addDocumentPart'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         self.assertEquals([identifier], [m.kwargs['identifier'] for m in observer.calledMethods])
         self.assertEquals(['ignoredName'], [m.kwargs['partname'] for m in observer.calledMethods])
         self.assertEquals(['<empty/>'], [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])

@@ -35,7 +35,7 @@ from urllib import urlencode
 
 from meresco.core import Observable
 from meresco.components.http.utils import CRLF
-from weightless.core import compose
+from weightless.core import compose, identify
 
 from sys import stderr, stdout
 from time import time
@@ -54,53 +54,55 @@ class PeriodicDownload(Observable):
             self._log = lambda x: None
 
     def observer_init(self):
-        self._loop = compose(self.loop())
-        self._reactor.addTimer(1, self._loop.next)
+        self.startTimer()
 
-    def loop(self):
-        while True:
-            sok = yield self._tryConnect()
-            sok.send(self.call.buildRequest())
-            sok.shutdown(SHUT_WR)
-            self._reactor.addReader(sok, self._loop.next, prio=self._prio)
-            responses = []
-            try:
-                while True:
-                    yield
-                    response = sok.recv(4096)
-                    if response == '':
-                         break
-                    responses.append(response)
-            except SocketError, (errno, msg):
-                yield self._retryAfterError("Receive error: %s: %s" % (errno, msg))
-                continue
-            self._reactor.removeReader(sok)
-            sok.close()
-            try:
-                response = ''.join(responses)
-                headers, body = response.split(2 * CRLF, 1)
-                statusLine = headers.split(CRLF)[0]
-                if not statusLine.strip().lower().endswith('200 ok'):
-                    yield self._retryAfterError('Unexpected response: ' + statusLine)
-                    continue
-                alwaysReadable = TemporaryFile(prefix='meresco-oai-', suffix='-download')
-                self._reactor.addReader(alwaysReadable, self._loop.next, prio=self._prio)
-                try:
-                    yield
-                    for data in self.all.handle(data=body):
-                        if callable(data):
-                            data(self._reactor, self._loop.next)
-                            yield
-                            data.resumeReader()
-                        yield
-                finally:
-                    self._reactor.removeReader(alwaysReadable)
-            except Exception:
-                self._logError(format_exc())
-            self._reactor.addTimer(self._period, self._loop.next)
-            yield
+    def startTimer(self):
+        self._reactor.addTimer(1, self.startProcess)
 
-    
+    def startProcess(self):
+        self._processOne = compose(self.processOne())
+        self._processOne.next()
+
+    def processOne(self):
+        sok = yield self._tryConnect()
+        sok.send(self.call.buildRequest())
+        sok.shutdown(SHUT_WR)
+        self._reactor.addReader(sok, self._processOne.next, prio=self._prio)
+        responses = []
+        try:
+            while True:
+                yield
+                response = sok.recv(4096)
+                if response == '':
+                     break
+                responses.append(response)
+        except SocketError, (errno, msg):
+            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg))
+            return
+        self._reactor.removeReader(sok)
+        sok.close()
+
+        try:
+            response = ''.join(responses)
+            headers, body = response.split(2 * CRLF, 1)
+            statusLine = headers.split(CRLF)[0]
+            if not statusLine.strip().lower().endswith('200 ok'):
+                yield self._retryAfterError('Unexpected response: ' + statusLine)
+                return
+
+            self._reactor.addProcess(self._processOne.next)
+            gen = self.all.handle(data=body)
+            g = compose(gen, filter=callable)
+            for response  in g:
+                if callable(response):
+                    response(self._reactor, this.next)
+                yield
+        except Exception:
+            self._logError(format_exc())
+        self._reactor.removeProcess()
+        self.startTimer()
+        yield
+
     def _tryConnect(self):
         sok = socket()
         sok.setblocking(0)
@@ -111,7 +113,7 @@ class PeriodicDownload(Observable):
                 if errno != EINPROGRESS:
                     yield self._retryAfterError("%s: %s" % (errno, msg))
                     continue
-            self._reactor.addWriter(sok, self._loop.next)
+            self._reactor.addWriter(sok, self._processOne.next)
             yield
             self._reactor.removeWriter(sok)
 
@@ -126,7 +128,7 @@ class PeriodicDownload(Observable):
 
     def _retryAfterError(self, message):
         self._logError(message)
-        self._reactor.addTimer(self._period, self._loop.next)
+        self._reactor.addTimer(self._period, self._processOne.next)
         yield
         
     def _logError(self, message):

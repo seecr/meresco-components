@@ -88,7 +88,6 @@ class PeriodicDownloadTest(CQ2TestCase):
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
             callback() # sok.recv
-            callback() # yield after self.do.add(...
             self.assertEquals("", harvester._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
             self.assertEquals('handle', observer.calledMethods[1].name)
@@ -162,13 +161,11 @@ class PeriodicDownloadTest(CQ2TestCase):
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
             callback() # recv = ''
-            callback() # yield after addReader()
-            callback() # yield after self.do.add(...
             self.assertEquals("", harvester._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEqualsWS(TWO_RECORDS, observer.calledMethods[1].kwargs['data'])
-            self.assertEquals('removeReader', reactor.calledMethods[-2].name)
+            self.assertEquals('addProcess', reactor.calledMethods[-2].name)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
 
     def testSuccessHttp1dot1Server(self):
@@ -180,8 +177,6 @@ class PeriodicDownloadTest(CQ2TestCase):
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
             callback() # recv = ''
-            callback() # yield after addReader()
-            callback() # yield after self.do.add(...
             self.assertEquals("", harvester._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
@@ -195,8 +190,6 @@ class PeriodicDownloadTest(CQ2TestCase):
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
             callback() # recv = ''
-            callback() # yield after addReader()
-            callback() # yield after self.do.add(...
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
             
@@ -223,8 +216,42 @@ class PeriodicDownloadTest(CQ2TestCase):
             self.assertEquals("GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
             callback() # sok.recv
             callback() # soc.recv == ''
-            callback() # removeReader() after self.do.add(...
             self.assertEquals(['buildRequest', 'buildRequest', 'handle'], [m.name for m in observer.calledMethods])
+
+    def xxtestDriver(self):
+        def f():
+            yield
+        reactor = CallTrace("reactor")
+        periodicDownloader = PeriodicDownload(reactor, "localhost", 9999)
+        driver = periodicDownloader.driver(f())
+        nextCall = driver.next
+        list(driver)
+        self.assertEquals(['removeProcess'], [m.name for m in reactor.calledMethods])
+        self.assertEquals(nextCall, reactor.calledMethods[0].args[0])
+
+    def testDriver(self):
+        reactor = CallTrace("reactor")
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            harvester, observer, reactor = self.getHarvester("localhost", port)
+            self.assertEquals(1, reactor.calledMethods[0].args[0])
+            callback = reactor.calledMethods[0].args[1]
+            callback() # connect
+            callback = reactor.calledMethods[1].args[1]
+            callback() # HTTP GET
+            sleep(0.01)
+            callback = reactor.calledMethods[3].args[1]
+            callback() # sok.recv
+            callback() # sok.recv
+            self.assertEquals('addProcess', reactor.calledMethods[5].name)
+            process = reactor.calledMethods[5].args[0]
+            try:
+                while True:
+                    process()
+            except StopIteration:
+                pass
+            self.assertEquals('removeProcess', reactor.calledMethods[6].name)
+            self.assertEquals(reactor.calledMethods[5].args[0], reactor.calledMethods[6].args[0])
+             
 
     def getHarvester(self, host, port, period=1):
         self._reactor = CallTrace("reactor")

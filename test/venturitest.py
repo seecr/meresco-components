@@ -187,15 +187,6 @@ class VenturiTest(CQ2TestCase):
         self.assertEquals([callable], result)
         self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
 
-    def testAddDocumentPartCallsAdd(self):
-        v = Venturi()
-        addInvocations = []
-        def add(*args, **kwargs):
-            addInvocations.append(dict(args=args, kwargs=kwargs))
-        v.add = add
-        v.addDocumentPart(identifier='x', partname='y', lxmlNode='dummy')
-        self.assertEquals([{'args': (), 'kwargs': dict(identifier='x', partname='y', lxmlNode='dummy')}], addInvocations)
-
     def testNoLxmlTailOnPart(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>message</second>\n\n\n\n</part></document>""")
         interceptor = CallTrace('Interceptor')

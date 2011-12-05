@@ -29,6 +29,7 @@
 
 from storage import HierarchicalStorage, Storage
 from itertools import ifilter
+from meresco.core import asyncreturn
 
 def defaultSplit((identifier, partname)):
     result = identifier.split(':',1)
@@ -42,29 +43,24 @@ def defaultJoin(parts):
     return identifier, partname
 
 class StorageComponent(object):
-    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[], name=None):
+    def __init__(self, directory, split=defaultSplit, join=defaultJoin, partsRemovedOnDelete=[], name=None):
         assert type(directory) == str, 'Please use directory as first parameter'
-        self._storage = HierarchicalStorage(Storage(directory, revisionControl=revisionControl, ), split, join)
+        self._storage = HierarchicalStorage(Storage(directory), split, join)
         self._partsRemovedOnDelete = partsRemovedOnDelete
         self._name = name
 
     def observable_name(self):
         return self._name
 
-    def store(self, *args, **kwargs):
-        return self.add(*args, **kwargs)
-
-    def addDocumentPart(self, identifier=None, partname=None, data=None):
-        return self.add(identifier=identifier, partname=partname, data=data)
-
+    @asyncreturn
     def add(self, identifier, partname, data):
-        """should be obsoleted in favor of addDocumentPart"""
         sink = self._storage.put((identifier, partname))
         try:
             sink.send(data)
         finally:
             return sink.close()
 
+    @asyncreturn
     def delete(self, identifier):
         for partname in self._partsRemovedOnDelete:
             self.deletePart(identifier, partname)
@@ -118,3 +114,4 @@ class StorageComponent(object):
             return identifier.startswith(prefix) and (wantedPartname == None or wantedPartname == partname)
 
         return ifilter(filterPrefixAndPart, self._storage.glob((prefix, wantedPartname)))
+
