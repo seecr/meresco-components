@@ -35,8 +35,6 @@ from cqlparser.cqlparser import parseString as parseCQL
 from meresco.core.observable import Observable
 from meresco.core.generatorutils import decorateWith
 
-from weightless.core import compose
-
 from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 
 class SRUFieldDrilldown(Observable):
