@@ -180,10 +180,12 @@ class SruHandler(Observable):
     def _yieldRecordForRecordPacking(self, recordId=None, recordSchema=None, recordPacking=None):
         generator = compose(self.all.yieldRecord(identifier=recordId, partname=recordSchema))
         if recordPacking == 'xml':
+            yield generator
+            return
+        if recordPacking == 'string':
             for data in generator:
-                yield data
-        elif recordPacking == 'string':
-            for data in generator:
+                if callable(data):
+                    yield data
                 yield xmlEscape(data)
         else:
             raise Exception("Unknown Record Packing: %s" % recordPacking)
