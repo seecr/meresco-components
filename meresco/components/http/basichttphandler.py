@@ -27,20 +27,19 @@
 ## end license ##
 from utils import notFoundHtml
 
-from meresco.core import Observable
+from meresco.core import Transparent
 from weightless.core import compose
 
-class BasicHttpHandler(Observable):
+class BasicHttpHandler(Transparent):
 
     def handleRequest(self, *args, **kwargs):
         yielded = False
         stuff = compose(self.all.handleRequest(*args, **kwargs))
         for x in stuff:
-            yielded = True
+            if not callable(x):
+                yielded = True
             yield x
         if not yielded:
             yield notFoundHtml
             yield "<html><body>404 Not Found</body></html>"
 
-    def all_unknown(self, method, *args, **kwargs):
-        yield self.all.unknown(method, *args, **kwargs)
