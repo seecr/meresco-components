@@ -51,7 +51,7 @@ class ApacheLogger(Transparent):
             if callable(line):
                 yield line
                 continue
-            if not status and line.startswith('HTTP/1.0'):
+            if not status and line.startswith('HTTP/1.'):
                 status = line[len('HTTP/1.0 '):][:3]
                 self._log(status, **kwargs)
             yield line  
