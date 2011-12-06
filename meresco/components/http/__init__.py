@@ -31,7 +31,6 @@ from observablehttpserver import ObservableHttpServer
 from observablehttpsserver import ObservableHttpsServer
 from pathfilter import PathFilter
 from pathrename import PathRename
-from geturl import GetURL
 from fileserver import StringServer, FileServer
 from ipfilter import IpFilter
 from basichttphandler import BasicHttpHandler

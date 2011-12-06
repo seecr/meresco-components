@@ -25,18 +25,18 @@
 # 
 ## end license ##
 
-from meresco.core import Observable
+from meresco.core import Observable, Transparent
 
 from time import time
 from urllib import urlencode
 
-class QueryLog(Observable):
+class QueryLog(Transparent):
     """
     Log incoming http queries with ip-address, path, size, timestamp, duration
     """
 
     def __init__(self, log, loggedPaths):
-        Observable.__init__(self)
+        Transparent.__init__(self)
         self._log = log
         self._loggedPaths = loggedPaths
 
@@ -63,9 +63,6 @@ class QueryLog(Observable):
 
     def _time(self):
         return time()
-
-    def unknown(self, method, *args, **kwargs):
-        return self.all.unknown(method, *args, **kwargs)
 
 
 SKIP_ARGS = ['sortBy', 'sortDescending']
