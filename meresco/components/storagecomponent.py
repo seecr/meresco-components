@@ -28,7 +28,6 @@
 ## end license ##
 
 from storage import HierarchicalStorage, Storage
-from itertools import ifilter
 from meresco.core import asyncreturn
 
 def defaultSplit((identifier, partname)):
@@ -58,7 +57,7 @@ class StorageComponent(object):
         try:
             sink.send(data)
         finally:
-            return sink.close()
+            sink.close()
 
     @asyncreturn
     def delete(self, identifier):
@@ -94,24 +93,12 @@ class StorageComponent(object):
     def getStream(self, identifier, partname):
         return self._storage.getFile((identifier, partname))
 
-    def _listIdentifiers(self, identifierPrefix=''):
-        lastIdentifier = None
-        for identifier, partname in self.glob((identifierPrefix, None)):
-            if identifier != lastIdentifier:
-                yield identifier
-                lastIdentifier = identifier
-
-    def _listIdentifiersByPartName(self, partname, identifierPrefix=''):
-        for identifier, ignored in self.glob((identifierPrefix, partname)):
-            yield identifier
-
     def listIdentifiers(self, partname=None, identifierPrefix=''):
-        """Use an ifilter to hide the generator so it won't be consumed by compose"""
-        return ifilter(None, self._listIdentifiersByPartName(partname, identifierPrefix=identifierPrefix))
+        return (identifier for identifier, ignored in self.glob((identifierPrefix, partname)))
 
     def glob(self, (prefix, wantedPartname)):
         def filterPrefixAndPart((identifier, partname)):
             return identifier.startswith(prefix) and (wantedPartname == None or wantedPartname == partname)
 
-        return ifilter(filterPrefixAndPart, self._storage.glob((prefix, wantedPartname)))
+        return ((identifier, partname) for (identifier, partname) in self._storage.glob((prefix, wantedPartname)) if filterPrefixAndPart((identifier, partname)))
 
