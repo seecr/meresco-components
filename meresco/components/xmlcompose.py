@@ -51,6 +51,8 @@ class XmlCompose(Observable):
         return self.createRecord(data)
 
     def createRecord(self, data):
+        if len(data) != len(self._fieldMapping):
+            return '' 
         return self._template % dict(((k, xmlEscape(v)) for k,v in data.items()))
 
     def _getPart(self, identifier, partname):
