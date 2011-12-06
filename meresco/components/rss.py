@@ -117,5 +117,5 @@ class Rss(Observable):
             **kwargs
         )
         total, hits = response.total, response.hits
-        for recordId in hits:
-            yield self.call.getRecord(recordId)
+        for identifier in hits:
+            yield self.call.getRecord(identifier=identifier)

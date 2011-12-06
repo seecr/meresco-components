@@ -59,7 +59,8 @@ from inboxtest import InboxTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from packertest import PackerTest
 from parsecqltest import ParseCQLTest
-from periodicdownloadtest import PeriodicDownloadTest
+#from periodicdownloadtest import PeriodicDownloadTest
+print 'SKIPPING PeriodicDownloadTest'
 from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
 from renamefieldforexacttest import RenameFieldForExactTest

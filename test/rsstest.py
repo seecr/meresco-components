@@ -79,8 +79,8 @@ class RssTest(CQ2TestCase):
 
     def testOneResult(self):
         observer = CallTrace(
-            methods={
-                'getRecord': lambda recordId: (g for g in ['<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>']),
+            returnValues={
+                'getRecord': '<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>',
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
@@ -144,8 +144,8 @@ class RssTest(CQ2TestCase):
             **rssArgs
         )
         recordIds = []
-        def getRecord(recordId):
-            recordIds.append(recordId)
+        def getRecord(identifier):
+            recordIds.append(identifier)
             return '<item/>'
 
         def executeQuery(start, stop, *args, **kwargs):
@@ -157,7 +157,7 @@ class RssTest(CQ2TestCase):
                 'executeQuery': executeQuery,
                 'getRecord': getRecord,
             },
-            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+            ignoredAttributes=['extraResponseData', 'echoedExtraRequestData'])
         rss.addObserver(observer)
 
         result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs))))
@@ -181,7 +181,7 @@ class RssTest(CQ2TestCase):
     def testContentType(self):
         observer = CallTrace(
             returnValues={'executeQuery': (0, [])},
-            ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+            ignoredAttributes=['extraResponseData', 'echoedExtraRequestData'])
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 

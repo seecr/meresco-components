@@ -37,23 +37,21 @@ class XmlCompose(Observable):
         self._nsMap = nsMap
         self._fieldMapping = fieldMapping
     
-    def getRecord(self, aRecordId):
+    def getRecord(self, identifier):
         data = {}
         cachedRecord = {}
         for tagName, values in self._fieldMapping.items():
             partname, xPathExpression = values
             if not partname in cachedRecord:
-                cachedRecord[partname] = self._getPart(aRecordId, partname)
+                cachedRecord[partname] = self._getPart(identifier, partname)
             xml = cachedRecord[partname]
             result = xml.xpath(xPathExpression, namespaces=self._nsMap)
             if result:
                 data[tagName] = str(result[0])
-        yield self.createRecord(data)
+        return self.createRecord(data)
 
     def createRecord(self, data):
-        if len(data) != len(self._fieldMapping):
-            raise StopIteration
         return self._template % dict(((k, xmlEscape(v)) for k,v in data.items()))
 
-    def _getPart(self, recordId, partname):
-        return parse(self.call.getStream(recordId, partname))
+    def _getPart(self, identifier, partname):
+        return parse(self.call.getStream(identifier, partname))

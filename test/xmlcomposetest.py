@@ -36,18 +36,16 @@ from meresco.components import XmlCompose
 
 class XmlComposeTest(TestCase):
     def testOne(self):
-        observable = Observable()
         xmlcompose = XmlCompose(
             template = """<template><one>%(one)s</one><two>%(two)s</two></template>""",
             nsMap = {'ns1': "http://namespaces.org/ns1"},
             one = ('partname1', '/ns1:one/ns1:tag/text()'),
             two = ('partname2', '/two/tag/@name')
         )
-        observable.addObserver(xmlcompose)
         observer = MockStorage()
         xmlcompose.addObserver(observer)
 
-        result = ''.join(list(observable.any.getRecord("recordId")))
+        result = xmlcompose.getRecord("recordId")
         self.assertEqualsWS(result, """<template><one>1</one><two>&lt;one&gt;</two></template>""")
 
     def testModuloThing(self):
@@ -58,7 +56,6 @@ class XmlComposeTest(TestCase):
                     aDictionary['two'].upper(),
                     aDictionary['three'].swapcase()
                 ])
-        observable = Observable()
         xmlcompose = SubXmlCompose(
             template = None,
             nsMap = {},
@@ -66,11 +63,10 @@ class XmlComposeTest(TestCase):
             two = ('partname3', '/root/two/text()'),
             three = ('partname3', '/root/three/text()'),
         )
-        observable.addObserver(xmlcompose)
         observer = MockStorage()
         xmlcompose.addObserver(observer)
 
-        result = ''.join(list(observable.any.getRecord("recordId")))
+        result = xmlcompose.getRecord("recordId")
         self.assertEqualsWS(result, """One|TWO|thrEE""")
 
     
