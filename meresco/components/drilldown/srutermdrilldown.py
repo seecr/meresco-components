@@ -30,6 +30,8 @@ from traceback import print_exc
 
 from meresco.components.sru.diagnostic import generalSystemError
 
+from weightless.core import compose
+
 class SRUTermDrilldown(Observable):
                 
     def extraResponseData(self, drilldownData, **kwargs):
@@ -45,6 +47,7 @@ class SRUTermDrilldown(Observable):
             return
 
     @decorateWith(DRILLDOWN_HEADER + "<dd:term-drilldown>", "</dd:term-drilldown>" + DRILLDOWN_FOOTER)
+    @compose
     def _termDrilldown(self, drilldownData):
         for fieldname, termCounts in drilldownData:
             yield self._dd_navigator(fieldname, termCounts)

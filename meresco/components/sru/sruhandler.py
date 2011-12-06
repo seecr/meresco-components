@@ -30,7 +30,7 @@
 
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
-from meresco.core import Observable, decorate, decorateWith
+from meresco.core import Observable, decorate
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from weightless.core import compose
 
