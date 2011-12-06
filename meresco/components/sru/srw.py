@@ -34,8 +34,6 @@ from cq2utils.amaraextension import getElements
 from meresco.core import Observable
 from meresco.components.http import utils as httputils
 
-from weightless.core import compose
-
 SOAP_XML_URI = "http://schemas.xmlsoap.org/soap/envelope/"
 
 SOAP_HEADER = """<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/"><SOAP:Body>"""
