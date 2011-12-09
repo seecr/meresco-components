@@ -95,14 +95,20 @@ class PeriodicDownloadTest(CQ2TestCase):
             self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
 
-    def testNoConnectionPossible(self):
+    def testNoConnectionPossibleBecauseOfInvalidPort(self):
         harvester, observer, reactor = self.getHarvester("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
-        try:
-            callback() # connect
-            self.fail()
-        except TypeError, e:
-            self.assertEquals("an integer is required", str(e))
+        callback() # connect
+        self.assertEquals("some.nl:no-port: an integer is required\n", harvester._err.getvalue())
+
+    def testNoConnectionPossible(self):
+        harvester, observer, reactor = self.getHarvester("localhost", 8899)
+        callback = reactor.calledMethods[0].args[1]
+        callback() # connect
+        reactor.exceptions['removeWriter'] = IOError("error in sockopt") ## Simulate IOError as raised from sok.getsockopt
+        callback() # connect
+        self.assertEquals("localhost:8899: error in sockopt\n", harvester._err.getvalue())
+        self.assertEquals(5*60, reactor.calledMethods[-1].args[0])
 
     def testErrorResponse(self):
         reactor = CallTrace("reactor")
