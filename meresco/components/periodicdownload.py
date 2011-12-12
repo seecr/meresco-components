@@ -59,9 +59,13 @@ class PeriodicDownload(Observable):
 
     def loop(self):
         while True:
-            sok = yield self._tryConnect()
-            sok.send(self.any.buildRequest())
-            sok.shutdown(SHUT_WR)
+            try:
+                sok = yield self._tryConnect()
+                sok.send(self.any.buildRequest())
+                sok.shutdown(SHUT_WR)
+            except Exception, e:
+                yield self._retryAfterError(str(e), period=5*60)
+                continue
             self._reactor.addReader(sok, self._loop.next, prio=self._prio)
             responses = []
             try:
@@ -106,26 +110,22 @@ class PeriodicDownload(Observable):
         sok.setblocking(0)
         while True:
             try:
-                try:
-                    sok.connect((self._host, self._port))
-                except SocketError, (errno, msg):
-                    if errno != EINPROGRESS:
-                        yield self._retryAfterError("%s: %s" % (errno, msg))
-                        continue
-                self._reactor.addWriter(sok, self._loop.next)
-                yield
-                self._reactor.removeWriter(sok)
-
-                err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
-                if err == ECONNREFUSED:
-                    yield self._retryAfterError("Connection refused.")
+                sok.connect((self._host, self._port))
+            except SocketError, (errno, msg):
+                if errno != EINPROGRESS:
+                    yield self._retryAfterError("%s: %s" % (errno, msg))
                     continue
-                if err != 0:   # any other error
-                    raise IOError(err)
-                break
-            except Exception, e:
-                yield self._retryAfterError(str(e), period=5*60)
+            self._reactor.addWriter(sok, self._loop.next)
+            yield
+            self._reactor.removeWriter(sok)
+
+            err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
+            if err == ECONNREFUSED:
+                yield self._retryAfterError("Connection refused.")
                 continue
+            if err != 0:   # any other error
+                raise IOError(err)
+            break
         raise StopIteration(sok)
 
     def _retryAfterError(self, message, period=None):
