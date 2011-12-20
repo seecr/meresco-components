@@ -318,6 +318,14 @@ class IntegerListTest(CQ2TestCase):
         l.append(2 ** 64)
         self.assertEquals([2 ** 63 - 1, -1, 0], l)
 
+    def testIter(self):
+        il = IntegerList(10 ** 5)
+        t0 = time()
+        for x in il:
+            pass
+        t1 = time()
+        self.assertTiming(0.15, t1 - t0, 0.25)
+
     def probeMemory(self):
         self.vmsize = self._getVmSize()
 
@@ -332,5 +340,6 @@ class IntegerListTest(CQ2TestCase):
         vmsize = self._getVmSize()
         self.assertTrue(self.vmsize*bandwidth < vmsize < self.vmsize/bandwidth,
                 "memory leaking: before: %d, after: %d" % (self.vmsize, vmsize))
+
 
 

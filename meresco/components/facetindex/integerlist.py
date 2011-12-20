@@ -135,8 +135,8 @@ class IntegerList(object):
         IntegerList_set(self, index, value)
 
     def __iter__(self):
-        for i in range(len(self)):
-            yield self[i]
+        for i in xrange(len(self)):
+            yield IntegerList_get(self, i)
 
     def append(self, integer):
         IntegerList_append(self, integer)
