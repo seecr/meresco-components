@@ -94,21 +94,16 @@ class IntegerList(object):
         return IntegerList_size(self)
 
     def __getitem__(self, i):
-        if type(i) == slice:
-            start, stop, step = self._parseSlice(i)
-            islice = IntegerList_slice(self, start, stop, step)
-            l = list(IntegerList(cobj=islice))
-            if step != 1:
-                l = l[::step]
-            return l
         length = len(self)
+        if type(i) == slice:
+            return self._IntegerListSliceView(self, i)
         if i >= length or -i > length:
             raise IndexError(i)
         return IntegerList_get(self, i)
 
     def __delitem__(self, i):
         if type(i) == slice:
-            start, stop, step = self._parseSlice(i)
+            start, stop = self._parseSlice(i)
             IntegerList_delitems(self, start, stop)
         else:
             length = len(self)
@@ -118,18 +113,19 @@ class IntegerList(object):
                 raise IndexError("list assignment index out of range")
             IntegerList_delitems(self, i, i+1)
 
-    def _parseSlice(self, slice):
-        length = len(self)
+    def _parseSlice(self, slice, length=None):
+        if not slice.step in [None, 1]:
+            raise ValueError("%s does not support stepping slices" % self.__class__.__name__)
+        length = length or len(self)
         start = slice.start if not slice.start is None else 0
-        step = slice.step if not slice.step is None else 1
         stop = slice.stop if not slice.stop is None else length
         if start < 0:
-            start = max(length - -start, 0)
+            start = max(length + start, 0)
         if stop < 0:
-            stop = length - -stop
-        if stop > length:
-            stop = length
-        return start, stop, step
+            stop = length + stop
+        stop = min(stop, length)
+        start = min(start, stop)
+        return start, stop
         
     def __setitem__(self, index, value):
         IntegerList_set(self, index, value)
@@ -146,7 +142,7 @@ class IntegerList(object):
             self.append(i)
 
     def __eq__(self, rhs):
-        return self[:] == rhs[:]
+        return list(self) == list(rhs)
 
     def __repr__(self):
         return repr(list(i for i in self))
@@ -171,4 +167,36 @@ class IntegerList(object):
         errno = IntegerList_extendFrom(self, filename)
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
+
+
+    class _IntegerListSliceView(object):
+        def __init__(self, original, slice):
+            self._original = original
+            self._start, self._stop = original._parseSlice(slice)
+
+        def __iter__(self):
+            for i in xrange(self._start, self._stop):
+                yield IntegerList_get(self._original, i)
+
+        def __getitem__(self, index):
+            if isinstance(index, slice):
+                start, stop = self._original._parseSlice(index, len(self))
+                nStart = self._start + start
+                nStop = self._start + stop
+                return self.__class__(self._original, slice(nStart, nStop))
+            if index < 0:
+                index = len(self) + index
+            index = self._start + index
+            if self._start <= index < self._stop:
+                return IntegerList_get(self._original, index)
+            raise IndexError('list index out of range')
+
+        def __len__(self):
+            return self._stop - self._start
+
+        def __repr__(self):
+            return repr(list(self))
+
+        def __eq__(self, rhs):
+            return list(self) == list(rhs)
 

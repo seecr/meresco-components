@@ -94,32 +94,11 @@ class PersistentSortedIntegerListTest(CQ2TestCase):
         self.assertEquals([1,2], list(s[1:3]))
         self.assertEquals([0,1,2,3], list(s[:-2]))
         self.assertEquals([4,5], list(s[-2:]))
-        self.assertEquals([0,2], list(s[:4:2]))
-        self.assertEquals([5,4,3,2,1,0], list(s[::-1]))
+        self.assertRaises(ValueError, lambda: s[:4:2])
+        self.assertRaises(ValueError, lambda: s[::-1])
         self.assertEquals([], list(s[4:3]))
         self.assertEquals([0,1,2,3,4,5], list(s[-12345:234567]))
         self.assertEquals([1,2], list(s[1:3]))
-
-    def testSlicingCreatesASequence(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
-        for i in range(6):
-            s.append(i)
-        r = s[2:4]
-        self.assertEquals(s[2], r[0])
-        self.assertEquals(2, len(r))
-        self.assertEquals([2,3], list(r))
-
-        r = s[0:4:2]
-        self.assertEquals([0,2], list(r))
-        self.assertEquals(2, r[1])
-        r = s[::-1]
-        self.assertEquals([5,4,3,2,1,0], list(r))
-        self.assertEquals(5, r[0])
-        self.assertEquals(0, r[5])
-        self.assertEquals(0, r[-1])
-        self.assertEquals([5,4], list(r[:2]))
-        self.assertEquals(4, r[:4][1])
-        self.assertRaises(IndexError, lambda: s[:2][4])
 
     def testAppendFailsIfValueMakesListUnsorted(self):
         s = PersistentSortedIntegerList(self.filepath, use64bits=True)
@@ -146,8 +125,6 @@ class PersistentSortedIntegerListTest(CQ2TestCase):
             
             self.assertEquals([0,2,4,6,8,10], list(aList))
             self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
-            self.assertEquals([0,2,4,6,8,10], list(aList[::-1][::-1]))
-            self.assertEquals([10,8,6,4,2,0], list(aList[::-1]))
             self.assertEquals([2,4,6], list(aList[1:4]))
             self.assertTrue(2 in aList)
             self.assertFalse(1 in aList)

@@ -72,20 +72,39 @@ class IntegerListTest(CQ2TestCase):
             self.assertEquals(90, l[-10])
 
     def testSlicing(self):
-        for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
-            self.assertEquals([0,1], l[:2])
-            self.assertEquals([1,2,3,4], l[1:5])
-            self.assertEquals([98, 99], l[98:])
-            self.assertEquals([98, 99], l[-2:])
+        def assertSlice(expected, sliced):
+            self.assertEquals(expected, sliced)
+            self.assertEquals(len(expected), len(sliced))
 
-            self.assertEquals([98], l[-2:99])
-            self.assertEquals([], l[98:2])
-            self.assertEquals([0], l[-200:1])
-            self.assertEquals(range(99), l[-200:-1])
-            self.assertEquals(range(100), l[-200:200])
-            self.assertEquals([], l[0:0])
-            self.assertEquals(range(100), l[:])
-            self.assertEquals(range(99, -1, -1), l[::-1])
+        for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
+            assertSlice([0,1], l[:2])
+            assertSlice([1,2,3,4], l[1:5])
+            assertSlice([98, 99], l[98:])
+            assertSlice([98, 99], l[-2:])
+            assertSlice([98], l[-2:99])
+            assertSlice([], l[98:2])
+            assertSlice([0], l[-200:1])
+            assertSlice(range(99), l[-200:-1])
+            assertSlice(range(100), l[-200:200])
+            assertSlice([], l[0:0])
+            assertSlice(range(100), l[:])
+            self.assertRaises(ValueError, lambda: l[::-1])
+            assertSlice(range(98), l[-200:-1][:-1])
+
+    def testSlicesImmutable(self):
+        s = IntegerList(100)[1:5]
+        self.assertRaises(AttributeError, lambda: s.append(101))
+        self.assertRaises(AttributeError, lambda: s.extend([101]))
+        try:
+            del s[0]
+            self.fail('del should have failed.')
+        except TypeError, e:
+            pass
+        try:
+            s[0] = 200
+            self.fail('assignment should have failed.')
+        except TypeError, e:
+            pass
 
     def testCopySlice(self):
         for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
@@ -325,6 +344,13 @@ class IntegerListTest(CQ2TestCase):
             pass
         t1 = time()
         self.assertTiming(0.15, t1 - t0, 0.25)
+
+    def testSlicingPerformance(self):
+        il = IntegerList(10 ** 7)
+        t0 = time()
+        segment = il[:][:10]
+        t1 = time()
+        self.assertTiming(0.00, t1 - t0, 0.001)
 
     def probeMemory(self):
         self.vmsize = self._getVmSize()
