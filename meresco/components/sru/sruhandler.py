@@ -121,10 +121,10 @@ class SruHandler(Observable):
 
     def _writeResult(self, recordSchema=None, recordPacking=None, recordId=None, version=None, **kwargs):
         yield '<srw:record>'
-        yield '<srw:recordSchema>%s</srw:recordSchema>' % recordSchema
-        yield '<srw:recordPacking>%s</srw:recordPacking>' % recordPacking
+        yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(recordSchema)
+        yield '<srw:recordPacking>%s</srw:recordPacking>' % xmlEscape(recordPacking)
         if version == "1.2": 
-            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % recordId
+            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % xmlEscape(recordId)
         yield self._writeRecordData(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId)
         yield self._writeExtraRecordData(recordPacking=recordPacking, recordId=recordId, **kwargs)
         yield '</srw:record>'
