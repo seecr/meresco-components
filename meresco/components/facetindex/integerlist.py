@@ -1,31 +1,34 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
-#
-#    Meresco Components are components to build searchengines, repositories
-#    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
-#       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
-#    Copyright (C) 2009 Tilburg University http://www.uvt.nl
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-#
-#    This file is part of Meresco Components.
-#
-#    Meresco Components is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    Meresco Components is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with Meresco Components; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# 
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core". 
+# 
+# Copyright (C) 2007-2008 SURF Foundation. http://www.surf.nl
+# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+# Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
+# Copyright (C) 2009 Tilburg University http://www.uvt.nl
+# Copyright (C) 2011 Netherlands Institute for Sound and Vision http://instituut.beeldengeluid.nl/
+# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# 
+# This file is part of "Meresco Components"
+# 
+# "Meresco Components" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# "Meresco Components" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with "Meresco Components"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
 ## end license ##
 
 from sys import maxint
@@ -63,7 +66,7 @@ IntegerList_delitems.argtypes = [INTEGERLIST, c_int, c_int]
 IntegerList_delitems.restype = None
 
 IntegerList_slice = libFacetIndex.IntegerList_slice
-IntegerList_slice.argtypes = [INTEGERLIST, c_int, c_int, c_int]
+IntegerList_slice.argtypes = [INTEGERLIST, c_int, c_int]
 IntegerList_slice.restype = INTEGERLIST
 
 IntegerList_mergeFromOffset = libFacetIndex.IntegerList_mergeFromOffset
@@ -96,7 +99,9 @@ class IntegerList(object):
     def __getitem__(self, i):
         length = len(self)
         if type(i) == slice:
-            return self._IntegerListSliceView(self, i)
+            start, stop = self._parseSlice(i)
+            islice = IntegerList_slice(self, start, stop)
+            return IntegerList(cobj=islice)
         if i >= length or -i > length:
             raise IndexError(i)
         return IntegerList_get(self, i)
@@ -167,36 +172,4 @@ class IntegerList(object):
         errno = IntegerList_extendFrom(self, filename)
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
-
-
-    class _IntegerListSliceView(object):
-        def __init__(self, original, slice):
-            self._original = original
-            self._start, self._stop = original._parseSlice(slice)
-
-        def __iter__(self):
-            for i in xrange(self._start, self._stop):
-                yield IntegerList_get(self._original, i)
-
-        def __getitem__(self, index):
-            if isinstance(index, slice):
-                start, stop = self._original._parseSlice(index, len(self))
-                nStart = self._start + start
-                nStop = self._start + stop
-                return self.__class__(self._original, slice(nStart, nStop))
-            if index < 0:
-                index = len(self) + index
-            index = self._start + index
-            if self._start <= index < self._stop:
-                return IntegerList_get(self._original, index)
-            raise IndexError('list index out of range')
-
-        def __len__(self):
-            return self._stop - self._start
-
-        def __repr__(self):
-            return repr(list(self))
-
-        def __eq__(self, rhs):
-            return list(self) == list(rhs)
 
