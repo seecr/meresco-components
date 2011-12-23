@@ -331,7 +331,35 @@ class IntegerListTest(CQ2TestCase):
         for x in il:
             pass
         t1 = time()
-        self.assertTiming(0.15, t1 - t0, 0.25)
+        self.assertTiming(0.30, t1 - t0, 0.5)
+
+    def testIterWhileModifyingList(self):
+        il = IntegerList()
+        il.extend([1,2,3,4])
+        i = iter(il)
+        numbers = []
+        numbers.append(i.next())
+        numbers.append(i.next())
+        del il[0]
+        numbers.append(i.next())
+        self.assertRaises(StopIteration, i.next)
+        self.assertEquals([1,2,4], numbers)
+        self.assertEquals([2,3,4], il)
+
+        # 3 is not returned, although still in the list
+        # this is default python behaviour
+
+        l = [1,2,3,4]
+        i = iter(l)
+        numbers = []
+        numbers.append(i.next())
+        numbers.append(i.next())
+        del l[0]
+        numbers.append(i.next())
+        self.assertRaises(StopIteration, i.next)
+        self.assertEquals([1,2,4], numbers)
+        self.assertEquals([2,3,4], l)
+
 
     def testIterateOnSliceWhileModifyingList(self):
         il = IntegerList()

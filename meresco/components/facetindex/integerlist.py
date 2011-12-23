@@ -137,6 +137,8 @@ class IntegerList(object):
 
     def __iter__(self):
         for i in xrange(len(self)):
+            if i >= len(self):
+                raise StopIteration()
             yield IntegerList_get(self, i)
 
     def append(self, integer):
