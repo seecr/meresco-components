@@ -121,25 +121,17 @@ class IntegerList(object):
     def _parseSlice(self, slice, length=None):
         if not slice.step in [None, 1]:
             raise ValueError("%s does not support stepping slices" % self.__class__.__name__)
-        length = length or len(self)
-        start = slice.start if not slice.start is None else 0
-        stop = slice.stop if not slice.stop is None else length
-        if start < 0:
-            start = max(length + start, 0)
-        if stop < 0:
-            stop = length + stop
-        stop = min(stop, length)
-        start = min(start, stop)
+        start, stop, ignored = slice.indices(length or IntegerList_size(self))
         return start, stop
         
     def __setitem__(self, index, value):
         IntegerList_set(self, index, value)
 
     def __iter__(self):
-        for i in xrange(len(self)):
-            if i >= len(self):
-                raise StopIteration()
+        i = 0
+        while i < IntegerList_size(self):
             yield IntegerList_get(self, i)
+            i += 1
 
     def append(self, integer):
         IntegerList_append(self, integer)
