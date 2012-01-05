@@ -287,7 +287,7 @@ class DocSetList(object):
 
     def getDocsetForTerm(self, term):
         r = DocSetList_getForTerm(self, term)
-        if r:
+        if not r is None:
             return DocSet(cobj=r)
         return None
 
