@@ -33,7 +33,7 @@ from cq2utils.cq2testcase import CQ2TestCase
 from meresco.components.storagecomponent import StorageComponent
 from storage import HierarchicalStorage, Storage
 from cStringIO import StringIO
-from meresco.core import Observable, sync
+from meresco.core import Observable
 from subprocess import Popen, PIPE
 from weightless.core import compose
 
