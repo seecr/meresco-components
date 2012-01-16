@@ -35,7 +35,7 @@ from urllib import urlencode
 
 from meresco.core import Observable
 from meresco.components.http.utils import CRLF
-from weightless.core import compose, identify
+from weightless.core import compose, Yield
 
 from sys import stderr, stdout
 from time import time
@@ -57,7 +57,7 @@ class PeriodicDownload(Observable):
         self.startTimer()
 
     def startTimer(self):
-        self._reactor.addTimer(1, self.startProcess)
+        self._reactor.addTimer(self._period, self.startProcess)
 
     def startProcess(self):
         self._processOne = compose(self.processOne())
@@ -92,9 +92,9 @@ class PeriodicDownload(Observable):
 
             self._reactor.addProcess(self._processOne.next)
             gen = self.all.handle(data=body)
-            g = compose(gen, filter=callable)
+            g = compose(gen)
             for response  in g:
-                if callable(response):
+                if callable(response) and not response is Yield:
                     response(self._reactor, this.next)
                 yield
         except Exception:
@@ -128,7 +128,7 @@ class PeriodicDownload(Observable):
 
     def _retryAfterError(self, message):
         self._logError(message)
-        self._reactor.addTimer(self._period, self._processOne.next)
+        self.startTimer()
         yield
         
     def _logError(self, message):

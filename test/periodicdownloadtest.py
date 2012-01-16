@@ -124,9 +124,10 @@ class PeriodicDownloadTest(CQ2TestCase):
     def testInvalidPortConnectionRefused(self):
         harvester, observer, reactor = self.getHarvester("localhost", 88)
         callback = reactor.calledMethods[0].args[1]
-        callback() # connect
+        callback() # startProcess
         self.assertEquals("addWriter", reactor.calledMethods[1].name)
-        callback() # connect
+        callback = reactor.calledMethods[1].args[1]
+        callback() # _processOne.next
         self.assertEquals("removeWriter", reactor.calledMethods[2].name)
         self.assertEquals("addTimer", reactor.calledMethods[3].name)
         self.assertEquals("localhost:88: Connection refused.\n", harvester._err.getvalue())
@@ -144,9 +145,10 @@ class PeriodicDownloadTest(CQ2TestCase):
     def testInvalidHostConnectionRefused(self):
         harvester, observer, reactor = self.getHarvester("127.0.0.255", 9876)
         callback = reactor.calledMethods[0].args[1]
-        callback()
+        callback() # startProcess
         self.assertEquals("addWriter", reactor.calledMethods[1].name)
-        callback()
+        callback = reactor.calledMethods[1].args[1]
+        callback() # _processOne.next
         self.assertEquals("127.0.0.255:9876: Connection refused.\n", harvester._err.getvalue())
         self.assertEquals("removeWriter", reactor.calledMethods[2].name)
         self.assertEquals("addTimer", reactor.calledMethods[3].name)
@@ -155,17 +157,18 @@ class PeriodicDownloadTest(CQ2TestCase):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
             self.assertEquals(1, harvester._period)
-            callback = self.doConnect()
-            callback() # HTTP GET
-            sleep(0.01)
-            callback = reactor.calledMethods[3].args[1]
-            callback() # sok.recv
-            callback() # recv = ''
-            self.assertEquals("", harvester._err.getvalue())
+            callback = self.doConnect() # _processOne.next
+            callback() # _processOne.next -> HTTP GET
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            sleep(0.01)
+            callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''
+            self.assertEquals("", harvester._err.getvalue())
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEqualsWS(TWO_RECORDS, observer.calledMethods[1].kwargs['data'])
-            self.assertEquals('addProcess', reactor.calledMethods[-2].name)
+            self.assertEquals('addProcess', reactor.calledMethods[-1].name)
+            callback() # _processOne.next
+            self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
 
     def testSuccessHttp1dot1Server(self):
@@ -184,24 +187,35 @@ class PeriodicDownloadTest(CQ2TestCase):
     def testPeriod(self):
         with server([RESPONSE_TWO_RECORDS, 'HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port, period=2)
+            reactor._verbose = True
             callback = self.doConnect()
             callback() # HTTP GET
             sleep(0.01)
-            callback = reactor.calledMethods[3].args[1]
-            callback() # sok.recv
-            callback() # recv = ''
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''
+            callback() # _processOne.next
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
             
-            callback = self.doConnect()
-            callback() # HTTP GET
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # startProcess
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # _processOne.next -> HTTP GET
             sleep(0.01)
-            callback() # sok.recv
-            callback() # recv = ''
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''
+            # error status
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
 
-    def testRecoveringAfterDroppedConnection(self):
+    def testTODO(self):
+        self.fail("""Still todo:
+        - check all readers removed?
+        - test all remaining tests below this comment.""")
+
+    def XXXtestRecoveringAfterDroppedConnection(self):
         with server([DROP_CONNECTION, RESPONSE_ONE_RECORD]) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
             callback = self.doConnect()
@@ -229,7 +243,7 @@ class PeriodicDownloadTest(CQ2TestCase):
         self.assertEquals(['removeProcess'], [m.name for m in reactor.calledMethods])
         self.assertEquals(nextCall, reactor.calledMethods[0].args[0])
 
-    def testDriver(self):
+    def XXXtestDriver(self):
         reactor = CallTrace("reactor")
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
@@ -260,14 +274,14 @@ class PeriodicDownloadTest(CQ2TestCase):
         self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._harvester.addObserver(self._observer)
         self._harvester.observer_init()
-        self.assertEquals(1, self._reactor.calledMethods[0].args[0])
+        self.assertEquals(period, self._reactor.calledMethods[0].args[0])
         return self._harvester, self._observer, self._reactor
 
     def doConnect(self):
         callback = self._reactor.calledMethods[0].args[1]
-        callback() # connect
+        callback() # startProcess -> tryConnect
         callback = self._reactor.calledMethods[1].args[1]
-        return callback
+        return callback # _processOne.next
 
 HTTP_SEPARATOR = 2 * CRLF
 STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
