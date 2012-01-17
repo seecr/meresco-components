@@ -70,17 +70,19 @@ class PeriodicDownload(Observable):
         self._reactor.addReader(sok, self._processOne.next, prio=self._prio)
         responses = []
         try:
-            while True:
-                yield
-                response = sok.recv(4096)
-                if response == '':
-                     break
-                responses.append(response)
+            try:
+                while True:
+                    yield
+                    response = sok.recv(4096)
+                    if response == '':
+                         break
+                    responses.append(response)
+            finally:
+                self._reactor.removeReader(sok)
+                sok.close()
         except SocketError, (errno, msg):
             yield self._retryAfterError("Receive error: %s: %s" % (errno, msg))
             return
-        self._reactor.removeReader(sok)
-        sok.close()
 
         try:
             response = ''.join(responses)
@@ -91,15 +93,17 @@ class PeriodicDownload(Observable):
                 return
 
             self._reactor.addProcess(self._processOne.next)
-            gen = self.all.handle(data=body)
-            g = compose(gen)
-            for response  in g:
-                if callable(response) and not response is Yield:
-                    response(self._reactor, this.next)
-                yield
+            try:
+                gen = self.all.handle(data=body)
+                g = compose(gen)
+                for response  in g:
+                    if callable(response) and not response is Yield:
+                        response(self._reactor, this.next)
+                    yield
+            finally:
+                self._reactor.removeProcess()
         except Exception:
             self._logError(format_exc())
-        self._reactor.removeProcess()
         self.startTimer()
         yield
 
