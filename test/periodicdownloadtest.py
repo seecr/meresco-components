@@ -70,7 +70,6 @@ def server(responses, bufsize=4096):
 
 class PeriodicDownloadTest(CQ2TestCase):
     def testOne(self):
-        reactor = CallTrace("reactor")
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
             self.assertEquals('addTimer', reactor.calledMethods[0].name)
@@ -94,6 +93,7 @@ class PeriodicDownloadTest(CQ2TestCase):
             self.assertEquals(0, len(observer.calledMethods[1].args))
             self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
+            print [m.name for m in reactor.calledMethods]
 
     def testNoConnectionPossible(self):
         harvester, observer, reactor = self.getHarvester("some.nl", 'no-port')
@@ -105,7 +105,6 @@ class PeriodicDownloadTest(CQ2TestCase):
             self.assertEquals("an integer is required", str(e))
 
     def testErrorResponse(self):
-        reactor = CallTrace("reactor")
         with server(['HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
             callback = reactor.calledMethods[0].args[1]
@@ -187,7 +186,6 @@ class PeriodicDownloadTest(CQ2TestCase):
     def testPeriod(self):
         with server([RESPONSE_TWO_RECORDS, 'HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port, period=2)
-            reactor._verbose = True
             callback = self.doConnect()
             callback() # HTTP GET
             sleep(0.01)
@@ -210,41 +208,26 @@ class PeriodicDownloadTest(CQ2TestCase):
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
 
-    def testTODO(self):
-        self.fail("""Still todo:
-        - check all readers removed?
-        - test all remaining tests below this comment.""")
-
-    def XXXtestRecoveringAfterDroppedConnection(self):
+    def testRecoveringAfterDroppedConnection(self):
         with server([DROP_CONNECTION, RESPONSE_ONE_RECORD]) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
             callback = self.doConnect()
             callback() # HTTP GET
             sleep(0.01)
-            callback = reactor.calledMethods[3].args[1]
-            callback() # sok.recv = ''
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # _processOne.next -> sok.recv
             self.assertEquals("localhost:%s: Receive error: 11: Resource temporarily unavailable\n" % port, harvester._err.getvalue()) 
-            callback()
-            callback() # HTTP GET
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # startProcess
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # _processOne.next -> HTTP GET
             sleep(0.01)
             self.assertEquals("GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
-            callback() # sok.recv
-            callback() # soc.recv == ''
+            callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''
             self.assertEquals(['buildRequest', 'buildRequest', 'handle'], [m.name for m in observer.calledMethods])
 
-    def xxtestDriver(self):
-        def f():
-            yield
-        reactor = CallTrace("reactor")
-        periodicDownloader = PeriodicDownload(reactor, "localhost", 9999)
-        driver = periodicDownloader.driver(f())
-        nextCall = driver.next
-        list(driver)
-        self.assertEquals(['removeProcess'], [m.name for m in reactor.calledMethods])
-        self.assertEquals(nextCall, reactor.calledMethods[0].args[0])
-
-    def XXXtestDriver(self):
-        reactor = CallTrace("reactor")
+    def testDriver(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             harvester, observer, reactor = self.getHarvester("localhost", port)
             self.assertEquals(1, reactor.calledMethods[0].args[0])
@@ -264,8 +247,11 @@ class PeriodicDownloadTest(CQ2TestCase):
             except StopIteration:
                 pass
             self.assertEquals('removeProcess', reactor.calledMethods[6].name)
-            self.assertEquals(reactor.calledMethods[5].args[0], reactor.calledMethods[6].args[0])
              
+    def testTODO(self):
+        self.fail("""Still todo:
+        - check all readers removed?  """)
+
 
     def getHarvester(self, host, port, period=1):
         self._reactor = CallTrace("reactor")
