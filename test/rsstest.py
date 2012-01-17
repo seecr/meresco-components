@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from amara.binderytools import bind_string
 from urllib import urlencode
 
@@ -55,7 +55,7 @@ RSS = RSS_HEAD % """<title>Test title</title>
 %s
 """
 
-class RssTest(CQ2TestCase):
+class RssTest(SeecrTestCase):
 
     def testNoResults(self):
         observer = CallTrace(

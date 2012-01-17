@@ -26,7 +26,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase as TestCase
+from seecr.test import SeecrTestCase as TestCase
 
 from meresco.components.rssitem import RssItem
 from StringIO import StringIO

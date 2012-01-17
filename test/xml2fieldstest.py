@@ -27,7 +27,7 @@
 #
 ## end license ##
 from unittest import TestCase
-from cq2utils import CallTrace
+from seecr.test import CallTrace
 
 from meresco.core import Observable
 from meresco.components import Xml2Fields

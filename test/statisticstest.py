@@ -30,14 +30,14 @@
 import cPickle as pickle
 from time import time
 from random import randint
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from os import makedirs, rename
 from os.path import isfile, join
 from meresco.components.statistics import Statistics, Logger, combinations, Aggregator, AggregatorException, Top100s, snapshotFilename, log
 from meresco.core import Observable
 from weightless.core import compose
 
-class StatisticsTest(CQ2TestCase):
+class StatisticsTest(SeecrTestCase):
 
     def testStatistics(self):
         stats = Statistics(self.tempdir, [('date',), ('date', 'protocol'), ('date', 'ip', 'protocol')])

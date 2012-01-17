@@ -29,7 +29,7 @@ from unittest import TestCase
 
 from meresco.components import TimedDictionary
 
-from cq2utils import CallTrace
+from seecr.test import CallTrace
 
 from time import time, sleep
 

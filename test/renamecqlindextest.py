@@ -26,12 +26,12 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 
 from meresco.components import RenameCqlIndex
 from cqlparser import parseString
 
-class RenameCqlIndexTest(CQ2TestCase):
+class RenameCqlIndexTest(SeecrTestCase):
     def testConvert(self):
         rename = RenameCqlIndex(lambda name: 'other'+name)
         self.assertEquals(parseString('otherfield = value'), rename(parseString('field = value')))

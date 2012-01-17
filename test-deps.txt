@@ -1,0 +1,2 @@
+seecr-test (>= 1.0)
+seecr-test (<< 1.1)

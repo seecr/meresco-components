@@ -26,7 +26,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.xml import XMLRewrite
 
 from StringIO import StringIO
@@ -45,10 +45,10 @@ from os.path import join, dirname, abspath
 def readRecord(name):
     return open('data/' + name)
 
-class CrosswalkTest(CQ2TestCase):
+class CrosswalkTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.crosswalk = Crosswalk()
         self.validate = Validate(join(abspath(dirname(xml_genericpath)), 'schemas-lom', 'lomCc.xsd'))
         self.crosswalk.addObserver(self.validate)

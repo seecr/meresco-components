@@ -28,11 +28,11 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 
 from meresco.components.packer import IntStringPacker, IntPacker, StringIntPacker
 
-class PackerTest(CQ2TestCase):
+class PackerTest(SeecrTestCase):
     def assertPacking(self, item):
         packed = self.packer.pack(item)
         result = self.packer.unpack(packed)

@@ -25,7 +25,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from os.path import isfile, isdir, join
 from os import listdir
@@ -37,9 +37,9 @@ from meresco.core import Observable
 
 from weightless.core import compose
 
-class QueryLogTest(CQ2TestCase):
+class QueryLogTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self._timeNow = 1257161136.0 # 2009-11-02 11:30:00
         def time():
             self._timeNow += 1.0

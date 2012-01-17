@@ -24,7 +24,7 @@
 # 
 ## end license ##
 
-from cq2utils import CallTrace
+from seecr.test import CallTrace
 from unittest import TestCase
 from meresco.components import CombineParts
 from weightless.core import compose

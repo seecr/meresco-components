@@ -27,7 +27,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from weightless.core import be
 from meresco.core import Observable
@@ -35,9 +35,9 @@ from meresco.components import RenameField, TransformFieldValue, FilterField, Ad
 from lxml.etree import parse
 from StringIO import StringIO
 
-class FieldletsTest(CQ2TestCase):
+class FieldletsTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.observert = CallTrace('Observer')
 
     def testRenameField(self):

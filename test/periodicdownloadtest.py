@@ -36,7 +36,7 @@ from lxml.etree import tostring
 from StringIO import StringIO
 from os.path import join
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be
 from meresco.core import Observable
 from meresco.components.http.utils import CRLF
@@ -68,7 +68,7 @@ def server(responses, bufsize=4096):
     thread.join()
 
 
-class PeriodicDownloadTest(CQ2TestCase):
+class PeriodicDownloadTest(SeecrTestCase):
     def testOne(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self.getDownloader("localhost", port)

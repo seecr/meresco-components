@@ -26,16 +26,16 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.fields2xmlfields import Fields2XmlFields, generateXml
 from meresco.core import Observable, TransactionScope
 from weightless.core import compose, be
 
 NAMESPACE="http://example.org/namespace"
 
-class Fields2XmlFieldsTest(CQ2TestCase):
+class Fields2XmlFieldsTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
 
         ctx = CallTrace('CTX')
         tx = CallTrace('TX', returnValues={'getId': 1234})

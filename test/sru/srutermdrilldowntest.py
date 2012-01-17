@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import compose
 
 from meresco.components.sru.diagnostic import generalSystemError
@@ -36,7 +36,7 @@ from meresco.components.sru.diagnostic import generalSystemError
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.drilldown import SRUTermDrilldown
 
-class SRUTermDrilldownTest(CQ2TestCase):
+class SRUTermDrilldownTest(SeecrTestCase):
     def testSRUTermDrilldown(self):
         sruTermDrilldown = SRUTermDrilldown()
 

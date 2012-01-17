@@ -32,7 +32,7 @@ from unittest import TestCase
 from meresco.components.http import SessionHandler, utils
 from meresco.components.http.sessionhandler import Session
 from weightless.core import compose
-from cq2utils import CallTrace
+from seecr.test import CallTrace
 from time import time, sleep
 
 #Cookies RFC 2109 http://www.ietf.org/rfc/rfc2109.txt

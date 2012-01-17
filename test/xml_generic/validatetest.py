@@ -27,7 +27,7 @@
 ## end license ##
 
 from cStringIO import StringIO
-from cq2utils.cq2testcase import CQ2TestCase
+from seecr.test import SeecrTestCase
 
 from lxml.etree import parse, _ElementTree
 
@@ -39,10 +39,10 @@ from weightless.core import compose
 from meresco.components.xml_generic import  __file__ as xml_genericpath
 from os.path import join, dirname, abspath
 
-class ValidateTest(CQ2TestCase):
+class ValidateTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.validate = Validate(join(abspath(dirname(xml_genericpath)), 'schemas-lom', 'lomCc.xsd'))
         self.exception = None
         self.args = None

@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from cq2utils import CallTrace, CQ2TestCase
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
@@ -58,11 +58,11 @@ CREATE = "create"
 REPLACE = "replace"
 DELETE = "delete"
 
-class SRURecordUpdateTest(CQ2TestCase):
+class SRURecordUpdateTest(SeecrTestCase):
     """http://www.loc.gov/standards/sru/record-update/"""
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.sruRecordUpdate = SRURecordUpdate()
         @asyncreturn
         def addOrDelete(*args, **kwargs):

@@ -26,16 +26,16 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.http import HandleRequestFilter
 from meresco.core import Observable
 
 from weightless.core import be, compose
 
-class HandleRequestFilterTest(CQ2TestCase):
+class HandleRequestFilterTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.observer = CallTrace('Observer')
 
         self.usedKwargs = []

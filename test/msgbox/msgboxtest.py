@@ -25,7 +25,7 @@
 ## end license ##
 
 from __future__ import with_statement
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.core import Transparent
 
@@ -50,10 +50,10 @@ DATA = "<record/>"
 def failingAddMock(identifier=None, filedata=None):
     raise ValueError()
 
-class MsgboxTest(CQ2TestCase):
+class MsgboxTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.reactor = Reactor()
         self.observer = CallTrace('Observer')
         self.inDirectory = join(self.tempdir, 'in')

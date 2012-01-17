@@ -25,7 +25,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.core import Observable
 
@@ -41,7 +41,7 @@ class Tokens(object):
     def addField(self, field, value):
         self.tokens.append(value)
 
-class TokenizeFieldletTest(CQ2TestCase):
+class TokenizeFieldletTest(SeecrTestCase):
 
     def assertTokenized(self, expected, value):
         tokens = Tokens()

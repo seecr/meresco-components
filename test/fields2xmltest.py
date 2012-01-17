@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components import Fields2Xml
 from meresco.components.fields2xml import Fields2XmlException, generateXml
@@ -37,7 +37,7 @@ from amara.binderytools import bind_string
 from StringIO import StringIO
 from lxml.etree import parse
 
-class Fields2XmlTest(CQ2TestCase):
+class Fields2XmlTest(SeecrTestCase):
     def testOne(self):
         __callstack_var_tx__ = CallTrace('TX')
         __callstack_var_tx__.locals = {'id': 'identifier'}

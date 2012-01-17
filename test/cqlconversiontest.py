@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
 from meresco.core import Observable
 from weightless.core import be
@@ -35,7 +35,7 @@ from cqlparser import parseString, cql2string
 from cqlparser.cqlparser import SEARCH_TERM, SEARCH_CLAUSE, TERM
 
 
-class CQLConversionTest(CQ2TestCase):
+class CQLConversionTest(SeecrTestCase):
     def testCQLContextSetConversion(self):
         observer = CallTrace('observer')
         o = be((Observable(),

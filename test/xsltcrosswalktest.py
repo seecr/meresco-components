@@ -26,7 +26,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from os.path import join
 from lxml.etree import parse, tostring, _ElementTree
 
@@ -66,10 +66,10 @@ XSLT = """<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" versi
 </xsl:stylesheet>"""
 
 
-class XsltCrosswalkTest(CQ2TestCase):
+class XsltCrosswalkTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.xsltFilename = join(self.tempdir, 'stylesheet.xsl')
         self.xmlFilename = join(self.tempdir, 'source.xml')
         fp = open(self.xsltFilename, 'w')

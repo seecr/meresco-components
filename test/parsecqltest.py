@@ -28,7 +28,7 @@
 
 
 from unittest import TestCase
-from cq2utils import CallTrace
+from seecr.test import CallTrace
 from meresco.components import ParseCQL
 from weightless.core import compose
 

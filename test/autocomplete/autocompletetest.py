@@ -27,10 +27,10 @@
 
 from meresco.components.autocomplete import Autocomplete
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import compose
 
-class AutocompleteTest(CQ2TestCase):
+class AutocompleteTest(SeecrTestCase):
     def testHandleRequest(self):
         auto = Autocomplete(path='/some/path', maxresults=50, inputs=[('mainsearchinput', 'drilldown.dc.subject')])
         observer = CallTrace('observer')

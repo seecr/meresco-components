@@ -25,7 +25,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.core import Transparent
 
@@ -38,10 +38,10 @@ from lxml.etree import tostring
 
 from meresco.components.inbox import Inbox, InboxException
 
-class InboxTest(CQ2TestCase):
+class InboxTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.reactor = Reactor()
         self.observer = CallTrace('Observer')
         self.inboxDirectory = join(self.tempdir, 'inbox')

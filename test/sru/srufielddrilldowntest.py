@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from StringIO import StringIO
 
@@ -40,7 +40,7 @@ from weightless.core import compose, be
 
 from cqlparser import parseString, cql2string
 
-class SRUFieldDrilldownTest(CQ2TestCase):
+class SRUFieldDrilldownTest(SeecrTestCase):
 
     def testSRUParamsAndXMLOutput(self):
         firstCall = []

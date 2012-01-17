@@ -26,12 +26,12 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import ReindexConsole
 from meresco.core import Observable
 from weightless.core import be
 
-class ReindexConsoleTest(CQ2TestCase):
+class ReindexConsoleTest(SeecrTestCase):
 
     def testArguments(self):
         observer = CallTrace('observer')

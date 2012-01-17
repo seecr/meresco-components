@@ -28,12 +28,12 @@
 #
 ## end license ##
 from meresco.components import ClauseCollector
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from cqlparser import parseString
 
-class ClauseCollectorTest(CQ2TestCase):
+class ClauseCollectorTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
 
     def testClauseCollector(self):
         self.assertEquals(['cat', 'dog'], self.findClauses("cat or dog"))

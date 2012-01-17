@@ -26,12 +26,12 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.http import PathFilter
 from weightless.core import compose
 
-class PathFilterTest(CQ2TestCase):
+class PathFilterTest(SeecrTestCase):
     def testSimplePath(self):
         f = PathFilter('/path')
         interceptor = CallTrace('Interceptor')

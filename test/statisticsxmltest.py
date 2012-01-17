@@ -27,7 +27,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.statisticsxml import StatisticsXml
 from meresco.components.statistics import Statistics
 from meresco.components.http.utils import CRLF
@@ -36,7 +36,7 @@ from lxml.etree import parse
 
 from weightless.core import compose
 
-class StatisticsXmlTest(CQ2TestCase):
+class StatisticsXmlTest(SeecrTestCase):
 
     def testParseTime(self):
         s = StatisticsXml('ignored')

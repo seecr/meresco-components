@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.core import Observable
 
 from weightless.core import be, compose
@@ -40,7 +40,7 @@ from StringIO import StringIO
 import sys
 
 
-class XmlXPathTest(CQ2TestCase):
+class XmlXPathTest(SeecrTestCase):
 
     def createXmlXPath(self, xpathList, nsMap):
         self.observer = CallTrace('observer',ignoredAttributes=['start'] )

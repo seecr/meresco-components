@@ -26,13 +26,13 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from meresco.core import Observable
 from meresco.components import RequestScope
 
 from weightless.core import compose
 
-class RequestScopeTest(CQ2TestCase):
+class RequestScopeTest(SeecrTestCase):
     def testEverythingIsPassed(self):
         usedArgsKwargs=[]
         class MyObserver(Observable):

@@ -41,7 +41,7 @@ from os.path import join
 
 
 from StringIO import StringIO
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from cqlparser import parseString
 import traceback
 
@@ -49,7 +49,7 @@ from weightless.core import compose
 
 SUCCESS = "SUCCESS"
 
-class SruHandlerTest(CQ2TestCase):
+class SruHandlerTest(SeecrTestCase):
 
     def testEchoedSearchRetrieveRequest(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string'}

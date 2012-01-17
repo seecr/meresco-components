@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from cq2utils.cq2testcase import CQ2TestCase
+from seecr.test import SeecrTestCase
 
 from meresco.components.storagecomponent import StorageComponent
 from storage import HierarchicalStorage, Storage
@@ -38,10 +38,10 @@ from subprocess import Popen, PIPE
 from weightless.core import compose
 
 
-class StorageComponentTest(CQ2TestCase):
+class StorageComponentTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
 
         self.storageComponent = StorageComponent(self.tempdir)
         self.storage = self.storageComponent._storage

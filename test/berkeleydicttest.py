@@ -28,11 +28,11 @@
 ## end license ##
 
 
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 
 from meresco.components import DoubleUniqueBerkeleyDict, BerkeleyDict
 
-class BerkeleyDictTestBase(CQ2TestCase):
+class BerkeleyDictTestBase(SeecrTestCase):
     def testInsert(self):
         self.bdict['1'] = 'some string'
         self.assertEquals('some string', self.bdict['1'])

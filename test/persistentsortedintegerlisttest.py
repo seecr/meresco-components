@@ -30,7 +30,7 @@
 ## end license ##
 
 from __future__ import with_statement
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from os import rename, remove, listdir
 from os.path import join, isfile
 from bisect import bisect_left, bisect_right
@@ -43,9 +43,9 @@ from time import time
 
 class FullStopException(Exception): pass
 
-class PersistentSortedIntegerListTest(CQ2TestCase):
+class PersistentSortedIntegerListTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.filepath = join(self.tempdir, 'list')
 
     def testAppendAndWrite(self):

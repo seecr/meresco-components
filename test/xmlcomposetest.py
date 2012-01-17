@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase as TestCase
+from seecr.test import SeecrTestCase as TestCase
 
 from meresco.core import Observable
 from StringIO import StringIO

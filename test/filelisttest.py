@@ -30,7 +30,7 @@
 ## end license ##
 
 from __future__ import with_statement
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from os.path import join
 from bisect import bisect_left, bisect_right
 from random import choice
@@ -39,7 +39,7 @@ from meresco.components import SortedFileList, FileList
 from meresco.components.packer import IntStringPacker, IntPacker
 from time import time
 
-class FileListTest(CQ2TestCase):
+class FileListTest(SeecrTestCase):
     def testAppendAndWrite(self):
         s = SortedFileList(join(self.tempdir, 'list'))
         s.append(1)

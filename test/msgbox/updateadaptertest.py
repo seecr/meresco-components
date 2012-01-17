@@ -25,15 +25,15 @@
 
 from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox, Msgbox
 from weightless.core import compose
-from cq2utils import CallTrace, CQ2TestCase
+from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse, tostring
 from StringIO import StringIO
 from os.path import basename, join
 from os import makedirs
 
-class UpdateAdapterTest(CQ2TestCase):
+class UpdateAdapterTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.indir = join(self.tempdir, 'in')
         self.outdir = join(self.tempdir, 'out')
         makedirs(self.indir)

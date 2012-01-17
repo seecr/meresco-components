@@ -30,7 +30,7 @@
 
 from StringIO import StringIO
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse, tostring
 
 from meresco.components.venturi import Venturi, VenturiException
@@ -56,7 +56,7 @@ def createVenturiHelix(should, could, *observers, **kwargs):
         )
     )
 
-class VenturiTest(CQ2TestCase):
+class VenturiTest(SeecrTestCase):
     def testOutline(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;</part><part name="parttwo"><second>message</second></part></document>""")
         interceptor = CallTrace('Interceptor')

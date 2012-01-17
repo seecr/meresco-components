@@ -27,14 +27,14 @@
 #
 ## end license ##
 from socket import socket
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from weightless.io import Reactor
 from weightless.core import compose
 
 from meresco.components.http import ObservableHttpServer
 from meresco.components.http.utils import CRLF
 
-class ObservableHttpServerTest(CQ2TestCase):
+class ObservableHttpServerTest(SeecrTestCase):
     def testSimpleHandleRequest(self):
         observer = CallTrace('Observer')
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)

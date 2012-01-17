@@ -25,14 +25,14 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components import XPath2Field
 
 from lxml.etree import parse
 from StringIO import StringIO
 
-class XPath2FieldTest(CQ2TestCase):
+class XPath2FieldTest(SeecrTestCase):
     def testSingleXPath2Field(self):
         observer = CallTrace()
         xpath2field = XPath2Field([('/a/b//@attr', 'a.b.attr')], namespaceMap={'ns': 'http://namespace.org/'})

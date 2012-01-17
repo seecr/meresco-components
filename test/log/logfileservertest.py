@@ -25,7 +25,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from os.path import join
 from os import mkdir, listdir
@@ -35,9 +35,9 @@ from meresco.components.http.utils import CRLF, notFoundHtml
 
 from meresco.components.log import LogFileServer, DirectoryLog
 
-class LogFileServerTest(CQ2TestCase):
+class LogFileServerTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         
         self.logDir = join(self.tempdir, 'log')
         directoryLog = DirectoryLog(self.logDir)

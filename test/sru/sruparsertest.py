@@ -31,14 +31,14 @@
 from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException, XML_HEADER
 from meresco.components.sru import SruParser, SruHandler
 
-from cq2utils import CallTrace, CQ2TestCase
+from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse
 from StringIO import StringIO
 from weightless.core import compose
 
 SUCCESS = "SUCCESS"
 
-class SruParserTest(CQ2TestCase):
+class SruParserTest(SeecrTestCase):
 
     def testExplainWithPresetValues(self):
         component = SruParser(host='TEST_SERVER_HOST', port='TEST_SERVER_PORT', description='TEST_SERVER_DESCRIPTION', modifiedDate='TEST_SERVER_DATE', database='DATABASE', wsdl='http://somewhe.re/wsdl')

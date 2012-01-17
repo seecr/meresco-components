@@ -26,15 +26,15 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from os.path import join
 
 from meresco.components.contextset import ContextSet, ContextSetException, ContextSetList
 from StringIO import StringIO
 
-class ContextSetTest(CQ2TestCase):
+class ContextSetTest(SeecrTestCase):
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         stream = StringIO("""
 # test contextset file
 query.field1\tactualfield1

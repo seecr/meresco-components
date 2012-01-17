@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
@@ -61,10 +61,10 @@ SRW_REQUEST = """<SRW:searchRetrieveRequest xmlns:SRW="http://www.loc.gov/zing/s
 
 argumentsWithMandatory = """<SRW:version>1.1</SRW:version><SRW:query>dc.author = "jones" and  dc.title = "smith"</SRW:query>%s"""
 
-class SrwTest(CQ2TestCase):
+class SrwTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.srw = Srw()
         self.sruParser = SruParser()
         self.sruHandler = SruHandler()

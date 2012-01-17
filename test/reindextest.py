@@ -28,7 +28,7 @@
 #
 ## end license ##
 
-from cq2utils import CQ2TestCase, CallTrace
+from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
 from meresco.core import Observable, asyncreturn
 from lxml.etree import tostring
@@ -38,7 +38,7 @@ from os.path import join, isdir
 from os import listdir
 from weightless.core import compose, be
 
-class ReindexTest(CQ2TestCase):
+class ReindexTest(SeecrTestCase):
     def _path(self, subdir):
         return join(self.tempdir, subdir)
 

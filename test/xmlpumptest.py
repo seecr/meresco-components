@@ -30,17 +30,17 @@
 
 from StringIO import StringIO
 from meresco.core import Observable
-from cq2utils import CallTrace, CQ2TestCase
+from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
 from amara import binderytools
 from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult, _ElementUnicodeResult
 
 from meresco.components import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 
-class XmlPumpTest(CQ2TestCase):
+class XmlPumpTest(SeecrTestCase):
 
     def setUp(self):
-        CQ2TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.observer = CallTrace('Observer', ignoredAttributes=['start'])
         self.observable = be(
             (Observable(),
