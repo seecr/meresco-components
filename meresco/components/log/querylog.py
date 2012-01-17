@@ -6,6 +6,7 @@
 # 
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -26,6 +27,7 @@
 ## end license ##
 
 from meresco.core import Observable, Transparent
+from weightless.core import compose
 
 from time import time
 from urllib import urlencode
@@ -51,7 +53,7 @@ class QueryLog(Transparent):
         timestamp = self._time()
         ipAddress = Client[0]
         sizeInBytes = 0
-        for response in self.all.handleRequest(Client=Client, path=path, **kwargs):
+        for response in compose(self.all.handleRequest(Client=Client, path=path, **kwargs)):
             if hasattr(response, '__len__'):
                 sizeInBytes += len(response)
             yield response

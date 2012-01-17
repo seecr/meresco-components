@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
@@ -32,7 +32,7 @@ from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
 from meresco.core import Observable, decorate
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
-from weightless.core import compose
+from weightless.core import compose, Yield
 
 from cqlparser import parseString as parseCQL
 from warnings import warn
@@ -106,7 +106,7 @@ class SruHandler(Observable):
         response = compose(self._extraResponseDataTryExcept(**kwargs))
         headerWritten = False
         for line in response:
-            if callable(line):
+            if line is Yield or callable(line):
                 yield line
                 continue
             if line and not headerWritten:
@@ -147,8 +147,7 @@ class SruHandler(Observable):
 
     def _catchErrors(self, dataGenerator, recordSchema, recordId):
         try:
-            for stuff in compose(dataGenerator):
-                yield stuff
+            yield dataGenerator
         except IOError, e:
             yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId))])
         except Exception, e:
@@ -184,7 +183,7 @@ class SruHandler(Observable):
             return
         if recordPacking == 'string':
             for data in generator:
-                if callable(data):
+                if data is Yield or callable(data):
                     yield data
                 yield xmlEscape(data)
         else:
