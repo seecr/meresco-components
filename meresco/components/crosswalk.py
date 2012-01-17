@@ -28,7 +28,6 @@
 from StringIO import StringIO
 from lxml.etree import parse, XMLParser, _ElementTree
 from meresco.xml import XMLRewrite
-from cq2utils.xmlutils import findNamespaces
 from glob import glob
 from os.path import basename, dirname, abspath, join
 
