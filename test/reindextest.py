@@ -31,7 +31,7 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
-from meresco.core import Observable, asyncreturn
+from meresco.core import Observable, asyncnoreturnvalue
 from lxml.etree import tostring
 from escaping import unescapeFilename, escapeFilename
 
@@ -50,7 +50,7 @@ class ReindexTest(SeecrTestCase):
         return storage
 
     def setupDna(self, storage):
-        @asyncreturn
+        @asyncnoreturnvalue
         def add(**kwargs):
             pass
         observer = CallTrace('observer', methods={'add': add})

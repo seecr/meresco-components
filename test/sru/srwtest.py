@@ -33,7 +33,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
 from meresco.components.facetindex import Response
-from meresco.core import asyncreturn
+from meresco.core import asyncnoreturnvalue
 
 from weightless.core import compose
 
@@ -132,7 +132,7 @@ Content-Type: text/xml; charset=utf-8
     </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
 
     def testContentType(self):
-        @asyncreturn
+        @asyncnoreturnvalue
         def methodAsGenerator(**kwargs):
             pass
         def executeQuery(**kwargs):
@@ -152,7 +152,7 @@ Content-Type: text/xml; charset=utf-8
 
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
-        @asyncreturn
+        @asyncnoreturnvalue
         def methodAsGenerator(**kwargs):
             pass
         response = Response(total=1, hits=['recordId'])
@@ -198,7 +198,7 @@ Content-Type: text/xml; charset=utf-8
   </SOAP:Body>
 </SOAP:Envelope>"""
 
-        @asyncreturn
+        @asyncnoreturnvalue
         def methodAsGenerator(**kwargs):
             pass
         response = Response(total=1, hits=['recordId'])
@@ -239,7 +239,7 @@ Content-Type: text/xml; charset=utf-8
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        @asyncreturn
+        @asyncnoreturnvalue
         def methodAsGenerator(**kwargs):
             pass
         observer = CallTrace(

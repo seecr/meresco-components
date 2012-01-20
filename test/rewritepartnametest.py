@@ -28,14 +28,14 @@
 
 from seecr.test import CallTrace
 from unittest import TestCase
-from meresco.core import Observable, asyncreturn
+from meresco.core import Observable, asyncnoreturnvalue
 
 from meresco.components import RewritePartname
 from weightless.core import compose
 
 class RewritePartnameTest(TestCase):
     def testAddPartname(self):
-        @asyncreturn
+        @asyncnoreturnvalue
         def add(**kwargs):
             pass
         observable = Observable()

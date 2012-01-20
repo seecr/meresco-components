@@ -34,7 +34,7 @@ from meresco.components.sru.srurecordupdate import SRURecordUpdate
 from amara.binderytools import bind_string
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
-from meresco.core import asyncreturn
+from meresco.core import asyncnoreturnvalue
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -65,7 +65,7 @@ class SRURecordUpdateTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.sruRecordUpdate = SRURecordUpdate()
-        @asyncreturn
+        @asyncnoreturnvalue
         def addOrDelete(*args, **kwargs):
             pass
         self.observer = CallTrace("Observer", methods={'add': addOrDelete, 'delete': addOrDelete})
