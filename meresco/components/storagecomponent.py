@@ -28,7 +28,7 @@
 ## end license ##
 
 from storage import HierarchicalStorage, Storage
-from meresco.core import asyncreturn
+from meresco.core import asyncnoreturnvalue
 
 def defaultSplit((identifier, partname)):
     result = identifier.split(':',1)
@@ -51,7 +51,7 @@ class StorageComponent(object):
     def observable_name(self):
         return self._name
 
-    @asyncreturn
+    @asyncnoreturnvalue
     def add(self, identifier, partname, data):
         sink = self._storage.put((identifier, partname))
         try:
@@ -59,7 +59,7 @@ class StorageComponent(object):
         finally:
             sink.close()
 
-    @asyncreturn
+    @asyncnoreturnvalue
     def delete(self, identifier):
         for partname in self._partsRemovedOnDelete:
             self.deletePart(identifier, partname)
