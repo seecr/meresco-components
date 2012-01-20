@@ -59,6 +59,8 @@ class StorageComponent(object):
 
     def add(self, identifier, partname, data):
         """should be obsoleted in favor of addDocumentPart"""
+        if not identifier:
+            raise ValueError("Empty identifier is not allowed.")
         sink = self._storage.put((identifier, partname))
         try:
             sink.send(data)
@@ -66,6 +68,8 @@ class StorageComponent(object):
             return sink.close()
 
     def delete(self, identifier):
+        if not identifier:
+            raise ValueError("Empty identifier is not allowed.")
         for partname in self._partsRemovedOnDelete:
             self.deletePart(identifier, partname)
 

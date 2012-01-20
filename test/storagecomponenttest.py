@@ -55,6 +55,15 @@ class StorageComponentTest(CQ2TestCase):
         if self.revisionAvailable:
             self.assertEquals((0,1), (old,new))
 
+    def testAddEmptyIdentifier(self):
+        self.assertRaises(ValueError, lambda: self.storageComponent.add("", "part", "data"))
+        self.assertRaises(ValueError, lambda: self.storageComponent.add(None, "part", "data"))
+
+    def testDeleteEmptyIdentifier(self):
+        self.assertRaises(ValueError, lambda: self.storageComponent.delete(""))
+        self.assertRaises(ValueError, lambda: self.storageComponent.delete(None))
+        self.storageComponent.deletePart("","part")
+
     def testIsAvailableIdAndPart(self):
         sink = self.storage.put(('some:thing:anId-123','somePartName'))
         sink.send('read string')
