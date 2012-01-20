@@ -29,7 +29,7 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 
-from weightless.core import be
+from weightless.core import be, compose
 from meresco.core import Observable
 from meresco.components import RenameField, TransformFieldValue, FilterField, AddField, Xml2Fields, FilterFieldValue
 from lxml.etree import parse
@@ -137,7 +137,8 @@ class FieldletsTest(SeecrTestCase):
     <name3>value3</name3>
 </base>"""
         
-        dna.do.add(identifier='id', partname='part', lxmlNode=parse(StringIO(inputXml)))
+        result = list(compose(dna.all.add(identifier='id', partname='part', lxmlNode=parse(StringIO(inputXml)))))
+        self.assertEquals([], result)
 
         self.assertEquals([
             "addField(name='addfield.name', value='addfield.value')",

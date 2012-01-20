@@ -45,7 +45,11 @@ class SRURecordUpdate(Observable):
             if action == prefix + "replace" or action == prefix + "create":
                 record = updateRequest.record
                 recordSchema = str(record.recordSchema)
+                print '>>> SRURecordUpdate.handleRequest  :: DAAARRRRRRRR <<<'
                 yield self.all.add(identifier=recordId, partname=recordSchema, amaraNode=record.recordData.childNodes[0])
+                from sys import stdout
+                print '>>> SRURecordUpdate.handleRequest  :: HIERRRRRRRRR <<<'
+                stdout.flush()
             elif action == prefix + "delete":
                 yield self.all.delete(recordId)
             else:

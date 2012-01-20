@@ -26,36 +26,34 @@
 #
 ## end license ##
 
-from meresco.core import Observable
 from warnings import warn
 from lxml.etree import _Element
 
-def removeNamespace(tagName):
-    return '}' in tagName and tagName.split('}')[1] or tagName
+from meresco.core import Observable
+from meresco.core.generatorutils import asyncnoreturnvalue
 
 
 class Xml2Fields(Observable):
-
+    @asyncnoreturnvalue
     def add(self, identifier=None, partname=None, lxmlNode=None):
-        """deprecated"""
-        self.addXml(lxmlNode=lxmlNode)
-
-    def addXml(self, lxmlNode):
         if hasattr(lxmlNode, 'getroot'):
             lxmlNode = lxmlNode.getroot()
-        return self._fillDict(lxmlNode, '')
+        self._addFields(lxmlNode, '')
 
-    def _fillDict(self, aNode, parentName):
+    def _addFields(self, aNode, parentName):
         if type(aNode) != _Element:
             return
-
         if parentName:
             parentName += '.'
-        localName = removeNamespace(aNode.tag)
+        localName = _removeNamespace(aNode.tag)
         fieldname = parentName + localName
         value = aNode.text
         if value and value.strip():
             self.do.addField(name=fieldname, value=value)
         for child in aNode.getchildren():
-            self._fillDict(child, fieldname)
+            self._addFields(child, fieldname)
+
+
+def _removeNamespace(tagName):
+    return '}' in tagName and tagName.split('}')[1] or tagName
 
