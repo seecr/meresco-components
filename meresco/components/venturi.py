@@ -47,6 +47,8 @@ class Venturi(Observable):
 
     def add(self, identifier, partname=None, lxmlNode=None):
         """should be obsoleted in favor of addDocumentPart"""
+        if not identifier:
+            raise ValueError("Empty identifier not allowed.")
         self.ctx.tx.locals['id'] = identifier
         for shouldPartname, partXPath in self._should:
             part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath)
@@ -59,6 +61,8 @@ class Venturi(Observable):
                 yield self.all.add(identifier=identifier, partname=couldPartname, lxmlNode=part)
 
     def delete(self, identifier):
+        if not identifier:
+            raise ValueError("Empty identifier not allowed.")
         self.ctx.tx.locals['id'] = identifier
         yield self.asyncdo.delete(identifier=identifier)
 

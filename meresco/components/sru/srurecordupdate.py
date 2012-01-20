@@ -40,6 +40,8 @@ class SRURecordUpdate(Observable):
         try:
             updateRequest = bind_string(Body).updateRequest
             recordId = str(updateRequest.recordIdentifier)
+            if not recordId:
+                raise ValueError("Empty recordIdentifier not allowed.")
             prefix = "info:srw/action/1/"
             action = str(updateRequest.action)
             if action == prefix + "replace" or action == prefix + "create":
