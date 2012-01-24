@@ -26,6 +26,7 @@
 #
 ## end license ##
 from meresco.core import Observable
+from meresco.core.generatorutils import asyncnoreturnvalue
 
 
 class XPath2Field(Observable):
@@ -35,6 +36,7 @@ class XPath2Field(Observable):
         self._namespaceMap = namespaceMap
         self._sendAsList = sendAsList
 
+    @asyncnoreturnvalue
     def add(self, identifier=None, partname=None, lxmlNode=None):
         for (xpath, dottedDestinationPath) in self._attributeXpaths:
             values = lxmlNode.xpath(xpath, namespaces=self._namespaceMap)

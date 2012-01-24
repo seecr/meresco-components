@@ -29,10 +29,12 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 
+from weightless.core import compose
 from meresco.components import XPath2Field
 
 from lxml.etree import parse
 from StringIO import StringIO
+
 
 class XPath2FieldTest(SeecrTestCase):
     def testSingleXPath2Field(self):
@@ -46,7 +48,7 @@ class XPath2FieldTest(SeecrTestCase):
             </b>
         </a>"""))
 
-        xpath2field.add('id', 'partname', node)
+        list(compose(xpath2field.add('id', 'partname', node)))
         self.assertEquals(1, len(observer.calledMethods))
 
         self.assertEquals("addField(name='a.b.attr', value='The Attribute')", str(observer.calledMethods[0]))
@@ -68,7 +70,7 @@ class XPath2FieldTest(SeecrTestCase):
             </b>
         </a>"""))
 
-        xpath2field.add('id', 'partname', node)
+        list(compose(xpath2field.add('id', 'partname', node)))
         self.assertEquals(3, len(observer.calledMethods))
         self.assertEquals("addField(name='a.b.attr', value='attr_1')", str(observer.calledMethods[0]))
         self.assertEquals("addField(name='a.b.attr', value='attr_2')", str(observer.calledMethods[1]))
@@ -81,7 +83,7 @@ class XPath2FieldTest(SeecrTestCase):
 
         node = parse(StringIO("""<a><b>1</b><b>2</b><b>3</b><b>4</b></a>"""))
 
-        xpath2field.add('id', 'partname', node)
+        list(compose(xpath2field.add('id', 'partname', node)))
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals(['1','2','3','4'], observer.calledMethods[0].kwargs['value'])
         
