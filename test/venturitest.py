@@ -36,9 +36,13 @@ from lxml.etree import parse, tostring
 
 from meresco.components.venturi import Venturi, VenturiException
 from meresco.core import TransactionScope, Observable
+from meresco.core.generatorutils import asyncnoreturnvalue
 
 from weightless.core import compose, be
 
+def yieldNothing(**kwargs):
+    return
+    yield
 
 def fromstring(aString):
     xmlParsed = parse(StringIO(aString))
@@ -60,7 +64,7 @@ def createVenturiHelix(should, could, *observers, **kwargs):
 class VenturiTest(SeecrTestCase):
     def testOutline(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;</part><part name="parttwo"><second>message</second></part></document>""")
-        interceptor = CallTrace('Interceptor')
+        interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
@@ -76,7 +80,7 @@ class VenturiTest(SeecrTestCase):
 
     def testOnlyPassPartsSpecified(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;</part><part name="parttwo"><second/></part></document>""")
-        interceptor = CallTrace('Interceptor')
+        interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
@@ -85,7 +89,8 @@ class VenturiTest(SeecrTestCase):
     def testReadFromStorage(self):
         inputEvent = fromstring('<document/>')
         interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
-        storage = CallTrace('Storage', ignoredAttributes=['add'])
+        interceptor.methods['add'] = yieldNothing
+        storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
         storage.returnValues['isAvailable'] = (True, True)
         storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor, storage)
@@ -96,7 +101,7 @@ class VenturiTest(SeecrTestCase):
 
     def testCouldHave(self):
         inputEvent = fromstring('<document><one/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
         v = createVenturiHelix([], [('one', '/document/one')], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
@@ -104,8 +109,8 @@ class VenturiTest(SeecrTestCase):
 
     def testCouldHaveInStorage(self):
         inputEvent = fromstring('<document><other/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
-        storage = CallTrace('Storage', ignoredAttributes=['add'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
+        storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
         storage.returnValues['isAvailable'] = (True, True)
         storage.returnValues['getStream'] = StringIO('<one/>')
         v = createVenturiHelix([], [('one', '/document/one')], interceptor, storage)
@@ -116,8 +121,8 @@ class VenturiTest(SeecrTestCase):
 
     def testCouldHaveButDoesnot(self):
         inputEvent = fromstring('<document><other/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
-        storage = CallTrace('Storage', ignoredAttributes=['add'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
+        storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
         storage.exceptions['getStream'] = KeyError('Part not available')
         v = createVenturiHelix([('other', '/document/other')], [('one', '/document/one')], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
@@ -139,7 +144,7 @@ class VenturiTest(SeecrTestCase):
 
     def testNamespace(self):
         inputEvent = fromstring('<document xmlns="ns1" xmlns:ns2="ns2"><ns2:one/><two/></document>')
-        interceptor = CallTrace('Interceptor')
+        interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
         v = createVenturiHelix([('one', '/prefixone:document/prefixtwo:one'), ('two','/prefixone:document/prefixone:two')], [], interceptor, namespaceMap={'prefixone':'ns1', 'prefixtwo':'ns2'})
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
@@ -147,6 +152,7 @@ class VenturiTest(SeecrTestCase):
     def testTransactionScopeFilledWithIdentifier(self):
         ids = []
         class TempComponent(Observable):
+            @asyncnoreturnvalue
             def add(this, identifier, partname, lxmlNode):
                 ids.append(this.ctx.tx.locals['id'])
         v = createVenturiHelix([('PARTNAME', '/document')],[], TempComponent())
@@ -190,7 +196,7 @@ class VenturiTest(SeecrTestCase):
 
     def testNoLxmlTailOnPart(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>message</second>\n\n\n\n</part></document>""")
-        interceptor = CallTrace('Interceptor')
+        interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
 
@@ -200,7 +206,7 @@ class VenturiTest(SeecrTestCase):
 
     def testPartsWithUnicodeChars(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;t€xt&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>t€xt</second>\n\n\n\n</part></document>""")
-        interceptor = CallTrace('Interceptor')
+        interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
 

@@ -77,7 +77,7 @@ class FieldletsTest(SeecrTestCase):
             )
         )
 
-        dna.do.add(identifier='id', partname='part', lxmlNode='data')
+        list(compose(dna.all.add(identifier='id', partname='part', lxmlNode='data')))
         self.assertEquals(1, len(self.observert.calledMethods))
         self.assertEquals("addField(name='name', value='value')", str(self.observert.calledMethods[0]))
 

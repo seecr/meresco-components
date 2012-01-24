@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -28,6 +28,7 @@
 ## end license ##
 
 from meresco.core import Transparent, Observable
+from meresco.core.generatorutils import asyncnoreturnvalue
 
 class _Fieldlet(Transparent):
     def __init__(self, method):
@@ -60,6 +61,7 @@ class AddField(Observable):
         self._name = name
         self._value = value
 
+    @asyncnoreturnvalue
     def add(self, *args, **kwargs):
         self.do.addField(name=self._name, value=self._value)
 

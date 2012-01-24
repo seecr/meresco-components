@@ -33,34 +33,34 @@ from meresco.components.http import PathFilter
 from weightless.core import compose
 
 class PathFilterTest(SeecrTestCase):
+    def setUp(self):
+        SeecrTestCase.setUp(self)
+        self.interceptor = CallTrace('Interceptor', methods={'handleRequest': lambda *args, **kwargs: (x for x in [])})
+
     def testSimplePath(self):
         f = PathFilter('/path')
-        interceptor = CallTrace('Interceptor')
-        f.addObserver(interceptor)
+        f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/path', otherArgument='value')))
-        self.assertEquals(1, len(interceptor.calledMethods))
-        self.assertEquals('handleRequest', interceptor.calledMethods[0].name)
-        self.assertEquals({'path':'/path', 'otherArgument':'value'}, interceptor.calledMethods[0].kwargs)
+        self.assertEquals(1, len(self.interceptor.calledMethods))
+        self.assertEquals('handleRequest', self.interceptor.calledMethods[0].name)
+        self.assertEquals({'path':'/path', 'otherArgument':'value'}, self.interceptor.calledMethods[0].kwargs)
 
     def testOtherPath(self):
         f = PathFilter('/path')
-        interceptor = CallTrace('Interceptor')
-        f.addObserver(interceptor)
+        f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/other/path')))
-        self.assertEquals(0, len(interceptor.calledMethods))
+        self.assertEquals(0, len(self.interceptor.calledMethods))
 
     def testPaths(self):
         f = PathFilter(['/path', '/other/path'])
-        interceptor = CallTrace('Interceptor')
-        f.addObserver(interceptor)
+        f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/other/path')))
-        self.assertEquals(1, len(interceptor.calledMethods))
+        self.assertEquals(1, len(self.interceptor.calledMethods))
 
     def testExcludingPaths(self):
         f = PathFilter('/path', excluding=['/path/not/this'])
-        interceptor = CallTrace('Interceptor')
-        f.addObserver(interceptor)
+        f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/path/not/this/path')))
-        self.assertEquals(0, len(interceptor.calledMethods))
+        self.assertEquals(0, len(self.interceptor.calledMethods))
         list(compose(f.handleRequest(path='/path/other')))
-        self.assertEquals(1, len(interceptor.calledMethods))
+        self.assertEquals(1, len(self.interceptor.calledMethods))

@@ -33,6 +33,10 @@ from StringIO import StringIO
 from os.path import basename, join
 from os import makedirs
 
+def deleteMock(identifier):
+    return
+    yield
+
 class UpdateAdapterTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
@@ -71,7 +75,7 @@ class UpdateAdapterTest(SeecrTestCase):
 
     def testMsgboxAndFromAdapterDelete(self):
         adapter = UpdateAdapterFromMsgbox()
-        observer = CallTrace('observer')
+        observer = CallTrace('observer', methods={'delete': deleteMock})
         self.msgbox.addObserver(adapter)
         adapter.addObserver(observer)
         open(join(self.indir, 'identifier.delete'), 'w').close()
@@ -89,6 +93,8 @@ class UpdateAdapterTest(SeecrTestCase):
         def addMethod(filedata, **kwargs):
             addKwargs['filedata'] = filedata.read()
             addKwargs.update(kwargs)
+            return
+            yield
         observer.methods['add'] = addMethod
         self.msgbox.addObserver(adapter)
         adapter.addObserver(observer)

@@ -264,7 +264,7 @@ class PeriodicDownloadTest(SeecrTestCase):
     def getDownloader(self, host, port, period=1):
         self._reactor = CallTrace("reactor")
         self._downloader = PeriodicDownload(self._reactor, host, port, period=period, prio=0, err=StringIO())
-        self._observer = CallTrace("observer")
+        self._observer = CallTrace("observer", methods={'handle': lambda data: (x for x in 'X')})
         self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._downloader.addObserver(self._observer)
         self._downloader.observer_init()

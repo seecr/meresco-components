@@ -33,6 +33,10 @@ from weightless.core import compose, be
 
 NAMESPACE="http://example.org/namespace"
 
+def add(identifier, partname, data):
+    return
+    yield
+
 class Fields2XmlFieldsTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
@@ -44,7 +48,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         self.fxf = Fields2XmlFields("tsName", "fields-partname", namespace=NAMESPACE)
         self.fxf.ctx = ctx 
         self.fxf.ctx.tx = tx
-        self.observer = CallTrace()
+        self.observer = CallTrace(methods={'add': add})
         self.fxf.addObserver(self.observer)
 
     def testAddField(self):
@@ -75,7 +79,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         self.assertEquals([], self.observer.calledMethods)
 
     def testWorksWithRealTransactionScope(self):
-        intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'])
+        intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'], methods={'add': add})
         class MockVenturi(Observable):
             def all_unknown(self, message, *args, **kwargs):
                 self.ctx.tx.locals['id'] = 'an:identifier'
@@ -131,7 +135,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         fxf = Fields2XmlFields("tsName", "fields-partname")
         fxf.ctx = ctx 
         fxf.ctx.tx = tx
-        observer = CallTrace()
+        observer = CallTrace(methods={'add': add})
         fxf.addObserver(observer)
         
         fxf.begin(name='tsName')

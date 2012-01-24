@@ -37,7 +37,7 @@ from weightless.core import compose
 class PathRenameTest(TestCase):
     def testRename(self):
         rename = PathRename(lambda path: '/new'+path)
-        interceptor = CallTrace('interceptor')
+        interceptor = CallTrace('interceptor', methods={'handleRequest': lambda *args, **kwargs: (x for x in [])})
         rename.addObserver(interceptor)
 
         list(compose(rename.handleRequest(path='/mypath')))
@@ -56,3 +56,4 @@ class PathRenameTest(TestCase):
 
         self.assertEquals(1, len(interceptor.calledMethods))
         self.assertEquals("otherMethod('attribute')", str(interceptor.calledMethods[0]))
+

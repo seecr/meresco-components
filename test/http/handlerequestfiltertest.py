@@ -37,7 +37,7 @@ from weightless.core import be, compose
 class HandleRequestFilterTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        self.observer = CallTrace('Observer')
+        self.observer = CallTrace('Observer', methods={'handleRequest': lambda *args, **kwargs: (x for x in [])})
 
         self.usedKwargs = []
         def filterMethod(**kwargs):

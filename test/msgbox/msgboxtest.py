@@ -49,15 +49,20 @@ from meresco.components.msgbox.msgbox import File
 
 DATA = "<record/>"
 
-def failingAddMock(identifier=None, filedata=None):
+def failingAddMock(identifier, filedata):
     raise ValueError()
+    yield
+
+def addMock(identifier, filedata):
+    return
+    yield
 
 class MsgboxTest(SeecrTestCase):
 
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.reactor = Reactor()
-        self.observer = CallTrace('Observer')
+        self.observer = CallTrace('Observer', methods={'add': addMock})
         self.inDirectory = join(self.tempdir, 'in')
         self.outDirectory = join(self.tempdir, 'out')
         makedirs(self.inDirectory)
@@ -109,7 +114,7 @@ class MsgboxTest(SeecrTestCase):
         self.assertEquals(set(['repo:ident:1.record.ack', 'repo:ident:2.record.ack']), set(self.listfiles(self.outDirectory)))
 
     def testProcessFileErrorHandling(self):
-        self.observer.add = failingAddMock
+        self.observer.methods['add'] = failingAddMock
         self.createMsgbox()
         self.msgbox._logError = lambda m: None
 
@@ -124,7 +129,7 @@ class MsgboxTest(SeecrTestCase):
         self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
 
     def testErrorHandlingWithReactorStep(self):
-        self.observer.add = failingAddMock
+        self.observer.methods['add'] = failingAddMock
         self.createMsgbox()
         self.msgbox._logError = lambda m: None
 
@@ -157,7 +162,7 @@ class MsgboxTest(SeecrTestCase):
         self.assertFalse(isfile(join(self.outDirectory, filename + '.ack')))
 
     def testErrorHandlingAsynchronousMsgbox(self):
-        self.observer.add = failingAddMock
+        self.observer.methods['add'] = failingAddMock
         self.createMsgbox(asynchronous=True)
         self.msgbox._logError = lambda m: None
 
@@ -466,7 +471,7 @@ MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
 
     def testUnEscapeIdentifiersWhenUsedAsInFilenames(self):
         msgbox = Msgbox(inDirectory=self.inDirectory, outDirectory=self.outDirectory)
-        interceptor = CallTrace()
+        interceptor = CallTrace(methods={'add': addMock})
         msgbox.addObserver(interceptor)
         open(join(self.inDirectory, '%2Eidwith.strange%2Fchar'), 'w').close()
         msgbox.processFile('%2Eidwith.strange%2Fchar')

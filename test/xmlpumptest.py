@@ -69,6 +69,7 @@ class XmlPumpTest(SeecrTestCase):
         xmlString = """<tag><content>contents</content></tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
         self.observable.call.add(identifier="id", partname="partName", data=xmlString)
+        self.observer.methods['add'] = lambda **kwargs: (x for x in [])
         list(compose(self.observable.all.add(identifier="id", partname="partName", data=xmlString)))
         list(compose(self.observable.any.add(identifier="id", partname="partName", data=xmlString)))
 
@@ -115,6 +116,8 @@ class XmlPumpTest(SeecrTestCase):
         class Observer:
             def ape(inner, lxmlNode):
                 self.lxmlNode = lxmlNode
+                return
+                yield
         amara2lxml = Amara2Lxml(fromKwarg='amaraNode', toKwarg='lxmlNode')
         amara2lxml.addObserver(Observer())
         amaraNode = binderytools.bind_string('<a><b>“c</b></a>')
@@ -126,6 +129,8 @@ class XmlPumpTest(SeecrTestCase):
         class Observer:
             def ape(inner, amaraNode):
                 self.amaraNode = amaraNode
+                return
+                yield
         lxml2amara = Lxml2Amara(fromKwarg='lxmlNode', toKwarg='amaraNode')
         lxml2amara.addObserver(Observer())
         lxmlNode = parse(StringIO('<a><b>“c</b></a>'))

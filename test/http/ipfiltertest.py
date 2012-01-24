@@ -36,6 +36,10 @@ from meresco.components.http import IpFilter
 
 from weightless.core import compose, be
 
+def handleRequest(*args, **kwargs):
+    return
+    yield
+
 class IpFilterTest(TestCase):
 
     def assertValidIp(self,  address, ipranges=[], ips=[], headers={}):
@@ -46,7 +50,7 @@ class IpFilterTest(TestCase):
 
 
     def _assertValidIp(self, address, ipranges, ips,headers, passed):
-        self.observer = CallTrace('Observer')
+        self.observer = CallTrace('Observer', methods={'handleRequest': handleRequest})
 
         dna = be(
             (Observable(),
@@ -71,7 +75,7 @@ class IpFilterTest(TestCase):
         self.assertInvalidIp('111.1.1.1', ips=['192.168.1.1'], headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'})
 
     def testIpfilterFakeIpHeaderKwargsUnchanged(self):
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         ipf = IpFilter(allowedIps=['192.168.1.1'])
 
         dna = be(
@@ -119,7 +123,7 @@ class IpFilterTest(TestCase):
         self.assertEquals(0, iprange.convertToNumber('0.0.0.0'))
 
     def testUpdateIpFilter(self):
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         ipf = IpFilter(allowedIps=['192.168.1.1'], allowedIpRanges=[('10.0.0.1', '10.0.0.2')])
 
         dna = be(

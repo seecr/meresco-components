@@ -31,15 +31,27 @@
 from unittest import TestCase
 from seecr.test import CallTrace
 from meresco.components import ParseCQL
+from meresco.core import Observable
 from weightless.core import compose
 
 class ParseCQLTest(TestCase):
     def testOne(self):
+        def executeQuery(*args, **kwargs):
+            raise StopIteration('retval')
+            yield
         s = ParseCQL()
-        observer = CallTrace('observer')
+        observer = CallTrace('observer', methods={'executeQuery': executeQuery})
         s.addObserver(observer)
+        observable = Observable()
+        observable.addObserver(s)
 
-        list(compose(s.executeCQLString('term1')))
+        composed = compose(observable.any.executeCQLString('term1'))
+        try:
+            composed.next()
+            self.fail('Should not happen')
+        except StopIteration, e:
+            self.assertEquals(('retval',), e.args)
 
-        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term1')))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+

@@ -221,7 +221,7 @@ class XmlXPathTest(SeecrTestCase):
         self.assertEquals({'lxmlNode': 'some text & some <entities>'}, result)
 
     def testTailTakeCareOfWithoutAffectingOriginal(self):
-        observer = CallTrace('observer')
+        observer = CallTrace('observer', methods={'test': lambda *args, **kwargs: (x for x in [])})
         observable = be(
             (Observable(),
                 (XmlXPath(

@@ -78,7 +78,8 @@ class SruHandlerTest(SeecrTestCase):
 
     def testEchoedSearchRetrieveRequestWithExtraRequestData(self):
         arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_term_drilldown':['field0,field1']}
-        observer = CallTrace('ExtraRequestData', returnValues={'echoedExtraRequestData': '<some>extra request data</some>'})
+        observer = CallTrace('ExtraRequestData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in '<some>extra request data</some>')
         component = SruHandler()
         component.addObserver(SRUTermDrilldown())
         component.addObserver(observer)
@@ -153,9 +154,9 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['yieldRecord'] = "record"
-        observer.returnValues['extraResponseData'] = 'extraResponseData'
-        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+        observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in 'record')
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
         component = SruHandler()
         component.addObserver(observer)
@@ -171,9 +172,9 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['yieldRecord'] = "record"
-        observer.returnValues['extraResponseData'] = 'extraResponseData'
-        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+        observer.returnValues['yieldRecord'] = lambda *a, **kw: (x for x in "record")
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
         component = SruHandler()
         component.addObserver(observer)
@@ -201,8 +202,8 @@ class SruHandlerTest(SeecrTestCase):
             yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
         observer.yieldRecord = yieldRecord
 
-        observer.returnValues['extraResponseData'] = 'extraResponseData'
-        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
         component = SruHandler()
         component.addObserver(observer)
@@ -293,8 +294,8 @@ class SruHandlerTest(SeecrTestCase):
             yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
         observer.yieldRecord = yieldRecord
 
-        observer.returnValues['extraResponseData'] = 'extraResponseData'
-        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
         component = SruHandler()
         component.addObserver(observer)
@@ -402,8 +403,8 @@ class SruHandlerTest(SeecrTestCase):
             yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
         observer.yieldRecord = yieldRecord
 
-        observer.returnValues['extraResponseData'] = 'extraResponseData'
-        observer.returnValues['echoedExtraRequestData'] = 'echoedExtraRequestData'
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         component = SruHandler(extraRecordDataNewStyle=False)
         component.addObserver(observer)
 
@@ -477,7 +478,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['executeQuery'] = executeQuery
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
-        observer.methods['yieldRecord'] = lambda *args, **kwargs: '<bike/>'
+        observer.methods['yieldRecord'] = lambda *args, **kwargs: (x for x in '<bike/>')
 
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)

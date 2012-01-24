@@ -52,7 +52,7 @@ class RequestScopeTest(SeecrTestCase):
         class MyObserver(Observable):
             def handleRequest(self, *args, **kwargs):
                 self.do.setArg()
-                yield self.any.getArg()
+                yield self.call.getArg()
         class SetArgObserver(Observable):
             def setArg(self):
                 self.ctx.requestScope["arg"] = "value"
@@ -74,7 +74,7 @@ class RequestScopeTest(SeecrTestCase):
         class MyObserver(Observable):
             def handleRequest(self, key, value, *args, **kwargs):
                 self.do.setArg(key, value)
-                yield self.any.getArg()
+                yield self.call.getArg()
         class SetArgObserver(Observable):
             def setArg(self, key, value):
                 self.ctx.requestScope[key] = value

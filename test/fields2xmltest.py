@@ -38,12 +38,16 @@ from amara.binderytools import bind_string
 from StringIO import StringIO
 from lxml.etree import parse
 
+def add(identifier, partname, data):
+    return
+    yield
+
 class Fields2XmlTest(SeecrTestCase):
     def testOne(self):
         __callstack_var_tx__ = CallTrace('TX')
         __callstack_var_tx__.locals = {'id': 'identifier'}
 
-        intercept = CallTrace()
+        intercept = CallTrace(methods={'add': add})
         fields2Xml = Fields2Xml('extra')
         fields2Xml.addObserver(intercept)
         def f():
@@ -57,7 +61,7 @@ class Fields2XmlTest(SeecrTestCase):
         self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
 
     def testAddNotCalledWhenNoAddFields(self):
-        intercept = CallTrace()
+        intercept = CallTrace(methods={'add': add})
         fields2Xml = Fields2Xml('extra')
         fields2Xml.addObserver(intercept)
         def f():
@@ -71,7 +75,7 @@ class Fields2XmlTest(SeecrTestCase):
     def testSameAddFieldGeneratedTwoTimes(self):
         __callstack_var_tx__ = CallTrace('TX')
         __callstack_var_tx__.locals = {'id': 'identifier'}
-        intercept = CallTrace()
+        intercept = CallTrace(methods={'add': add})
         fields2Xml = Fields2Xml('extra')
         fields2Xml.addObserver(intercept)
         def f():
@@ -91,7 +95,7 @@ class Fields2XmlTest(SeecrTestCase):
         # for phrasequeries.
 
     def testWorksWithRealTransactionScope(self):
-        intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'])
+        intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'], methods={'add': add})
         class MockVenturi(Observable):
             def all_unknown(self, message, *args, **kwargs):
                 self.ctx.tx.locals['id'] = 'an:identifier'
@@ -127,7 +131,7 @@ class Fields2XmlTest(SeecrTestCase):
     def testPartNameIsDefinedAtInitialization(self):
         __callstack_var_tx__ = CallTrace('TX')
         __callstack_var_tx__.locals = {'id': 'otherIdentifier'}
-        intercept = CallTrace()
+        intercept = CallTrace(methods={'add': add})
         fields2Xml = Fields2Xml('partName')
         fields2Xml.addObserver(intercept)
         def f():
@@ -145,7 +149,7 @@ class Fields2XmlTest(SeecrTestCase):
     def testNamespace(self):
         __callstack_var_tx__ = CallTrace('TX')
         __callstack_var_tx__.locals = {'id': 'identifier'}
-        intercept = CallTrace()
+        intercept = CallTrace(methods={'add': add})
         fields2Xml = Fields2Xml('extra', namespace="http://meresco.org/namespace/fields/extra")
         fields2Xml.addObserver(intercept)
         def f():
@@ -197,6 +201,4 @@ class Fields2XmlTest(SeecrTestCase):
             ]
         x = '<root>%s</root>' % generateXml(fields)
         self.assertEquals("<root><vuur><aap>normal</aap></vuur><vuurboom><aap>normal</aap></vuurboom></root>", x)
-
-
 

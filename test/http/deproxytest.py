@@ -37,10 +37,14 @@ from meresco.components.http import Deproxy
 from weightless.core import compose
 
 
+def handleRequest(*args, **kwargs):
+    return
+    yield
+
 class DeproxyTest(TestCase):
     def testClientInCaseNoXForwardedForHeader(self):
         clientfromxforwardedfor = Deproxy(deproxyForIps=['1.1.1.1'])
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         clientfromxforwardedfor.addObserver(observer)
 
         observable = Observable()
@@ -56,7 +60,7 @@ class DeproxyTest(TestCase):
 
     def testDeproxy(self):
         clientfromxforwardedfor = Deproxy(deproxyForIps=['1.1.1.1'])
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         clientfromxforwardedfor.addObserver(observer)
 
         observable = Observable()
@@ -73,7 +77,7 @@ class DeproxyTest(TestCase):
 
     def testClientFromMulitpleXForwardedForEntries(self):
         clientfromxforwardedfor = Deproxy(deproxyForIps=['1.1.1.1'])
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         clientfromxforwardedfor.addObserver(observer)
 
         observable = Observable()
@@ -96,7 +100,7 @@ class DeproxyTest(TestCase):
     def testHostFromXForwardedHost(self):
         clientfromxforwardedfor = Deproxy(deproxyForIpRanges=[
             ('9.9.9.0', '9.9.9.255')])
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         clientfromxforwardedfor.addObserver(observer)
 
         observable = Observable()
@@ -117,7 +121,7 @@ class DeproxyTest(TestCase):
 
     def testDeproxyForIps(self):
         clientfromxforwardedfor = Deproxy(deproxyForIps=['3.3.3.3'])
-        observer = CallTrace()
+        observer = CallTrace(methods={'handleRequest': handleRequest})
         clientfromxforwardedfor.addObserver(observer)
 
         observable = Observable()

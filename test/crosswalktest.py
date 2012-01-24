@@ -58,6 +58,7 @@ class CrosswalkTest(SeecrTestCase):
         self.validate.addObserver(self.observer)
 
     def testOne(self):
+        self.observer.methods['crosswalk'] = lambda *args, **kwargs: (x for x in [])
         list(compose(self.crosswalk.all_unknown('crosswalk', 'id', 'metadata', theXmlRecord=parse(readRecord('imsmd_v1p2-1.xml')))))
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals(2, len(self.observer.calledMethods[0].args))
@@ -66,6 +67,7 @@ class CrosswalkTest(SeecrTestCase):
         self.assertEquals("metadata", arguments[1])
 
     def testValidate(self):
+        self.observer.methods['methodname'] = lambda *args, **kwargs: (x for x in [])
         list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('lom-cc-nbc.xml')))))
         try:
             list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('imsmd_v1p2-1.xml')))))
@@ -74,6 +76,7 @@ class CrosswalkTest(SeecrTestCase):
             self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://dpc.uba.uva.nl/schema/lom/triplel}lom': No matching global declaration available for the validation root." in str(e), str(e))
 
     def testTripleLExample(self):
+        self.observer.methods['methodname'] = lambda *args, **kwargs: (x for x in [])
         try:
             list(compose(self.crosswalk.all_unknown('methodname', 'id', 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
         except Exception, e:
@@ -83,6 +86,7 @@ class CrosswalkTest(SeecrTestCase):
             raise
 
     def testNormalize(self):
+        self.observer.methods['add'] = lambda *args, **kwargs: (x for x in [])
         list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertFalse('2006-11-28 19:00' in tostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
@@ -137,3 +141,4 @@ rules = [
         result = tree.xpath('y[p/q="selector"]')
         self.assertEquals(1, len(result))
         self.assertEquals('y', result[0].tag)
+

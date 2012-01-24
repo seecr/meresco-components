@@ -38,7 +38,7 @@ from meresco.components.http.utils import CRLF
 
 class ObservableHttpServerTest(SeecrTestCase):
     def testSimpleHandleRequest(self):
-        observer = CallTrace('Observer')
+        observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)
         s.addObserver(observer)
 
@@ -50,7 +50,7 @@ class ObservableHttpServerTest(SeecrTestCase):
         self.assertEquals(7, len(method.kwargs))
 
     def testHandleRequest(self):
-        observer = CallTrace('Observer')
+        observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)
         s.addObserver(observer)
 
@@ -68,7 +68,7 @@ class ObservableHttpServerTest(SeecrTestCase):
         self.assertEquals([''], arguments['emptykey'])
 
     def testMaxConnectionsErrorHandling(self):
-        observer = CallTrace('Observer')
+        observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
         reactor = CallTrace('Reactor')
 
         s = ObservableHttpServer(reactor, 1024, maxConnections=5)

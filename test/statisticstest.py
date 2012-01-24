@@ -37,6 +37,7 @@ from os import makedirs, rename
 from os.path import isfile, join
 from meresco.components.statistics import Statistics, Logger, combinations, Aggregator, AggregatorException, Top100s, snapshotFilename, log
 from meresco.core import Observable
+from meresco.core.generatorutils import asyncnoreturnvalue
 from weightless.core import compose
 
 class StatisticsTest(SeecrTestCase):
@@ -192,6 +193,7 @@ class StatisticsTest(SeecrTestCase):
 
     def testSelfLog(self):
         class MyObserver(Logger):
+            @asyncnoreturnvalue
             def aMessage(self):
                 self.log(message='newValue')
         stats = Statistics(self.tempdir, [('message',)])
@@ -206,6 +208,7 @@ class StatisticsTest(SeecrTestCase):
     def testSelfLogWithObservableAndDelegation(self):
         class MyObserver(Observable):
             log=log
+            @asyncnoreturnvalue
             def aMessage(self):
                 self.log(message='newValue')
         stats = Statistics(self.tempdir, [('message',)])
@@ -243,6 +246,7 @@ class StatisticsTest(SeecrTestCase):
 
     def testSelfLogMultipleValuesForSameKey(self):
         class MyObserver(Logger):
+            @asyncnoreturnvalue
             def aMessage(self):
                 self.log(message='value1')
                 self.log(message='value2')
