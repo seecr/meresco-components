@@ -29,23 +29,25 @@
 # 
 ## end license ##
 
-from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException
+from os.path import join
+from StringIO import StringIO
+import traceback
+from lxml.etree import parse
+from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
+from weightless.core import compose
+
+from cqlparser import parseString
+
+from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
 from meresco.components.facetindex import Response
 
-from os.path import join
-
-
-from StringIO import StringIO
 from seecr.test import SeecrTestCase, CallTrace
-from cqlparser import parseString
-import traceback
 
-from weightless.core import compose
 
 SUCCESS = "SUCCESS"
 
@@ -144,7 +146,7 @@ class SruHandlerTest(SeecrTestCase):
 
     def testDrilldownResultInExecuteQuery(self):
         observer = CallTrace()
-        response = Response(total=100, hits=range(11, 26))
+        response = Response(total=100, hits=hitsRange(11, 26))
         drilldownData = iter([
             ('field0', iter([('value0_0', 14)])),
             ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
@@ -162,12 +164,14 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-        self.assertEquals(['executeQuery', 'yieldRecord'], [m.name for m in observer.calledMethods][:2])
+        self.assertEquals(['executeQuery', 'docsetFromQuery', 'drilldown'] + ['yieldRecord'] * 15 +     ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
+        extraResponseDataMethod = observer.calledMethods[-1]
+        self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
 
     def testNextRecordPosition(self):
         observer = CallTrace()
-        response = Response(total=100, hits=range(11, 26))
+        response = Response(total=100, hits=hitsRange(11, 26))
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -190,7 +194,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        response = Response(total=100, hits=range(11, 13))
+        response = Response(total=100, hits=['<aap&noot>', 'vuur'])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -199,7 +203,7 @@ class SruHandlerTest(SeecrTestCase):
         yieldRecordCalls = []
         def yieldRecord(identifier, partname):
             yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), partname)
         observer.yieldRecord = yieldRecord
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
@@ -282,7 +286,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
 
         observer = CallTrace()
-        response = Response(total=100, hits=range(11, 13))
+        response = Response(total=100, hits=hitsRange(11, 13))
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -312,6 +316,10 @@ class SruHandlerTest(SeecrTestCase):
 
         self.assertEquals(6, sum(yieldRecordCalls))
 
+        resultXml = parse(StringIO(result))
+        ids = resultXml.xpath('//srw:recordIdentifier/text()', namespaces={'srw':"http://www.loc.gov/zing/srw/"})
+        self.assertEquals(['<aap&noot>', 'vuur'], ids)
+
         self.assertEqualsWS("""
 <srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <srw:version>1.2</srw:version>
@@ -320,23 +328,23 @@ class SruHandlerTest(SeecrTestCase):
         <srw:record>
             <srw:recordSchema>schema</srw:recordSchema>
             <srw:recordPacking>xml</srw:recordPacking>
-            <srw:recordIdentifier>11</srw:recordIdentifier>
+            <srw:recordIdentifier>&lt;aap&amp;noot&gt;</srw:recordIdentifier>
             <srw:recordData>
-                <MOCKED_WRITTEN_DATA>11-schema</MOCKED_WRITTEN_DATA>
+                <MOCKED_WRITTEN_DATA>&lt;aap&amp;noot&gt;-schema</MOCKED_WRITTEN_DATA>
             </srw:recordData>
             <srw:extraRecordData>
                 <srw:record>
                     <srw:recordSchema>extra</srw:recordSchema>
                     <srw:recordPacking>xml</srw:recordPacking>
                     <srw:recordData>
-                    <MOCKED_WRITTEN_DATA>11-extra</MOCKED_WRITTEN_DATA>
+                    <MOCKED_WRITTEN_DATA>&lt;aap&amp;noot&gt;-extra</MOCKED_WRITTEN_DATA>
                     </srw:recordData>
                 </srw:record>
                 <srw:record>
                     <srw:recordSchema>evenmore</srw:recordSchema>
                     <srw:recordPacking>xml</srw:recordPacking>
                     <srw:recordData>
-                    <MOCKED_WRITTEN_DATA>11-evenmore</MOCKED_WRITTEN_DATA>
+                    <MOCKED_WRITTEN_DATA>&lt;aap&amp;noot&gt;-evenmore</MOCKED_WRITTEN_DATA>
                     </srw:recordData>
                 </srw:record>
             </srw:extraRecordData>
@@ -344,23 +352,23 @@ class SruHandlerTest(SeecrTestCase):
         <srw:record>
             <srw:recordSchema>schema</srw:recordSchema>
             <srw:recordPacking>xml</srw:recordPacking>
-            <srw:recordIdentifier>12</srw:recordIdentifier>
+            <srw:recordIdentifier>vuur</srw:recordIdentifier>
             <srw:recordData>
-                <MOCKED_WRITTEN_DATA>12-schema</MOCKED_WRITTEN_DATA>
+                <MOCKED_WRITTEN_DATA>vuur-schema</MOCKED_WRITTEN_DATA>
             </srw:recordData>
             <srw:extraRecordData>
                 <srw:record>
                     <srw:recordSchema>extra</srw:recordSchema>
                     <srw:recordPacking>xml</srw:recordPacking>
                     <srw:recordData>
-                    <MOCKED_WRITTEN_DATA>12-extra</MOCKED_WRITTEN_DATA>
+                    <MOCKED_WRITTEN_DATA>vuur-extra</MOCKED_WRITTEN_DATA>
                     </srw:recordData>
                 </srw:record>
                 <srw:record>
                     <srw:recordSchema>evenmore</srw:recordSchema>
                     <srw:recordPacking>xml</srw:recordPacking>
                     <srw:recordData>
-                    <MOCKED_WRITTEN_DATA>12-evenmore</MOCKED_WRITTEN_DATA>
+                    <MOCKED_WRITTEN_DATA>vuur-evenmore</MOCKED_WRITTEN_DATA>
                     </srw:recordData>
                 </srw:record>
             </srw:extraRecordData>
@@ -385,13 +393,13 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals((), echoedExtraRequestDataMethod.args)
         self.assertEquals(set(['version', 'x_term_drilldown', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x_extra_key']), set(echoedExtraRequestDataMethod.kwargs.keys()))
         self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'drilldownData', 'x_extra_key']), set(extraResponseDataMethod.kwargs.keys()))
+        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'x_extra_key']), set(extraResponseDataMethod.kwargs.keys()))
  
     def testExtraRecordDataOldStyle(self):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        response = Response(total=100, hits=[11])
+        response = Response(total=100, hits=['11'])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -490,3 +498,5 @@ class SruHandlerTest(SeecrTestCase):
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
         self.assertTrue('diagnostic' in body, body)
 
+def hitsRange(*args):
+    return ['%s' % i for i in range(*args)]

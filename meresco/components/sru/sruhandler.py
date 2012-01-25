@@ -87,7 +87,7 @@ class SruHandler(Observable):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
@@ -132,10 +132,10 @@ class SruHandler(Observable):
 
     def _writeResult(self, recordSchema=None, recordPacking=None, recordId=None, version=None, **kwargs):
         yield '<srw:record>'
-        yield '<srw:recordSchema>%s</srw:recordSchema>' % recordSchema
-        yield '<srw:recordPacking>%s</srw:recordPacking>' % recordPacking
+        yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(recordSchema)
+        yield '<srw:recordPacking>%s</srw:recordPacking>' % xmlEscape(recordPacking)
         if version == "1.2": 
-            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % recordId
+            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % xmlEscape(recordId)
         yield self._writeRecordData(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId)
         yield self._writeExtraRecordData(recordPacking=recordPacking, recordId=recordId, **kwargs)
         yield '</srw:record>'
