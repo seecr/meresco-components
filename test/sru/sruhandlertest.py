@@ -164,7 +164,7 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-        self.assertEquals(['executeQuery', 'docsetFromQuery', 'drilldown'] + ['yieldRecord'] * 15 +     ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 +     ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
         extraResponseDataMethod = observer.calledMethods[-1]
         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
@@ -194,7 +194,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        response = Response(total=100, hits=['<aap&noot>', 'vuur'])
+        response = Response(total=100, hits=hitsRange(11, 13))
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -286,7 +286,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
 
         observer = CallTrace()
-        response = Response(total=100, hits=hitsRange(11, 13))
+        response = Response(total=100, hits=['<aap&noot>', 'vuur'])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -295,7 +295,7 @@ class SruHandlerTest(SeecrTestCase):
         yieldRecordCalls = []
         def yieldRecord(identifier, partname):
             yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), partname)
         observer.yieldRecord = yieldRecord
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
