@@ -1,36 +1,38 @@
 ## begin license ##
-#
-#    Meresco Components are components to build searchengines, repositories
-#    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
-#       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-#
-#    This file is part of Meresco Components.
-#
-#    Meresco Components is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    Meresco Components is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with Meresco Components; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# 
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core". 
+# 
+# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# 
+# This file is part of "Meresco Components"
+# 
+# "Meresco Components" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# "Meresco Components" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with "Meresco Components"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
 ## end license ##
 
 from copy import copy
 from meresco.core import Observable
 from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
 from StringIO import StringIO
+from warnings import warn
 
 #HM: To support both lxml1.2 as 2.1
 try:
@@ -48,13 +50,29 @@ oftenUsedNamespaces = {
 }
 
 class XmlXPath(Observable):
-    def __init__(self, xpathList, namespaceMap=None):
+    def __init__(self, xpathList, namespaceMap=None, fromKwarg=None, toKwarg=None):
         Observable.__init__(self)
+        if fromKwarg is None:
+            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
+        self._fromKwarg = fromKwarg
+        self._toKwarg = toKwarg if toKwarg else self._fromKwarg
         self._xpaths = xpathList
         self._namespacesMap = oftenUsedNamespaces.copy()
         self._namespacesMap.update(namespaceMap or {})
 
     def unknown(self, msg, *args, **kwargs):
+        if self._fromKwarg is not None:
+            try:
+                oldvalue = kwargs[self._fromKwarg]
+            except KeyError:
+                pass
+            else:
+                del kwargs[self._fromKwarg]
+                for newTree in self._findNewTree(oldvalue):
+                    kwargs[self._toKwarg] = newTree
+                    yield self.all.unknown(msg, *args, **kwargs)
+                return
+
         changeTheseArgs = [(position,arg) for position,arg in enumerate(args) if type(arg) == ElementTreeType]
         changeTheseKwargs = [(key,value) for key,value in kwargs.items() if type(value) == ElementTreeType]
         assert len(changeTheseArgs) + len(changeTheseKwargs) <= 1, 'Can only handle one ElementTree in argument list.'

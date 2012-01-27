@@ -1,31 +1,32 @@
 # -*- coding=utf-8 -*-
 ## begin license ##
-#
-#    Meresco Components are components to build searchengines, repositories
-#    and archives, based on Meresco Core.
-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
-#       http://www.kennisnetictopschool.nl
-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-#
-#    This file is part of Meresco Components.
-#
-#    Meresco Components is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    Meresco Components is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with Meresco Components; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# 
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core". 
+# 
+# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# 
+# This file is part of "Meresco Components"
+# 
+# "Meresco Components" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# "Meresco Components" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with "Meresco Components"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
 ## end license ##
 
 from cq2utils import CQ2TestCase, CallTrace
@@ -45,6 +46,15 @@ class XmlXPathTest(CQ2TestCase):
         self.observable = be(
             (Observable(),
                 (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+                    (XmlXPath(xpathList, nsMap, fromKwarg='lxmlNode', toKwarg='lxmlNode'),
+                        (self.observer, ),
+                    )
+                )
+            )
+        )
+        self.observableKwargs = be(
+            (Observable(),
+                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
                     (XmlXPath(xpathList, nsMap),
                         (self.observer, ),
                     )
@@ -54,7 +64,7 @@ class XmlXPathTest(CQ2TestCase):
         strm = StringIO()
         sys.stderr = strm
         try:
-            self.observableWithoutKwarg = be(
+            self.observableArgs = be(
                 (Observable(),
                     (XmlParseLxml(),
                         (XmlXPath(xpathList, nsMap),
@@ -83,6 +93,20 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
         self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
 
+    def testSimpleXPathWithoutFromKwargToKwargStillWorking(self):
+        self.createXmlXPath(['/root/path'], {})
+
+        xml = '<root><path><to>me</to></path>\n</root>'
+        self.observableKwargs.do.test('een tekst', data=xml)
+
+        self.assertEquals(1, len(self.observer.calledMethods))
+        method = self.observer.calledMethods[0]
+        self.assertEquals('test', method.name)
+        self.assertEquals(1, len(method.args))
+        self.assertEquals('een tekst', method.args[0])
+        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+
     def testSimpleXPathWithUnicodeChars(self):
         self.createXmlXPath(['/root/text()'], {})
 
@@ -93,7 +117,7 @@ class XmlXPathTest(CQ2TestCase):
     def testElementInKwargs(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observableWithoutKwarg.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
+        self.observableArgs.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
@@ -105,7 +129,7 @@ class XmlXPathTest(CQ2TestCase):
     def testNoElementInArgumentsPassesOn(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observable.do.aMethod('do not xpath me')
+        self.observableArgs.do.aMethod('do not xpath me')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals('do not xpath me', self.observer.calledMethods[0].args[0])
@@ -155,13 +179,13 @@ class XmlXPathTest(CQ2TestCase):
     def testXPathWithNoResults(self):
         self.createXmlXPath(['/does/not/exist'], {})
 
-        self.observableWithoutKwarg.do.aMethod("""<some><element>data</element></some>""")
+        self.observableArgs.do.aMethod("""<some><element>data</element></some>""")
         self.assertEquals(0, len(self.observer.calledMethods))
 
     def testOnlyOneXMLAllowed(self):
         self.createXmlXPath('/root', {})
         try:
-            self.observableWithoutKwarg.do.aMethod("<somexml/>", data="<otherxml/>")
+            self.observableArgs.do.aMethod("<somexml/>", data="<otherxml/>")
             self.fail()
         except AssertionError, e:
             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
@@ -194,7 +218,7 @@ class XmlXPathTest(CQ2TestCase):
     def testFindUsingMultipleXPaths(self):
         self.createXmlXPath(['/does/not/exist', '/a/b', '/a/b/c'], {})
 
-        self.observableWithoutKwarg.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
+        self.observableArgs.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
 
         self.assertEquals(3, len(self.observer.calledMethods))
         allResults = []
@@ -207,7 +231,7 @@ class XmlXPathTest(CQ2TestCase):
     def testTestWithCondition(self):
         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
 
-        self.observableWithoutKwarg.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
+        self.observableArgs.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         allResults = []
@@ -218,7 +242,7 @@ class XmlXPathTest(CQ2TestCase):
     def testTestWithConditionAndNS(self):
         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
 
-        self.observableWithoutKwarg.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
+        self.observableArgs.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         allResults = []
