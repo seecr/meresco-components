@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from lxml.etree import _Element, ElementTree, parse, XMLParser
+from lxml.etree import _Element, ElementTree, parse, XMLParser, tostring
 from StringIO import StringIO
 
 from meresco.core import Observable
@@ -55,16 +55,22 @@ class Venturi(Observable):
         for partSpec in self._should:
             shouldPartname = partSpec['partname']
             partXPath = partSpec['xpath']
-            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath)
+            asString = partSpec['asString']
+            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath, asString)
             if part == None:
                 raise VenturiException("Expected '%s', '%s'" % (shouldPartname, partXPath))
-            yield self.all.add(identifier=identifier, partname=shouldPartname, lxmlNode=part)
+            kwargs = dict(identifier=identifier, partname=shouldPartname)
+            kwargs['data' if asString else 'lxmlNode'] = part
+            yield self.all.add(**kwargs)
         for partSpec in self._could:
             couldPartname = partSpec['partname']
             partXPath = partSpec['xpath']
-            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath)
+            asString = partSpec['asString']
+            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath, asString)
             if part != None:
-                yield self.all.add(identifier=identifier, partname=couldPartname, lxmlNode=part)
+                kwargs = dict(identifier=identifier, partname=couldPartname)
+                kwargs['data' if asString else 'lxmlNode'] = part
+                yield self.all.add(**kwargs)
 
     def delete(self, identifier):
         if not identifier:
@@ -72,20 +78,26 @@ class Venturi(Observable):
         self.ctx.tx.locals['id'] = identifier
         yield self.asyncdo.delete(identifier=identifier)
 
-    def _findPart(self, identifier, partname, lxmlNode, partXPath):
+    def _findPart(self, identifier, partname, lxmlNode, partXPath, asString):
         matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
         if len(matches) > 1:
             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
         if len(matches) == 1:
-            return self._nodeOrText2ElementTree(matches[0])
+            return self._elementOrText2Text(matches[0]) if asString else self._nodeOrText2ElementTree(matches[0])
         if self.any.isAvailable(identifier, partname) == (True, True):
-            return parse(self.any.getStream(identifier, partname))
+            stream = self.any.getStream(identifier, partname)
+            return stream.read() if asString else parse(stream)
         return None
 
     def _nodeOrText2ElementTree(self, nodeOrText):
         if type(nodeOrText) == _Element:
             return ElementTree(lxmlElementUntail(nodeOrText))
         return parse(StringIO(nodeOrText))
+
+    def _elementOrText2Text(self, elementOrText):
+        if type(elementOrText) == _Element:
+            return tostring(elementOrText)
+        return elementOrText
 
 mandatoryKeys = ['partname', 'xpath']
 optionalKeys = ['asString']

@@ -61,14 +61,14 @@ class VenturiTest(CQ2TestCase):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;</part><part name="parttwo"><second>message</second></part></document>""")
         interceptor = CallTrace('Interceptor')
         v = createVenturiHelix(
-                [dict(partname='partone', xpath='/document/part[@name="partone"]/text()'), dict(partname='parttwo', xpath='/document/part/second')], 
+                [dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True), dict(partname='parttwo', xpath='/document/part/second')], 
                 [], 
                 interceptor)
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
         self.assertEquals('identifier', interceptor.calledMethods[1].kwargs['identifier'])
         self.assertEquals('partone', interceptor.calledMethods[1].kwargs['partname'])
-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('<some>message</some>', interceptor.calledMethods[1].kwargs['data'])
         self.assertEquals('identifier', interceptor.calledMethods[2].kwargs['identifier'])
         self.assertEquals('parttwo', interceptor.calledMethods[2].kwargs['partname'])
         secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
@@ -96,6 +96,18 @@ class VenturiTest(CQ2TestCase):
         self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
         self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
 
+    def testReadFromStorageAsString(self):
+        inputEvent = fromstring('<document/>')
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'unknown'])
+        storage = CallTrace('Storage', ignoredAttributes=['add'])
+        storage.returnValues['isAvailable'] = (True, True)
+        storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')
+        v = createVenturiHelix([dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True)], [], interceptor, storage)
+        v.do.add('identifier', 'document', inputEvent)
+        self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+        self.assertEquals('<some>this is partone</some>', interceptor.calledMethods[1].kwargs['data'])
+        self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
+
     def testCouldHave(self):
         inputEvent = fromstring('<document><one/></document>')
         interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'unknown'])
@@ -103,6 +115,14 @@ class VenturiTest(CQ2TestCase):
         list(v.all.add('identifier', 'document', inputEvent))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
         self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+
+    def testCouldHaveAsString(self):
+        inputEvent = fromstring('<document><one>some text</one></document>')
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'unknown'])
+        v = createVenturiHelix([], [dict(partname='one', xpath='/document/one', asString=True)], interceptor)
+        list(v.all.add('identifier', 'document', inputEvent))
+        self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+        self.assertEquals('<one>some text</one>', interceptor.calledMethods[1].kwargs['data'])
 
     def testCouldHaveInStorage(self):
         inputEvent = fromstring('<document><other/></document>')
