@@ -40,3 +40,7 @@ class FilterPartByName(Observable):
     def yieldRecord(self, identifier, partname):
         if self._allowed(partname):
             yield self.all.yieldRecord(identifier=identifier, partname=partname)
+
+    def add(self, partname, **kwargs):
+        if self._allowed(partname):
+            yield self.all.add(partname=partname, **kwargs)

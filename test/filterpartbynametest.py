@@ -50,3 +50,15 @@ class FilterPartByNameTest(TestCase):
     
     def testFilter(self):
         self.assertRaises(ValueError, FilterPartByName)
+
+    def testFilterOnAdd(self):
+        filter = FilterPartByName(included=['thisone'])
+        observer = CallTrace('observer')
+        observer.methods['add'] = lambda **kwargs: (f for f in [])
+        filter.addObserver(observer)
+
+        self.assertEquals([], list(compose(filter.add(identifier='identifier', partname='thisone'))))
+        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+        del observer.calledMethods[:]
+        self.assertEquals([], list(compose(filter.add(identifier='identifier', partname='no'))))
+        self.assertEquals([], [m.name for m in observer.calledMethods])
