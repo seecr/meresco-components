@@ -1,0 +1,72 @@
+Changeset created on Wed Nov 30 15:20:58 UTC 2011 by Seecr (Seek You Too B.V.)
+
+Description: Deproxy now rewrites port in case of X-Forwarded-Host 
+
+    Deproxy now rewrites port in case of X-Forwarded-Host
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.21-Natag/version_0
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/http/deproxy.py version_1/meresco/components/http/deproxy.py
+--- version_0/meresco/components/http/deproxy.py	2011-11-30 15:12:23.000000000 +0100
++++ version_1/meresco/components/http/deproxy.py	2011-11-30 16:20:54.000000000 +0100
+@@ -28,6 +28,7 @@
+ from meresco.core import Observable
+ from ipfilter import IpFilter
+ 
++
+ class Deproxy(Observable):
+     def __init__(self, deproxyForIps=None, deproxyForIpRanges=None):
+         Observable.__init__(self)
+@@ -35,16 +36,15 @@
+             raise ValueError('Expected ipaddresses to deproxy for.')
+         self._ipfilter = IpFilter(allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges)
+ 
+-    def handleRequest(self, Client, Headers, **kwargs):
++    def handleRequest(self, Client, Headers, port='80', **kwargs):
+         clientHost, clientPort = Client
+         if self._ipfilter.filterIpAddress(clientHost):
+             clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
+-
+             host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
+             if host != '':
+                 Headers['Host'] = host
+-
+-        return self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, **kwargs)
++                port = host.partition(':')[2] or '80'
++        return self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, port=port, **kwargs)
+ 
+ def _firstFromCommaSeparated(s):
+     return s.split(",", 1)[0].strip()
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/http/deproxytest.py version_1/test/http/deproxytest.py
+--- version_0/test/http/deproxytest.py	2011-11-30 15:12:22.000000000 +0100
++++ version_1/test/http/deproxytest.py	2011-11-30 16:20:54.000000000 +0100
+@@ -103,11 +103,23 @@
+             "Host": "1.1.1.1:11111",
+             "X-Forwarded-Host": "2.2.2.2:22222,3.3.3.3:33333,4.4.4.4:44444"
+         }
+-        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), Headers=Headers))
++        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
+ 
+         self.assertEquals(1, len(observer.calledMethods))
+         handleRequestCallKwargs = observer.calledMethods[0].kwargs
+         self.assertEquals("2.2.2.2:22222", handleRequestCallKwargs['Headers']['Host'])
++        self.assertEquals("22222", handleRequestCallKwargs['port'])
++
++        Headers={
++            "Host": "1.1.1.1:11111",
++            "X-Forwarded-Host": "2.2.2.2,3.3.3.3:33333,4.4.4.4:44444"
++        }
++        list(observable.any.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
++
++        self.assertEquals(2, len(observer.calledMethods))
++        handleRequestCallKwargs = observer.calledMethods[1].kwargs
++        self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
++        self.assertEquals("80", handleRequestCallKwargs['port'])
+ 
+     def testDeproxyMustHaveIps(self):
+         self.assertRaises(ValueError, Deproxy)
+@@ -128,3 +140,4 @@
+         handleRequestCallKwargs = observer.calledMethods[0].kwargs
+         self.assertEquals("1.1.1.1", handleRequestCallKwargs['Client'][0])
+         self.assertEquals({"X-Forwarded-For": "2.2.2.2"}, handleRequestCallKwargs['Headers'])
++

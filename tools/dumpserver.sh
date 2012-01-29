@@ -4,7 +4,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core". 
 # 
-# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
 # 
