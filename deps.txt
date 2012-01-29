@@ -16,6 +16,6 @@ python-meresco-xml (>= 1.1)
 python-meresco-xml (<< 2)
 python-storage (>=5.1.9)
 python-storage (<<5.2)
-python-weightless-core (>= 0.6.3)
-python-weightless-core (<< 0.7)
+python-weightless-core (>= 0.7)
+python-weightless-core (<< 0.8)
 lsof
