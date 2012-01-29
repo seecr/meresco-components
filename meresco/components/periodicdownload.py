@@ -56,8 +56,8 @@ class PeriodicDownload(Observable):
     def observer_init(self):
         self.startTimer()
 
-    def startTimer(self):
-        self._reactor.addTimer(self._period, self.startProcess)
+    def startTimer(self, additionalTime=0):
+        self._reactor.addTimer(self._period + additionalTime, self.startProcess)
 
     def startProcess(self):
         self._processOne = compose(self.processOne())
@@ -112,31 +112,35 @@ class PeriodicDownload(Observable):
         sok.setblocking(0)
         while True:
             try:
-                sok.connect((self._host, self._port))
-            except SocketError, (errno, msg):
-                if errno != EINPROGRESS:
-                    yield self._retryAfterError("%s: %s" % (errno, msg))
-                    continue
-            self._reactor.addWriter(sok, self._processOne.next)
-            yield
-            self._reactor.removeWriter(sok)
+                try:
+                    sok.connect((self._host, self._port))
+                except SocketError, (errno, msg):
+                    if errno != EINPROGRESS:
+                        yield self._retryAfterError("%s: %s" % (errno, msg))
+                        continue
+                self._reactor.addWriter(sok, self._processOne.next)
+                yield
+                self._reactor.removeWriter(sok)
 
-            err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
-            if err == ECONNREFUSED:
-                yield self._retryAfterError("Connection refused.")
+                err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
+                if err == ECONNREFUSED:
+                    yield self._retryAfterError("Connection refused.")
+                    continue
+                if err != 0:   # any other error
+                    raise IOError(err)
+                break
+            except Exception, e:
+                yield self._retryAfterError(str(e), additionalTime=5*60)
                 continue
-            if err != 0:   # any other error
-                raise IOError(err)
-            break
         raise StopIteration(sok)
 
-    def _retryAfterError(self, message):
+    def _retryAfterError(self, message, additionalTime=0):
         self._logError(message)
-        self.startTimer()
+        self.startTimer(additionalTime=additionalTime)
         yield
         
     def _logError(self, message):
-        self._err.write("%s:%d: " % (self._host, self._port))
+        self._err.write("%s:%s: " % (self._host, self._port))
         self._err.write(message)
         if not message.endswith('\n'):
             self._err.write('\n')

@@ -1,0 +1,98 @@
+Changeset created on Fri Dec 09 13:22:11 UTC 2011 by Seecr (Seek You Too B.V.)
+
+Description: Always retry after connections errors in periodic downloader
+
+    The periodicDownloader will always retry after connection errors. If the 
+    errors are unexpected (sometimes on server restart you get IOError 113) the 
+    server will retry in 5 minutes.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.21-Edurep/version_0
+
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/periodicdownload.py version_1/meresco/components/periodicdownload.py
+--- version_0/meresco/components/periodicdownload.py	2011-11-14 09:50:51.000000000 +0100
++++ version_1/meresco/components/periodicdownload.py	2011-12-09 14:21:51.000000000 +0100
+@@ -106,31 +106,36 @@
+         sok.setblocking(0)
+         while True:
+             try:
+-                sok.connect((self._host, self._port))
+-            except SocketError, (errno, msg):
+-                if errno != EINPROGRESS:
+-                    yield self._retryAfterError("%s: %s" % (errno, msg))
+-                    continue
+-            self._reactor.addWriter(sok, self._loop.next)
+-            yield
+-            self._reactor.removeWriter(sok)
++                try:
++                    sok.connect((self._host, self._port))
++                except SocketError, (errno, msg):
++                    if errno != EINPROGRESS:
++                        yield self._retryAfterError("%s: %s" % (errno, msg))
++                        continue
++                self._reactor.addWriter(sok, self._loop.next)
++                yield
++                self._reactor.removeWriter(sok)
+ 
+-            err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
+-            if err == ECONNREFUSED:
+-                yield self._retryAfterError("Connection refused.")
++                err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
++                if err == ECONNREFUSED:
++                    yield self._retryAfterError("Connection refused.")
++                    continue
++                if err != 0:   # any other error
++                    raise IOError(err)
++                break
++            except Exception, e:
++                yield self._retryAfterError(str(e), period=5*60)
+                 continue
+-            if err != 0:   # any other error
+-                raise IOError(err)
+-            break
+         raise StopIteration(sok)
+ 
+-    def _retryAfterError(self, message):
++    def _retryAfterError(self, message, period=None):
++        period = period or self._period
+         self._logError(message)
+-        self._reactor.addTimer(self._period, self._loop.next)
++        self._reactor.addTimer(period, self._loop.next)
+         yield
+         
+     def _logError(self, message):
+-        self._err.write("%s:%d: " % (self._host, self._port))
++        self._err.write("%s:%s: " % (self._host, self._port))
+         self._err.write(message)
+         if not message.endswith('\n'):
+             self._err.write('\n')
+Binary files version_0/meresco/components/.periodicdownload.py.swp and version_1/meresco/components/.periodicdownload.py.swp differ
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/test/periodicdownloadtest.py version_1/test/periodicdownloadtest.py
+--- version_0/test/periodicdownloadtest.py	2011-11-14 09:50:51.000000000 +0100
++++ version_1/test/periodicdownloadtest.py	2011-12-09 14:21:51.000000000 +0100
+@@ -95,14 +95,20 @@
+             self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
+             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
+ 
+-    def testNoConnectionPossible(self):
++    def testNoConnectionPossibleBecauseOfInvalidPort(self):
+         harvester, observer, reactor = self.getHarvester("some.nl", 'no-port')
+         callback = reactor.calledMethods[0].args[1]
+-        try:
+-            callback() # connect
+-            self.fail()
+-        except TypeError, e:
+-            self.assertEquals("an integer is required", str(e))
++        callback() # connect
++        self.assertEquals("some.nl:no-port: an integer is required\n", harvester._err.getvalue())
++
++    def testNoConnectionPossible(self):
++        harvester, observer, reactor = self.getHarvester("localhost", 8899)
++        callback = reactor.calledMethods[0].args[1]
++        callback() # connect
++        reactor.exceptions['removeWriter'] = IOError("error in sockopt") ## Simulate IOError as raised from sok.getsockopt
++        callback() # connect
++        self.assertEquals("localhost:8899: error in sockopt\n", harvester._err.getvalue())
++        self.assertEquals(5*60, reactor.calledMethods[-1].args[0])
+ 
+     def testErrorResponse(self):
+         reactor = CallTrace("reactor")

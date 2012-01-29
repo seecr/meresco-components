@@ -99,11 +99,19 @@ class PeriodicDownloadTest(SeecrTestCase):
     def testNoConnectionPossible(self):
         downloader, observer, reactor = self.getDownloader("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
-        try:
-            callback() # connect
-            self.fail()
-        except TypeError, e:
-            self.assertEquals("an integer is required", str(e))
+        callback() # connect
+        self.assertEquals("some.nl:no-port: an integer is required\n", downloader._err.getvalue())
+        self.assertReactorState(reactor)
+
+    def testNoConnectionPossible(self):
+        downloader, observer, reactor = self.getDownloader("localhost", 8899)
+        callback = reactor.calledMethods[0].args[1]
+        callback() # connect
+        reactor.exceptions['removeWriter'] = IOError("error in sockopt") ## Simulate IOError as raised from sok.getsockopt
+        callback = reactor.calledMethods[1].args[1]
+        callback() # HTTP GET
+        self.assertEquals("localhost:8899: error in sockopt\n", downloader._err.getvalue())
+        self.assertEquals(1 + 5*60, reactor.calledMethods[-1].args[0])
         self.assertReactorState(reactor)
 
     def testErrorResponse(self):
