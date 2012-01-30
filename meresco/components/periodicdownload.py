@@ -102,6 +102,8 @@ class PeriodicDownload(Observable):
                     yield
             finally:
                 self._reactor.removeProcess()
+        except (AssertionError, KeyboardInterrupt, SystemExit), e:
+            raise
         except Exception:
             self._logError(format_exc())
         self.startTimer()
@@ -129,6 +131,8 @@ class PeriodicDownload(Observable):
                 if err != 0:   # any other error
                     raise IOError(err)
                 break
+            except (AssertionError, KeyboardInterrupt, SystemExit), e:
+                raise
             except Exception, e:
                 yield self._retryAfterError(str(e), additionalTime=5*60)
                 continue

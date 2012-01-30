@@ -63,7 +63,6 @@ def server(responses, bufsize=4096):
                     connection.send(response)
                     connection.close()
             except:
-                print "HIERO"
                 pass
     thread = Thread(None, serverThread)
     thread.start()
@@ -198,6 +197,24 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertReactorState(reactor)
 
+    def testAssertionErrorReraised(self):
+        with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
+            downloader, observer, reactor = self.getDownloader("localhost", port)
+            observer.methods['handle'] = lambda *args, **kwargs: None  # will cause AssertionError in Observable
+
+            self.assertEquals(1, downloader._period)
+            callback = self.doConnect() # _processOne.next
+            callback() # _processOne.next -> HTTP GET
+            self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            sleep(0.01)
+            callback() # _processOne.next -> sok.recv
+            try:
+                callback() # _processOne.next -> recv = ''
+                self.assertEquals('', self._downloader._err.getvalue())
+                self.fail('should not get here')
+            except AssertionError, e:
+                self.assertEquals('<bound method handle of <CallTrace: observer>> should have resulted in a generator.', str(e))
+          
     def testSuccessHttp1dot1Server(self):
         with server([STATUSLINE_ALTERNATIVE + ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self.getDownloader("localhost", port)
