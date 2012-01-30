@@ -55,12 +55,16 @@ def server(responses, bufsize=4096):
         s.listen(0)
         start.set()
         for response in responses:
-            connection, address = s.accept()
-            msg = connection.recv(bufsize)
-            messages.append(msg)
-            if not response is DROP_CONNECTION:
-                connection.send(response)
-                connection.close()
+            try:
+                connection, address = s.accept()
+                msg = connection.recv(bufsize)
+                messages.append(msg)
+                if not response is DROP_CONNECTION:
+                    connection.send(response)
+                    connection.close()
+            except:
+                print "HIERO"
+                pass
     thread = Thread(None, serverThread)
     thread.start()
     start.wait()
@@ -96,7 +100,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback()
             self.assertReactorState(reactor)
 
-    def testNoConnectionPossible(self):
+    def testNoConnectionPossibleWithNonIntegerPort(self):
         downloader, observer, reactor = self.getDownloader("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
@@ -111,8 +115,17 @@ class PeriodicDownloadTest(SeecrTestCase):
         callback = reactor.calledMethods[1].args[1]
         callback() # HTTP GET
         self.assertEquals("localhost:8899: error in sockopt\n", downloader._err.getvalue())
+        del reactor.exceptions['removeWriter']
+        self.assertEquals('addTimer', reactor.calledMethods[-1].name)
         self.assertEquals(1 + 5*60, reactor.calledMethods[-1].args[0])
+
         self.assertReactorState(reactor)
+
+        callback = reactor.calledMethods[-1].args[1]
+        callback() # connect
+        self.assertEquals("addWriter", reactor.calledMethods[-1].name)
+        self.assertEquals("localhost:8899: error in sockopt\n", downloader._err.getvalue()) # remains 1 error
+ 
 
     def testErrorResponse(self):
         with server(['HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
