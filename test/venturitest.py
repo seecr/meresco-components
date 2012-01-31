@@ -217,3 +217,35 @@ class VenturiTest(SeecrTestCase):
         self.assertEquals('<second>t&#8364;xt</second>', tostring(secondXml))
         self.assertEquals('t€xt', secondXml.getroot().text)
 
+    def testEmptyIdInAddNotAllowed(self):
+        __callstack_var_tx__ = CallTrace('Transaction')
+        __callstack_var_tx__.locals={}
+        inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;t€xt&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>t€xt</second>\n\n\n\n</part></document>""")
+        v = Venturi()
+        try:
+            list(compose(v.add('', 'document', inputEvent)))
+            self.fail("Should raise an exception")
+        except ValueError, e:
+            self.assertEquals("Empty identifier not allowed.", str(e))
+
+        try:
+            list(compose(v.add(None, 'document', inputEvent)))
+            self.fail("Should raise an exception")
+        except ValueError, e:
+            self.assertEquals("Empty identifier not allowed.", str(e))
+
+    def testEmptyIdInDeleteNotAllowed(self):
+        __callstack_var_tx__ = CallTrace('Transaction')
+        __callstack_var_tx__.locals={}
+        v = Venturi()
+        try:
+            list(compose(v.delete('')))
+            self.fail("Should raise an exception")
+        except ValueError, e:
+            self.assertEquals("Empty identifier not allowed.", str(e))
+
+        try:
+            list(compose(v.delete(None)))
+            self.fail("Should raise an exception")
+        except ValueError, e:
+            self.assertEquals("Empty identifier not allowed.", str(e))

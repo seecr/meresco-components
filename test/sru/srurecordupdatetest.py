@@ -71,10 +71,10 @@ class SRURecordUpdateTest(SeecrTestCase):
         self.observer = CallTrace("Observer", methods={'add': addOrDelete, 'delete': addOrDelete})
         self.sruRecordUpdate.addObserver(self.observer)
 
-    def createRequestBody(self, action=CREATE, recordData="<dc>empty</dc>"):
+    def createRequestBody(self, action=CREATE, recordIdentifier="123", recordData="<dc>empty</dc>"):
         return XML % {
             "action": action,
-            "recordIdentifier": "123",
+            "recordIdentifier": recordIdentifier,
             "recordPacking": "text/xml",
             "recordSchema": "irrelevantXML",
             "recordData": recordData,
@@ -179,3 +179,31 @@ class SRURecordUpdateTest(SeecrTestCase):
         self.assertEquals("info:srw/diagnostic/12/12", str(diag.updateResponse.diagnostics.diagnostic.uri))
         self.assertEquals("Some <Exception>", str(diag.updateResponse.diagnostics.diagnostic.details))
         self.assertEquals("Invalid data:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
+
+    def testEmptyIdentifierNotAccepted(self):
+        requestBody = self.createRequestBody(recordIdentifier="")
+        headers, result = self.performRequest(requestBody)
+        self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
+        diag = bind_string(result)
+        self.assertEquals("info:srw/diagnostic/12/1", str(diag.updateResponse.diagnostics.diagnostic.uri))
+        self.assertTrue("Empty recordIdentifier not allowed." in str(diag.updateResponse.diagnostics.diagnostic.details))
+        self.assertEquals("Invalid component:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
+
+    def testNoIdentifierNotAccepted(self):
+        requestBody = """<?xml version="1.0" encoding="UTF-8"?>
+<srw:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+    <srw:version>1.0</srw:version>
+    <ucp:action>info:srw/action/1/%(action)s</ucp:action>
+    <srw:record>
+        <srw:recordPacking>xml</srw:recordPacking>
+        <srw:recordSchema>ascheme</srw:recordSchema>
+        <srw:recordData>some data</srw:recordData>
+    </srw:record>
+</srw:updateRequest>"""
+        headers, result = self.performRequest(requestBody)
+        self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
+        diag = bind_string(result)
+        self.assertEquals("info:srw/diagnostic/12/1", str(diag.updateResponse.diagnostics.diagnostic.uri))
+        self.assertTrue("no attribute \'recordIdentifier\'" in str(diag.updateResponse.diagnostics.diagnostic.details))
+        self.assertEquals("Invalid component:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
+
