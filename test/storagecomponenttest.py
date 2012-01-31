@@ -50,6 +50,15 @@ class StorageComponentTest(SeecrTestCase):
         list(compose(self.storageComponent.add("id_0", "partName", "The contents of the part")))
         self.assertEquals('The contents of the part', self.storage.get(('id_0', 'partName')).read())
 
+    def testAddEmptyIdentifier(self):
+        self.assertRaises(ValueError, lambda: list(compose(self.storageComponent.add("", "part", "data"))))
+        self.assertRaises(ValueError, lambda: list(compose(self.storageComponent.add(None, "part", "data"))))
+
+    def testDeleteEmptyIdentifier(self):
+        self.assertRaises(ValueError, lambda: list(compose(self.storageComponent.delete(""))))
+        self.assertRaises(ValueError, lambda: list(compose(self.storageComponent.delete(None))))
+        self.storageComponent.deletePart("","part")
+
     def testIsAvailableIdAndPart(self):
         sink = self.storage.put(('some:thing:anId-123','somePartName'))
         sink.send('read string')

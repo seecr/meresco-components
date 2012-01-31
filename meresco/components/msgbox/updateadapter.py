@@ -41,8 +41,12 @@ class UpdateAdapterFromMsgbox(Observable):
 class UpdateAdapterToMsgbox(Observable):
 
     def add(self, identifier, data, **kwargs):
+        if not identifier:
+            raise ValueError("Empty identifier not allowed.")
         yield self.all.add(identifier='%s.add' % identifier, filedata=data, **kwargs)
 
     def delete(self, identifier):
+        if not identifier:
+            raise ValueError("Empty identifier not allowed.")
         yield self.all.add(identifier='%s.delete' % identifier, filedata='')
 

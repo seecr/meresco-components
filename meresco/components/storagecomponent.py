@@ -54,6 +54,8 @@ class StorageComponent(object):
 
     @asyncnoreturnvalue
     def add(self, identifier, partname, data):
+        if not identifier:
+            raise ValueError("Empty identifier is not allowed.")
         sink = self._storage.put((identifier, partname))
         try:
             sink.send(data)
@@ -62,6 +64,8 @@ class StorageComponent(object):
 
     @asyncnoreturnvalue
     def delete(self, identifier):
+        if not identifier:
+            raise ValueError("Empty identifier is not allowed.")
         for partname in self._partsRemovedOnDelete:
             self.deletePart(identifier, partname)
 

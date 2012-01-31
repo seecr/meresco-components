@@ -110,4 +110,17 @@ class UpdateAdapterTest(SeecrTestCase):
         self.assertEquals('data', addKwargs['filedata'])
         self.assertEquals(3, len(addKwargs.items()))
 
+    def testToAdapterAndMsgboxAddEmptyIdentifier(self):
+        adapter = UpdateAdapterToMsgbox()
+        adapter.addObserver(self.msgbox)
+        
+        self.assertRaises(ValueError, lambda: list(compose(adapter.add(identifier='', partname='partname', data='data'))))
+        self.assertRaises(ValueError, lambda: list(compose(adapter.add(identifier=None, partname='partname', data='data'))))
+
+    def testToAdapterAndMsgboxDeleteEmptyIdentifier(self):
+        adapter = UpdateAdapterToMsgbox()
+        adapter.addObserver(self.msgbox)
+        
+        self.assertRaises(ValueError, lambda: list(compose(adapter.delete(identifier=''))))
+        self.assertRaises(ValueError, lambda: list(compose(adapter.delete(identifier=None))))
 
