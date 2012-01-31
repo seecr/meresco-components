@@ -1,0 +1,257 @@
+Changeset created on Wed Dec 21 10:08:25 UTC 2011 by Seecr (Seek You Too B.V.)
+
+Description: Iterating over an IntegerList is much faster now. So is slicing.
+
+    See above. We noticed that OAI-PMH set requests could be made much faster 
+    with these optimizations.
+
+    Note 1: to achieve the slicing speedup we no longer copy the slice 
+    of the original IntegerList. Instead an immutable 'view' into the underlying 
+    IntegerList is returned. 
+    
+    Note 2: slicing no longer supports stepping (as it adds much complexity and we
+    don't see the need at the moment).
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.23.1-Natag/version_0
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/facetindex/integerlist.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.23.1-Natag/version_1/meresco/components/facetindex/integerlist.py
+--- version_0/meresco/components/facetindex/integerlist.py	2011-12-21 11:06:23.000000000 +0100
++++ version_1/meresco/components/facetindex/integerlist.py	2011-12-21 11:08:02.000000000 +0100
+@@ -94,21 +94,16 @@
+         return IntegerList_size(self)
+ 
+     def __getitem__(self, i):
+-        if type(i) == slice:
+-            start, stop, step = self._parseSlice(i)
+-            islice = IntegerList_slice(self, start, stop, step)
+-            l = list(IntegerList(cobj=islice))
+-            if step != 1:
+-                l = l[::step]
+-            return l
+         length = len(self)
++        if type(i) == slice:
++            return self._IntegerListSliceView(self, i)
+         if i >= length or -i > length:
+             raise IndexError(i)
+         return IntegerList_get(self, i)
+ 
+     def __delitem__(self, i):
+         if type(i) == slice:
+-            start, stop, step = self._parseSlice(i)
++            start, stop = self._parseSlice(i)
+             IntegerList_delitems(self, start, stop)
+         else:
+             length = len(self)
+@@ -118,25 +113,26 @@
+                 raise IndexError("list assignment index out of range")
+             IntegerList_delitems(self, i, i+1)
+ 
+-    def _parseSlice(self, slice):
+-        length = len(self)
++    def _parseSlice(self, slice, length=None):
++        if not slice.step in [None, 1]:
++            raise ValueError("%s does not support stepping slices" % self.__class__.__name__)
++        length = length or len(self)
+         start = slice.start if not slice.start is None else 0
+-        step = slice.step if not slice.step is None else 1
+         stop = slice.stop if not slice.stop is None else length
+         if start < 0:
+-            start = max(length - -start, 0)
++            start = max(length + start, 0)
+         if stop < 0:
+-            stop = length - -stop
+-        if stop > length:
+-            stop = length
+-        return start, stop, step
++            stop = length + stop
++        stop = min(stop, length)
++        start = min(start, stop)
++        return start, stop
+         
+     def __setitem__(self, index, value):
+         IntegerList_set(self, index, value)
+ 
+     def __iter__(self):
+-        for i in range(len(self)):
+-            yield self[i]
++        for i in xrange(len(self)):
++            yield IntegerList_get(self, i)
+ 
+     def append(self, integer):
+         IntegerList_append(self, integer)
+@@ -146,7 +142,7 @@
+             self.append(i)
+ 
+     def __eq__(self, rhs):
+-        return self[:] == rhs[:]
++        return list(self) == list(rhs)
+ 
+     def __repr__(self):
+         return repr(list(i for i in self))
+@@ -172,3 +168,35 @@
+         if errno:
+             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
+ 
++
++    class _IntegerListSliceView(object):
++        def __init__(self, original, slice):
++            self._original = original
++            self._start, self._stop = original._parseSlice(slice)
++
++        def __iter__(self):
++            for i in xrange(self._start, self._stop):
++                yield IntegerList_get(self._original, i)
++
++        def __getitem__(self, index):
++            if isinstance(index, slice):
++                start, stop = self._original._parseSlice(index, len(self))
++                nStart = self._start + start
++                nStop = self._start + stop
++                return self.__class__(self._original, slice(nStart, nStop))
++            if index < 0:
++                index = len(self) + index
++            index = self._start + index
++            if self._start <= index < self._stop:
++                return IntegerList_get(self._original, index)
++            raise IndexError('list index out of range')
++
++        def __len__(self):
++            return self._stop - self._start
++
++        def __repr__(self):
++            return repr(list(self))
++
++        def __eq__(self, rhs):
++            return list(self) == list(rhs)
++
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/facetindex/integerlisttest.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.23.1-Natag/version_1/test/facetindex/integerlisttest.py
+--- version_0/test/facetindex/integerlisttest.py	2011-12-21 11:06:22.000000000 +0100
++++ version_1/test/facetindex/integerlisttest.py	2011-12-21 11:08:02.000000000 +0100
+@@ -72,20 +72,39 @@
+             self.assertEquals(90, l[-10])
+ 
+     def testSlicing(self):
++        def assertSlice(expected, sliced):
++            self.assertEquals(expected, sliced)
++            self.assertEquals(len(expected), len(sliced))
++
+         for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
+-            self.assertEquals([0,1], l[:2])
+-            self.assertEquals([1,2,3,4], l[1:5])
+-            self.assertEquals([98, 99], l[98:])
+-            self.assertEquals([98, 99], l[-2:])
+-
+-            self.assertEquals([98], l[-2:99])
+-            self.assertEquals([], l[98:2])
+-            self.assertEquals([0], l[-200:1])
+-            self.assertEquals(range(99), l[-200:-1])
+-            self.assertEquals(range(100), l[-200:200])
+-            self.assertEquals([], l[0:0])
+-            self.assertEquals(range(100), l[:])
+-            self.assertEquals(range(99, -1, -1), l[::-1])
++            assertSlice([0,1], l[:2])
++            assertSlice([1,2,3,4], l[1:5])
++            assertSlice([98, 99], l[98:])
++            assertSlice([98, 99], l[-2:])
++            assertSlice([98], l[-2:99])
++            assertSlice([], l[98:2])
++            assertSlice([0], l[-200:1])
++            assertSlice(range(99), l[-200:-1])
++            assertSlice(range(100), l[-200:200])
++            assertSlice([], l[0:0])
++            assertSlice(range(100), l[:])
++            self.assertRaises(ValueError, lambda: l[::-1])
++            assertSlice(range(98), l[-200:-1][:-1])
++
++    def testSlicesImmutable(self):
++        s = IntegerList(100)[1:5]
++        self.assertRaises(AttributeError, lambda: s.append(101))
++        self.assertRaises(AttributeError, lambda: s.extend([101]))
++        try:
++            del s[0]
++            self.fail('del should have failed.')
++        except TypeError, e:
++            pass
++        try:
++            s[0] = 200
++            self.fail('assignment should have failed.')
++        except TypeError, e:
++            pass
+ 
+     def testCopySlice(self):
+         for l in [IntegerList(100), IntegerList(100, use64bits=True)]:
+@@ -318,6 +337,21 @@
+         l.append(2 ** 64)
+         self.assertEquals([2 ** 63 - 1, -1, 0], l)
+ 
++    def testIter(self):
++        il = IntegerList(10 ** 5)
++        t0 = time()
++        for x in il:
++            pass
++        t1 = time()
++        self.assertTiming(0.15, t1 - t0, 0.25)
++
++    def testSlicingPerformance(self):
++        il = IntegerList(10 ** 7)
++        t0 = time()
++        segment = il[:][:10]
++        t1 = time()
++        self.assertTiming(0.00, t1 - t0, 0.001)
++
+     def probeMemory(self):
+         self.vmsize = self._getVmSize()
+ 
+@@ -334,3 +368,4 @@
+                 "memory leaking: before: %d, after: %d" % (self.vmsize, vmsize))
+ 
+ 
++
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/persistentsortedintegerlisttest.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.23.1-Natag/version_1/test/persistentsortedintegerlisttest.py
+--- version_0/test/persistentsortedintegerlisttest.py	2011-12-21 11:06:22.000000000 +0100
++++ version_1/test/persistentsortedintegerlisttest.py	2011-12-21 11:08:02.000000000 +0100
+@@ -94,33 +94,12 @@
+         self.assertEquals([1,2], list(s[1:3]))
+         self.assertEquals([0,1,2,3], list(s[:-2]))
+         self.assertEquals([4,5], list(s[-2:]))
+-        self.assertEquals([0,2], list(s[:4:2]))
+-        self.assertEquals([5,4,3,2,1,0], list(s[::-1]))
++        self.assertRaises(ValueError, lambda: s[:4:2])
++        self.assertRaises(ValueError, lambda: s[::-1])
+         self.assertEquals([], list(s[4:3]))
+         self.assertEquals([0,1,2,3,4,5], list(s[-12345:234567]))
+         self.assertEquals([1,2], list(s[1:3]))
+ 
+-    def testSlicingCreatesASequence(self):
+-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+-        for i in range(6):
+-            s.append(i)
+-        r = s[2:4]
+-        self.assertEquals(s[2], r[0])
+-        self.assertEquals(2, len(r))
+-        self.assertEquals([2,3], list(r))
+-
+-        r = s[0:4:2]
+-        self.assertEquals([0,2], list(r))
+-        self.assertEquals(2, r[1])
+-        r = s[::-1]
+-        self.assertEquals([5,4,3,2,1,0], list(r))
+-        self.assertEquals(5, r[0])
+-        self.assertEquals(0, r[5])
+-        self.assertEquals(0, r[-1])
+-        self.assertEquals([5,4], list(r[:2]))
+-        self.assertEquals(4, r[:4][1])
+-        self.assertRaises(IndexError, lambda: s[:2][4])
+-
+     def testAppendFailsIfValueMakesListUnsorted(self):
+         s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+         s.append(10)
+@@ -146,8 +125,6 @@
+             
+             self.assertEquals([0,2,4,6,8,10], list(aList))
+             self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
+-            self.assertEquals([0,2,4,6,8,10], list(aList[::-1][::-1]))
+-            self.assertEquals([10,8,6,4,2,0], list(aList[::-1]))
+             self.assertEquals([2,4,6], list(aList[1:4]))
+             self.assertTrue(2 in aList)
+             self.assertFalse(1 in aList)

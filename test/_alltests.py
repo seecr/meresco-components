@@ -111,6 +111,8 @@ from sru.srwtest import SrwTest
 
 from xml_generic.validatetest import ValidateTest
 
+from facetindex.integerlisttest import IntegerListTest
+
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
 

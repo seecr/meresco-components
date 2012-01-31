@@ -9,7 +9,9 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011 Netherlands Institute for Sound and Vision http://instituut.beeldengeluid.nl/
+# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -64,7 +66,7 @@ IntegerList_delitems.argtypes = [INTEGERLIST, c_int, c_int]
 IntegerList_delitems.restype = None
 
 IntegerList_slice = libFacetIndex.IntegerList_slice
-IntegerList_slice.argtypes = [INTEGERLIST, c_int, c_int, c_int]
+IntegerList_slice.argtypes = [INTEGERLIST, c_int, c_int]
 IntegerList_slice.restype = INTEGERLIST
 
 IntegerList_mergeFromOffset = libFacetIndex.IntegerList_mergeFromOffset
@@ -95,21 +97,18 @@ class IntegerList(object):
         return IntegerList_size(self)
 
     def __getitem__(self, i):
-        if type(i) == slice:
-            start, stop, step = self._parseSlice(i)
-            islice = IntegerList_slice(self, start, stop, step)
-            l = list(IntegerList(cobj=islice))
-            if step != 1:
-                l = l[::step]
-            return l
         length = len(self)
+        if type(i) == slice:
+            start, stop = self._parseSlice(i)
+            islice = IntegerList_slice(self, start, stop)
+            return IntegerList(cobj=islice)
         if i >= length or -i > length:
             raise IndexError(i)
         return IntegerList_get(self, i)
 
     def __delitem__(self, i):
         if type(i) == slice:
-            start, stop, step = self._parseSlice(i)
+            start, stop = self._parseSlice(i)
             IntegerList_delitems(self, start, stop)
         else:
             length = len(self)
@@ -119,25 +118,20 @@ class IntegerList(object):
                 raise IndexError("list assignment index out of range")
             IntegerList_delitems(self, i, i+1)
 
-    def _parseSlice(self, slice):
-        length = len(self)
-        start = slice.start if not slice.start is None else 0
-        step = slice.step if not slice.step is None else 1
-        stop = slice.stop if not slice.stop is None else length
-        if start < 0:
-            start = max(length - -start, 0)
-        if stop < 0:
-            stop = length - -stop
-        if stop > length:
-            stop = length
-        return start, stop, step
+    def _parseSlice(self, slice, length=None):
+        if not slice.step in [None, 1]:
+            raise ValueError("%s does not support stepping slices" % self.__class__.__name__)
+        start, stop, ignored = slice.indices(length or IntegerList_size(self))
+        return start, stop
         
     def __setitem__(self, index, value):
         IntegerList_set(self, index, value)
 
     def __iter__(self):
-        for i in range(len(self)):
-            yield self[i]
+        i = 0
+        while i < IntegerList_size(self):
+            yield IntegerList_get(self, i)
+            i += 1
 
     def append(self, integer):
         IntegerList_append(self, integer)
@@ -147,7 +141,7 @@ class IntegerList(object):
             self.append(i)
 
     def __eq__(self, rhs):
-        return self[:] == rhs[:]
+        return list(self) == list(rhs)
 
     def __repr__(self):
         return repr(list(i for i in self))

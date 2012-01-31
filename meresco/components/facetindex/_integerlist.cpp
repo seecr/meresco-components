@@ -8,8 +8,8 @@
  * Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
  * Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
  * Copyright (C) 2009 Tilburg University http://www.uvt.nl
+ * Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
  * Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
- * Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
  * 
  * This file is part of "Meresco Components"
  * 
@@ -72,7 +72,7 @@ class TypedIntegerList : public IntegerList {
             v->push_back((T) element);
         }
         virtual void set(int index, uint64_t element) { v->at(index) = (T) element; }
-        virtual IntegerList* slice(int start, int stop, int step) {
+        virtual IntegerList* slice(int start, int stop) {
             return new TypedIntegerList<T>(this, start, stop);
         }
         virtual void delitems(int start, int stop) {
@@ -147,8 +147,8 @@ void IntegerList_set(IntegerList *iList, int index, uint64_t value) {
     iList->set(index, value);
 }
 
-IntegerList* IntegerList_slice(IntegerList *iList, int start, int stop, int step) {
-    return iList->slice(start, stop, step);
+IntegerList* IntegerList_slice(IntegerList *iList, int start, int stop) {
+    return iList->slice(start, stop);
 }
 
 void IntegerList_delitems(IntegerList* iList, int start, int stop) {

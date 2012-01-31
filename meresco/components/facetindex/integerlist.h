@@ -8,7 +8,8 @@
  * Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
  * Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
  * Copyright (C) 2009 Tilburg University http://www.uvt.nl
- * Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ * Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ * Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
  * 
  * This file is part of "Meresco Components"
  * 
@@ -42,7 +43,7 @@ class IntegerList {
         virtual uint64_t get(int index) = 0;
         virtual void append(uint64_t element) = 0;
         virtual void set(int index, uint64_t value) = 0;
-        virtual IntegerList* slice(int start, int stop, int step) = 0;
+        virtual IntegerList* slice(int start, int stop) = 0;
         virtual void delitems(int start, int stop) = 0;
         virtual int mergeFromOffset(int offset) = 0;
         virtual int save(char* filename, int offset, bool append) = 0;
@@ -56,7 +57,7 @@ extern "C" {
     int             IntegerList_size                 (IntegerList*);
     uint64_t        IntegerList_get                  (IntegerList*, int);
     void            IntegerList_set                  (IntegerList*, int, uint64_t);
-    IntegerList*    IntegerList_slice                (IntegerList*, int, int, int);
+    IntegerList*    IntegerList_slice                (IntegerList*, int, int);
     void            IntegerList_delitems             (IntegerList* list, int start, int stop);
     int             IntegerList_mergeFromOffset      (IntegerList* list, int);
     int             IntegerList_save                 (IntegerList* list, char* filename, int offset, bool append);
