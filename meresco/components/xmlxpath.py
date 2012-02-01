@@ -29,10 +29,10 @@
 ## end license ##
 
 from copy import copy
-from meresco.core import Observable
-from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
 from StringIO import StringIO
-from warnings import warn
+from lxml.etree import ElementTree
+
+from meresco.core import Observable
 
 
 #HM: To support both lxml1.2 as 2.1
@@ -51,13 +51,11 @@ oftenUsedNamespaces = {
 }
 
 class XmlXPath(Observable):
-    def __init__(self, xpathList, namespaceMap=None, fromKwarg=None, toKwarg=None):
+    def __init__(self, xpathList, fromKwarg, toKwarg=None, namespaceMap=None):
         Observable.__init__(self)
-        if fromKwarg is None:
-            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
+        self._xpaths = xpathList
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
-        self._xpaths = xpathList
         self._namespacesMap = oftenUsedNamespaces.copy()
         self._namespacesMap.update(namespaceMap or {})
 
@@ -70,36 +68,12 @@ class XmlXPath(Observable):
             yield self.all.unknown(msg, *newArgs, **newKwargs)
 
     def _convertArgs(self, *args, **kwargs):
-        if not self._fromKwarg is None:
-            try:
-                oldvalue = kwargs[self._fromKwarg]
-            except KeyError:
-                pass
-            else:
-                del kwargs[self._fromKwarg]
-                for newTree in self._findNewTree(oldvalue):
-                    kwargs[self._toKwarg] = newTree
-                    yield args, kwargs
-                return
-
-        changeTheseArgs = [(position,arg) for position,arg in enumerate(args) if type(arg) == ElementTreeType]
-        changeTheseKwargs = [(key,value) for key,value in kwargs.items() if type(value) == ElementTreeType]
-        assert len(changeTheseArgs) + len(changeTheseKwargs) <= 1, 'Can only handle one ElementTree in argument list.'
-
-        if changeTheseArgs:
-            position, elementTree = changeTheseArgs[0]
-            for newTree in self._findNewTree(elementTree):
-                newArgs = [arg for arg in args]
-                newArgs[position] = newTree
-                yield newArgs, kwargs
-        elif changeTheseKwargs:
-            key, elementTree = changeTheseKwargs[0]
-            for newTree in self._findNewTree(elementTree):
-                newKwargs = kwargs.copy()
-                newKwargs[key] = newTree
-                yield args, newKwargs
-        else:
+        oldvalue = kwargs[self._fromKwarg]
+        del kwargs[self._fromKwarg]
+        for newTree in self._findNewTree(oldvalue):
+            kwargs[self._toKwarg] = newTree
             yield args, kwargs
+        return
 
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:

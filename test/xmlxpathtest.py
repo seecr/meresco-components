@@ -47,16 +47,7 @@ class XmlXPathTest(SeecrTestCase):
         self.observable = be(
             (Observable(),
                 (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
-                    (XmlXPath(xpathList, nsMap, fromKwarg='lxmlNode', toKwarg='lxmlNode'),
-                        (self.observer, ),
-                    )
-                )
-            )
-        )
-        self.observableKwargs = be(
-            (Observable(),
-                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
-                    (XmlXPath(xpathList, nsMap),
+                    (XmlXPath(xpathList, fromKwarg='lxmlNode', namespaceMap=nsMap),
                         (self.observer, ),
                     )
                 )
@@ -68,20 +59,6 @@ class XmlXPathTest(SeecrTestCase):
 
         xml = '<root><path><to>me</to></path>\n</root>'
         self.observable.do.test('een tekst', data=xml)
-
-        self.assertEquals(1, len(self.observer.calledMethods))
-        method = self.observer.calledMethods[0]
-        self.assertEquals('test', method.name)
-        self.assertEquals(1, len(method.args))
-        self.assertEquals('een tekst', method.args[0])
-        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
-        self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
-
-    def testSimpleXPathWithoutFromKwargToKwargStillWorking(self):
-        self.createXmlXPath(['/root/path'], {})
-
-        xml = '<root><path><to>me</to></path>\n</root>'
-        self.observableKwargs.do.test('een tekst', data=xml)
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
@@ -110,13 +87,13 @@ class XmlXPathTest(SeecrTestCase):
         self.assertEquals(set(['otherKeyword', 'lxmlNode']), set(method.kwargs.keys()))
         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
 
-    def testNoElementInArgumentsPassesOn(self):
+    def testFromKwargMissingRaisesKeyError(self):
         self.createXmlXPath(['/root/path'], {})
-
-        self.observableKwargs.do.aMethod('do not xpath me')
-
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals('do not xpath me', self.observer.calledMethods[0].args[0])
+        try:
+            self.observable.do.aMethod('do not xpath me')
+            self.fail('should not get here')
+        except KeyError, e:
+            self.assertEquals("'lxmlNode'", str(e))
 
     def testXPathWithNamespaces(self):
         self.createXmlXPath(['/a:root/b:path/c:findme'], {'a':'ns1', 'b':'ns2', 'c':'ns3'})
@@ -165,33 +142,25 @@ class XmlXPathTest(SeecrTestCase):
         self.observable.do.aMethod(data="""<some><element>data</element></some>""")
         self.assertEquals(0, len(self.observer.calledMethods))
 
-    def testOnlyOneXMLAllowed(self):
-        self.createXmlXPath('/root', {})
-        try:
-            self.observableKwargs.do.aMethod(parse(StringIO("<somexml/>")), data="<otherxml/>")
-            self.fail("Should not get here")
-        except AssertionError, e:
-            self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
-
-    def testDoNotChangeArgs(self):
-        xmlXPath = XmlXPath(['/a'])
-        arg = parse(StringIO('<a>a</a>'))
-        list(compose(xmlXPath.all_unknown('message', arg)))
-        self.assertEquals('<a>a</a>', tostring(arg))
+    def testDoNotChangeOriginal(self):
+        xmlXPath = XmlXPath(['/a'], fromKwarg='lxmlNode')
+        lxmlNode = parse(StringIO('<a>a</a>'))
+        list(compose(xmlXPath.all_unknown('message', lxmlNode=lxmlNode)))
+        self.assertEquals('<a>a</a>', tostring(lxmlNode))
 
     def testNamespaces(self):
-        xmlXPath = XmlXPath(['/a:aNode/b:bNode'], {'a':'aNamespace', 'b':'bNamespace' })
-        arg = parse(StringIO('<aNode xmlns="aNamespace"><bNode xmlns="bNamespace">ccc</bNode></aNode>'))
+        xmlXPath = XmlXPath(['/a:aNode/b:bNode'], fromKwarg='lxmlNode', namespaceMap={'a':'aNamespace', 'b':'bNamespace' })
+        lxmlNode = parse(StringIO('<aNode xmlns="aNamespace"><bNode xmlns="bNamespace">ccc</bNode></aNode>'))
         observer = CallTrace('Observer')
         observable = Observable()
         observable.addObserver(xmlXPath)
         xmlXPath.addObserver(observer)
 
-        observable.do.message(arg)
+        observable.do.message(lxmlNode=lxmlNode)
 
         message = observer.calledMethods[0]
         self.assertEquals('message', message.name)
-        newNode = message.args[0]
+        newNode = message.kwargs['lxmlNode']
         self.assertEqualsWS('<bNode xmlns="bNamespace">ccc</bNode>', tostring(newNode))
 
         newNamespaces = newNode.getroot().nsmap
@@ -228,7 +197,7 @@ class XmlXPathTest(SeecrTestCase):
         self.assertEqualsWS('two', self.observer.calledMethods[0].kwargs['lxmlNode'].xpath("text()")[0])
 
     def testXPathReturnsString(self):
-        xpath = XmlXPath(['/a/t/text()'])
+        xpath = XmlXPath(['/a/t/text()'], fromKwarg="lxmlNode")
         inputNode = parse(StringIO('<a><t>some text &amp; some &lt;entities&gt;</t></a>'))
 
         observable = Observable()
@@ -241,13 +210,14 @@ class XmlXPathTest(SeecrTestCase):
         result = observer.calledMethods[0].kwargs
         self.assertEquals({'lxmlNode': 'some text & some <entities>'}, result)
 
-    def testTailTakeCareOfWithoutAffectingOriginal(self):
+    def testTailTakenCareOfWithoutAffectingOriginal(self):
         observer = CallTrace('observer', methods={'test': lambda *args, **kwargs: (x for x in [])})
         observable = be(
             (Observable(),
                 (XmlXPath(
                         ['/myns:root/myns:path'],
-                        {'myns': 'http://myns.org/'}
+                        fromKwarg='lxmlNode',
+                        namespaceMap={'myns': 'http://myns.org/'}
                     ),
                     (observer, ),
                 )
