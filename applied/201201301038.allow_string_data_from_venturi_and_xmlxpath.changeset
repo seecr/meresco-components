@@ -1,0 +1,612 @@
+Changeset created on Mon Jan 30 10:38:29 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Improvements to Venturi, XmlXPath and FilterPartByName
+
+    Venturi:
+    - allows for strings as a result from an xpath
+    - changed configuration by using dicts
+    - old configuration still possible, but with DeprecationWarning
+    XmlXPath:
+    - now supports fromKwarg, toKwarg configuration
+    - old style still supported, but with DeprecationWarning
+    FilterPartByName:
+    - now also supports add messages.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.28.1-Edurep/version_0
+
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/filterpartbyname.py /vol/extra_disk/development/meresco-components/workingsets/3.4.28.1-Edurep/version_1/meresco/components/filterpartbyname.py
+--- version_0/meresco/components/filterpartbyname.py	2012-01-26 16:28:07.000000000 +0100
++++ version_1/meresco/components/filterpartbyname.py	2012-01-30 11:38:25.000000000 +0100
+@@ -4,8 +4,8 @@
+ # and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
+-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -40,3 +40,7 @@
+     def yieldRecord(self, identifier, partname):
+         if self._allowed(partname):
+             yield self.all.yieldRecord(identifier=identifier, partname=partname)
++
++    def add(self, partname, **kwargs):
++        if self._allowed(partname):
++            yield self.all.add(partname=partname, **kwargs)
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/venturi.py /vol/extra_disk/development/meresco-components/workingsets/3.4.28.1-Edurep/version_1/meresco/components/venturi.py
+--- version_0/meresco/components/venturi.py	2012-01-26 16:28:08.000000000 +0100
++++ version_1/meresco/components/venturi.py	2012-01-30 11:38:25.000000000 +0100
+@@ -1,46 +1,48 @@
+ ## begin license ##
+-#
+-#    Meresco Components are components to build searchengines, repositories
+-#    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+-#       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+-#
+-#    This file is part of Meresco Components.
+-#
+-#    Meresco Components is free software; you can redistribute it and/or modify
+-#    it under the terms of the GNU General Public License as published by
+-#    the Free Software Foundation; either version 2 of the License, or
+-#    (at your option) any later version.
+-#
+-#    Meresco Components is distributed in the hope that it will be useful,
+-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-#    GNU General Public License for more details.
+-#
+-#    You should have received a copy of the GNU General Public License
+-#    along with Meresco Components; if not, write to the Free Software
+-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
++# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
++# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
+ ## end license ##
+ 
+-from lxml.etree import _Element, ElementTree, parse, XMLParser
++from lxml.etree import _Element, ElementTree, parse, XMLParser, tostring
+ from StringIO import StringIO
+ 
+ from meresco.core import Observable
+ 
+ from meresco.components.xmlxpath import lxmlElementUntail
++from warnings import warn
+ 
+ 
+ class Venturi(Observable):
+-    def __init__(self, should=[], could=[], namespaceMap={}):
++    def __init__(self, should=None, could=None, namespaceMap={}):
+         Observable.__init__(self)
+         self._namespaceMap = namespaceMap
+-        self._should = should
+-        self._could = could
++        self._should = _init(should)
++        self._could = _init(could)
+ 
+     def addDocumentPart(self, identifier=None, partname=None, lxmlNode=None):
+         return self.add(identifier=identifier, partname=partname, lxmlNode=lxmlNode)
+@@ -50,15 +52,25 @@
+         if not identifier:
+             raise ValueError("Empty identifier not allowed.")
+         self.ctx.tx.locals['id'] = identifier
+-        for shouldPartname, partXPath in self._should:
+-            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath)
++        for partSpec in self._should:
++            shouldPartname = partSpec['partname']
++            partXPath = partSpec['xpath']
++            asString = partSpec['asString']
++            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath, asString)
+             if part == None:
+                 raise VenturiException("Expected '%s', '%s'" % (shouldPartname, partXPath))
+-            yield self.all.add(identifier=identifier, partname=shouldPartname, lxmlNode=part)
+-        for couldPartname, partXPath in self._could:
+-            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath)
++            kwargs = dict(identifier=identifier, partname=shouldPartname)
++            kwargs['data' if asString else 'lxmlNode'] = part
++            yield self.all.add(**kwargs)
++        for partSpec in self._could:
++            couldPartname = partSpec['partname']
++            partXPath = partSpec['xpath']
++            asString = partSpec['asString']
++            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath, asString)
+             if part != None:
+-                yield self.all.add(identifier=identifier, partname=couldPartname, lxmlNode=part)
++                kwargs = dict(identifier=identifier, partname=couldPartname)
++                kwargs['data' if asString else 'lxmlNode'] = part
++                yield self.all.add(**kwargs)
+ 
+     def delete(self, identifier):
+         if not identifier:
+@@ -66,14 +78,15 @@
+         self.ctx.tx.locals['id'] = identifier
+         yield self.asyncdo.delete(identifier=identifier)
+ 
+-    def _findPart(self, identifier, partname, lxmlNode, partXPath):
++    def _findPart(self, identifier, partname, lxmlNode, partXPath, asString):
+         matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
+         if len(matches) > 1:
+             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
+         if len(matches) == 1:
+-            return self._nodeOrText2ElementTree(matches[0])
++            return self._elementOrText2Text(matches[0]) if asString else self._nodeOrText2ElementTree(matches[0])
+         if self.any.isAvailable(identifier, partname) == (True, True):
+-            return parse(self.any.getStream(identifier, partname))
++            stream = self.any.getStream(identifier, partname)
++            return stream.read() if asString else parse(stream)
+         return None
+ 
+     def _nodeOrText2ElementTree(self, nodeOrText):
+@@ -81,6 +94,28 @@
+             return ElementTree(lxmlElementUntail(nodeOrText))
+         return parse(StringIO(nodeOrText))
+ 
++    def _elementOrText2Text(self, elementOrText):
++        if type(elementOrText) == _Element:
++            return tostring(elementOrText)
++        return elementOrText
++
++mandatoryKeys = ['partname', 'xpath']
++optionalKeys = ['asString']
++def _init(venturiList):
++    if venturiList is None:
++        return []
++    result = []
++    for item in venturiList:
++        if type(item) is tuple:
++            result.append(dict(partname=item[0], xpath=item[1], asString=False))
++            warn("Please use {'partname':'...', 'xpath':'...', 'asString':False}", DeprecationWarning)
++        else:
++            if not 'asString' in item:
++                item['asString'] = False
++            assert set(item.keys()) == set(mandatoryKeys + optionalKeys), "Expected the following keys: %s" % ', '.join(mandatoryKeys)
++            result.append(item)
++    return result
++
+ 
+ class VenturiException(Exception):
+     pass
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/xmlxpath.py /vol/extra_disk/development/meresco-components/workingsets/3.4.28.1-Edurep/version_1/meresco/components/xmlxpath.py
+--- version_0/meresco/components/xmlxpath.py	2012-01-26 16:28:07.000000000 +0100
++++ version_1/meresco/components/xmlxpath.py	2012-01-30 11:38:25.000000000 +0100
+@@ -1,36 +1,38 @@
+ ## begin license ##
+-#
+-#    Meresco Components are components to build searchengines, repositories
+-#    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+-#       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+-#
+-#    This file is part of Meresco Components.
+-#
+-#    Meresco Components is free software; you can redistribute it and/or modify
+-#    it under the terms of the GNU General Public License as published by
+-#    the Free Software Foundation; either version 2 of the License, or
+-#    (at your option) any later version.
+-#
+-#    Meresco Components is distributed in the hope that it will be useful,
+-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-#    GNU General Public License for more details.
+-#
+-#    You should have received a copy of the GNU General Public License
+-#    along with Meresco Components; if not, write to the Free Software
+-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
++# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
++# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
+ ## end license ##
+ 
+ from copy import copy
+ from meresco.core import Observable
+ from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
+ from StringIO import StringIO
++from warnings import warn
+ 
+ #HM: To support both lxml1.2 as 2.1
+ try:
+@@ -48,13 +50,29 @@
+ }
+ 
+ class XmlXPath(Observable):
+-    def __init__(self, xpathList, namespaceMap=None):
++    def __init__(self, xpathList, namespaceMap=None, fromKwarg=None, toKwarg=None):
+         Observable.__init__(self)
++        if fromKwarg is None:
++            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
++        self._fromKwarg = fromKwarg
++        self._toKwarg = toKwarg if toKwarg else self._fromKwarg
+         self._xpaths = xpathList
+         self._namespacesMap = oftenUsedNamespaces.copy()
+         self._namespacesMap.update(namespaceMap or {})
+ 
+     def unknown(self, msg, *args, **kwargs):
++        if self._fromKwarg is not None:
++            try:
++                oldvalue = kwargs[self._fromKwarg]
++            except KeyError:
++                pass
++            else:
++                del kwargs[self._fromKwarg]
++                for newTree in self._findNewTree(oldvalue):
++                    kwargs[self._toKwarg] = newTree
++                    yield self.all.unknown(msg, *args, **kwargs)
++                return
++
+         changeTheseArgs = [(position,arg) for position,arg in enumerate(args) if type(arg) == ElementTreeType]
+         changeTheseKwargs = [(key,value) for key,value in kwargs.items() if type(value) == ElementTreeType]
+         assert len(changeTheseArgs) + len(changeTheseKwargs) <= 1, 'Can only handle one ElementTree in argument list.'
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/test/filterpartbynametest.py /vol/extra_disk/development/meresco-components/workingsets/3.4.28.1-Edurep/version_1/test/filterpartbynametest.py
+--- version_0/test/filterpartbynametest.py	2012-01-26 16:28:07.000000000 +0100
++++ version_1/test/filterpartbynametest.py	2012-01-30 11:38:25.000000000 +0100
+@@ -3,8 +3,8 @@
+ # "Meresco Components" are components to build searchengines, repositories
+ # and archives, based on "Meresco Core". 
+ # 
+-# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -50,3 +50,15 @@
+     
+     def testFilter(self):
+         self.assertRaises(ValueError, FilterPartByName)
++
++    def testFilterOnAdd(self):
++        filter = FilterPartByName(included=['thisone'])
++        observer = CallTrace('observer')
++        observer.methods['add'] = lambda **kwargs: (f for f in [])
++        filter.addObserver(observer)
++
++        self.assertEquals([], list(compose(filter.add(identifier='identifier', partname='thisone'))))
++        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
++        del observer.calledMethods[:]
++        self.assertEquals([], list(compose(filter.add(identifier='identifier', partname='no'))))
++        self.assertEquals([], [m.name for m in observer.calledMethods])
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/test/venturitest.py /vol/extra_disk/development/meresco-components/workingsets/3.4.28.1-Edurep/version_1/test/venturitest.py
+--- version_0/test/venturitest.py	2012-01-26 16:28:07.000000000 +0100
++++ version_1/test/venturitest.py	2012-01-30 11:38:25.000000000 +0100
+@@ -1,31 +1,32 @@
+ # -*- coding=utf-8 -*-
+ ## begin license ##
+-#
+-#    Meresco Components are components to build searchengines, repositories
+-#    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+-#       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+-#
+-#    This file is part of Meresco Components.
+-#
+-#    Meresco Components is free software; you can redistribute it and/or modify
+-#    it under the terms of the GNU General Public License as published by
+-#    the Free Software Foundation; either version 2 of the License, or
+-#    (at your option) any later version.
+-#
+-#    Meresco Components is distributed in the hope that it will be useful,
+-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-#    GNU General Public License for more details.
+-#
+-#    You should have received a copy of the GNU General Public License
+-#    along with Meresco Components; if not, write to the Free Software
+-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
++# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++# Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
++# Copyright (C) 2010-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
+ ## end license ##
+ 
+ from StringIO import StringIO
+@@ -59,12 +60,15 @@
+     def testOutline(self):
+         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;</part><part name="parttwo"><second>message</second></part></document>""")
+         interceptor = CallTrace('Interceptor')
+-        v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
++        v = createVenturiHelix(
++                [dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True), dict(partname='parttwo', xpath='/document/part/second')], 
++                [], 
++                interceptor)
+         list(v.all.add('identifier', 'document', inputEvent))
+         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
+         self.assertEquals('identifier', interceptor.calledMethods[1].kwargs['identifier'])
+         self.assertEquals('partone', interceptor.calledMethods[1].kwargs['partname'])
+-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
++        self.assertEquals('<some>message</some>', interceptor.calledMethods[1].kwargs['data'])
+         self.assertEquals('identifier', interceptor.calledMethods[2].kwargs['identifier'])
+         self.assertEquals('parttwo', interceptor.calledMethods[2].kwargs['partname'])
+         secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
+@@ -92,6 +96,18 @@
+         self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+         self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
+ 
++    def testReadFromStorageAsString(self):
++        inputEvent = fromstring('<document/>')
++        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'unknown'])
++        storage = CallTrace('Storage', ignoredAttributes=['add'])
++        storage.returnValues['isAvailable'] = (True, True)
++        storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')
++        v = createVenturiHelix([dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True)], [], interceptor, storage)
++        v.do.add('identifier', 'document', inputEvent)
++        self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
++        self.assertEquals('<some>this is partone</some>', interceptor.calledMethods[1].kwargs['data'])
++        self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
++
+     def testCouldHave(self):
+         inputEvent = fromstring('<document><one/></document>')
+         interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'unknown'])
+@@ -100,6 +116,14 @@
+         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
+         self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+ 
++    def testCouldHaveAsString(self):
++        inputEvent = fromstring('<document><one>some text</one></document>')
++        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'unknown'])
++        v = createVenturiHelix([], [dict(partname='one', xpath='/document/one', asString=True)], interceptor)
++        list(v.all.add('identifier', 'document', inputEvent))
++        self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
++        self.assertEquals('<one>some text</one>', interceptor.calledMethods[1].kwargs['data'])
++
+     def testCouldHaveInStorage(self):
+         inputEvent = fromstring('<document><other/></document>')
+         interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'unknown'])
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/test/xmlxpathtest.py /vol/extra_disk/development/meresco-components/workingsets/3.4.28.1-Edurep/version_1/test/xmlxpathtest.py
+--- version_0/test/xmlxpathtest.py	2012-01-26 16:28:07.000000000 +0100
++++ version_1/test/xmlxpathtest.py	2012-01-30 11:38:25.000000000 +0100
+@@ -1,31 +1,32 @@
+ # -*- coding=utf-8 -*-
+ ## begin license ##
+-#
+-#    Meresco Components are components to build searchengines, repositories
+-#    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+-#       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#    Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+-#
+-#    This file is part of Meresco Components.
+-#
+-#    Meresco Components is free software; you can redistribute it and/or modify
+-#    it under the terms of the GNU General Public License as published by
+-#    the Free Software Foundation; either version 2 of the License, or
+-#    (at your option) any later version.
+-#
+-#    Meresco Components is distributed in the hope that it will be useful,
+-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-#    GNU General Public License for more details.
+-#
+-#    You should have received a copy of the GNU General Public License
+-#    along with Meresco Components; if not, write to the Free Software
+-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
++# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
++# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
+ ## end license ##
+ 
+ from cq2utils import CQ2TestCase, CallTrace
+@@ -45,6 +46,15 @@
+         self.observable = be(
+             (Observable(),
+                 (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
++                    (XmlXPath(xpathList, nsMap, fromKwarg='lxmlNode', toKwarg='lxmlNode'),
++                        (self.observer, ),
++                    )
++                )
++            )
++        )
++        self.observableKwargs = be(
++            (Observable(),
++                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+                     (XmlXPath(xpathList, nsMap),
+                         (self.observer, ),
+                     )
+@@ -54,7 +64,7 @@
+         strm = StringIO()
+         sys.stderr = strm
+         try:
+-            self.observableWithoutKwarg = be(
++            self.observableArgs = be(
+                 (Observable(),
+                     (XmlParseLxml(),
+                         (XmlXPath(xpathList, nsMap),
+@@ -83,6 +93,20 @@
+         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+         self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+ 
++    def testSimpleXPathWithoutFromKwargToKwargStillWorking(self):
++        self.createXmlXPath(['/root/path'], {})
++
++        xml = '<root><path><to>me</to></path>\n</root>'
++        self.observableKwargs.do.test('een tekst', data=xml)
++
++        self.assertEquals(1, len(self.observer.calledMethods))
++        method = self.observer.calledMethods[0]
++        self.assertEquals('test', method.name)
++        self.assertEquals(1, len(method.args))
++        self.assertEquals('een tekst', method.args[0])
++        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
++        self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
++
+     def testSimpleXPathWithUnicodeChars(self):
+         self.createXmlXPath(['/root/text()'], {})
+ 
+@@ -93,7 +117,7 @@
+     def testElementInKwargs(self):
+         self.createXmlXPath(['/root/path'], {})
+ 
+-        self.observableWithoutKwarg.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
++        self.observableArgs.do.aMethod('otherArgument', aKeyword='<root><path><to>me</to></path></root>', otherKeyword='okay')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         method = self.observer.calledMethods[0]
+@@ -105,7 +129,7 @@
+     def testNoElementInArgumentsPassesOn(self):
+         self.createXmlXPath(['/root/path'], {})
+ 
+-        self.observable.do.aMethod('do not xpath me')
++        self.observableArgs.do.aMethod('do not xpath me')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         self.assertEquals('do not xpath me', self.observer.calledMethods[0].args[0])
+@@ -155,13 +179,13 @@
+     def testXPathWithNoResults(self):
+         self.createXmlXPath(['/does/not/exist'], {})
+ 
+-        self.observableWithoutKwarg.do.aMethod("""<some><element>data</element></some>""")
++        self.observableArgs.do.aMethod("""<some><element>data</element></some>""")
+         self.assertEquals(0, len(self.observer.calledMethods))
+ 
+     def testOnlyOneXMLAllowed(self):
+         self.createXmlXPath('/root', {})
+         try:
+-            self.observableWithoutKwarg.do.aMethod("<somexml/>", data="<otherxml/>")
++            self.observableArgs.do.aMethod("<somexml/>", data="<otherxml/>")
+             self.fail()
+         except AssertionError, e:
+             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
+@@ -194,7 +218,7 @@
+     def testFindUsingMultipleXPaths(self):
+         self.createXmlXPath(['/does/not/exist', '/a/b', '/a/b/c'], {})
+ 
+-        self.observableWithoutKwarg.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
++        self.observableArgs.do.test('<a><b><c>one</c></b><b><d>two</d></b></a>')
+ 
+         self.assertEquals(3, len(self.observer.calledMethods))
+         allResults = []
+@@ -207,7 +231,7 @@
+     def testTestWithCondition(self):
+         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
+ 
+-        self.observableWithoutKwarg.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
++        self.observableArgs.do.test('<a><b>zero</b><c>one</c><d>two</d></a>')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         allResults = []
+@@ -218,7 +242,7 @@
+     def testTestWithConditionAndNS(self):
+         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
+ 
+-        self.observableWithoutKwarg.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
++        self.observableArgs.do.test('<z:a xmlns:z="aSpace"><z:b>zero</z:b><z:c>one</z:c><z:d>two</z:d></z:a>')
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         allResults = []

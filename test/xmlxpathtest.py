@@ -8,7 +8,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
@@ -29,23 +29,31 @@
 # 
 ## end license ##
 
+import sys
+from StringIO import StringIO
+from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType, tostring
+
 from seecr.test import SeecrTestCase, CallTrace
-from meresco.core import Observable
 
 from weightless.core import be, compose
-
+from meresco.core import Observable
 from meresco.components import XmlXPath, XmlParseLxml
 from meresco.components.xmlxpath import lxmlElementUntail
-from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType, tostring
-from StringIO import StringIO
-import sys
 
 
 class XmlXPathTest(SeecrTestCase):
-
     def createXmlXPath(self, xpathList, nsMap):
-        self.observer = CallTrace('observer',ignoredAttributes=['start'] )
+        self.observer = CallTrace('observer', ignoredAttributes=['start'])
         self.observable = be(
+            (Observable(),
+                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+                    (XmlXPath(xpathList, nsMap, fromKwarg='lxmlNode', toKwarg='lxmlNode'),
+                        (self.observer, ),
+                    )
+                )
+            )
+        )
+        self.observableKwargs = be(
             (Observable(),
                 (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
                     (XmlXPath(xpathList, nsMap),
@@ -60,6 +68,20 @@ class XmlXPathTest(SeecrTestCase):
 
         xml = '<root><path><to>me</to></path>\n</root>'
         self.observable.do.test('een tekst', data=xml)
+
+        self.assertEquals(1, len(self.observer.calledMethods))
+        method = self.observer.calledMethods[0]
+        self.assertEquals('test', method.name)
+        self.assertEquals(1, len(method.args))
+        self.assertEquals('een tekst', method.args[0])
+        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+
+    def testSimpleXPathWithoutFromKwargToKwargStillWorking(self):
+        self.createXmlXPath(['/root/path'], {})
+
+        xml = '<root><path><to>me</to></path>\n</root>'
+        self.observableKwargs.do.test('een tekst', data=xml)
 
         self.assertEquals(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
@@ -91,7 +113,7 @@ class XmlXPathTest(SeecrTestCase):
     def testNoElementInArgumentsPassesOn(self):
         self.createXmlXPath(['/root/path'], {})
 
-        self.observable.do.aMethod('do not xpath me')
+        self.observableKwargs.do.aMethod('do not xpath me')
 
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals('do not xpath me', self.observer.calledMethods[0].args[0])
@@ -104,7 +126,6 @@ class XmlXPathTest(SeecrTestCase):
 
         self.assertEquals(1, len(self.observer.calledMethods))
         self.assertEquals('Found', self.observer.calledMethods[0].kwargs['lxmlNode'].xpath('text()')[0])
-
 
     def testXPathWithConditions(self):
         self.createXmlXPath(['/root/element[pick="me"]/data'], {})
@@ -147,8 +168,8 @@ class XmlXPathTest(SeecrTestCase):
     def testOnlyOneXMLAllowed(self):
         self.createXmlXPath('/root', {})
         try:
-            self.observable.do.aMethod(parse(StringIO("<somexml/>")), data="<otherxml/>")
-            self.fail()
+            self.observableKwargs.do.aMethod(parse(StringIO("<somexml/>")), data="<otherxml/>")
+            self.fail("Should not get here")
         except AssertionError, e:
             self.assertEquals('Can only handle one ElementTree in argument list.', str(e))
 

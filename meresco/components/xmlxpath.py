@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
@@ -32,6 +32,8 @@ from copy import copy
 from meresco.core import Observable
 from lxml.etree import ElementTree, _ElementTree as ElementTreeType, parse
 from StringIO import StringIO
+from warnings import warn
+
 
 #HM: To support both lxml1.2 as 2.1
 try:
@@ -49,8 +51,12 @@ oftenUsedNamespaces = {
 }
 
 class XmlXPath(Observable):
-    def __init__(self, xpathList, namespaceMap=None):
+    def __init__(self, xpathList, namespaceMap=None, fromKwarg=None, toKwarg=None):
         Observable.__init__(self)
+        if fromKwarg is None:
+            warn("This use of %s is deprecated. Specify 'fromKwarg' and 'toKwarg' parameters to convert specific keyword argument." % self.__class__.__name__, DeprecationWarning)
+        self._fromKwarg = fromKwarg
+        self._toKwarg = toKwarg if toKwarg else self._fromKwarg
         self._xpaths = xpathList
         self._namespacesMap = oftenUsedNamespaces.copy()
         self._namespacesMap.update(namespaceMap or {})
@@ -64,6 +70,18 @@ class XmlXPath(Observable):
             yield self.all.unknown(msg, *newArgs, **newKwargs)
 
     def _convertArgs(self, *args, **kwargs):
+        if not self._fromKwarg is None:
+            try:
+                oldvalue = kwargs[self._fromKwarg]
+            except KeyError:
+                pass
+            else:
+                del kwargs[self._fromKwarg]
+                for newTree in self._findNewTree(oldvalue):
+                    kwargs[self._toKwarg] = newTree
+                    yield args, kwargs
+                return
+
         changeTheseArgs = [(position,arg) for position,arg in enumerate(args) if type(arg) == ElementTreeType]
         changeTheseKwargs = [(key,value) for key,value in kwargs.items() if type(value) == ElementTreeType]
         assert len(changeTheseArgs) + len(changeTheseKwargs) <= 1, 'Can only handle one ElementTree in argument list.'
