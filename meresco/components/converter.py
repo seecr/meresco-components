@@ -29,40 +29,42 @@
 # 
 ## end license ##
 
-from StringIO import StringIO
-from lxml.etree import parse, tostring
-from amara.binderytools import bind_string
-
 from meresco.core import Observable
 
-from converter import Converter
 
+class Converter(Observable):
+    def __init__(self, fromKwarg, toKwarg=None, name=None):
+        Observable.__init__(self, name=name)
+        self._fromKwarg = fromKwarg
+        self._toKwarg = toKwarg if toKwarg else self._fromKwarg
 
-class XmlParseAmara(Converter):
-    def _convert(self, anObject):
-        return bind_string(anObject.encode('UTF-8')).childNodes[0]
+    def all_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        yield self.all.unknown(msg, *newArgs, **newKwargs)
 
-class XmlPrintAmara(Converter):
-    def _convert(self, anObject):
-        return anObject.xml()
+    def any_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        response = yield self.any.unknown(msg, *newArgs, **newKwargs)
+        raise StopIteration(response)
 
-class FileParseLxml(Converter):
-    def _convert(self, anObject):
-        return parse(anObject)
+    def do_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        self.do.unknown(msg, *newArgs, **newKwargs)
 
-class XmlParseLxml(Converter):
-    def _convert(self, anObject):
-        return parse(StringIO(anObject.encode('UTF-8')))
-        
-class XmlPrintLxml(Converter):
-    def _convert(self, anObject):
-        return tostring(anObject, pretty_print = True, encoding="UTF-8")
+    def call_unknown(self, msg, *args, **kwargs):
+        newArgs, newKwargs = self._convertArgs(*args, **kwargs)
+        return self.call.unknown(msg, *newArgs, **newKwargs)
 
-class Amara2Lxml(Converter):
-    def _convert(self, anObject):
-        return parse(StringIO(anObject.xml()))
+    def _convertArgs(self, *args, **kwargs):
+        try:
+            oldvalue = kwargs[self._fromKwarg]
+        except KeyError:
+            pass
+        else:
+            del kwargs[self._fromKwarg]
+            kwargs[self._toKwarg] = self._convert(oldvalue)
+        return args, kwargs
 
-class Lxml2Amara(Converter):
     def _convert(self, anObject):
-        return bind_string(tostring(anObject, encoding="UTF-8")).childNodes[0]
+        raise NotImplementedError()
 
