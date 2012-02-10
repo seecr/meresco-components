@@ -54,6 +54,7 @@ from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
 from filelisttest import FileListTest
+from filtermessagestest import FilterMessagesTest
 from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
