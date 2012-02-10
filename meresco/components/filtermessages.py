@@ -27,8 +27,9 @@
 # 
 ## end license ##
 
-from weightless.core._observable import NoneOfTheObserversRespond
+from weightless.core import NoneOfTheObserversRespond
 from meresco.core import Observable
+
 
 class FilterMessages(Observable):
     def __init__(self, allowed=[], disallowed=[]):
@@ -43,10 +44,7 @@ class FilterMessages(Observable):
         if self._allowedMessage(message):
             response = yield self.any.unknown(message, *args, **kwargs)
             raise StopIteration(response)
-        raise self.messageNotAnswered(message)
-
-    def messageNotAnswered(self, message):
-        raise NoneOfTheObserversRespond(unansweredMessage=message, observers=[], unknownCall=True)
+        raise NoneOfTheObserversRespond(message, unknownCall=True)
 
     def all_unknown(self, message, *args, **kwargs):
         if self._allowedMessage(message):
@@ -55,8 +53,9 @@ class FilterMessages(Observable):
     def call_unknown(self, message, *args, **kwargs):
         if self._allowedMessage(message):
             return self.call.unknown(message, *args, **kwargs)
-        raise self.messageNotAnswered(message)
+        raise NoneOfTheObserversRespond(message, unknownCall=True)
 
     def do_unknown(self, message, *args, **kwargs):
         if self._allowedMessage(message):
             self.do.unknown(message, *args, **kwargs)
+
