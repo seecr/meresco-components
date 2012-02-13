@@ -10,12 +10,12 @@ python-levenshtein
 python-lxml (>=2.1)
 python-lxml (<<3.0)
 python-magic
-python-meresco-core (>= 4.0)
+python-meresco-core (>= 4.0.1)
 python-meresco-core (<< 4.1)
 python-meresco-xml (>= 1.1)
 python-meresco-xml (<< 2)
 python-storage (>= 6.0)
 python-storage (<< 6.1)
-python-weightless-core (>= 0.7.0.1)
+python-weightless-core (>= 0.7.1)
 python-weightless-core (<< 0.8)
 lsof

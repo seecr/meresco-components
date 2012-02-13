@@ -45,8 +45,9 @@ sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
 import unittest
 
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
-from contextsettest import ContextSetTest
 from clausecollectortest import ClauseCollectorTest
+from contextsettest import ContextSetTest
+from convertertest import ConverterTest
 from cqlconversiontest import CQLConversionTest
 from combinepartstest import CombinePartsTest
 from crosswalktest import CrosswalkTest

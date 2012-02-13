@@ -29,6 +29,7 @@
 # 
 ## end license ##
 
+from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
 
 
@@ -44,8 +45,11 @@ class Converter(Observable):
 
     def any_unknown(self, msg, *args, **kwargs):
         newArgs, newKwargs = self._convertArgs(*args, **kwargs)
-        response = yield self.any.unknown(msg, *newArgs, **newKwargs)
-        raise StopIteration(response)
+        try:
+            response = yield self.any.unknown(msg, *newArgs, **newKwargs)
+            raise StopIteration(response)
+        except NoneOfTheObserversRespond:
+            raise DeclineMessage
 
     def do_unknown(self, msg, *args, **kwargs):
         newArgs, newKwargs = self._convertArgs(*args, **kwargs)
@@ -53,7 +57,10 @@ class Converter(Observable):
 
     def call_unknown(self, msg, *args, **kwargs):
         newArgs, newKwargs = self._convertArgs(*args, **kwargs)
-        return self.call.unknown(msg, *newArgs, **newKwargs)
+        try:
+            return self.call.unknown(msg, *newArgs, **newKwargs)
+        except NoneOfTheObserversRespond:
+            raise DeclineMessage
 
     def _convertArgs(self, *args, **kwargs):
         try:

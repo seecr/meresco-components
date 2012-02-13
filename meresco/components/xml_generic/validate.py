@@ -30,6 +30,7 @@
 from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree, tostring
 from StringIO import StringIO
 
+from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
 
 class ValidateException(Exception):
@@ -55,12 +56,18 @@ class Validate(Observable):
 
     def any_unknown(self, message, *args, **kwargs):
         self._detectAndValidate(*args, **kwargs)
-        response = yield self.any.unknown(message, *args, **kwargs)
-        raise StopIteration(response)
+        try:
+            response = yield self.any.unknown(message, *args, **kwargs)
+            raise StopIteration(response)
+        except NoneOfTheObserversRespond:
+            raise DeclineMessage
 
     def call_unknown(self, message, *args, **kwargs):
         self._detectAndValidate(*args, **kwargs)
-        return self.call.unknown(message, *args, **kwargs)
+        try:
+            return self.call.unknown(message, *args, **kwargs)
+        except NoneOfTheObserversRespond:
+            raise DeclineMessage
 
     def _detectAndValidate(self, *args, **kwargs):
         allArguments = list(args) + kwargs.values()
@@ -85,3 +92,4 @@ def formatException(schema, lxmlNode):
     for nr, line in enumerate(tostring(lxmlNode, encoding="utf-8", pretty_print=True).split('\n')):
         message += "%s %s\n" % (nr+1, line)
     return message
+

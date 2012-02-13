@@ -42,8 +42,9 @@ class FilterMessagesTest(SeecrTestCase):
                 'noop': None
             }
         )
-        self.observer2 = CallTrace(
-            'observer2', 
+        self.observer2 = object()
+        self.observer3 = CallTrace(
+            'observer3', 
             emptyGeneratorMethods=['message'], 
             returnValues={
                 'function': 42, 
@@ -57,6 +58,9 @@ class FilterMessagesTest(SeecrTestCase):
             ),
             (FilterMessages(allowed=['message', 'function', 'gen', 'noop']),
                 (self.observer2,)
+            ),
+            (FilterMessages(allowed=['message', 'function', 'gen', 'noop']),
+                (self.observer3,)
             )
         ))
 
@@ -64,7 +68,7 @@ class FilterMessagesTest(SeecrTestCase):
     def testAll(self):
         list(compose(self.dna.all.message()))
         self.assertEquals([], [m.name for m in self.observer1.calledMethods])
-        self.assertEquals(['message'], [m.name for m in self.observer2.calledMethods])
+        self.assertEquals(['message'], [m.name for m in self.observer3.calledMethods])
 
     def testCall(self):
         self.assertEquals(42, self.dna.call.function())
@@ -72,7 +76,7 @@ class FilterMessagesTest(SeecrTestCase):
     def testDo(self):
         self.dna.do.noop()
         self.assertEquals([], [m.name for m in self.observer1.calledMethods])
-        self.assertEquals(['noop'], [m.name for m in self.observer2.calledMethods])
+        self.assertEquals(['noop'], [m.name for m in self.observer3.calledMethods])
 
     def testAny(self):
         self.assertEquals([42], list(compose(self.dna.any.gen())))
