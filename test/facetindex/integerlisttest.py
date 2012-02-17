@@ -31,14 +31,14 @@
 # 
 ## end license ##
 
-from cq2utils import CQ2TestCase
+from seecr.test import SeecrTestCase
 from time import time
 from os import getpid, remove
 from os.path import join, isfile
 
 from meresco.components.facetindex import IntegerList
 
-class IntegerListTest(CQ2TestCase):
+class IntegerListTest(SeecrTestCase):
     def testConstruct(self):
         l = IntegerList()
         self.assertEquals(0, len(l))
