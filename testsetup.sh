@@ -28,7 +28,7 @@ set -o errexit
 
 rm -rf tmp build
 fullPythonVersion=python2.6
-./setup.sh install --root tmp
+${fullPythonVersion} setup.py install --root tmp
 
 VERSION="x.y.z"
 
