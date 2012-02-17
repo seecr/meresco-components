@@ -29,18 +29,8 @@
 # 
 ## end license ##
 
-import sys
-import os
-import string
-from re import compile
-from types import ListType, TupleType
 from distutils.core import setup
 from distutils.extension import Extension
-from distutils.command.build_ext import build_ext
-from distutils.command.clean import clean
-from distutils.dep_util import newer_group
-from distutils.core import setup
-from distutils import log
 
 setup(
     name = 'meresco-components',
