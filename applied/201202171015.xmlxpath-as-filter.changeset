@@ -1,0 +1,39 @@
+Changeset created on Fri Feb 17 10:15:47 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: XmlXPath now works as filter and converter
+
+    If no lxmlNode is given or no xpath matched it's not forwarding the unknown-call.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.29-Edurep/version_0
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/xmlxpath.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.29-Edurep/version_1/meresco/components/xmlxpath.py
+--- version_0/meresco/components/xmlxpath.py	2012-02-17 11:02:47.000000000 +0100
++++ version_1/meresco/components/xmlxpath.py	2012-02-17 11:15:35.000000000 +0100
+@@ -89,8 +89,6 @@
+                 newKwargs = kwargs.copy()
+                 newKwargs[key] = newTree
+                 yield self.all.unknown(msg, *args, **newKwargs)
+-        else:
+-            yield self.all.unknown(msg, *args, **kwargs)
+ 
+     def _findNewTree(self, elementTree):
+         for xpath in self._xpaths:
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/xmlxpathtest.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.29-Edurep/version_1/test/xmlxpathtest.py
+--- version_0/test/xmlxpathtest.py	2012-02-17 11:01:47.000000000 +0100
++++ version_1/test/xmlxpathtest.py	2012-02-17 11:15:35.000000000 +0100
+@@ -126,13 +126,10 @@
+         self.assertEquals(set(['aKeyword', 'otherKeyword']), set(method.kwargs.keys()))
+         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['aKeyword']))
+ 
+-    def testNoElementInArgumentsPassesOn(self):
++    def testNoElementInArgumentsNotPassedOn(self):
+         self.createXmlXPath(['/root/path'], {})
+-
+         self.observableArgs.do.aMethod('do not xpath me')
+-
+-        self.assertEquals(1, len(self.observer.calledMethods))
+-        self.assertEquals('do not xpath me', self.observer.calledMethods[0].args[0])
++        self.assertEquals(0, len(self.observer.calledMethods))
+ 
+     def testXPathWithNamespaces(self):
+         self.createXmlXPath(['/a:root/b:path/c:findme'], {'a':'ns1', 'b':'ns2', 'c':'ns3'})
