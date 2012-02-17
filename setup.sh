@@ -24,24 +24,10 @@
 # 
 ## end license ##
 
-if [ -f /etc/debian_version ]; then
-    GCCDIR=/usr
-elif [ -f /etc/redhat-release ]; then
-    GCCDIR=/opt/gcc-4.3.2
-else
-    echo "Unsupported platform"
-fi
-
 ARGS="$@"
 if [ -z "${ARGS}" ]; then
     # For building a local checked-out code
     ARGS="build_ext --inplace"
 fi
 
-MACHINE=`${GCCDIR}/bin/gcc -dumpmachine`
-GCCVERSION=`${GCCDIR}/bin/gcc -dumpversion`
-GCCVERSION_SHORT=$(echo $GCCVERSION | awk -F. '{print $1"."$2}')
-
-LIBRARY_PATH=${GCCDIR}/lib/gcc/$MACHINE/${GCCVERSION} \
-CPLUS_INCLUDE_PATH=${GCCDIR}/include/c++/${GCCVERSION}:${GCCDIR}/lib/gcc/$MACHINE/${GCCVERSION}/include \
-CPP=cpp-${GCCVERSION_SHORT} CC=gcc-${GCCVERSION_SHORT} CXX=g++-${GCCVERSION_SHORT} python2.6 setup.py ${ARGS}
+python2.6 setup.py ${ARGS}
