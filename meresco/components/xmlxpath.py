@@ -89,8 +89,6 @@ class XmlXPath(Observable):
                 newKwargs = kwargs.copy()
                 newKwargs[key] = newTree
                 yield self.all.unknown(msg, *args, **newKwargs)
-        else:
-            yield self.all.unknown(msg, *args, **kwargs)
 
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:

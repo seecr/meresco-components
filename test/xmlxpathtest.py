@@ -126,13 +126,10 @@ class XmlXPathTest(CQ2TestCase):
         self.assertEquals(set(['aKeyword', 'otherKeyword']), set(method.kwargs.keys()))
         self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['aKeyword']))
 
-    def testNoElementInArgumentsPassesOn(self):
+    def testNoElementInArgumentsNotPassedOn(self):
         self.createXmlXPath(['/root/path'], {})
-
         self.observableArgs.do.aMethod('do not xpath me')
-
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals('do not xpath me', self.observer.calledMethods[0].args[0])
+        self.assertEquals(0, len(self.observer.calledMethods))
 
     def testXPathWithNamespaces(self):
         self.createXmlXPath(['/a:root/b:path/c:findme'], {'a':'ns1', 'b':'ns2', 'c':'ns3'})
