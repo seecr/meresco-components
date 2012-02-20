@@ -1,9 +1,0 @@
-Changeset created on Mon Oct  4 11:06:05 CEST 2010 by Seek You Too
-
-Description: WebRequestServer removed 
-
-    WebRequestServer is moved to meresco-oai.
-
-Baseline version: meresco-components/workingsets/3.3-Edurep/version_3
-
-Only in version_3/meresco/components/http: webrequestserver.py
