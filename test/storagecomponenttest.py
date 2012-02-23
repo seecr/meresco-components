@@ -114,6 +114,25 @@ class StorageComponentTest(CQ2TestCase):
         self.storageComponent.delete('some:thing:anId-123')
         self.assertFalse(identifier in self.storage)
 
+    def testPurgeWithoutIdentifierNotAllowed(self):
+        self.assertRaises(ValueError, lambda: StorageComponent(self.tempdir).purge(''))
+
+    def testPurge(self):
+        identifier = ('some:thing:anId-123','somePartName')
+        self.storage.put(identifier).close()
+        self.assertTrue(identifier in self.storage)
+        self.storageComponent.purge('some:thing:anId-123')
+        self.assertTrue(identifier in self.storage)
+
+        self.storageComponent = StorageComponent(self.tempdir, partsRemovedOnDelete=['somePartName'])
+        self.storage = self.storageComponent._storage
+        self.storageComponent.purge('some:thing:anId-123')
+        self.assertFalse(identifier in self.storage)
+
+        self.storageComponent = StorageComponent(self.tempdir, partsRemovedOnDelete=['somePartName'], partsRemovedOnPurge=['notTherePart'])
+        self.storage = self.storageComponent._storage
+        self.storageComponent.purge('some:thing:anId-123')
+        self.assertFalse(identifier in self.storage)
 
     def testDeleteNonexisting(self):
         identifier = ('some:thing:anId-123','somePartName.xml')

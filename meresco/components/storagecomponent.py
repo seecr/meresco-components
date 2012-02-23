@@ -42,10 +42,11 @@ def defaultJoin(parts):
     return identifier, partname
 
 class StorageComponent(object):
-    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[], name=None):
+    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=None, partsRemovedOnPurge=None, name=None):
         assert type(directory) == str, 'Please use directory as first parameter'
         self._storage = HierarchicalStorage(Storage(directory, revisionControl=revisionControl, ), split, join)
-        self._partsRemovedOnDelete = partsRemovedOnDelete
+        self._partsRemovedOnDelete = set([]) if partsRemovedOnDelete is None else set(partsRemovedOnDelete)
+        self._partsRemovedOnPurge = self._partsRemovedOnDelete if partsRemovedOnPurge is None else self._partsRemovedOnDelete.union(set(partsRemovedOnPurge))
         self._name = name
 
     def observable_name(self):
@@ -76,6 +77,13 @@ class StorageComponent(object):
     def deletePart(self, identifier, partname):
         if (identifier, partname) in self._storage:
             self._storage.delete((identifier, partname))
+
+    def purge(self, identifier):
+        if not identifier:
+            raise ValueError("Empty identifier is not allowed.")
+        for partname in self._partsRemovedOnPurge:
+            if (identifier, partname) in self._storage:
+                self._storage.purge((identifier, partname))
 
     def isAvailable(self, identifier, partname):
         """returns (hasId, hasPartName)"""
