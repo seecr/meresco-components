@@ -1,0 +1,197 @@
+Changeset created on Mon Feb 27 10:16:27 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Purge on StorageComponent
+
+    StorageComponent now supports purging records, partsRemovedOnPurge added to specify which
+    additional parts should be removed w.r.t. partsRemovedOnDelete.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.4.29-Edurep/version_1
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_1/deps.txt /home/hendrik/development/meresco/meresco-components/workingsets/3.4.29-Edurep/version_2/deps.txt
+--- version_1/deps.txt	2012-02-17 11:19:50.000000000 +0100
++++ version_2/deps.txt	2012-02-27 11:16:13.000000000 +0100
+@@ -16,7 +16,7 @@
+ python-meresco-core (<< 3.2)
+ python-meresco-xml (>= 1.0)
+ python-meresco-xml (<< 1.1)
+-python-storage (>=5.1.7)
++python-storage (>=5.1.12)
+ python-storage (<<5.2)
+ python-weightless-core (>= 0.6)
+ python-weightless-core (<< 0.7)
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_1/meresco/components/storagecomponent.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.29-Edurep/version_2/meresco/components/storagecomponent.py
+--- version_1/meresco/components/storagecomponent.py	2012-02-17 11:19:50.000000000 +0100
++++ version_2/meresco/components/storagecomponent.py	2012-02-27 11:16:13.000000000 +0100
+@@ -1,30 +1,32 @@
+ # -*- coding: utf-8 -*-
+ ## begin license ##
+-#
+-#    Meresco Components are components to build searchengines, repositories
+-#    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+-#       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#
+-#    This file is part of Meresco Components.
+-#
+-#    Meresco Components is free software; you can redistribute it and/or modify
+-#    it under the terms of the GNU General Public License as published by
+-#    the Free Software Foundation; either version 2 of the License, or
+-#    (at your option) any later version.
+-#
+-#    Meresco Components is distributed in the hope that it will be useful,
+-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-#    GNU General Public License for more details.
+-#
+-#    You should have received a copy of the GNU General Public License
+-#    along with Meresco Components; if not, write to the Free Software
+-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
++# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
+ ## end license ##
+ 
+ from storage import HierarchicalStorage, Storage
+@@ -42,10 +44,11 @@
+     return identifier, partname
+ 
+ class StorageComponent(object):
+-    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=[], name=None):
++    def __init__(self, directory, split=defaultSplit, join=defaultJoin, revisionControl=False, partsRemovedOnDelete=None, partsRemovedOnPurge=None, name=None):
+         assert type(directory) == str, 'Please use directory as first parameter'
+         self._storage = HierarchicalStorage(Storage(directory, revisionControl=revisionControl, ), split, join)
+-        self._partsRemovedOnDelete = partsRemovedOnDelete
++        self._partsRemovedOnDelete = set([]) if partsRemovedOnDelete is None else set(partsRemovedOnDelete)
++        self._partsRemovedOnPurge = self._partsRemovedOnDelete if partsRemovedOnPurge is None else self._partsRemovedOnDelete.union(set(partsRemovedOnPurge))
+         self._name = name
+ 
+     def observable_name(self):
+@@ -77,6 +80,13 @@
+         if (identifier, partname) in self._storage:
+             self._storage.delete((identifier, partname))
+ 
++    def purge(self, identifier):
++        if not identifier:
++            raise ValueError("Empty identifier is not allowed.")
++        for partname in self._partsRemovedOnPurge:
++            if (identifier, partname) in self._storage:
++                self._storage.purge((identifier, partname))
++
+     def isAvailable(self, identifier, partname):
+         """returns (hasId, hasPartName)"""
+         if (identifier, partname) in self._storage:
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_1/test/storagecomponenttest.py /home/hendrik/development/meresco/meresco-components/workingsets/3.4.29-Edurep/version_2/test/storagecomponenttest.py
+--- version_1/test/storagecomponenttest.py	2012-02-17 11:19:50.000000000 +0100
++++ version_2/test/storagecomponenttest.py	2012-02-27 11:16:13.000000000 +0100
+@@ -1,30 +1,32 @@
+ # -*- coding: utf-8 -*-
+ ## begin license ##
+-#
+-#    Meresco Components are components to build searchengines, repositories
+-#    and archives, based on Meresco Core.
+-#    Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+-#    Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+-#    Copyright (C) 2007-2009 Stichting Kennisnet Ict op school.
+-#       http://www.kennisnetictopschool.nl
+-#    Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+-#
+-#    This file is part of Meresco Components.
+-#
+-#    Meresco Components is free software; you can redistribute it and/or modify
+-#    it under the terms of the GNU General Public License as published by
+-#    the Free Software Foundation; either version 2 of the License, or
+-#    (at your option) any later version.
+-#
+-#    Meresco Components is distributed in the hope that it will be useful,
+-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-#    GNU General Public License for more details.
+-#
+-#    You should have received a copy of the GNU General Public License
+-#    along with Meresco Components; if not, write to the Free Software
+-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
++# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
++# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
++# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
+ ## end license ##
+ 
+ from cq2utils.cq2testcase import CQ2TestCase
+@@ -114,6 +116,25 @@
+         self.storageComponent.delete('some:thing:anId-123')
+         self.assertFalse(identifier in self.storage)
+ 
++    def testPurgeWithoutIdentifierNotAllowed(self):
++        self.assertRaises(ValueError, lambda: StorageComponent(self.tempdir).purge(''))
++
++    def testPurge(self):
++        identifier = ('some:thing:anId-123','somePartName')
++        self.storage.put(identifier).close()
++        self.assertTrue(identifier in self.storage)
++        self.storageComponent.purge('some:thing:anId-123')
++        self.assertTrue(identifier in self.storage)
++
++        self.storageComponent = StorageComponent(self.tempdir, partsRemovedOnDelete=['somePartName'])
++        self.storage = self.storageComponent._storage
++        self.storageComponent.purge('some:thing:anId-123')
++        self.assertFalse(identifier in self.storage)
++
++        self.storageComponent = StorageComponent(self.tempdir, partsRemovedOnDelete=['somePartName'], partsRemovedOnPurge=['notTherePart'])
++        self.storage = self.storageComponent._storage
++        self.storageComponent.purge('some:thing:anId-123')
++        self.assertFalse(identifier in self.storage)
+ 
+     def testDeleteNonexisting(self):
+         identifier = ('some:thing:anId-123','somePartName.xml')
