@@ -34,13 +34,19 @@ from os import makedirs, listdir, remove
 NR_OF_FILES_KEPT = 14
 
 # '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s #123 /sru query=query&operation=searchRetrieve&version=1.1\n'
+def _valueFromDict(aDict, key, template='%s', alt='-'):
+    try:
+        return template % aDict[key]
+    except TypeError, KeyError:
+        return alt
+
 def logline(aDict):
     line = []
     line.append(strftime('%Y-%m-%dT%H:%M:%SZ', gmtime(aDict['timestamp'])))
     line.append(aDict.get('ipAddress', '-'))
-    line.append('%.1fK' % aDict['size'] if 'size' in aDict else '-')
-    line.append('%.3fs' % aDict['duration'] if 'duration' in aDict else '-')
-    line.append('%d#R' % aDict['numberOfRecords'] if 'numberOfRecords' in aDict else '-')
+    line.append(_valueFromDict(aDict, 'size', '%.1fK'))
+    line.append(_valueFromDict(aDict, 'duration', '%.3fs'))
+    line.append(_valueFromDict(aDict, 'numberOfRecords', '%d#R'))
     line.append(aDict.get('path', '-'))
     line.append('%s' % aDict.get('queryArguments', ''))
     return '%s\n' % ' '.join(line)

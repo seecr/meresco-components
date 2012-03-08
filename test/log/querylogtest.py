@@ -31,10 +31,13 @@ from cq2utils import CQ2TestCase, CallTrace
 from os.path import isfile, isdir, join
 from os import listdir
 
-from meresco.components.log import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog
+from meresco.components.log import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog, QueryLogHelperForExecuteCQL
 from meresco.components.log.directorylog import NR_OF_FILES_KEPT
 
 from meresco.core import Observable
+from meresco.core import be
+from weightless.core import compose
+from meresco.components.sru import SruHandler, SruParser
 
 class QueryLogTest(CQ2TestCase):
     def setUp(self):
@@ -44,21 +47,21 @@ class QueryLogTest(CQ2TestCase):
             self._timeNow += 1.0
             return self._timeNow
         directoryLog = DirectoryLog(self.tempdir)
-        self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/edurep/sru', '/edurep/srw'])
+        self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/path/sru', '/path/srw'])
         self.queryLog._time = time
     
     def testLogging(self):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
 
         self.assertEquals('123', result)
         self.assertEquals(['handleRequest'], [m.name for m in observer.calledMethods])
-        self.assertEquals([dict(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
+        self.assertEquals([dict(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
 
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /edurep/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testAddToLogfile(self):
         f = open(join(self.tempdir, '2009-11-02-query.log'), 'w')
@@ -67,7 +70,7 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
 
         self.assertEquals(2, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
 
@@ -75,7 +78,7 @@ class QueryLogTest(CQ2TestCase):
         observer= CallTrace('observer')
         observer.returnValues['handleRequest'] = (f for f in ['1', lambda: None,'3'])
         self.queryLog.addObserver(observer)
-        list(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        list(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
 
         self.assertEquals(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
         
@@ -83,10 +86,10 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
         self._timeNow += 24 * 60 *60
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
 
         self.assertEquals(['2009-11-02-query.log', '2009-11-03-query.log'], sorted(listdir(self.tempdir)))
 
@@ -104,9 +107,9 @@ class QueryLogTest(CQ2TestCase):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru/extended/path', otherArg='value'))
+        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru/extended/path', otherArg='value'))
         self.assertEquals(1, len(listdir(self.tempdir)))
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /edurep/sru/extended/path \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru/extended/path \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
         
     def testLogDirCreated(self):
         logDir = join(self.tempdir, 'amihere')
@@ -115,15 +118,26 @@ class QueryLogTest(CQ2TestCase):
         queryLog = QueryLog(log=DirectoryLog(logDir), loggedPaths=None)
         self.assertTrue(isdir(logDir))
 
+    def testSetExtension(self):
+        queryLog = QueryLog(log=DirectoryLog(self.tempdir, extension='-q.ext'), loggedPaths=['/'])
+        queryLog._time = self.queryLog._time
+        observer = CallTrace('observer')
+        observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
+        queryLog.addObserver(observer)
+        ''.join(queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru/extended/path', otherArg='value'))
+        self.assertEquals(1, len(listdir(self.tempdir)))
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru/extended/path \n', open(join(self.tempdir, '2009-11-02-q.ext')).read())
+
+
     def testLogQueryParameters(self):
         class HandleRequestObserver(Observable):
             def handleRequest(self, **kwargs):
                 self.ctx.queryLogValues['queryArguments'].update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
                 yield 'result'
         self.queryLog.addObserver(HandleRequestObserver())
-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
+        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
         self.assertEquals('result', result)
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /edurep/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testQueryLogHelperForSru(self):
         __callstack_var_queryLogValues__ = {'queryArguments':{}}
@@ -146,19 +160,52 @@ class QueryLogTest(CQ2TestCase):
         self.assertEquals([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])
 
 
+    def testAllQueryHelpersForSRU(self):
+        index = CallTrace('index')
+        index.returnValues['executeCQL'] = (3201, []) 
+        index.ignoredAttributes.extend(['echoedExtraRequestData', 'extraResponseData'])
+        server = be((Observable(),
+            (self.queryLog,
+                (SruParser(),
+                    (QueryLogHelperForSru(),
+                        (SruHandler(extraRecordDataNewStyle=True),
+                            (QueryLogHelperForExecuteCQL(),
+                                (index,)
+                            )
+                        )
+                    )
+                )
+            ),
+        ))
+
+        ''.join(compose(server.all.handleRequest(
+                path='/path/sru',
+                Client=('11.22.33.44', 8080),
+                arguments={
+                    'operation': ['searchRetrieve'],
+                    'version': ['1.2'],
+                    'maximumRecords': ['0'],
+                    'query': ['field=value'],
+                    },
+            )))
+        self.assertEquals('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201#R /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+
+
+
+
     def testRemoveOldLogs(self):
         for filename in ("%03d" % r for r in range(NR_OF_FILES_KEPT)):
             open(join(self.tempdir, filename), 'w').close()
         
         filesBefore = listdir(self.tempdir)
-        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/edurep/sru"))
+        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
         filesAfter = listdir(self.tempdir)
         self.assertFalse('000' in filesAfter)
         self.assertEquals(len(filesAfter), len(filesBefore))
         
         filesBefore = listdir(self.tempdir)
         self._timeNow += 3600*24
-        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/edurep/sru"))
+        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
         filesAfter = listdir(self.tempdir)
         self.assertFalse('001' in filesAfter)
         self.assertEquals(len(filesAfter), len(filesBefore))
@@ -166,7 +213,7 @@ class QueryLogTest(CQ2TestCase):
         open(join(self.tempdir, '015'), 'w').close()
         open(join(self.tempdir, '016'), 'w').close()
         self._timeNow += 3600*24
-        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/edurep/sru"))
+        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
         self.assertEquals(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
         
         

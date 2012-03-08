@@ -26,7 +26,7 @@
 # 
 ## end license ##
 
-from meresco.core import Observable
+from meresco.core import Observable, Transparant
 
 from time import time
 from urllib import urlencode
@@ -59,13 +59,15 @@ class QueryLog(Observable):
         size = sizeInBytes / 1024.0
         duration = self._time() - timestamp
         queryArguments = str(urlencode(sorted(__callstack_var_queryLogValues__['queryArguments'].items()), doseq=True))
+        numberOfRecords = __callstack_var_queryLogValues__.get('numberOfRecords', None)
 
         self._log.log(timestamp=timestamp,
                 path=path,
                 ipAddress=ipAddress,
                 size=size,
                 duration=duration,
-                queryArguments=queryArguments)
+                queryArguments=queryArguments,
+                numberOfRecords=numberOfRecords)
 
     def _time(self):
         return time()
@@ -95,3 +97,9 @@ class QueryLogHelper(Observable):
         queryArguments = self.ctx.queryLogValues['queryArguments']
         queryArguments.update(arguments)
         return self.all.handleRequest(arguments=arguments, **kwargs)
+
+class QueryLogHelperForExecuteCQL(Transparant):
+    def executeCQL(self, **kwargs):
+        total, recordIds = self.any.executeCQL(**kwargs)
+        self.ctx.queryLogValues['numberOfRecords'] = total
+        return total, recordIds
