@@ -5,7 +5,8 @@
 # and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -57,7 +58,7 @@ class QueryLogTest(CQ2TestCase):
         self.assertEquals([dict(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
 
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /edurep/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testAddToLogfile(self):
         f = open(join(self.tempdir, '2009-11-02-query.log'), 'w')
@@ -105,6 +106,7 @@ class QueryLogTest(CQ2TestCase):
         self.queryLog.addObserver(observer)
         ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru/extended/path', otherArg='value'))
         self.assertEquals(1, len(listdir(self.tempdir)))
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /edurep/sru/extended/path \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
         
     def testLogDirCreated(self):
         logDir = join(self.tempdir, 'amihere')
@@ -116,31 +118,31 @@ class QueryLogTest(CQ2TestCase):
     def testLogQueryParameters(self):
         class HandleRequestObserver(Observable):
             def handleRequest(self, **kwargs):
-                self.ctx.queryArguments.update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
+                self.ctx.queryLogValues['queryArguments'].update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
                 yield 'result'
         self.queryLog.addObserver(HandleRequestObserver())
         result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
         self.assertEquals('result', result)
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /edurep/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testQueryLogHelperForSru(self):
-        __callstack_var_queryArguments__ = {}
+        __callstack_var_queryLogValues__ = {'queryArguments':{}}
         helper = QueryLogHelperForSru()
         observer = CallTrace('observer')
         helper.addObserver(observer)
         observer.returnValues['searchRetrieve'] = 'result'
         helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})
-        self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryArguments__)
+        self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
         
     def testQueryLogHelper(self):
-        __callstack_var_queryArguments__ = {}
+        __callstack_var_queryLogValues__ = {'queryArguments':{}}
         helper = QueryLogHelper()
         observer = CallTrace('observer')
         helper.addObserver(observer)
         observer.returnValues['handleRequest'] = 'result'
         result = list(helper.handleRequest(arguments={'key':['value'], 'key2':['value1', 'value2']}, path='path'))
         self.assertEquals(['result'], result)
-        self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryArguments__)
+        self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryLogValues__['queryArguments'])
         self.assertEquals([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])
 
 

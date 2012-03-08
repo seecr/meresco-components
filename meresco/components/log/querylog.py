@@ -5,7 +5,8 @@
 # and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -46,7 +47,7 @@ class QueryLog(Observable):
         return self._handleRequest(Client=Client, path=path, **kwargs)
         
     def _handleRequest(self, Client, path, **kwargs):
-        __callstack_var_queryArguments__ = {}
+        __callstack_var_queryLogValues__ = {'queryArguments':{}}
 
         timestamp = self._time()
         ipAddress = Client[0]
@@ -57,9 +58,14 @@ class QueryLog(Observable):
             yield response
         size = sizeInBytes / 1024.0
         duration = self._time() - timestamp
-        queryArguments = str(urlencode(sorted(__callstack_var_queryArguments__.items()), doseq=True))
+        queryArguments = str(urlencode(sorted(__callstack_var_queryLogValues__['queryArguments'].items()), doseq=True))
 
-        self._log.log(timestamp, path, ipAddress, size, duration, queryArguments)
+        self._log.log(timestamp=timestamp,
+                path=path,
+                ipAddress=ipAddress,
+                size=size,
+                duration=duration,
+                queryArguments=queryArguments)
 
     def _time(self):
         return time()
@@ -75,7 +81,7 @@ def duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
 
 class QueryLogHelperForSru(Observable):
     def searchRetrieve(self, **kwargs):
-        queryArguments = self.ctx.queryArguments
+        queryArguments = self.ctx.queryLogValues['queryArguments']
         for key, value in kwargs.items():
             if duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
                 continue
@@ -86,6 +92,6 @@ class QueryLogHelperForSru(Observable):
 
 class QueryLogHelper(Observable):
     def handleRequest(self, arguments, **kwargs):
-        queryArguments = self.ctx.queryArguments
+        queryArguments = self.ctx.queryLogValues['queryArguments']
         queryArguments.update(arguments)
         return self.all.handleRequest(arguments=arguments, **kwargs)
