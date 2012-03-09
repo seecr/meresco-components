@@ -5,7 +5,7 @@
 # and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
@@ -33,19 +33,42 @@ from os import makedirs, listdir, remove
 
 NR_OF_FILES_KEPT = 14
 
-# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s /sru query=query&operation=searchRetrieve&version=1.1\n'
+# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s #123 /sru query=query&operation=searchRetrieve&version=1.1\n'
+def _valueFromDict(aDict, key, template='%s', alt='-'):
+    try:
+        return template % aDict[key]
+    except TypeError, KeyError:
+        return alt
+
+def logline(aDict):
+    line = []
+    line.append(strftime('%Y-%m-%dT%H:%M:%SZ', gmtime(aDict['timestamp'])))
+    line.append(aDict.get('ipAddress', '-'))
+    line.append(_valueFromDict(aDict, 'size', '%.1fK'))
+    line.append(_valueFromDict(aDict, 'duration', '%.3fs'))
+    line.append(_valueFromDict(aDict, 'numberOfRecords', '%dhits'))
+    line.append(aDict.get('path', '-'))
+    line.append('%s' % aDict.get('queryArguments', ''))
+    return '%s\n' % ' '.join(line)
+
+
 logtemplate = '%(strTimestamp)s %(ipAddress)s %(size).1fK %(duration).3fs %(path)s %(queryArguments)s\n'
 
 class DirectoryLog(object):
-    def __init__(self, logdir):
+    def __init__(self, logdir, extension='-query.log'):
         self._previousLog = None
         self._logdir = logdir
         if not isdir(self._logdir):
             makedirs(self._logdir)
+        self._filenameExtension = extension
+
+    def _filename(self, timestamp):
+        date = strftime('%Y-%m-%d', gmtime(timestamp))
+        return join(self._logdir, '%s%s' % (date, self._filenameExtension))
     
-    def log(self, timestamp, path, ipAddress, size, duration, queryArguments):
-        strTimestamp=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime(timestamp))
-        logFilename = join(self._logdir, strftime('%Y-%m-%d-query.log', gmtime(timestamp)))
+    def log(self, **kwargs):
+        timestamp = kwargs['timestamp']
+        logFilename = self._filename(timestamp)
         
         if logFilename != self._previousLog:
             logs = sorted(listdir(self._logdir))
@@ -54,7 +77,8 @@ class DirectoryLog(object):
                 logs = sorted(listdir(self._logdir))
         
         with open(logFilename, 'a') as f:
-            f.write(logtemplate % locals())
+            f.write(logline(kwargs))
+
             
     def logExists(self, logName):
         return isfile(join(self._logdir, logName))
