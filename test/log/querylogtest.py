@@ -47,7 +47,7 @@ class QueryLogTest(CQ2TestCase):
             self._timeNow += 1.0
             return self._timeNow
         directoryLog = DirectoryLog(self.tempdir)
-        self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/path/sru', '/path/srw'])
+        self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/path/sru', '/path/srw'], backwardsCompatibility=False)
         self.queryLog._time = time
     
     def testLogging(self):
@@ -115,11 +115,11 @@ class QueryLogTest(CQ2TestCase):
         logDir = join(self.tempdir, 'amihere')
         self.assertFalse(isdir(logDir))
         
-        queryLog = QueryLog(log=DirectoryLog(logDir), loggedPaths=None)
+        queryLog = QueryLog(log=DirectoryLog(logDir), loggedPaths=None, backwardsCompatibility=False)
         self.assertTrue(isdir(logDir))
 
     def testSetExtension(self):
-        queryLog = QueryLog(log=DirectoryLog(self.tempdir, extension='-q.ext'), loggedPaths=['/'])
+        queryLog = QueryLog(log=DirectoryLog(self.tempdir, extension='-q.ext'), loggedPaths=['/'], backwardsCompatibility=False)
         queryLog._time = self.queryLog._time
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
@@ -217,4 +217,28 @@ class QueryLogTest(CQ2TestCase):
         self.assertEquals(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
         
         
+    def testOldQueryLogModeStillWorks(self):
+        # test needs to be removed in new Meresco 4 including the backwardsCompatibility flag.
+        class MyQueryLogHelper(Observable):
+            def handleRequest(self, value, **kwargs):
+                self.ctx.queryArguments['value'] = value
+                yield 'handled'
+        observable = be((Observable(),
+            (QueryLog(log=DirectoryLog(self.tempdir), loggedPaths=['/']),
+                (MyQueryLogHelper(),)
+            )
+        ))
+
+        result = ''.join(compose(observable.all.handleRequest(
+                path='/path',
+                Client=('11.22.33.44', 8080),
+                arguments={},
+                value='VALUE')))
         
+        self.assertEquals('handled', result)
+        loglines = open(join(self.tempdir, listdir(self.tempdir)[0])).readlines()
+        self.assertEquals(1, len(loglines))
+        date, ipAddress, size, duration, nrOfRecords, path, args = loglines[0].strip().split()
+        self.assertEquals('value=VALUE', args)
+
+

@@ -36,10 +36,14 @@ class QueryLog(Observable):
     Log incoming http queries with ip-address, path, size, timestamp, duration
     """
 
-    def __init__(self, log, loggedPaths):
+    def __init__(self, log, loggedPaths, backwardsCompatibility=True):
         Observable.__init__(self)
         self._log = log
         self._loggedPaths = loggedPaths
+        self._backwardsCompatibility = backwardsCompatibility
+        if self._backwardsCompatibility:
+            from warnings import warn
+            warn("Running in BackwardsCompatibility mode, adding 'queryArguments' as variable to the callstack.", DeprecationWarning)
 
     def handleRequest(self, Client, path, **kwargs):
         if not any(path.startswith(p) for p in self._loggedPaths):
@@ -47,7 +51,10 @@ class QueryLog(Observable):
         return self._handleRequest(Client=Client, path=path, **kwargs)
         
     def _handleRequest(self, Client, path, **kwargs):
-        __callstack_var_queryLogValues__ = {'queryArguments':{}}
+        _queryArguments = {}
+        if self._backwardsCompatibility:
+            __callstack_var_queryArguments__ = _queryArguments
+        __callstack_var_queryLogValues__ = {'queryArguments':_queryArguments}
 
         timestamp = self._time()
         ipAddress = Client[0]
@@ -58,7 +65,7 @@ class QueryLog(Observable):
             yield response
         size = sizeInBytes / 1024.0
         duration = self._time() - timestamp
-        queryArguments = str(urlencode(sorted(__callstack_var_queryLogValues__['queryArguments'].items()), doseq=True))
+        queryArguments = str(urlencode(sorted(_queryArguments.items()), doseq=True))
         numberOfRecords = __callstack_var_queryLogValues__.get('numberOfRecords', None)
 
         self._log.log(timestamp=timestamp,
