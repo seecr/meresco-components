@@ -46,7 +46,7 @@ def logline(aDict):
     line.append(aDict.get('ipAddress', '-'))
     line.append(_valueFromDict(aDict, 'size', '%.1fK'))
     line.append(_valueFromDict(aDict, 'duration', '%.3fs'))
-    line.append(_valueFromDict(aDict, 'numberOfRecords', '%d#R'))
+    line.append(_valueFromDict(aDict, 'numberOfRecords', '%dhits'))
     line.append(aDict.get('path', '-'))
     line.append('%s' % aDict.get('queryArguments', ''))
     return '%s\n' % ' '.join(line)

@@ -188,7 +188,7 @@ class QueryLogTest(CQ2TestCase):
                     'query': ['field=value'],
                     },
             )))
-        self.assertEquals('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201#R /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEquals('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201hits /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
 
 
