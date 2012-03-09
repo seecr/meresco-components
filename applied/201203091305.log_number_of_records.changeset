@@ -1,0 +1,435 @@
+Changeset created on Fri Mar 09 13:05:00 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Log number of records in querylog.
+
+    QueryLog is extended so it can log the number of records. If not applicable
+    the numberOfRecords is represented as '-' in the log file.
+
+    The format of the logfile has slightly changed to make room for the number of 
+    records.
+
+    The callstack variable to register this number has changed from 'queryArguments'
+    to 'queryLogValues'. In compatabilitymode it can still use the old value.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/3.5-Edurep/version_0
+
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/log/directorylog.py /vol/extra_disk/development/meresco-components/workingsets/3.5-Edurep/version_1/meresco/components/log/directorylog.py
+--- version_0/meresco/components/log/directorylog.py	2012-03-08 09:18:21.000000000 +0100
++++ version_1/meresco/components/log/directorylog.py	2012-03-09 14:04:57.000000000 +0100
+@@ -5,7 +5,8 @@
+ # and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
+-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -32,19 +33,42 @@
+ 
+ NR_OF_FILES_KEPT = 14
+ 
+-# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s /sru query=query&operation=searchRetrieve&version=1.1\n'
++# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s #123 /sru query=query&operation=searchRetrieve&version=1.1\n'
++def _valueFromDict(aDict, key, template='%s', alt='-'):
++    try:
++        return template % aDict[key]
++    except TypeError, KeyError:
++        return alt
++
++def logline(aDict):
++    line = []
++    line.append(strftime('%Y-%m-%dT%H:%M:%SZ', gmtime(aDict['timestamp'])))
++    line.append(aDict.get('ipAddress', '-'))
++    line.append(_valueFromDict(aDict, 'size', '%.1fK'))
++    line.append(_valueFromDict(aDict, 'duration', '%.3fs'))
++    line.append(_valueFromDict(aDict, 'numberOfRecords', '%dhits'))
++    line.append(aDict.get('path', '-'))
++    line.append('%s' % aDict.get('queryArguments', ''))
++    return '%s\n' % ' '.join(line)
++
++
+ logtemplate = '%(strTimestamp)s %(ipAddress)s %(size).1fK %(duration).3fs %(path)s %(queryArguments)s\n'
+ 
+ class DirectoryLog(object):
+-    def __init__(self, logdir):
++    def __init__(self, logdir, extension='-query.log'):
+         self._previousLog = None
+         self._logdir = logdir
+         if not isdir(self._logdir):
+             makedirs(self._logdir)
++        self._filenameExtension = extension
++
++    def _filename(self, timestamp):
++        date = strftime('%Y-%m-%d', gmtime(timestamp))
++        return join(self._logdir, '%s%s' % (date, self._filenameExtension))
+     
+-    def log(self, timestamp, path, ipAddress, size, duration, queryArguments):
+-        strTimestamp=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime(timestamp))
+-        logFilename = join(self._logdir, strftime('%Y-%m-%d-query.log', gmtime(timestamp)))
++    def log(self, **kwargs):
++        timestamp = kwargs['timestamp']
++        logFilename = self._filename(timestamp)
+         
+         if logFilename != self._previousLog:
+             logs = sorted(listdir(self._logdir))
+@@ -53,7 +77,8 @@
+                 logs = sorted(listdir(self._logdir))
+         
+         with open(logFilename, 'a') as f:
+-            f.write(logtemplate % locals())
++            f.write(logline(kwargs))
++
+             
+     def logExists(self, logName):
+         return isfile(join(self._logdir, logName))
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/log/__init__.py /vol/extra_disk/development/meresco-components/workingsets/3.5-Edurep/version_1/meresco/components/log/__init__.py
+--- version_0/meresco/components/log/__init__.py	2012-03-08 09:18:21.000000000 +0100
++++ version_1/meresco/components/log/__init__.py	2012-03-09 14:04:57.000000000 +0100
+@@ -4,7 +4,8 @@
+ # and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2011 Seek You Too (CQ2) http://www.cq2.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -25,5 +26,5 @@
+ ## end license ##
+ 
+ from logfileserver import LogFileServer
+-from querylog import QueryLog, QueryLogHelperForSru, QueryLogHelper
++from querylog import QueryLog, QueryLogHelperForSru, QueryLogHelper, QueryLogHelperForExecuteCQL
+ from directorylog import DirectoryLog
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/meresco/components/log/querylog.py /vol/extra_disk/development/meresco-components/workingsets/3.5-Edurep/version_1/meresco/components/log/querylog.py
+--- version_0/meresco/components/log/querylog.py	2012-03-08 09:18:21.000000000 +0100
++++ version_1/meresco/components/log/querylog.py	2012-03-09 14:04:57.000000000 +0100
+@@ -5,7 +5,8 @@
+ # and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
+-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -25,7 +26,7 @@
+ # 
+ ## end license ##
+ 
+-from meresco.core import Observable
++from meresco.core import Observable, Transparant
+ 
+ from time import time
+ from urllib import urlencode
+@@ -35,10 +36,14 @@
+     Log incoming http queries with ip-address, path, size, timestamp, duration
+     """
+ 
+-    def __init__(self, log, loggedPaths):
++    def __init__(self, log, loggedPaths, backwardsCompatibility=True):
+         Observable.__init__(self)
+         self._log = log
+         self._loggedPaths = loggedPaths
++        self._backwardsCompatibility = backwardsCompatibility
++        if self._backwardsCompatibility:
++            from warnings import warn
++            warn("Running in BackwardsCompatibility mode, adding 'queryArguments' as variable to the callstack.", DeprecationWarning)
+ 
+     def handleRequest(self, Client, path, **kwargs):
+         if not any(path.startswith(p) for p in self._loggedPaths):
+@@ -46,7 +51,10 @@
+         return self._handleRequest(Client=Client, path=path, **kwargs)
+         
+     def _handleRequest(self, Client, path, **kwargs):
+-        __callstack_var_queryArguments__ = {}
++        _queryArguments = {}
++        if self._backwardsCompatibility:
++            __callstack_var_queryArguments__ = _queryArguments
++        __callstack_var_queryLogValues__ = {'queryArguments':_queryArguments}
+ 
+         timestamp = self._time()
+         ipAddress = Client[0]
+@@ -57,9 +65,16 @@
+             yield response
+         size = sizeInBytes / 1024.0
+         duration = self._time() - timestamp
+-        queryArguments = str(urlencode(sorted(__callstack_var_queryArguments__.items()), doseq=True))
++        queryArguments = str(urlencode(sorted(_queryArguments.items()), doseq=True))
++        numberOfRecords = __callstack_var_queryLogValues__.get('numberOfRecords', None)
+ 
+-        self._log.log(timestamp, path, ipAddress, size, duration, queryArguments)
++        self._log.log(timestamp=timestamp,
++                path=path,
++                ipAddress=ipAddress,
++                size=size,
++                duration=duration,
++                queryArguments=queryArguments,
++                numberOfRecords=numberOfRecords)
+ 
+     def _time(self):
+         return time()
+@@ -75,7 +90,7 @@
+ 
+ class QueryLogHelperForSru(Observable):
+     def searchRetrieve(self, **kwargs):
+-        queryArguments = self.ctx.queryArguments
++        queryArguments = self.ctx.queryLogValues['queryArguments']
+         for key, value in kwargs.items():
+             if duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
+                 continue
+@@ -86,6 +101,12 @@
+ 
+ class QueryLogHelper(Observable):
+     def handleRequest(self, arguments, **kwargs):
+-        queryArguments = self.ctx.queryArguments
++        queryArguments = self.ctx.queryLogValues['queryArguments']
+         queryArguments.update(arguments)
+         return self.all.handleRequest(arguments=arguments, **kwargs)
++
++class QueryLogHelperForExecuteCQL(Transparant):
++    def executeCQL(self, **kwargs):
++        total, recordIds = self.any.executeCQL(**kwargs)
++        self.ctx.queryLogValues['numberOfRecords'] = total
++        return total, recordIds
+diff --unidirectional-new-file --recursive --unified --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied version_0/test/log/querylogtest.py /vol/extra_disk/development/meresco-components/workingsets/3.5-Edurep/version_1/test/log/querylogtest.py
+--- version_0/test/log/querylogtest.py	2012-03-08 09:18:21.000000000 +0100
++++ version_1/test/log/querylogtest.py	2012-03-09 14:04:57.000000000 +0100
+@@ -5,7 +5,8 @@
+ # and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
+-# Copyright (C) 2006-2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -30,10 +31,13 @@
+ from os.path import isfile, isdir, join
+ from os import listdir
+ 
+-from meresco.components.log import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog
++from meresco.components.log import QueryLog, QueryLogHelper, QueryLogHelperForSru, DirectoryLog, QueryLogHelperForExecuteCQL
+ from meresco.components.log.directorylog import NR_OF_FILES_KEPT
+ 
+ from meresco.core import Observable
++from meresco.core import be
++from weightless.core import compose
++from meresco.components.sru import SruHandler, SruParser
+ 
+ class QueryLogTest(CQ2TestCase):
+     def setUp(self):
+@@ -43,21 +47,21 @@
+             self._timeNow += 1.0
+             return self._timeNow
+         directoryLog = DirectoryLog(self.tempdir)
+-        self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/edurep/sru', '/edurep/srw'])
++        self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/path/sru', '/path/srw'], backwardsCompatibility=False)
+         self.queryLog._time = time
+     
+     def testLogging(self):
+         observer = CallTrace('observer')
+         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
+         self.queryLog.addObserver(observer)
+-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
++        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
+ 
+         self.assertEquals('123', result)
+         self.assertEquals(['handleRequest'], [m.name for m in observer.calledMethods])
+-        self.assertEquals([dict(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
++        self.assertEquals([dict(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
+ 
+         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
+-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
++        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+ 
+     def testAddToLogfile(self):
+         f = open(join(self.tempdir, '2009-11-02-query.log'), 'w')
+@@ -66,7 +70,7 @@
+         observer = CallTrace('observer')
+         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
+         self.queryLog.addObserver(observer)
+-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
++        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
+ 
+         self.assertEquals(2, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
+ 
+@@ -74,7 +78,7 @@
+         observer= CallTrace('observer')
+         observer.returnValues['handleRequest'] = (f for f in ['1', lambda: None,'3'])
+         self.queryLog.addObserver(observer)
+-        list(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
++        list(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
+ 
+         self.assertEquals(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
+         
+@@ -82,10 +86,10 @@
+         observer = CallTrace('observer')
+         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
+         self.queryLog.addObserver(observer)
+-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
++        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
+         self._timeNow += 24 * 60 *60
+         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
+-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
++        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
+ 
+         self.assertEquals(['2009-11-02-query.log', '2009-11-03-query.log'], sorted(listdir(self.tempdir)))
+ 
+@@ -103,60 +107,105 @@
+         observer = CallTrace('observer')
+         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
+         self.queryLog.addObserver(observer)
+-        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru/extended/path', otherArg='value'))
++        ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru/extended/path', otherArg='value'))
+         self.assertEquals(1, len(listdir(self.tempdir)))
++        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru/extended/path \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+         
+     def testLogDirCreated(self):
+         logDir = join(self.tempdir, 'amihere')
+         self.assertFalse(isdir(logDir))
+         
+-        queryLog = QueryLog(log=DirectoryLog(logDir), loggedPaths=None)
++        queryLog = QueryLog(log=DirectoryLog(logDir), loggedPaths=None, backwardsCompatibility=False)
+         self.assertTrue(isdir(logDir))
+ 
++    def testSetExtension(self):
++        queryLog = QueryLog(log=DirectoryLog(self.tempdir, extension='-q.ext'), loggedPaths=['/'], backwardsCompatibility=False)
++        queryLog._time = self.queryLog._time
++        observer = CallTrace('observer')
++        observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
++        queryLog.addObserver(observer)
++        ''.join(queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru/extended/path', otherArg='value'))
++        self.assertEquals(1, len(listdir(self.tempdir)))
++        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru/extended/path \n', open(join(self.tempdir, '2009-11-02-q.ext')).read())
++
++
+     def testLogQueryParameters(self):
+         class HandleRequestObserver(Observable):
+             def handleRequest(self, **kwargs):
+-                self.ctx.queryArguments.update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
++                self.ctx.queryLogValues['queryArguments'].update({'a':'A', 'b':'B', 'c':'C', 'd':['D','DD']})
+                 yield 'result'
+         self.queryLog.addObserver(HandleRequestObserver())
+-        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/edurep/sru', otherArg='value'))
++        result = ''.join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value'))
+         self.assertEquals('result', result)
+-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s /edurep/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
++        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+ 
+     def testQueryLogHelperForSru(self):
+-        __callstack_var_queryArguments__ = {}
++        __callstack_var_queryLogValues__ = {'queryArguments':{}}
+         helper = QueryLogHelperForSru()
+         observer = CallTrace('observer')
+         helper.addObserver(observer)
+         observer.returnValues['searchRetrieve'] = 'result'
+         helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})
+-        self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryArguments__)
++        self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
+         
+     def testQueryLogHelper(self):
+-        __callstack_var_queryArguments__ = {}
++        __callstack_var_queryLogValues__ = {'queryArguments':{}}
+         helper = QueryLogHelper()
+         observer = CallTrace('observer')
+         helper.addObserver(observer)
+         observer.returnValues['handleRequest'] = 'result'
+         result = list(helper.handleRequest(arguments={'key':['value'], 'key2':['value1', 'value2']}, path='path'))
+         self.assertEquals(['result'], result)
+-        self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryArguments__)
++        self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryLogValues__['queryArguments'])
+         self.assertEquals([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])
+ 
+ 
++    def testAllQueryHelpersForSRU(self):
++        index = CallTrace('index')
++        index.returnValues['executeCQL'] = (3201, []) 
++        index.ignoredAttributes.extend(['echoedExtraRequestData', 'extraResponseData'])
++        server = be((Observable(),
++            (self.queryLog,
++                (SruParser(),
++                    (QueryLogHelperForSru(),
++                        (SruHandler(extraRecordDataNewStyle=True),
++                            (QueryLogHelperForExecuteCQL(),
++                                (index,)
++                            )
++                        )
++                    )
++                )
++            ),
++        ))
++
++        ''.join(compose(server.all.handleRequest(
++                path='/path/sru',
++                Client=('11.22.33.44', 8080),
++                arguments={
++                    'operation': ['searchRetrieve'],
++                    'version': ['1.2'],
++                    'maximumRecords': ['0'],
++                    'query': ['field=value'],
++                    },
++            )))
++        self.assertEquals('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201hits /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
++
++
++
++
+     def testRemoveOldLogs(self):
+         for filename in ("%03d" % r for r in range(NR_OF_FILES_KEPT)):
+             open(join(self.tempdir, filename), 'w').close()
+         
+         filesBefore = listdir(self.tempdir)
+-        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/edurep/sru"))
++        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
+         filesAfter = listdir(self.tempdir)
+         self.assertFalse('000' in filesAfter)
+         self.assertEquals(len(filesAfter), len(filesBefore))
+         
+         filesBefore = listdir(self.tempdir)
+         self._timeNow += 3600*24
+-        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/edurep/sru"))
++        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
+         filesAfter = listdir(self.tempdir)
+         self.assertFalse('001' in filesAfter)
+         self.assertEquals(len(filesAfter), len(filesBefore))
+@@ -164,8 +213,32 @@
+         open(join(self.tempdir, '015'), 'w').close()
+         open(join(self.tempdir, '016'), 'w').close()
+         self._timeNow += 3600*24
+-        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/edurep/sru"))
++        "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
+         self.assertEquals(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
+         
+         
+-        
++    def testOldQueryLogModeStillWorks(self):
++        # test needs to be removed in new Meresco 4 including the backwardsCompatibility flag.
++        class MyQueryLogHelper(Observable):
++            def handleRequest(self, value, **kwargs):
++                self.ctx.queryArguments['value'] = value
++                yield 'handled'
++        observable = be((Observable(),
++            (QueryLog(log=DirectoryLog(self.tempdir), loggedPaths=['/']),
++                (MyQueryLogHelper(),)
++            )
++        ))
++
++        result = ''.join(compose(observable.all.handleRequest(
++                path='/path',
++                Client=('11.22.33.44', 8080),
++                arguments={},
++                value='VALUE')))
++        
++        self.assertEquals('handled', result)
++        loglines = open(join(self.tempdir, listdir(self.tempdir)[0])).readlines()
++        self.assertEquals(1, len(loglines))
++        date, ipAddress, size, duration, nrOfRecords, path, args = loglines[0].strip().split()
++        self.assertEquals('value=VALUE', args)
++
++
