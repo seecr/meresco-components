@@ -38,6 +38,7 @@ from os.path import join
 
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be
+from weightless.io import  Suspend
 from meresco.core import Observable
 from meresco.components.http.utils import CRLF
 from meresco.components import PeriodicDownload
@@ -197,6 +198,31 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertReactorState(reactor)
 
+    def testSuccessWithSuspend(self):
+        suspendObject = Suspend()
+        with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
+            downloader, observer, reactor = self.getDownloader("localhost", port, handleGenerator=(x for x in ['X', suspendObject]))
+            self.assertEquals(1, downloader._period)
+            callback = self.doConnect() # _processOne.next
+            callback() # _processOne.next -> HTTP GET
+            self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            sleep(0.01)
+            callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''
+            self.assertEquals("", downloader._err.getvalue())
+            self.assertEquals('handle', observer.calledMethods[1].name)
+            self.assertEqualsWS(TWO_RECORDS, observer.calledMethods[1].kwargs['data'])
+            self.assertEquals('addProcess', reactor.calledMethods[-1].name)
+            callback = reactor.calledMethods[-1].args[0]
+            callback() 
+            self.assertEquals('suspend', reactor.calledMethods[-1].name)
+            suspendObject.resume("resume response")
+            self.assertEquals('resumeProcess', reactor.calledMethods[-1].name)
+            callback()
+            self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
+            self.assertEquals('addTimer', reactor.calledMethods[-1].name)
+            self.assertReactorState(reactor)
+
     def testAssertionErrorReraised(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self.getDownloader("localhost", port)
@@ -299,10 +325,11 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals('removeProcess', reactor.calledMethods[6].name)
             self.assertReactorState(reactor)
              
-    def getDownloader(self, host, port, period=1):
+    def getDownloader(self, host, port, period=1, handleGenerator=None):
+        handleGenerator = handleGenerator or (x for x in 'X')
         self._reactor = CallTrace("reactor")
         self._downloader = PeriodicDownload(self._reactor, host, port, period=period, prio=0, err=StringIO())
-        self._observer = CallTrace("observer", methods={'handle': lambda data: (x for x in 'X')})
+        self._observer = CallTrace("observer", methods={'handle': lambda data: handleGenerator})
         self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._downloader.addObserver(self._observer)
         self._downloader.observer_init()

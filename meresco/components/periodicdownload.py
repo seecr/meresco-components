@@ -98,7 +98,9 @@ class PeriodicDownload(Observable):
                 g = compose(gen)
                 for response  in g:
                     if callable(response) and not response is Yield:
-                        response(self._reactor, this.next)
+                        response(self._reactor, self._processOne.next)
+                        yield
+                        response.resumeProcess()
                     yield
             finally:
                 self._reactor.removeProcess()
