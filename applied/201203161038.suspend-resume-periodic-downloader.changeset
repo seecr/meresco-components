@@ -8,6 +8,17 @@ Description: Resume suspend objects in PeriodicDownloader
 
 Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/4.0.5-Edurep/version_0
 
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/deps.txt /home/hendrik/development/meresco/meresco-components/workingsets/4.0.5-Edurep/version_1/deps.txt
+--- version_0/deps.txt	2012-03-12 09:35:42.000000000 +0100
++++ version_1/deps.txt	2012-03-16 11:42:16.000000000 +0100
+@@ -16,6 +16,6 @@
+ python-meresco-xml (<< 4.1)
+ python-storage (>= 6.0.2)
+ python-storage (<< 6.1)
+-python-weightless-core (>= 0.7.1)
++python-weightless-core (>= 0.7.3)
+ python-weightless-core (<< 0.8)
+ lsof
 diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/periodicdownload.py /home/hendrik/development/meresco/meresco-components/workingsets/4.0.5-Edurep/version_1/meresco/components/periodicdownload.py
 --- version_0/meresco/components/periodicdownload.py	2012-03-12 09:35:42.000000000 +0100
 +++ version_1/meresco/components/periodicdownload.py	2012-03-16 11:38:31.000000000 +0100
