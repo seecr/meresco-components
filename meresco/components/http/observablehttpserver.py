@@ -39,7 +39,7 @@ from socket import gethostname
 from utils import serverUnavailableHtml
 
 class ObservableHttpServer(Observable):
-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None):
+    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=False):
         Observable.__init__(self)
         self._port = port
         self._reactor = reactor
@@ -48,6 +48,7 @@ class ObservableHttpServer(Observable):
         self._prio = prio
         self._sok = sok
         self._maxConnections = maxConnections
+        self._compressResponse = compressResponse
 
     def startServer(self):
         """Starts server,
@@ -60,7 +61,8 @@ class ObservableHttpServer(Observable):
             HttpServer(self._reactor, self._port, self._connect,
                 timeout=self._timeout, prio=self._prio, sok=self._sok,
                 maxConnections=self._maxConnections,
-                errorHandler=self._error)
+                errorHandler=self._error,
+                compressResponse=self._compressResponse)
         self._httpserver.listen()
         self._started = True
 
