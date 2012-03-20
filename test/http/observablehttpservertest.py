@@ -106,6 +106,19 @@ class ObservableHttpServerTest(SeecrTestCase):
         self.assertEquals(6, httpserver._maxConnections)
         self.assertEquals(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
 
+    def testCompressResponseFlag(self):
+        reactor = CallTrace('Reactor')
+
+        s = ObservableHttpServer(reactor, 0, compressResponse=True)
+        s.startServer()
+        httpserver = s._httpserver
+        self.assertEquals(True, httpserver._compressResponse)
+
+        s = ObservableHttpServer(reactor, 0)
+        s.startServer()
+        httpserver = s._httpserver
+        self.assertEquals(False, httpserver._compressResponse)
+
     def testServerWithPrio(self):
         import gc, weakref
         prios = []

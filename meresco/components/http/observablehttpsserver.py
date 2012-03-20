@@ -39,7 +39,7 @@ from socket import gethostname
 
 
 class ObservableHttpsServer(Observable):
-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None):
+    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None, compressResponse=False):
         Observable.__init__(self)
         self._port = port
         self._reactor = reactor
@@ -49,6 +49,7 @@ class ObservableHttpsServer(Observable):
         self._keyfile = keyfile
         self._certfile = certfile
         self._sok = sok
+        self._compressResponse = compressResponse
 
     def startServer(self):
         """Starts server,
@@ -57,9 +58,9 @@ class ObservableHttpsServer(Observable):
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
-        self._keepsHttpServerForTestingSupport = \
+        self._httpsserver = \
             HttpsServer(self._reactor, self._port, self._connect,
-                timeout=self._timeout, prio=self._prio, sok=self._sok, keyfile=self._keyfile, certfile=self._certfile)
+                timeout=self._timeout, prio=self._prio, sok=self._sok, keyfile=self._keyfile, certfile=self._certfile, compressResponse=self._compressResponse)
         self._started = True
 
     def observer_init(self):

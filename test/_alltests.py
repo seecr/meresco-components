@@ -93,6 +93,7 @@ from http.fileservertest import FileServerTest
 from http.handlerequestfiltertest import HandleRequestFilterTest
 from http.ipfiltertest import IpFilterTest
 from http.observablehttpservertest import ObservableHttpServerTest
+from http.observablehttpsservertest import ObservableHttpsServerTest
 from http.pathfiltertest import PathFilterTest
 from http.pathrenametest import PathRenameTest
 from http.sessionhandlertest import SessionHandlerTest
