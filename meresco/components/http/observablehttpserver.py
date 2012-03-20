@@ -78,7 +78,7 @@ class ObservableHttpServer(Observable):
         '<html><head></head><body><h1>Service Unavailable</h1></body></html>'
         self.do.logHttpError(**kwargs)
 
-    def handleRequest(self, RequestURI=None, *args, **kwargs):
+    def handleRequest(self, RequestURI=None, **kwargs):
         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
         arguments = parse_qs(query, keep_blank_values=True)
         requestArguments = {
