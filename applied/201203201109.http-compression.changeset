@@ -1,0 +1,226 @@
+Changeset created on Tue Mar 20 11:09:25 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: HTTP Compression parameter passing
+
+    HTTP Compression parameter passing added for ObservableHttp(s)Server.
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/4.0.6-Edurep/version_0
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/deps.txt /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/deps.txt
+--- version_0/deps.txt	2012-03-19 16:46:30.990193662 +0100
++++ version_1/deps.txt	2012-03-20 12:09:13.069101445 +0100
+@@ -16,6 +16,6 @@
+ python-meresco-xml (<< 4.1)
+ python-storage (>= 6.0.2)
+ python-storage (<< 6.1)
+-python-weightless-core (>= 0.7.3)
++python-weightless-core (>= 0.7.4)
+ python-weightless-core (<< 0.8)
+ lsof
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/http/observablehttpserver.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/meresco/components/http/observablehttpserver.py
+--- version_0/meresco/components/http/observablehttpserver.py	2012-03-19 16:46:28.095340971 +0100
++++ version_1/meresco/components/http/observablehttpserver.py	2012-03-20 12:09:11.589999698 +0100
+@@ -39,7 +39,7 @@
+ from utils import serverUnavailableHtml
+ 
+ class ObservableHttpServer(Observable):
+-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None):
++    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=False):
+         Observable.__init__(self)
+         self._port = port
+         self._reactor = reactor
+@@ -48,6 +48,7 @@
+         self._prio = prio
+         self._sok = sok
+         self._maxConnections = maxConnections
++        self._compressResponse = compressResponse
+ 
+     def startServer(self):
+         """Starts server,
+@@ -60,7 +61,8 @@
+             HttpServer(self._reactor, self._port, self._connect,
+                 timeout=self._timeout, prio=self._prio, sok=self._sok,
+                 maxConnections=self._maxConnections,
+-                errorHandler=self._error)
++                errorHandler=self._error,
++                compressResponse=self._compressResponse)
+         self._httpserver.listen()
+         self._started = True
+ 
+@@ -76,7 +78,7 @@
+         '<html><head></head><body><h1>Service Unavailable</h1></body></html>'
+         self.do.logHttpError(**kwargs)
+ 
+-    def handleRequest(self, RequestURI=None, *args, **kwargs):
++    def handleRequest(self, RequestURI=None, **kwargs):
+         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
+         arguments = parse_qs(query, keep_blank_values=True)
+         requestArguments = {
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/http/observablehttpsserver.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/meresco/components/http/observablehttpsserver.py
+--- version_0/meresco/components/http/observablehttpsserver.py	2012-03-19 16:46:28.099179937 +0100
++++ version_1/meresco/components/http/observablehttpsserver.py	2012-03-20 12:09:11.589999698 +0100
+@@ -39,7 +39,7 @@
+ 
+ 
+ class ObservableHttpsServer(Observable):
+-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None):
++    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None, compressResponse=False):
+         Observable.__init__(self)
+         self._port = port
+         self._reactor = reactor
+@@ -49,6 +49,7 @@
+         self._keyfile = keyfile
+         self._certfile = certfile
+         self._sok = sok
++        self._compressResponse = compressResponse
+ 
+     def startServer(self):
+         """Starts server,
+@@ -57,9 +58,9 @@
+         root user. In other cases it will be started when initializing all observers,
+         see observer_init()
+         """
+-        self._keepsHttpServerForTestingSupport = \
++        self._httpsserver = \
+             HttpsServer(self._reactor, self._port, self._connect,
+-                timeout=self._timeout, prio=self._prio, sok=self._sok, keyfile=self._keyfile, certfile=self._certfile)
++                timeout=self._timeout, prio=self._prio, sok=self._sok, keyfile=self._keyfile, certfile=self._certfile, compressResponse=self._compressResponse)
+         self._started = True
+ 
+     def observer_init(self):
+@@ -69,7 +70,7 @@
+     def _connect(self, **kwargs):
+         return self.handleRequest(port=self._port, **kwargs)
+ 
+-    def handleRequest(self, RequestURI=None, *args, **kwargs):
++    def handleRequest(self, RequestURI=None, **kwargs):
+         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
+         arguments = parse_qs(query, keep_blank_values=True)
+         requestArguments = {
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/_alltests.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/test/_alltests.py
+--- version_0/test/_alltests.py	2012-03-19 16:46:27.023225376 +0100
++++ version_1/test/_alltests.py	2012-03-20 12:09:10.285989749 +0100
+@@ -93,6 +93,7 @@
+ from http.handlerequestfiltertest import HandleRequestFilterTest
+ from http.ipfiltertest import IpFilterTest
+ from http.observablehttpservertest import ObservableHttpServerTest
++from http.observablehttpsservertest import ObservableHttpsServerTest
+ from http.pathfiltertest import PathFilterTest
+ from http.pathrenametest import PathRenameTest
+ from http.sessionhandlertest import SessionHandlerTest
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/data/ssl/server.cert /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/test/data/ssl/server.cert
+--- version_0/test/data/ssl/server.cert	1970-01-01 01:00:00.000000000 +0100
++++ version_1/test/data/ssl/server.cert	2012-03-20 12:09:09.933164743 +0100
+@@ -0,0 +1,11 @@
++-----BEGIN CERTIFICATE-----
++MIIBozCCAQwCAQEwDQYJKoZIhvcNAQEEBQAwIDEeMBwGA1UEAxMVQ2VydGlmaWNh
++dGUgQXV0aG9yaXR5MB4XDTA5MDMzMTA2MjU1NFoXDTE0MDMzMDA2MjU1NFowFDES
++MBAGA1UEAxMJbG9jYWxob3N0MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCh
++s45+NXnKT159XtKzNejezCkH7OqOYj9GL3NMAdoIZxNr6q4rYPySW81MuQ+DzR+X
++jQZI8BaMNdVqIvvGrWEz7FvLw6HBkBnUfEWUSqN4mFhO0K3jlthNPDjVGygMLxGL
++SqAVUjf2psTwx3zvQfIKecI5q2c0wVgwzMhcH+eWCwIDAQABMA0GCSqGSIb3DQEB
++BAUAA4GBAGdnXCnLNMGf0mCCxgCZmNx1r6YZjpwhCL/hG8Kk4OB+3YUabAE47bKy
++T5Wfe/65VR1CPrVaGz8LXdMXl+aIRXlbtfjhVNho3C6wpmA0BlaN2S+eVfh2U/VD
++b1HVGHchxqMUCXsewbyRbD4zbngPjbrgRsEev45wYs7sq6VGwYfU
++-----END CERTIFICATE-----
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/data/ssl/server.pkey /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/test/data/ssl/server.pkey
+--- version_0/test/data/ssl/server.pkey	1970-01-01 01:00:00.000000000 +0100
++++ version_1/test/data/ssl/server.pkey	2012-03-20 12:09:09.933164743 +0100
+@@ -0,0 +1,15 @@
++-----BEGIN RSA PRIVATE KEY-----
++MIICXQIBAAKBgQChs45+NXnKT159XtKzNejezCkH7OqOYj9GL3NMAdoIZxNr6q4r
++YPySW81MuQ+DzR+XjQZI8BaMNdVqIvvGrWEz7FvLw6HBkBnUfEWUSqN4mFhO0K3j
++lthNPDjVGygMLxGLSqAVUjf2psTwx3zvQfIKecI5q2c0wVgwzMhcH+eWCwIDAQAB
++AoGBAJBqT9HSKrKPziEEJgOeGxuYlPCaHCYMAtzJFh0E7lhgzoysLN9bIFgKm0Fx
++ajTZZuSwM7PCkTCqB69iDSE0ycDtNBFTQ/cTQ9Wx2Faxo2NBABE08Glo+XsDjW1d
++KoEZrVWmsvBEgK0aSbI5wqAtiKuri2bihKCGhIC702kefxaZAkEA0hdUZkfvJjhh
++OeZ4VshAHkqyi8EH4R9dNQdudHU2aB/Mca00aOvY7ylt7nfuN9IlUPVzggGJtS4C
++NRRfVKpz9wJBAMUJQ+bSKggtBATI2vnp4uKY90l2ZMgQ/659yxQhYWUr7ZXQP1I4
++L8bOn/mUEdjgd1RFMdXF7gok26kUULEMQY0CQC1cSCbFRUdVSPi9YCIsnltr+Vzf
++UpoysWcvsZOHczXMF9I7eWNl+LK6mTexwUdgIhp2xHe/aUIrKuLXATZAj0UCQGia
++z6K2RrxKccy8eYyeP+a/AOHOahjQ9XzEqdDJG/TjSmHzyfozfCHWxpVwp7z1BkUF
++6zwrtYFLKhbsgx5LfG0CQQDA6aivpGZfX2XSb90E2y/lIeO0DeIqYwCguDC7fH/l
++IZSBkiv2HI8/WpPieYnVpZaSd5brikZIeMQDk0S/L5xD
++-----END RSA PRIVATE KEY-----
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/http/observablehttpservertest.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/test/http/observablehttpservertest.py
+--- version_0/test/http/observablehttpservertest.py	2012-03-19 16:46:25.591224314 +0100
++++ version_1/test/http/observablehttpservertest.py	2012-03-20 12:09:09.066819097 +0100
+@@ -106,6 +106,19 @@
+         self.assertEquals(6, httpserver._maxConnections)
+         self.assertEquals(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
+ 
++    def testCompressResponseFlag(self):
++        reactor = CallTrace('Reactor')
++
++        s = ObservableHttpServer(reactor, 0, compressResponse=True)
++        s.startServer()
++        httpserver = s._httpserver
++        self.assertEquals(True, httpserver._compressResponse)
++
++        s = ObservableHttpServer(reactor, 0)
++        s.startServer()
++        httpserver = s._httpserver
++        self.assertEquals(False, httpserver._compressResponse)
++
+     def testServerWithPrio(self):
+         import gc, weakref
+         prios = []
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/http/observablehttpsservertest.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.6-Edurep/version_1/test/http/observablehttpsservertest.py
+--- version_0/test/http/observablehttpsservertest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_1/test/http/observablehttpsservertest.py	2012-03-20 12:09:09.066819097 +0100
+@@ -0,0 +1,55 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++from seecr.test import SeecrTestCase, CallTrace
++
++from os.path import join, dirname
++
++from meresco.components.http import ObservableHttpsServer
++
++testDataDir = join(dirname(dirname(__file__)), 'data', 'ssl')
++
++class ObservableHttpsServerTest(SeecrTestCase):
++
++    def testCompressResponseFlag(self):
++        reactor = CallTrace('Reactor')
++
++        keyfile = join(testDataDir, 'server.pkey')
++        certfile = join(testDataDir, 'server.cert')
++        mockSok = object()
++
++        s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, compressResponse=True)
++        s.startServer()
++        httpsserver_acceptor = s._httpsserver
++        httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
++        self.assertEquals(True, httpHandler._compressResponse)
++
++        s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile)
++        s.startServer()
++        httpsserver_acceptor = s._httpsserver
++        httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
++        self.assertEquals(False, httpHandler._compressResponse)
++
