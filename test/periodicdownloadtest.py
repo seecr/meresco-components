@@ -93,6 +93,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # sok.recv
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            callback() # addProcess
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEquals(0, len(observer.calledMethods[1].args))
             self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
@@ -189,6 +190,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             sleep(0.01)
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''
+            callback() # addProcess
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEqualsWS(TWO_RECORDS, observer.calledMethods[1].kwargs['data'])
@@ -209,6 +211,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             sleep(0.01)
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''
+            callback() # addProcess
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEqualsWS(TWO_RECORDS, observer.calledMethods[1].kwargs['data'])
@@ -234,8 +237,9 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
             sleep(0.01)
             callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''
             try:
-                callback() # _processOne.next -> recv = ''
+                callback() # addProcess
                 self.assertEquals('', self._downloader._err.getvalue())
                 self.fail('should not get here')
             except AssertionError, e:
@@ -250,6 +254,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
             callback() # recv = ''
+            callback() # addProcess
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
@@ -265,6 +270,9 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[-1].args[1]
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''
+            callback() # _processOne.next
+            self.assertEquals('addProcess', reactor.calledMethods[-1].name)
+            callback = reactor.calledMethods[-1].args[0]
             callback() # _processOne.next
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
@@ -299,6 +307,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals("GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''
+            callback() # _processOne.next -> addProcess
             self.assertEquals(['buildRequest', 'buildRequest', 'handle'], [m.name for m in observer.calledMethods])
             callback()
             self.assertReactorState(reactor)

@@ -93,6 +93,7 @@ class PeriodicDownload(Observable):
                 return
 
             self._reactor.addProcess(self._processOne.next)
+            yield
             try:
                 gen = self.all.handle(data=body)
                 g = compose(gen)
