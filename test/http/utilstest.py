@@ -30,6 +30,8 @@
 ## end license ##
 
 import meresco.components.http.utils as utils
+from meresco.components.http.utils import redirectHttp
+
 from unittest import TestCase
 from weightless.core import compose
 
@@ -59,3 +61,7 @@ class UtilsTest(TestCase):
 
         result = list(utils.insertHeader(handleRequest(), 'Set-Cookie: session=dummySessionId1234; path=/'))
         self.assertFalse('' in result, result)
+
+    def testRedirect(self):
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")
+
