@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -435,6 +435,25 @@ class SruHandlerTest(SeecrTestCase):
                 </recordData>
             </srw:extraRecordData>
         </srw:record>""", strippedResult)
+
+    def testRecordPackingXmlAndSuspendObjects(self):
+        def Suspend():
+            pass
+        def yieldRecord(**kwargs):
+            yield '<tag>'
+            yield Suspend
+            yield '</tag>'
+        observer = CallTrace('observer')
+        observer.methods['yieldRecord'] = yieldRecord
+        component = SruHandler()
+        component.addObserver(observer)
+
+        result = list(compose(component._writeRecordData(recordSchema='schema', recordPacking='string', recordId='identifier')))
+        self.assertEquals(['<srw:recordData>',
+            '&lt;tag&gt;',
+            Suspend,
+            '&lt;/tag&gt;',
+            '</srw:recordData>'], result)
 
     def testIOErrorInWriteRecordData(self):
         observer = CallTrace()
