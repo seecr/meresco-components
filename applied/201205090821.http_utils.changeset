@@ -1,0 +1,58 @@
+Changeset created on Wed May 09 08:21:54 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Additional shortcut methods for httputils
+
+    Additional shortcut methods for httputils
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/4.0.6-oas/version_0
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/http/utils.py /home/oas/development/meresco-components-4.0.6/version_1/meresco/components/http/utils.py
+--- version_0/meresco/components/http/utils.py	2012-03-19 09:55:22.000000000 +0100
++++ version_1/meresco/components/http/utils.py	2012-05-09 10:20:19.000000000 +0200
+@@ -58,6 +58,16 @@
+         ContentTypeHeader + ContentTypePlainText + CRLF + \
+         CRLF
+ 
++redirectHttp = "HTTP/1.0 302 Redirect" + CRLF + \
++              "Location: %s" + CRLF + \
++              CRLF
++
++#401
++unauthorizedHtml = \
++    "HTTP/1.0 401 Unauthorized" + CRLF + \
++    ContentTypeHeader + ContentTypeHtml + CRLF + \
++    CRLF
++
+ #403
+ forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
+                ContentTypeHeader + ContentTypeHtml + CRLF + \
+@@ -73,6 +83,9 @@
+                  ContentTypeHeader + ContentTypeXml + CRLF + \
+                  CRLF
+ 
++serverErrorHtml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
++                  ContentTypeHeader + ContentTypeHtml + CRLF + \
++                  CRLF
+ #503
+ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
+                         ContentTypeHeader + ContentTypeHtml + CRLF +\
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/http/utilstest.py /home/oas/development/meresco-components-4.0.6/version_1/test/http/utilstest.py
+--- version_0/test/http/utilstest.py	2012-03-19 09:55:21.000000000 +0100
++++ version_1/test/http/utilstest.py	2012-05-09 10:20:18.000000000 +0200
+@@ -30,6 +30,8 @@
+ ## end license ##
+ 
+ import meresco.components.http.utils as utils
++from meresco.components.http.utils import redirectHttp
++
+ from unittest import TestCase
+ from weightless.core import compose
+ 
+@@ -59,3 +61,7 @@
+ 
+         result = list(utils.insertHeader(handleRequest(), 'Set-Cookie: session=dummySessionId1234; path=/'))
+         self.assertFalse('' in result, result)
++
++    def testRedirect(self):
++        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")
++
