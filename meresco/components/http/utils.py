@@ -58,6 +58,16 @@ okPlainText = "HTTP/1.0 200 OK" + CRLF + \
         ContentTypeHeader + ContentTypePlainText + CRLF + \
         CRLF
 
+redirectHttp = "HTTP/1.0 302 Redirect" + CRLF + \
+              "Location: %s" + CRLF + \
+              CRLF
+
+#401
+unauthorizedHtml = \
+    "HTTP/1.0 401 Unauthorized" + CRLF + \
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
+
 #403
 forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
                ContentTypeHeader + ContentTypeHtml + CRLF + \
@@ -73,6 +83,9 @@ serverErrorXml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
                  ContentTypeHeader + ContentTypeXml + CRLF + \
                  CRLF
 
+serverErrorHtml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
+                  ContentTypeHeader + ContentTypeHtml + CRLF + \
+                  CRLF
 #503
 serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
                         ContentTypeHeader + ContentTypeHtml + CRLF +\
