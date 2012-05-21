@@ -1,0 +1,37 @@
+Changeset created on Mon May 21 09:47:00 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: IpFilter range end now inclusive
+
+    IpFilter's allowedIpRanges now also allows the end of the range's
+    IP (don't assume it's a broadcast IP).
+
+Baseline version: https://meresco.svn.sourceforge.net/svnroot/meresco/meresco-components/workingsets/4.0.10-ozp/version_0
+
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/meresco/components/http/ipfilter.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.10-ozp/version_1/meresco/components/http/ipfilter.py
+--- version_0/meresco/components/http/ipfilter.py	2012-05-21 11:37:54.992784153 +0200
++++ version_1/meresco/components/http/ipfilter.py	2012-05-21 11:46:51.424784237 +0200
+@@ -50,7 +50,7 @@
+ 
+         ipNumber = self.convertToNumber(ipaddress)
+         for (start, end) in self._allowedIpRanges:
+-            if start <= ipNumber < end:
++            if start <= ipNumber <= end:
+                 return True
+ 
+         return False
+diff --unidirectional-new-file --recursive --unified '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' version_0/test/http/ipfiltertest.py /newroot/home/tom/repositories/work/meresco/meresco-components/workingsets/4.0.10-ozp/version_1/test/http/ipfiltertest.py
+--- version_0/test/http/ipfiltertest.py	2012-05-21 11:37:51.912782294 +0200
++++ version_1/test/http/ipfiltertest.py	2012-05-21 11:46:50.473767899 +0200
+@@ -109,10 +109,11 @@
+         self.assertValidIp('192.168.1.0', ipranges=[('192.168.1.0', '192.168.1.255')])
+         self.assertValidIp('192.168.1.128', ipranges=[('192.168.1.0', '192.168.1.255')])
+         self.assertValidIp('192.168.1.128', ipranges=[('192.168.2.0', '192.168.2.255'), ('192.168.1.0', '192.168.1.255')])
++        self.assertValidIp('192.168.1.255', ipranges=[('192.168.1.0', '192.168.1.255')])
+ 
+     def testNotInRanges(self):
+         self.assertInvalidIp('192.168.2.128', ipranges=[('192.168.1.0', '192.168.1.255')])
+-        self.assertInvalidIp('192.168.1.255', ipranges=[('192.168.1.0', '192.168.1.255')])
++        self.assertInvalidIp('192.168.1.255', ipranges=[('192.168.1.0', '192.168.1.254')])
+         self.assertInvalidIp('192.168.2.0', ipranges=[('192.168.1.0', '192.168.1.255')])
+         self.assertInvalidIp('192.168.0.255', ipranges=[('192.168.1.0', '192.168.1.255')])
+ 
