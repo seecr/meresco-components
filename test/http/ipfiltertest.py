@@ -109,10 +109,11 @@ class IpFilterTest(TestCase):
         self.assertValidIp('192.168.1.0', ipranges=[('192.168.1.0', '192.168.1.255')])
         self.assertValidIp('192.168.1.128', ipranges=[('192.168.1.0', '192.168.1.255')])
         self.assertValidIp('192.168.1.128', ipranges=[('192.168.2.0', '192.168.2.255'), ('192.168.1.0', '192.168.1.255')])
+        self.assertValidIp('192.168.1.255', ipranges=[('192.168.1.0', '192.168.1.255')])
 
     def testNotInRanges(self):
         self.assertInvalidIp('192.168.2.128', ipranges=[('192.168.1.0', '192.168.1.255')])
-        self.assertInvalidIp('192.168.1.255', ipranges=[('192.168.1.0', '192.168.1.255')])
+        self.assertInvalidIp('192.168.1.255', ipranges=[('192.168.1.0', '192.168.1.254')])
         self.assertInvalidIp('192.168.2.0', ipranges=[('192.168.1.0', '192.168.1.255')])
         self.assertInvalidIp('192.168.0.255', ipranges=[('192.168.1.0', '192.168.1.255')])
 

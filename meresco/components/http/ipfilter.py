@@ -50,7 +50,7 @@ class IpFilter(HandleRequestFilter):
 
         ipNumber = self.convertToNumber(ipaddress)
         for (start, end) in self._allowedIpRanges:
-            if start <= ipNumber < end:
+            if start <= ipNumber <= end:
                 return True
 
         return False
