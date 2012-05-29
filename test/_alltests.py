@@ -91,6 +91,7 @@ from http.basicauthenticationtest import BasicAuthenticationTest
 from http.deproxytest import DeproxyTest
 from http.fileservertest import FileServerTest
 from http.handlerequestfiltertest import HandleRequestFilterTest
+from http.httpclienttest import HttpClientTest
 from http.ipfiltertest import IpFilterTest
 from http.observablehttpservertest import ObservableHttpServerTest
 from http.observablehttpsservertest import ObservableHttpsServerTest
