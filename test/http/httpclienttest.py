@@ -47,7 +47,7 @@ class HttpClientTest(SeecrTestCase):
     def testPlainText(self):
         client = HttpClient()
 
-        gen = client.httpGetRequest(hostname='localhost', port=80, path='/', arguments={}, parse=False)
+        gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={}, parse=False)
         headers, body = self.sendAndReceive(gen, """HTTP/1.0 200 Ok\r\nContent-Type: text/xml\r\n\r\n<xml/>""")
 
         self.assertEquals('<xml/>', body)
@@ -56,7 +56,7 @@ class HttpClientTest(SeecrTestCase):
     def testPlainXml(self):
         client = HttpClient()
 
-        gen = client.httpGetRequest(hostname='localhost', port=80, path='/', arguments={})
+        gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = self.sendAndReceive(gen,  """HTTP/1.0 200 Ok\r\nContent-Type: text/xml\r\n\r\n<xml/>""")
         
         self.assertEquals('<xml/>', tostring(body))

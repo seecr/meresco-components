@@ -31,7 +31,7 @@ from urllib import urlencode
 
 class HttpClient(object):
 
-    def httpGetRequest(self, hostname, port, path, arguments, parse=True, **kwargs):
+    def httpGet(self, hostname, port, path, arguments, parse=True, **kwargs):
         response = yield httpget(hostname, port, '%s?%s' % (path, urlencode(arguments)))
         headers, body = response.split(CRLF*2)
         raise StopIteration((headers, lxmlParse(StringIO(body)) if parse else body))
