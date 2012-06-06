@@ -51,6 +51,7 @@ from convertertest import ConverterTest
 from cqlconversiontest import CQLConversionTest
 from combinepartstest import CombinePartsTest
 from crosswalktest import CrosswalkTest
+from datapumptest import DataPumpTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
