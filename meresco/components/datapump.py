@@ -30,18 +30,15 @@ from meresco.components import Converter
 from zlib import compress as _compress, decompress
 from base64 import encodestring, decodestring
 from weightless.core import compose
-from meresco.core import Observable
+from meresco.core import Transparent
 from StringIO import StringIO
 
 compress = lambda data: _compress(data)
 
-class _OutboundConverter(Observable):
+class _OutboundConverter(Transparent):
     def yieldRecord(self, *args, **kwargs):
         for stuff in self.getStream(*args, **kwargs):
             yield stuff
-
-    def isAvailable(self, *args, **kwargs):
-        return self.call.isAvailable(*args, **kwargs)
 
     def getStream(self, *args, **kwargs):
         return StringIO(self._convert(self.call.getStream(*args, **kwargs).read()))
