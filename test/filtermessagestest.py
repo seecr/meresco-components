@@ -81,3 +81,10 @@ class FilterMessagesTest(SeecrTestCase):
     def testAny(self):
         self.assertEquals([42], list(compose(self.dna.any.gen())))
 
+    def testEitherAllowedOrDisallowed(self):
+        try:
+            fm = FilterMessages(allowed=['either'], disallowed=['or'])
+        except AssertionError, e:
+            self.assertEquals('Use disallowed or allowed', str(e))
+        else:
+            self.fail('Should not happen')
