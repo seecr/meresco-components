@@ -65,7 +65,8 @@ class PeriodicDownload(Observable):
 
     def processOne(self):
         sok = yield self._tryConnect()
-        sok.send(self.call.buildRequest())
+        requestString = self.call.buildRequest()
+        sok.send(requestString)
         sok.shutdown(SHUT_WR)
         self._reactor.addReader(sok, self._processOne.next, prio=self._prio)
         responses = []
@@ -81,7 +82,7 @@ class PeriodicDownload(Observable):
                 self._reactor.removeReader(sok)
                 sok.close()
         except SocketError, (errno, msg):
-            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg))
+            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString)
             return
 
         try:
@@ -89,7 +90,7 @@ class PeriodicDownload(Observable):
             headers, body = response.split(2 * CRLF, 1)
             statusLine = headers.split(CRLF)[0]
             if not statusLine.strip().lower().endswith('200 ok'):
-                yield self._retryAfterError('Unexpected response: ' + statusLine)
+                yield self._retryAfterError('Unexpected response: ' + statusLine, request=requestString)
                 return
 
             self._reactor.addProcess(self._processOne.next)
@@ -141,16 +142,21 @@ class PeriodicDownload(Observable):
                 continue
         raise StopIteration(sok)
 
-    def _retryAfterError(self, message, additionalTime=0):
-        self._logError(message)
+    def _retryAfterError(self, message, request=None, additionalTime=0):
+        self._logError(message, request)
         self.startTimer(additionalTime=additionalTime)
         yield
         
-    def _logError(self, message):
+    def _logError(self, message, request=None):
         self._err.write("%s:%s: " % (self._host, self._port))
         self._err.write(message)
         if not message.endswith('\n'):
             self._err.write('\n')
+        if request:
+            self._err.write('For request: ')
+            self._err.write(request)
+            if not request.endswith('\n'):
+                self._err.write('\n')
         self._err.flush()
 
     def _log(self, message):

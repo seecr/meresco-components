@@ -141,7 +141,7 @@ class PeriodicDownloadTest(SeecrTestCase):
 
             callback() # yield After Error 
 
-            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\n" % port, downloader._err.getvalue())
+            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue())
             self.assertEquals(['buildRequest'], [m.name for m in observer.calledMethods])
             self.assertReactorState(reactor)
 
@@ -298,7 +298,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             sleep(0.01)
             callback = reactor.calledMethods[-1].args[1]
             callback() # _processOne.next -> sok.recv
-            self.assertEquals("localhost:%s: Receive error: 11: Resource temporarily unavailable\n" % port, downloader._err.getvalue()) 
+            self.assertEquals("localhost:%d: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue()) 
             callback = reactor.calledMethods[-1].args[1]
             callback() # startProcess
             callback = reactor.calledMethods[-1].args[1]
