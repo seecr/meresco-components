@@ -1,0 +1,143 @@
+Changeset created on Fri Jun 22 10:08:16 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: PeriodicDownload request logging
+
+    PeriodicDownload now logs the requestString in the event
+    of an error.
+
+Baseline version: 4.0.12
+
+From 9cc8780232cd1f26bbee64b98f9b4fc8f415ead5 Mon Sep 17 00:00:00 2001
+From: Tom van der Sommen <tom@seecr.nl>
+Date: Fri, 22 Jun 2012 10:21:09 +0200
+Subject: [PATCH 1/2] TS: gittified build-if-development logic
+
+Added .gitignore for build-dir and _facetindex.so
+---
+ .gitignore                                |    2 ++
+ meresco/components/facetindex/__init__.py |    6 ++++--
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+ create mode 100644 .gitignore
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..a832ecc
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,2 @@
++build/
++meresco/components/facetindex/_facetindex.so
+diff --git a/meresco/components/facetindex/__init__.py b/meresco/components/facetindex/__init__.py
+index 7b4c154..50bdee9 100644
+--- a/meresco/components/facetindex/__init__.py
++++ b/meresco/components/facetindex/__init__.py
+@@ -30,9 +30,11 @@
+ ## end license ##
+ 
+ from os.path import dirname, abspath, isdir, join            #DO_NOT_DISTRIBUTE
+-if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
++mydir = abspath(dirname(__file__))                           #DO_NOT_DISTRIBUTE
++projectdir = dirname(dirname(dirname(mydir)))                #DO_NOT_DISTRIBUTE
++if isdir(join(projectdir, '.git')):                          #DO_NOT_DISTRIBUTE
+     from os import system                                    #DO_NOT_DISTRIBUTE
+-    status = system("cd %s/../../..; python2.6 setup.py build_ext --inplace"  % abspath(dirname(__file__)))  #DO_NOT_DISTRIBUTE
++    status = system("cd %s; python2.6 setup.py build_ext --inplace"  % projectdir)  #DO_NOT_DISTRIBUTE
+     if status > 0:                                           #DO_NOT_DISTRIBUTE
+         import sys                                           #DO_NOT_DISTRIBUTE
+         sys.exit(status)                                     #DO_NOT_DISTRIBUTE
+-- 
+1.7.2.5
+
+
+From 8326487d72271f753ff936d4f4d883f4fc08c285 Mon Sep 17 00:00:00 2001
+From: Tom van der Sommen <tom@seecr.nl>
+Date: Fri, 22 Jun 2012 12:05:39 +0200
+Subject: [PATCH 2/2] HM/TS: PeriodicDownload log request on error.
+
+---
+ meresco/components/periodicdownload.py |   18 ++++++++++++------
+ test/periodicdownloadtest.py           |    4 ++--
+ 2 files changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/meresco/components/periodicdownload.py b/meresco/components/periodicdownload.py
+index 07baccd..7500c8b 100644
+--- a/meresco/components/periodicdownload.py
++++ b/meresco/components/periodicdownload.py
+@@ -65,7 +65,8 @@ class PeriodicDownload(Observable):
+ 
+     def processOne(self):
+         sok = yield self._tryConnect()
+-        sok.send(self.call.buildRequest())
++        requestString = self.call.buildRequest()
++        sok.send(requestString)
+         sok.shutdown(SHUT_WR)
+         self._reactor.addReader(sok, self._processOne.next, prio=self._prio)
+         responses = []
+@@ -81,7 +82,7 @@ class PeriodicDownload(Observable):
+                 self._reactor.removeReader(sok)
+                 sok.close()
+         except SocketError, (errno, msg):
+-            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg))
++            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString)
+             return
+ 
+         try:
+@@ -89,7 +90,7 @@ class PeriodicDownload(Observable):
+             headers, body = response.split(2 * CRLF, 1)
+             statusLine = headers.split(CRLF)[0]
+             if not statusLine.strip().lower().endswith('200 ok'):
+-                yield self._retryAfterError('Unexpected response: ' + statusLine)
++                yield self._retryAfterError('Unexpected response: ' + statusLine, request=requestString)
+                 return
+ 
+             self._reactor.addProcess(self._processOne.next)
+@@ -141,16 +142,21 @@ class PeriodicDownload(Observable):
+                 continue
+         raise StopIteration(sok)
+ 
+-    def _retryAfterError(self, message, additionalTime=0):
+-        self._logError(message)
++    def _retryAfterError(self, message, request=None, additionalTime=0):
++        self._logError(message, request)
+         self.startTimer(additionalTime=additionalTime)
+         yield
+         
+-    def _logError(self, message):
++    def _logError(self, message, request=None):
+         self._err.write("%s:%s: " % (self._host, self._port))
+         self._err.write(message)
+         if not message.endswith('\n'):
+             self._err.write('\n')
++        if request:
++            self._err.write('For request: ')
++            self._err.write(request)
++            if not request.endswith('\n'):
++                self._err.write('\n')
+         self._err.flush()
+ 
+     def _log(self, message):
+diff --git a/test/periodicdownloadtest.py b/test/periodicdownloadtest.py
+index 8051982..5a661fc 100644
+--- a/test/periodicdownloadtest.py
++++ b/test/periodicdownloadtest.py
+@@ -141,7 +141,7 @@ class PeriodicDownloadTest(SeecrTestCase):
+ 
+             callback() # yield After Error 
+ 
+-            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\n" % port, downloader._err.getvalue())
++            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue())
+             self.assertEquals(['buildRequest'], [m.name for m in observer.calledMethods])
+             self.assertReactorState(reactor)
+ 
+@@ -298,7 +298,7 @@ class PeriodicDownloadTest(SeecrTestCase):
+             sleep(0.01)
+             callback = reactor.calledMethods[-1].args[1]
+             callback() # _processOne.next -> sok.recv
+-            self.assertEquals("localhost:%s: Receive error: 11: Resource temporarily unavailable\n" % port, downloader._err.getvalue()) 
++            self.assertEquals("localhost:%d: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue()) 
+             callback = reactor.calledMethods[-1].args[1]
+             callback() # startProcess
+             callback = reactor.calledMethods[-1].args[1]
+-- 
+1.7.2.5
+
