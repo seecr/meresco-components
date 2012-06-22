@@ -30,9 +30,11 @@
 ## end license ##
 
 from os.path import dirname, abspath, isdir, join            #DO_NOT_DISTRIBUTE
-if isdir(join(abspath(dirname(__file__)), '.svn')):          #DO_NOT_DISTRIBUTE
+mydir = abspath(dirname(__file__))                           #DO_NOT_DISTRIBUTE
+projectdir = dirname(dirname(dirname(mydir)))                #DO_NOT_DISTRIBUTE
+if isdir(join(projectdir, '.git')):                          #DO_NOT_DISTRIBUTE
     from os import system                                    #DO_NOT_DISTRIBUTE
-    status = system("cd %s/../../..; python2.6 setup.py build_ext --inplace"  % abspath(dirname(__file__)))  #DO_NOT_DISTRIBUTE
+    status = system("cd %s; python2.6 setup.py build_ext --inplace"  % projectdir)  #DO_NOT_DISTRIBUTE
     if status > 0:                                           #DO_NOT_DISTRIBUTE
         import sys                                           #DO_NOT_DISTRIBUTE
         sys.exit(status)                                     #DO_NOT_DISTRIBUTE
