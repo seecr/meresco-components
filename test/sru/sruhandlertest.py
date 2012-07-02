@@ -163,9 +163,9 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(observer)
 
-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
-        self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 +     ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
+        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,fie:ld1:2,field2,fie:ld3"])))
+        self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEquals([('field0', 1, False), ('fie:ld1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False), ('fie:ld3', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
         extraResponseDataMethod = observer.calledMethods[-1]
         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
 

@@ -193,11 +193,16 @@ class SruHandler(Observable):
     def _parseDrilldownArgs(self, x_term_drilldown):
         if x_term_drilldown == None or len(x_term_drilldown) != 1:
             return
-        def splitTermAndMaximum(s):
-            l = s.split(":")
-            if len(l) == 1:
-                return l[0], DEFAULT_MAXIMUM_TERMS, self._drilldownSortedByTermCount
-            return l[0], int(l[1]), self._drilldownSortedByTermCount
 
-        fieldsAndMaximums = x_term_drilldown[0].split(",")
-        return (splitTermAndMaximum(s) for s in fieldsAndMaximums)
+        def splitTermAndMaximum(field):
+            maxTerms = DEFAULT_MAXIMUM_TERMS
+            splitted = field.rsplit(":", 1)
+            if len(splitted) == 2:
+                try:
+                    field, maxTerms = splitted[0], int(splitted[1])
+                except ValueError:
+                    pass
+            return field, maxTerms, self._drilldownSortedByTermCount
+
+        return (splitTermAndMaximum(field) for field in x_term_drilldown[0].split(","))
+
