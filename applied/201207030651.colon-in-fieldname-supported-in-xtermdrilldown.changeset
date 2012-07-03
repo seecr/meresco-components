@@ -1,0 +1,67 @@
+Changeset created on Tue Jul 03 06:51:30 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: allowing colons in fieldnames in x-term-drilldown
+
+    The SRU extension 'x-term-drilldown' argument did not allow for colons to appear in fieldnames, but does now. E.g. x-term-drilldown=dc:creator:8 results in the top 8 values for 'dc:creator'. Alternatively, x-term-drilldown=dc:creator results in the top 10 (the default) values for this field. (As before, more than one drilldown field can be specified by delimiting with commas.) 
+
+Baseline version: 4.0.13
+
+From 93dd02ab3a665d034b7021970b7e7611a4216e0f Mon Sep 17 00:00:00 2001
+From: Jurjan-Paul Medema <jurjanpaul@cq2.nl>
+Date: Mon, 2 Jul 2012 17:13:09 +0200
+Subject: [PATCH] JPM: allowing for the ':' character within drilldown field names
+
+---
+ meresco/components/sru/sruhandler.py |   21 +++++++++++++--------
+ test/sru/sruhandlertest.py           |    6 +++---
+ 2 files changed, 16 insertions(+), 11 deletions(-)
+
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index 74bb74d..bbd5aed 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -193,11 +193,16 @@ class SruHandler(Observable):
+     def _parseDrilldownArgs(self, x_term_drilldown):
+         if x_term_drilldown == None or len(x_term_drilldown) != 1:
+             return
+-        def splitTermAndMaximum(s):
+-            l = s.split(":")
+-            if len(l) == 1:
+-                return l[0], DEFAULT_MAXIMUM_TERMS, self._drilldownSortedByTermCount
+-            return l[0], int(l[1]), self._drilldownSortedByTermCount
+-
+-        fieldsAndMaximums = x_term_drilldown[0].split(",")
+-        return (splitTermAndMaximum(s) for s in fieldsAndMaximums)
++
++        def splitTermAndMaximum(field):
++            maxTerms = DEFAULT_MAXIMUM_TERMS
++            splitted = field.rsplit(":", 1)
++            if len(splitted) == 2:
++                try:
++                    field, maxTerms = splitted[0], int(splitted[1])
++                except ValueError:
++                    pass
++            return field, maxTerms, self._drilldownSortedByTermCount
++
++        return (splitTermAndMaximum(field) for field in x_term_drilldown[0].split(","))
++
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index cec5311..6977aa4 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -163,9 +163,9 @@ class SruHandlerTest(SeecrTestCase):
+         component = SruHandler()
+         component.addObserver(observer)
+ 
+-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,field1:2,field2"])))
+-        self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 +     ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+-        self.assertEquals([('field0', 1, False), ('field1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
++        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,fie:ld1:2,field2,fie:ld3"])))
++        self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
++        self.assertEquals([('field0', 1, False), ('fie:ld1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False), ('fie:ld3', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
+         extraResponseDataMethod = observer.calledMethods[-1]
+         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
+ 
+-- 
+1.7.2.3
+
