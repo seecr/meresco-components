@@ -25,23 +25,23 @@
 # 
 ## end license ##
 
+from meresco.core import Observable
+
 class TranslateDrilldownFieldnames(Observable):
     def __init__(self, translate):
         Observable.__init__(self)
         self.translate = translate
 
     def executeQuery(self, *args, **kwargs):
-        fieldnamesAndMaximums = kwargs['fieldnamesAndMaximums'] if 'fieldnamesAndMaximums' in kwargs else None
-        if fieldnamesAndMaximums is None:
-            response = yield self.any.executeQuery(*args, **kwargs)
-            raise StopIteration(response)
+        fieldnamesAndMaximums = kwargs['fieldnamesAndMaximums'] if 'fieldnamesAndMaximums' in kwargs else []
         reverseLookup = {}
         translatedFields = []
         for field, maximum, sort in fieldnamesAndMaximums:
             translated = self.translate(field)
             translatedFields.append((translated, maximum, sort))
             reverseLookup[translated] = field
-        kwargs['fieldnamesAndMaximums'] = translatedFields
+        if translatedFields:
+            kwargs['fieldnamesAndMaximums'] = translatedFields
         response = yield self.any.executeQuery(*args, **kwargs)
         response.drilldownData = [(reverseLookup[field], termCounts)
             for field, termCounts in response.drilldownData]
