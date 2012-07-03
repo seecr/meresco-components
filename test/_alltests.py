@@ -86,6 +86,9 @@ from xsltcrosswalktest import XsltCrosswalkTest
 
 from autocomplete.autocompletetest import AutocompleteTest
 
+from drilldown.srufielddrilldowntest import SRUFieldDrilldownTest
+from drilldown.srutermdrilldowntest import SRUTermDrilldownTest
+
 from http.apacheloggertest import ApacheLoggerTest
 from http.argumentsinsessiontest import ArgumentsInSessionTest
 from http.basicauthenticationtest import BasicAuthenticationTest
@@ -107,11 +110,9 @@ from log.querylogtest import QueryLogTest
 
 from numeric.converttest import ConvertTest
 
-from sru.srufielddrilldowntest import SRUFieldDrilldownTest
 from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest
 from sru.srurecordupdatetest import SRURecordUpdateTest
-from sru.srutermdrilldowntest import SRUTermDrilldownTest
 from sru.srwtest import SrwTest
 
 from xml_generic.validatetest import ValidateTest
