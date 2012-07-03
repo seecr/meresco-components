@@ -3,10 +3,6 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core". 
 # 
-# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
-# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
@@ -29,7 +25,25 @@
 # 
 ## end license ##
 
-from srufielddrilldown import SRUFieldDrilldown
-from srutermdrilldown import SRUTermDrilldown
-from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
-from translatedrilldownfieldnames import TranslateDrilldownFieldnames
+class TranslateDrilldownFieldnames(Observable):
+    def __init__(self, translate):
+        Observable.__init__(self)
+        self.translate = translate
+
+    def executeQuery(self, *args, **kwargs):
+        fieldnamesAndMaximums = kwargs['fieldnamesAndMaximums'] if 'fieldnamesAndMaximums' in kwargs else None
+        if fieldnamesAndMaximums is None:
+            response = yield self.any.executeQuery(*args, **kwargs)
+            raise StopIteration(response)
+        reverseLookup = {}
+        translatedFields = []
+        for field, maximum, sort in fieldnamesAndMaximums:
+            translated = self.translate(field)
+            translatedFields.append((translated, maximum, sort))
+            reverseLookup[translated] = field
+        kwargs['fieldnamesAndMaximums'] = translatedFields
+        response = yield self.any.executeQuery(*args, **kwargs)
+        response.drilldownData = [(reverseLookup[field], termCounts)
+            for field, termCounts in response.drilldownData]
+        raise StopIteration(response)
+
