@@ -36,11 +36,11 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.response = Response(total=10, hits=[])
-        self.response.drilldownData = []
-        def executeQuery(**kwargs):
-            fieldnamesAndMaximums = kwargs.get('fieldnamesAndMaximums', [])
-            for fieldName, _, _ in fieldnamesAndMaximums:
-                self.response.drilldownData.append((fieldName,  [('value1', 1), ('value2', 2)]))
+        def executeQuery(fieldnamesAndMaximums=None, **kwargs):
+            if not fieldnamesAndMaximums is None:
+                self.response.drilldownData = []
+                for fieldName, _, _ in fieldnamesAndMaximums:
+                    self.response.drilldownData.append((fieldName,  [('value1', 1), ('value2', 2)]))
             raise StopIteration(self.response)
             yield
         self.observer = CallTrace('observer', methods={'executeQuery': executeQuery})
@@ -51,7 +51,8 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
             'name2': 'internal.name2',
             'othername1': 'internal.name1',
         }
-        result = self._doDrilldown(translate=names.get,
+        result = self._doDrilldown(
+                translate=names.get,
                 queryKwargs=dict(
                     query='query', 
                     fieldnamesAndMaximums=[('name1', 10, True)]))
@@ -64,14 +65,28 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
             ('name1', [('value1', 1), ('value2', 2)]),
         ], result.drilldownData)
 
-    def testNoTranslateNecessary(self):
-        result = self._doDrilldown(translate=lambda name:'ignored',
+    def testNoDrilldown(self):
+        result = self._doDrilldown(
+                translate=lambda name: 'ignored',
                 queryKwargs=dict(query='query'))
 
+        self.assertEquals("[executeQuery(query='query')]", str(self.observer.calledMethods))
         self.assertEquals(self.response.hits, result.hits)
         self.assertEquals(self.response.total, result.total)
-        self.assertEquals(self.response.drilldownData, result.drilldownData)
+        self.assertFalse(hasattr(result, 'drilldownData'))
+
+    def testFieldnamesAndMaximumsNone(self):
+        result = self._doDrilldown(
+                translate=lambda name: 'ignored',
+                queryKwargs=dict(
+                    query='query', 
+                    fieldnamesAndMaximums=None))
+
         self.assertEquals("[executeQuery(query='query')]", str(self.observer.calledMethods))
+        self.assertEquals(self.response.hits, result.hits)
+        self.assertEquals(self.response.total, result.total)
+        self.assertFalse(hasattr(result, 'drilldownData'))
+
 
     def _doDrilldown(self, translate, queryKwargs):
         observable = be(

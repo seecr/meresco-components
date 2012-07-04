@@ -32,8 +32,8 @@ class TranslateDrilldownFieldnames(Observable):
         Observable.__init__(self)
         self.translate = translate
 
-    def executeQuery(self, *args, **kwargs):
-        fieldnamesAndMaximums = kwargs['fieldnamesAndMaximums'] if 'fieldnamesAndMaximums' in kwargs else []
+    def executeQuery(self, fieldnamesAndMaximums=None, *args, **kwargs):
+        fieldnamesAndMaximums = fieldnamesAndMaximums or []
         reverseLookup = {}
         translatedFields = []
         for field, maximum, sort in fieldnamesAndMaximums:
@@ -43,7 +43,8 @@ class TranslateDrilldownFieldnames(Observable):
         if translatedFields:
             kwargs['fieldnamesAndMaximums'] = translatedFields
         response = yield self.any.executeQuery(*args, **kwargs)
-        response.drilldownData = [(reverseLookup[field], termCounts)
-            for field, termCounts in response.drilldownData]
+        if hasattr(response, 'drilldownData'):
+            response.drilldownData = [(reverseLookup[field], termCounts)
+                for field, termCounts in response.drilldownData]
         raise StopIteration(response)
 
