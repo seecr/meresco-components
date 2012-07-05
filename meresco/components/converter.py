@@ -35,6 +35,8 @@ from meresco.core import Observable
 
 class Converter(Observable):
     def __init__(self, fromKwarg, toKwarg=None, name=None):
+        if not fromKwarg:
+            raise ValueError("'fromKwarg' should contain a keyword argument name.")
         Observable.__init__(self, name=name)
         self._fromKwarg = fromKwarg
         self._toKwarg = toKwarg if toKwarg else self._fromKwarg

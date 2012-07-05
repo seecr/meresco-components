@@ -29,7 +29,7 @@
 # 
 ## end license ##
 
-from xmlpump import Converter
+from converter import Converter
 from cqlparser.cqlparser import CQLAbstractSyntaxNode
 from cqlparser import CqlVisitor
 
@@ -42,7 +42,7 @@ class CQLConversion(Converter):
         return self._astConversion(cqlAst)
 
 class CqlMultiSearchClauseConversion(CQLConversion):
-    def __init__(self, filtersAndModifiers, name=None, fromKwarg=None, toKwarg=None):
+    def __init__(self, filtersAndModifiers, fromKwarg, toKwarg=None, name=None):
         CQLConversion.__init__(self, self._convertAst, name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
         self._filtersAndModifiers = filtersAndModifiers
 
@@ -51,7 +51,7 @@ class CqlMultiSearchClauseConversion(CQLConversion):
         return cqlAst
 
 class CqlSearchClauseConversion(CqlMultiSearchClauseConversion):
-    def __init__(self, searchClauseFilter, modifier, name=None, fromKwarg=None, toKwarg=None):
+    def __init__(self, searchClauseFilter, modifier, fromKwarg, toKwarg=None, name=None):
         CqlMultiSearchClauseConversion.__init__(self, filtersAndModifiers=[(searchClauseFilter, modifier)], name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
     
 class CqlMultiSearchClauseModification(CqlVisitor):

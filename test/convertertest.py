@@ -32,20 +32,18 @@ from meresco.core import Observable
 from meresco.components import Converter
 
 
+class FourtytwoConverter(Converter):
+    def _convert(self, value):
+        return 42
+
 class ConverterTest(SeecrTestCase):
     def setUp(self):
-        class FourtytwoConverter(Converter):
-            def _convert(self, value):
-                return 42
-
         SeecrTestCase.setUp(self)
-
         self.observer1 = CallTrace('observer 1', returnValues={
             'f': (i for i in ['done']),
             'g': 'done'}, onlySpecifiedMethods=True)
         self.observer2 = CallTrace('observer 2', returnValues={
             'h': 'done2'}, onlySpecifiedMethods=True)
-
         self.observable = be(
             (Observable(),
                 (FourtytwoConverter(fromKwarg='data', toKwarg='fourtytwo'),
@@ -65,4 +63,7 @@ class ConverterTest(SeecrTestCase):
         self.assertEquals({'data': 41}, self.observer1.calledMethods[1].kwargs)
         self.assertEquals(1, len(self.observer2.calledMethods))
         self.assertEquals({'fourtytwo': 42}, self.observer2.calledMethods[0].kwargs)
+
+    def testFromKwargMustBeSpecified(self):
+        self.assertRaises(ValueError, lambda: FourtytwoConverter(fromKwarg=None))
 
