@@ -16,9 +16,8 @@ Subject: [PATCH] HM/JPM: added guard to Converter.__init__ to make sure that fro
 ---
  meresco/components/converter.py           |    2 ++
  meresco/components/cqlconversion.py       |    6 +++---
- meresco/components/renamefieldforexact.py |   10 ++++++++++
  test/convertertest.py                     |   13 +++++++------
- 4 files changed, 22 insertions(+), 9 deletions(-)
+ 3 files changed, 12 insertions(+), 9 deletions(-)
 
 diff --git a/meresco/components/converter.py b/meresco/components/converter.py
 index 0181364..25df68f 100644
@@ -64,43 +63,6 @@ index cf44a53..02da0cf 100644
          CqlMultiSearchClauseConversion.__init__(self, filtersAndModifiers=[(searchClauseFilter, modifier)], name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
      
  class CqlMultiSearchClauseModification(CqlVisitor):
-diff --git a/meresco/components/renamefieldforexact.py b/meresco/components/renamefieldforexact.py
-index ef45c07..96d8fb7 100644
---- a/meresco/components/renamefieldforexact.py
-+++ b/meresco/components/renamefieldforexact.py
-@@ -27,6 +27,8 @@
- 
- class RenameFieldForExact(object):
-     def __init__(self, untokenizedFields, untokenizedPrefix):
-+        print 'RenameFieldForExact.__init__', untokenizedFields
-+        from sys import stdout; stdout.flush()
-         self._untokenizedFields = [f for f in untokenizedFields if not f.endswith('*')]
-         self._untokenizedFieldPrefixes = [f[:-1] for f in untokenizedFields if f.endswith('*')]
-         self._untokenizedPrefix = untokenizedPrefix
-@@ -36,15 +38,23 @@ class RenameFieldForExact(object):
-         if len(node.children) == 3 and \
-                 node.children[1].children[0].children[0] == 'exact' and \
-                 self._hasUntokenizedRenaming(node.children[0].children[0].children[0]):
-+            print 'canModify!'
-+            from sys import stdout; stdout.flush()
-             return True
-+        print 'cannot Modify!'
-+        from sys import stdout; stdout.flush()
-         return False
- 
-     def modify(self, node):
-         term = node.children[0].children[0]
-         term.children = (self._untokenizedPrefix + term.children[0],)
-+        print 'modify', term.children
-+        from sys import stdout; stdout.flush()
-         return node
- 
-     def _hasUntokenizedRenaming(self, fieldname):
-+        print '_hasUntokenizedRenaming', fieldname
-+        from sys import stdout; stdout.flush()
-         untokenizedField = self._untokenizedPrefix + fieldname
-         return untokenizedField in self._untokenizedFields or any(untokenizedField.startswith(prefix) for prefix in self._untokenizedFieldPrefixes)
- 
 diff --git a/test/convertertest.py b/test/convertertest.py
 index 39dfc6c..33cae90 100644
 --- a/test/convertertest.py

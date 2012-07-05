@@ -27,8 +27,6 @@
 
 class RenameFieldForExact(object):
     def __init__(self, untokenizedFields, untokenizedPrefix):
-        print 'RenameFieldForExact.__init__', untokenizedFields
-        from sys import stdout; stdout.flush()
         self._untokenizedFields = [f for f in untokenizedFields if not f.endswith('*')]
         self._untokenizedFieldPrefixes = [f[:-1] for f in untokenizedFields if f.endswith('*')]
         self._untokenizedPrefix = untokenizedPrefix
@@ -38,23 +36,15 @@ class RenameFieldForExact(object):
         if len(node.children) == 3 and \
                 node.children[1].children[0].children[0] == 'exact' and \
                 self._hasUntokenizedRenaming(node.children[0].children[0].children[0]):
-            print 'canModify!'
-            from sys import stdout; stdout.flush()
             return True
-        print 'cannot Modify!'
-        from sys import stdout; stdout.flush()
         return False
 
     def modify(self, node):
         term = node.children[0].children[0]
         term.children = (self._untokenizedPrefix + term.children[0],)
-        print 'modify', term.children
-        from sys import stdout; stdout.flush()
         return node
 
     def _hasUntokenizedRenaming(self, fieldname):
-        print '_hasUntokenizedRenaming', fieldname
-        from sys import stdout; stdout.flush()
         untokenizedField = self._untokenizedPrefix + fieldname
         return untokenizedField in self._untokenizedFields or any(untokenizedField.startswith(prefix) for prefix in self._untokenizedFieldPrefixes)
 
