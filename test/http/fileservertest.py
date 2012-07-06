@@ -57,6 +57,7 @@ class FileServerTest(TestCase):
         FileServer(self.directory)
         FileServer(documentRoot=self.directory)
         FileServer(documentRoots=[self.directory, self.directory2])
+        FileServer([self.directory, self.directory2])
 
     def testServeNotExistingFile(self):
         fileServer = FileServer(self.directory)
@@ -65,7 +66,7 @@ class FileServerTest(TestCase):
         self.assertTrue("<title>404 Not Found</title>" in response)
 
     def testFindFile(self):
-        server = FileServer(documentRoots=[self.directory, self.directory2])
+        server = FileServer([self.directory, self.directory2])
         self.assertFalse(server._findFile("/filename"))
         self.assertFalse(server._findFile("/"))
 
