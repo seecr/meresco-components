@@ -8,6 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -43,6 +44,7 @@ magicCookie.load()
 import mimetypes
 mimetypes.init()
 
+
 class File(object):
     def __init__(self, filename):
         self._filename = filename
@@ -75,49 +77,37 @@ class File(object):
     def _date(self, offset=0):
         return formatdate(time() + offset)
 
+
 class FileServer(object):
-    def __init__(self, documentRoot):
-        self._documentRoot = documentRoot
+    def __init__(self, documentRoot=None, documentRoots=None):
+        if not any([documentRoot, documentRoots]) or all([documentRoot, documentRoots]):
+            raise ValueError("Specify either 'documentRoot' or 'documentRoots'.")
+        self._documentRoots = documentRoots or [documentRoot]
 
     def handleRequest(self, path, port=None, Client=None, Method=None, Headers=None, **kwargs):
-
-        if not self.fileExists(path):
+        file = self._findFile(path)
+        if file is None:
             yield httputils.notFoundHtml
-            for line in ['<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">',
-"<html><head>",
-"<title>404 Not Found</title>",
-"</head><body>",
-"<h1>Not Found</h1>",
-"<p>The requested URL %s was not found on this server.</p>" % path,
-"<hr>",
-"<address>Weightless Server at localhost Port 8080</address>",
-"</body></html>"]:
-                yield line
-            raise StopIteration
-
-        file = File(self._filenameFor(path))
-
-
+            yield '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n'
+            yield "<html><head>\n"
+            yield "<title>404 Not Found</title>\n"
+            yield "</head><body>\n"
+            yield "<h1>Not Found</h1>\n"
+            yield "<p>The requested URL %s was not found on this server.</p>\n" % path
+            yield "</body></html>\n"
+            return
         yield 'HTTP/1.0 200 OK' + CRLF
         for item in file.getHeaders().items():
             yield "%s: %s" % item + CRLF
         yield CRLF
+        yield file.stream()
 
-        for part in file.stream():
-            yield part
-
-    def _filenameFor(self, filename):
+    def _findFile(self, filename):
         filename = '/'.join(part for part in filename.split('/') if part)
-        path = normpath(join(self._documentRoot, filename))
-        if commonprefix([self._documentRoot, path]) != self._documentRoot:
-            raise ValueError('Filename "%s" not inside documentRoot.' % filename)
-        return path
-
-    def fileExists(self, filename):
-        try:
-            return isfile(self._filenameFor(filename))
-        except ValueError:
-            return False
+        for documentRoot in self._documentRoots:
+            path = normpath(join(documentRoot, filename))
+            if isfile(path) and commonprefix([documentRoot, path]) == documentRoot:
+                return File(path)
 
 
 class StringServer(object):
@@ -131,3 +121,4 @@ class StringServer(object):
         yield "\r\n"
 
         yield self._aString
+

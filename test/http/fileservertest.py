@@ -8,6 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -37,37 +38,48 @@ from time import time
 from rfc822 import parsedate
 from calendar import timegm
 
+from weightless.core import compose
 from meresco.components.http.fileserver import FileServer
 
-class FileServerTest(TestCase):
 
+class FileServerTest(TestCase):
     def setUp(self):
         self.directory = mkdtemp()
+        self.directory2 = mkdtemp()
 
     def tearDown(self):
         rmtree(self.directory)
+        rmtree(self.directory2)
 
-    def testServeNoneExistingFile(self):
+    def testEitherDocumentRootOrDocumentRoots(self):
+        self.assertRaises(ValueError, lambda: FileServer())
+        self.assertRaises(ValueError, lambda: FileServer(self.directory, self.directory2))
+        FileServer(self.directory)
+        FileServer(documentRoot=self.directory)
+        FileServer(documentRoots=[self.directory, self.directory2])
+
+    def testServeNotExistingFile(self):
         fileServer = FileServer(self.directory)
         response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/doesNotExist", Method="GET", Headers={}))
-
         self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
         self.assertTrue("<title>404 Not Found</title>" in response)
 
-    def testFileExists(self):
-        server = FileServer(self.directory)
-        self.assertFalse(server.fileExists("/filename"))
-        self.assertFalse(server.fileExists("/"))
+    def testFindFile(self):
+        server = FileServer(documentRoots=[self.directory, self.directory2])
+        self.assertFalse(server._findFile("/filename"))
+        self.assertFalse(server._findFile("/"))
 
         open(join(self.directory, 'filename'), "w").close()
-        self.assertTrue(server.fileExists("/filename"))
+        open(join(self.directory2, 'filename2'), "w").close()
+        self.assertTrue(server._findFile("/filename"))
+        self.assertTrue(server._findFile("/filename2"))
 
-        self.assertFalse(server.fileExists("//etc/shadow"))
+        self.assertFalse(server._findFile("//etc/shadow"))
         open('/tmp/testFileExists', 'w').close()
         try:
-            self.assertFalse(server.fileExists("/tmp/testFileExists"))
-            self.assertFalse(server.fileExists("//tmp/testFileExists"))
-            self.assertFalse(server.fileExists("../testFileExists"))
+            self.assertFalse(server._findFile("/tmp/testFileExists"))
+            self.assertFalse(server._findFile("//tmp/testFileExists"))
+            self.assertFalse(server._findFile("../testFileExists"))
         finally:
             remove('/tmp/testFileExists')
 
@@ -77,10 +89,24 @@ class FileServerTest(TestCase):
         f.close()
 
         fileServer = FileServer(self.directory)
-        response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
 
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue("Some Contents" in response)
+
+    def testFirstOneWins(self):
+        f = open(join(self.directory, 'someFile'), 'w').write("Some Contents")
+        f = open(join(self.directory2, 'someFile'), 'w').write("Different Contents")
+
+        fileServer = FileServer(documentRoots=[self.directory, self.directory2])
+        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        self.assertTrue("Some Contents" in response)
+        self.assertFalse("Different Contents" in response)
+
+        fileServer = FileServer(documentRoots=[self.directory2, self.directory])
+        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        self.assertTrue("Different Contents" in response)
+        self.assertFalse("Some Contents" in response)
 
     def testCacheControlStuff(self):
         f = open(join(self.directory, 'someFile'), 'w')
@@ -88,7 +114,7 @@ class FileServerTest(TestCase):
         f.close()
 
         fileServer = FileServer(self.directory)
-        response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
         headers, body = response.split("\r\n\r\n")
 
         self.assertTrue("Date: " in headers)
@@ -110,7 +136,8 @@ class FileServerTest(TestCase):
         f.close()
         fileServer = FileServer(documentRoot)
 
-        response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={}))
+        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={})))
 
         self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
         self.assertTrue("<title>404 Not Found</title>" in response)
+
