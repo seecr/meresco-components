@@ -51,12 +51,12 @@ class FileServerTest(TestCase):
         rmtree(self.directory)
         rmtree(self.directory2)
 
-    def testEitherDocumentRootOrDocumentRoots(self):
-        self.assertRaises(ValueError, lambda: FileServer())
-        self.assertRaises(ValueError, lambda: FileServer(self.directory, self.directory2))
+    def testInit(self):
+        self.assertRaises(TypeError, lambda: FileServer())
+        self.assertRaises(TypeError, lambda: FileServer(self.directory, self.directory2))
         FileServer(self.directory)
         FileServer(documentRoot=self.directory)
-        FileServer(documentRoots=[self.directory, self.directory2])
+        FileServer(documentRoot=[self.directory, self.directory2])
         FileServer([self.directory, self.directory2])
 
     def testServeNotExistingFile(self):
@@ -99,12 +99,12 @@ class FileServerTest(TestCase):
         f = open(join(self.directory, 'someFile'), 'w').write("Some Contents")
         f = open(join(self.directory2, 'someFile'), 'w').write("Different Contents")
 
-        fileServer = FileServer(documentRoots=[self.directory, self.directory2])
+        fileServer = FileServer(documentRoot=[self.directory, self.directory2])
         response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
         self.assertTrue("Some Contents" in response)
         self.assertFalse("Different Contents" in response)
 
-        fileServer = FileServer(documentRoots=[self.directory2, self.directory])
+        fileServer = FileServer(documentRoot=[self.directory2, self.directory])
         response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
         self.assertTrue("Different Contents" in response)
         self.assertFalse("Some Contents" in response)

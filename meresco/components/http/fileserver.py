@@ -79,12 +79,10 @@ class File(object):
 
 
 class FileServer(object):
-    def __init__(self, documentRoot=None, documentRoots=None):
-        if not any([documentRoot, documentRoots]) or all([documentRoot, documentRoots]):
-            raise ValueError("Specify either 'documentRoot' or 'documentRoots'.")
-        self._documentRoots = documentRoot or documentRoots
-        if hasattr(self._documentRoots, 'endswith'):
-            self._documentRoots = [self._documentRoots]
+    def __init__(self, documentRoot):
+        self._documentRoots = documentRoot
+        if hasattr(documentRoot, 'endswith'):
+            self._documentRoots = [documentRoot]
 
     def handleRequest(self, path, port=None, Client=None, Method=None, Headers=None, **kwargs):
         file = self._findFile(path)
