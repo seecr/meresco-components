@@ -7,6 +7,7 @@
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -26,7 +27,7 @@
 # 
 ## end license ##
 
-from socket import socket, error as SocketError, SHUT_WR, SHUT_RD, SOL_SOCKET, SO_ERROR, SOL_SOCKET, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
+from socket import socket, error as SocketError, SHUT_WR, SHUT_RD, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
 from errno import EINPROGRESS, ECONNREFUSED
 from traceback import format_exc
 from os import makedirs, close, remove
