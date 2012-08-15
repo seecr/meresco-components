@@ -36,7 +36,7 @@ for directory in glob('../deps.d/*'):
     path.insert(0, directory)
 path.insert(0, '..')
 
-from weightless.core import be
+from weightless.core import be, compose
 from weightless.io import Reactor
 from sys import stdout
 from os.path import abspath, dirname, join, isdir, basename
@@ -54,7 +54,7 @@ notWordCharRE = compile('\W+')
 
 
 class Dump(object):
-    def __init__(self, dumpdir, maxCount=10):
+    def __init__(self, dumpdir, maxCount=100):
         self._dumpdir = dumpdir
         self._number = self._findLastNumber()
         self._maxCountNumber = self._number + maxCount
@@ -102,7 +102,7 @@ def main(reactor, portNumber, dumpdir):
             )
         )
     )
-    server.once.observer_init()
+    list(compose(server.once.observer_init()))
 
 if __name__== '__main__':
     args = argv[1:]
