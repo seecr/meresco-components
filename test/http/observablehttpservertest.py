@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -35,6 +36,7 @@ from weightless.core import compose
 
 from meresco.components.http import ObservableHttpServer
 from meresco.components.http.utils import CRLF
+from random import randint
 
 class ObservableHttpServerTest(SeecrTestCase):
     def testSimpleHandleRequest(self):
@@ -152,4 +154,12 @@ class ObservableHttpServerTest(SeecrTestCase):
         gc.collect()
         garbage = [weakref.ref(o) for o in gc.get_objects() if 'AllMess' in str(type(o))]
         self.assertEquals([], garbage)
+
+
+    def testServerBindAddress(self):
+        reactor = CallTrace()
+        port = randint(2**10, 2**16)
+        server = ObservableHttpServer(reactor, port, bindAddress='127.0.0.1')
+        server.startServer()
+        self.assertEquals(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
 

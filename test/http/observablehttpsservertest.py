@@ -3,8 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core". 
 # 
-# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -47,9 +48,10 @@ class ObservableHttpsServerTest(SeecrTestCase):
         httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
         self.assertEquals(True, httpHandler._compressResponse)
 
-        s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile)
+        s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, bindAddress='127.0.0.1')
         s.startServer()
         httpsserver_acceptor = s._httpsserver
         httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
         self.assertEquals(False, httpHandler._compressResponse)
+        self.assertEquals('127.0.0.1', httpsserver_acceptor._sok.getsockname()[0])
 

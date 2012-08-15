@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -39,7 +40,7 @@ from socket import gethostname
 from utils import serverUnavailableHtml
 
 class ObservableHttpServer(Observable):
-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=False):
+    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=False, bindAddress=None):
         Observable.__init__(self)
         self._port = port
         self._reactor = reactor
@@ -49,6 +50,7 @@ class ObservableHttpServer(Observable):
         self._sok = sok
         self._maxConnections = maxConnections
         self._compressResponse = compressResponse
+        self._bindAddress = bindAddress
 
     def startServer(self):
         """Starts server,
@@ -57,12 +59,18 @@ class ObservableHttpServer(Observable):
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
-        self._httpserver = \
-            HttpServer(self._reactor, self._port, self._connect,
-                timeout=self._timeout, prio=self._prio, sok=self._sok,
+        self._httpserver = HttpServer(
+                self._reactor,
+                self._port,
+                self._connect,
+                timeout=self._timeout,
+                prio=self._prio,
+                sok=self._sok,
                 maxConnections=self._maxConnections,
                 errorHandler=self._error,
-                compressResponse=self._compressResponse)
+                compressResponse=self._compressResponse,
+                bindAddress=self._bindAddress
+            )
         self._httpserver.listen()
         self._started = True
 

@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -39,7 +40,7 @@ from socket import gethostname
 
 
 class ObservableHttpsServer(Observable):
-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None, compressResponse=False):
+    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None, compressResponse=False, bindAddress=None):
         Observable.__init__(self)
         self._port = port
         self._reactor = reactor
@@ -50,6 +51,7 @@ class ObservableHttpsServer(Observable):
         self._certfile = certfile
         self._sok = sok
         self._compressResponse = compressResponse
+        self._bindAddress = bindAddress
 
     def startServer(self):
         """Starts server,
@@ -58,9 +60,18 @@ class ObservableHttpsServer(Observable):
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
-        self._httpsserver = \
-            HttpsServer(self._reactor, self._port, self._connect,
-                timeout=self._timeout, prio=self._prio, sok=self._sok, keyfile=self._keyfile, certfile=self._certfile, compressResponse=self._compressResponse)
+        self._httpsserver = HttpsServer(
+                self._reactor,
+                self._port,
+                self._connect,
+                timeout=self._timeout,
+                prio=self._prio,
+                sok=self._sok,
+                keyfile=self._keyfile,
+                certfile=self._certfile,
+                compressResponse=self._compressResponse,
+                bindAddress=self._bindAddress
+            )
         self._started = True
 
     def observer_init(self):
