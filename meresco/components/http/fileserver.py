@@ -43,6 +43,8 @@ magicCookie.load()
 
 import mimetypes
 mimetypes.init()
+# Override defaults (for redhat systems)
+mimetypes.add_type("application/javascript", ".js")
 
 
 class File(object):
