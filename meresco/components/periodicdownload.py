@@ -26,7 +26,7 @@
 # 
 ## end license ##
 
-from socket import socket, error as SocketError, SHUT_WR, SHUT_RD, SOL_SOCKET, SO_ERROR
+from socket import socket, error as SocketError, SHUT_WR, SHUT_RD, SOL_SOCKET, SO_ERROR, SOL_SOCKET, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
 from errno import EINPROGRESS, ECONNREFUSED
 from traceback import format_exc
 from os import makedirs, close, remove
@@ -116,6 +116,10 @@ class PeriodicDownload(Observable):
     def _tryConnect(self):
         sok = socket()
         sok.setblocking(0)
+        sok.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
+        sok.setsockopt(SOL_TCP, TCP_KEEPIDLE, 60*10)
+        sok.setsockopt(SOL_TCP, TCP_KEEPINTVL, 75)
+        sok.setsockopt(SOL_TCP, TCP_KEEPCNT, 9)
         while True:
             try:
                 try:
