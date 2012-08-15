@@ -54,7 +54,7 @@ notWordCharRE = compile('\W+')
 
 
 class Dump(object):
-    def __init__(self, dumpdir, maxCount=100):
+    def __init__(self, dumpdir, maxCount=10):
         self._dumpdir = dumpdir
         self._number = self._findLastNumber()
         self._maxCountNumber = self._number + maxCount
