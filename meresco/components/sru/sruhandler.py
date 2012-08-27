@@ -37,21 +37,28 @@ from weightless.core import compose, Yield
 from cqlparser import parseString as parseCQL
 from warnings import warn
 
+from time import time
+from decimal import Decimal
+
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
+millis = Decimal('0.001')
+
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False):
         Observable.__init__(self)
         self._drilldownSortedByTermCount = drilldownSortedByTermCount
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
         self._extraXParameters = set(extraXParameters or [])
         self._extraXParameters.add("x-recordSchema")
+        self._includeQueryTimes = includeQueryTimes
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
+        t0 = self._timeNow()
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
 
@@ -59,18 +66,21 @@ class SruHandler(Observable):
 
         try:
             response = yield self.any.executeQuery(
-                cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
-                start=start,
-                stop=start + maximumRecords,
-                sortBy=sortBy,
-                sortDescending=sortDescending,
-                fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
-                **kwargs)
+                    cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+                    start=start,
+                    stop=start + maximumRecords,
+                    sortBy=sortBy,
+                    sortDescending=sortDescending,
+                    fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                    **kwargs)
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)
         except Exception, e:
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
+
+        queryTime = str(self._timeNow() - t0)
+
         yield self._startResults(total, version)
 
         recordsWritten = 0
@@ -87,7 +97,7 @@ class SruHandler(Observable):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
@@ -102,10 +112,26 @@ class SruHandler(Observable):
             yield chunk
         yield '</srw:echoedSearchRetrieveRequest>'
 
-    def _writeExtraResponseData(self, **kwargs):
-        response = compose(self._extraResponseDataTryExcept(**kwargs))
+    def _writeExtraResponseData(self, response=None, queryTime=None, **kwargs):
+        result = compose(self._extraResponseDataTryExcept(response=response, queryTime=queryTime, **kwargs))
         headerWritten = False
-        for line in response:
+
+        if self._includeQueryTimes:    
+            headerWritten = True
+            t_sru_ms = Decimal(queryTime).quantize(millis)
+            if hasattr(response, "queryTime"):
+                t_index_ms = (Decimal(response.queryTime)/1000).quantize(millis)
+            else:
+                t_index_ms = -1
+
+            yield """<srw:extraResponseData>
+        <querytimes xmlns="http://meresco.org/namespace/timing">
+            <sru>PT%(sru)sS</sru>
+            <index>PT%(index)sS</index>
+        </querytimes>
+    """ % {'sru': t_sru_ms, 'index': t_index_ms}
+
+        for line in result:
             if line is Yield or callable(line):
                 yield line
                 continue
@@ -206,3 +232,5 @@ class SruHandler(Observable):
 
         return (splitTermAndMaximum(field) for field in x_term_drilldown[0].split(","))
 
+    def _timeNow(self):
+        return time()
