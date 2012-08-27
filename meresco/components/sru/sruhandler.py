@@ -39,6 +39,7 @@ from warnings import warn
 
 from time import time
 from decimal import Decimal
+from traceback import print_exc
 
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
 
@@ -76,6 +77,7 @@ class SruHandler(Observable):
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)
         except Exception, e:
+            print_exc()
             yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
             return
 
