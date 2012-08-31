@@ -1,0 +1,96 @@
+Changeset created on Fri Aug 31 14:30:26 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Fixed namespace in SRU explainResponse
+
+    Fixed namespace in SRU explainResponse
+
+Baseline version: 4.0.23.1
+
+From 3dced5651f0719b5cc244642eb3a085be7bc6501 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Fri, 31 Aug 2012 15:28:31 +0100
+Subject: [PATCH] TS/TJ: use namespaces in explainResponse.
+
+---
+ meresco/components/sru/sruparser.py |   12 ++++++------
+ test/sru/sruparsertest.py           |   22 +++++++++++-----------
+ 2 files changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+index 29272d2..f626d78 100644
+--- a/meresco/components/sru/sruparser.py
++++ b/meresco/components/sru/sruparser.py
+@@ -220,18 +220,18 @@ class SruParser(Observable):
+         if self._wsdl:
+             yield """wsdl="%s" """ % self._wsdl
+         yield """protocol="SRU" version="%(version)s">
+-                    <host>%(host)s</host>
+-                    <port>%(port)s</port>
+-                    <database>%(database)s</database>
++                    <zr:host>%(host)s</zr:host>
++                    <zr:port>%(port)s</zr:port>
++                    <zr:database>%(database)s</zr:database>
+                 </zr:serverInfo>
+                 <zr:databaseInfo>
+-                    <title lang="en" primary="true">SRU Database</title>
+-                    <description lang="en" primary="true">%(description)s</description>
++                    <zr:title lang="en" primary="true">SRU Database</zr:title>
++                    <zr:description lang="en" primary="true">%(description)s</zr:description>
+                 </zr:databaseInfo>""" % locals()
+         if modifiedDate:
+             yield """
+                 <zr:metaInfo>
+-                    <dateModified>%(modifiedDate)s</dateModified>
++                    <zr:dateModified>%(modifiedDate)s</zr:dateModified>
+                 </zr:metaInfo>""" % locals()
+         yield """
+             </zr:explain>
+diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+index 41a63a5..8c5f608 100644
+--- a/test/sru/sruparsertest.py
++++ b/test/sru/sruparsertest.py
+@@ -58,16 +58,16 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+     <srw:recordData>
+         <zr:explain>
+             <zr:serverInfo wsdl="http://somewhe.re/wsdl" protocol="SRU" version="1.1">
+-                <host>TEST_SERVER_HOST</host>
+-                <port>TEST_SERVER_PORT</port>
+-                <database>DATABASE</database>
++                <zr:host>TEST_SERVER_HOST</zr:host>
++                <zr:port>TEST_SERVER_PORT</zr:port>
++                <zr:database>DATABASE</zr:database>
+             </zr:serverInfo>
+             <zr:databaseInfo>
+-                <title lang="en" primary="true">SRU Database</title>
+-                <description lang="en" primary="true">TEST_SERVER_DESCRIPTION</description>
++                <zr:title lang="en" primary="true">SRU Database</zr:title>
++                <zr:description lang="en" primary="true">TEST_SERVER_DESCRIPTION</zr:description>
+             </zr:databaseInfo>
+             <zr:metaInfo>
+-                <dateModified>TEST_SERVER_DATE</dateModified>
++                <zr:dateModified>TEST_SERVER_DATE</zr:dateModified>
+             </zr:metaInfo>
+         </zr:explain>
+     </srw:recordData>
+@@ -92,13 +92,13 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+     <srw:recordData>
+         <zr:explain>
+             <zr:serverInfo protocol="SRU" version="1.2">
+-                <host>1.2.3.4</host>
+-                <port>8080</port>
+-                <database>sru</database>
++                <zr:host>1.2.3.4</zr:host>
++                <zr:port>8080</zr:port>
++                <zr:database>sru</zr:database>
+             </zr:serverInfo>
+             <zr:databaseInfo>
+-                <title lang="en" primary="true">SRU Database</title>
+-                <description lang="en" primary="true">Meresco SRU</description>
++                <zr:title lang="en" primary="true">SRU Database</zr:title>
++                <zr:description lang="en" primary="true">Meresco SRU</zr:description>
+             </zr:databaseInfo>
+         </zr:explain>
+     </srw:recordData>
+-- 
+1.7.1
+
