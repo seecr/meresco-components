@@ -58,16 +58,16 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
     <srw:recordData>
         <zr:explain>
             <zr:serverInfo wsdl="http://somewhe.re/wsdl" protocol="SRU" version="1.1">
-                <host>TEST_SERVER_HOST</host>
-                <port>TEST_SERVER_PORT</port>
-                <database>DATABASE</database>
+                <zr:host>TEST_SERVER_HOST</zr:host>
+                <zr:port>TEST_SERVER_PORT</zr:port>
+                <zr:database>DATABASE</zr:database>
             </zr:serverInfo>
             <zr:databaseInfo>
-                <title lang="en" primary="true">SRU Database</title>
-                <description lang="en" primary="true">TEST_SERVER_DESCRIPTION</description>
+                <zr:title lang="en" primary="true">SRU Database</zr:title>
+                <zr:description lang="en" primary="true">TEST_SERVER_DESCRIPTION</zr:description>
             </zr:databaseInfo>
             <zr:metaInfo>
-                <dateModified>TEST_SERVER_DATE</dateModified>
+                <zr:dateModified>TEST_SERVER_DATE</zr:dateModified>
             </zr:metaInfo>
         </zr:explain>
     </srw:recordData>
@@ -92,13 +92,13 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
     <srw:recordData>
         <zr:explain>
             <zr:serverInfo protocol="SRU" version="1.2">
-                <host>1.2.3.4</host>
-                <port>8080</port>
-                <database>sru</database>
+                <zr:host>1.2.3.4</zr:host>
+                <zr:port>8080</zr:port>
+                <zr:database>sru</zr:database>
             </zr:serverInfo>
             <zr:databaseInfo>
-                <title lang="en" primary="true">SRU Database</title>
-                <description lang="en" primary="true">Meresco SRU</description>
+                <zr:title lang="en" primary="true">SRU Database</zr:title>
+                <zr:description lang="en" primary="true">Meresco SRU</zr:description>
             </zr:databaseInfo>
         </zr:explain>
     </srw:recordData>

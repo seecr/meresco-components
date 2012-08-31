@@ -220,18 +220,18 @@ class SruParser(Observable):
         if self._wsdl:
             yield """wsdl="%s" """ % self._wsdl
         yield """protocol="SRU" version="%(version)s">
-                    <host>%(host)s</host>
-                    <port>%(port)s</port>
-                    <database>%(database)s</database>
+                    <zr:host>%(host)s</zr:host>
+                    <zr:port>%(port)s</zr:port>
+                    <zr:database>%(database)s</zr:database>
                 </zr:serverInfo>
                 <zr:databaseInfo>
-                    <title lang="en" primary="true">SRU Database</title>
-                    <description lang="en" primary="true">%(description)s</description>
+                    <zr:title lang="en" primary="true">SRU Database</zr:title>
+                    <zr:description lang="en" primary="true">%(description)s</zr:description>
                 </zr:databaseInfo>""" % locals()
         if modifiedDate:
             yield """
                 <zr:metaInfo>
-                    <dateModified>%(modifiedDate)s</dateModified>
+                    <zr:dateModified>%(modifiedDate)s</zr:dateModified>
                 </zr:metaInfo>""" % locals()
         yield """
             </zr:explain>
