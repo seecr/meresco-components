@@ -1,129 +1,105 @@
 ## begin license ##
 # 
-# "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
+# "NBC+" also known as "ZP (ZoekPlatform)" is
+#  initiated by Stichting Bibliotheek.nl to provide a new search service
+#  for all public libraries in the Netherlands. 
 # 
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # 
-# This file is part of "Meresco Components"
+# This file is part of "NBC+ (Zoekplatform BNL)"
 # 
-# "Meresco Components" is free software; you can redistribute it and/or modify
+# "NBC+ (Zoekplatform BNL)" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 # 
-# "Meresco Components" is distributed in the hope that it will be useful,
+# "NBC+ (Zoekplatform BNL)" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with "Meresco Components"; if not, write to the Free Software
+# along with "NBC+ (Zoekplatform BNL)"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # 
 ## end license ##
 
-from rfc822 import formatdate
-from time import mktime, gmtime, timezone
 from xml.sax.saxutils import escape as escapeXml
-from os.path import dirname, abspath, join
-
 from meresco.core import Observable
-from meresco.components.http import utils as httputils, FileServer
+from meresco.components.http.utils import Ok as HttpOk, ContentTypeHeader, CRLF, okXml
+from meresco.components.http import FileServer
+from simplejson import dumps as dumps_json
+from urllib import quote
+from os.path import join, dirname, abspath
 
-javascriptDir = join(dirname(abspath(__file__)), 'js')
+filesDir = join(dirname(abspath(__file__)), 'files')
 
-def _date(offset=0):
-    return formatdate(mktime(gmtime()) - timezone + offset)
+ContentTypeJsonSuggestions = "application/x-suggestions+json"
 
 class Autocomplete(Observable):
-    def __init__(self, path, inputs, maxresults, labelMapping=None, fieldMapping=None, delay=100):
+    def __init__(self, host, port, path, defaultField, templateQuery, defaultLimit, shortname, description, minimumLength=2):
         Observable.__init__(self)
+        self._host = host
+        self._port = port
         self._path = path
-        self._maxresults = maxresults
-        self._delay = delay
-        self._inputs = inputs
-        self._labelMapping = labelMapping if labelMapping else {}
-        self._fieldMapping = fieldMapping if fieldMapping else {}
-        self._fileServer = FileServer(documentRoot=javascriptDir)
+        self._defaultField = defaultField
+        self._templateQuery = templateQuery
+        self._defaultLimit = defaultLimit
+        self._shortname = shortname
+        self._description = description
+        self._minimumLength = minimumLength
+        self._fileServer = FileServer(documentRoot=filesDir)
 
     def handleRequest(self, arguments, path, **kwargs):
-        filename = path.split('/')[-1]
-        if filename in ['jquery.js', 'jquery.autocomplete.js']:
-            yield self._javascript(filename, **kwargs)
-        elif filename == 'autocomplete.js':
-            yield self._autocompleteScript()
+        filename = path.rsplit('/', 1)[-1]
+        if filename in ['jquery.js', 'jquery.autocomplete.js', 'autocomplete.css']:
+            yield self._files(filename, **kwargs)
+        elif filename == 'opensearchdescription.xml':
+            yield self._openSearchDescription(path=path, arguments=arguments, **kwargs)
         else:
             yield self._prefixSearch(arguments)
 
     def _prefixSearch(self, arguments):
-        fieldname = arguments['fieldname'][0]
-        if fieldname in self._fieldMapping:
-            fieldname = self._fieldMapping[fieldname]
         prefix = arguments['prefix'][0]
-        label = None
-        if '=' in prefix:
-            label, newPrefix = prefix.split('=', 1)
-            if label in self._labelMapping:
-                fieldname = self._labelMapping[label]
-                prefix = newPrefix
+
+        field = arguments.get('field', [self._defaultField])[0]
+        limit = int(arguments.get('limit', [self._defaultLimit])[0])
         
-        yield httputils.okXml
-        yield '<?xml version="1.0" encoding="utf-8"?><root>'
-        itemCounts = yield self.any.prefixSearch(fieldname=fieldname, prefix=prefix, maxresults=self._maxresults)
-        for item, count in itemCounts:
-            escapedItem = escapeXml(item)
-            yield """<item count="%s">%s</item>""" % (count, '%s=%s' % (label, escapedItem) if label else escapedItem)
-        yield '</root>'
+        terms = []
+        descriptions = []
 
-    def _javascript(self, filename, **kwargs):
+        yield HttpOk
+        yield ContentTypeHeader + ContentTypeJsonSuggestions + CRLF
+        yield "Access-Control-Allow-Origin: *" + CRLF
+        yield "Access-Control-Allow-Headers: X-Requested-With" + CRLF
+        yield CRLF
+        hits = []
+        if len(prefix) >= self._minimumLength:
+            response = yield self.any.prefixSearch(field=field, prefix=prefix.lower(), limit=limit)
+            hits = response.hits
+        yield dumps_json([prefix, hits])
+
+    def _openSearchDescription(self, **kwargs):
+        yield okXml
+        yield """<?xml version="1.0" encoding="UTF-8"?>"""
+        yield """<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+    <ShortName>%(shortname)s</ShortName>
+    <Description>%(description)s</Description>
+    <Url type="text/html" method="get" template="http://%(host)s:%(port)s%(temlateQuery)s"/>
+    <Url type="application/x-suggestions+json" template="http://%(host)s:%(port)s%(path)s?prefix={searchTerms}"/>
+</OpenSearchDescription>""" % {
+            'shortname': self._shortname,
+            'description': self._description,
+            'host': self._host,
+            'port': self._port,
+            'path': self._path,
+            'temlateQuery': escapeXml(self._templateQuery),
+        }
+
+    def _files(self, filename, **kwargs):
         yield self._fileServer.handleRequest(path=filename, **kwargs)
-
-    def _autocompleteScript(self):
-        yield 'HTTP/1.0 200 OK' + httputils.CRLF
-        yield 'Date: ' + _date() + httputils.CRLF
-        yield 'Last-Modified: ' + _date() + httputils.CRLF
-        yield 'Expires: ' + _date(60 * 60 * 24) + httputils.CRLF
-        yield 'Content-Type: application/x-javascript' + httputils.CRLF
-
-        yield httputils.CRLF
-        yield """
-            function buildSuggestionList(cont) {
-                return function(obj) {
-                            var res = [];
-                            i = 0;
-                            $(obj).find("item").each(function() {
-                                i++;
-                                res.push({
-                                    id: i,
-                                    value: $(this).text(),
-                                    info: "(" + $(this).attr("count") + " results)"});
-                            });
-
-                            // will build suggestions list
-                            cont(res);
-                        }
-            }
-            """
-
-        yield "$(document).ready(function() {"
-        path = self._path
-        delay = self._delay
-        for inputId, fieldname in self._inputs:
-            yield """
-                $('#%(inputId)s').autocomplete({
-                    ajax_get: function(key, cont) {
-                                  $.get('%(path)s',
-                                        {'prefix': key, 'fieldname': '%(fieldname)s'},
-                                        buildSuggestionList(cont),
-                                        'xml');},
-                    minchars: 1,
-                    cache: false,
-                    delay: %(delay)s,
-                    noresults: ""});
-
-            """ % locals()
-        yield "});"
 

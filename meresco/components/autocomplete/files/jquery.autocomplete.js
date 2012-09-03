@@ -2,6 +2,7 @@
  * Extending jQuery with autocomplete
  * Version: 1.4.2
  * Author: Yanik Gleyzer (clonyara)
+ * Edited by Seecr
  */
 (function($) {
 
@@ -75,7 +76,7 @@ function prepareArray(jsondata){
       new_arr.push(jsondata[i]);
     }
   }
-  return $(new_arr).sort(function(l,r) {return l.value > r.value;});
+  return $(new_arr);
 }
 // php analogs
 function escapearg(s){
@@ -473,3 +474,20 @@ $.fn.autocomplete = function(options){ return this.each(function(){
 })};
 
 })($);
+
+function buildSuggestionList(cont) {
+    return function(obj) {
+                var res = [];
+                i = 0;
+                for (var i=0; i<obj[1].length; i++) {
+                    res.push({
+                        id: i,
+                        value: obj[1][i],
+                        info: "",
+                        });
+                }
+
+                // will build suggestions list
+                cont(res);
+            }
+}
