@@ -34,6 +34,7 @@ from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
 from meresco.components.facetindex import Response
 from meresco.core import asyncnoreturnvalue
+from meresco.solr.solrresponse import SolrResponse
 
 from weightless.core import compose
 
@@ -136,7 +137,7 @@ Content-Type: text/xml; charset=utf-8
         def methodAsGenerator(**kwargs):
             pass
         def executeQuery(**kwargs):
-            raise StopIteration([1, [0]])
+            raise StopIteration(SolrResponse(total=1, hits=[0]))
             yield
         observer = CallTrace(
             methods={

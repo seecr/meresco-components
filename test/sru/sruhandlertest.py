@@ -32,6 +32,7 @@
 from os.path import join
 from StringIO import StringIO
 from urllib2 import urlopen
+import sys
 
 import traceback
 from lxml.etree import parse, tostring
@@ -487,13 +488,17 @@ class SruHandlerTest(SeecrTestCase):
         self.assertTrue("diagnostic" in result)
 
     def testDiagnosticOnExecuteCql(self):
-        class RaisesException(object):
-            def executeQuery(self, *args, **kwargs):
-                raise Exception("Test Exception")
-        component = SruHandler()
-        component.addObserver(RaisesException())
-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
-        self.assertTrue("diagnostic" in result)
+        sys.stderr = StringIO()
+        try:
+            class RaisesException(object):
+                def executeQuery(self, *args, **kwargs):
+                    raise Exception("Test Exception")
+            component = SruHandler()
+            component.addObserver(RaisesException())
+            result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
+            self.assertTrue("diagnostic" in result)
+        finally:
+            sys.stderr = sys.__stderr__
     
     def testValidXml(self):
         component = SruParser()
