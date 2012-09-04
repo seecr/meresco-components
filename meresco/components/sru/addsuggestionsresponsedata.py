@@ -26,13 +26,21 @@
 
 class AddSuggestionsResponseData(object):
 
-    def extraResponseData(self, response, **kwargs):
+    def extraResponseData(self, response, suggestionsQuery, **kwargs):
         if not hasattr(response, 'suggestions'):
             return
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
-        for word, (start, stop, suggestions) in response.suggestions.items():
-            yield '<word start="%s" end="%s" name="%s">\n' % (start, stop, word)
-            yield '\n'.join('<suggestion>%s</suggestion>' % s for s in suggestions)
-            yield '</word>\n'
+
+        allSuggestions = [suggestions for (start, stop, suggestions) in response.suggestions.values()]
+
+        shortest = min([len(suggestions) for suggestions in allSuggestions])
+        for i in range(shortest):
+            indexShift = 0
+            newSuggestionsQuery = suggestionsQuery
+            for word, (start, stop, suggestions) in response.suggestions.items():
+                replaceWord = suggestions[i]
+                newSuggestionsQuery = newSuggestionsQuery[:start+indexShift] + replaceWord + newSuggestionsQuery[1+stop+indexShift:]
+                indexShift += len(replaceWord) - len(word)
+            yield "<suggestion>%s</suggestion>\n" % newSuggestionsQuery
         yield '</suggestions>\n'
 

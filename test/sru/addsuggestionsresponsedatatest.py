@@ -31,22 +31,31 @@ from weightless.core import compose
 
 class AddSuggestionsResponseDataTest(SeecrTestCase):
 
-    def testCreateExtraResponseData(self):
+    def testCreateExtraResponseDataWithSingleSuggestions(self):
         suggestions = AddSuggestionsResponseData()
         response = Response(total=0, hits=[])
         response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
-        responseData = ''.join(compose(suggestions.extraResponseData(response=response)))
+        responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
-    <word start="0" end="5" name="query">
-        <suggestion>que</suggestion>
-        <suggestion>emery</suggestion>
-        <suggestion>queen</suggestion>
-    </word>
+    <suggestion>que</suggestion>
+    <suggestion>emery</suggestion>
+    <suggestion>queen</suggestion>
+</suggestions>
+""", responseData)
+
+    def testCreateExtraResponseDataWithMultipleSuggestions(self):
+        suggestions = AddSuggestionsResponseData()
+        response = Response(total=0, hits=[])
+        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (9, 14, ['valu', 'ot']) }
+        responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query AND value")))
+        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
+    <suggestion>que AND valu</suggestion>
+    <suggestion>emery AND ot</suggestion>
 </suggestions>
 """, responseData)
 
     def testDoNothingIfNoSuggestionsInResponse(self):
         suggestions = AddSuggestionsResponseData()
         response = Response(total=0, hits=[])
-        responseData = list(compose(suggestions.extraResponseData(response=response)))
+        responseData = list(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
         self.assertEquals([], responseData)
