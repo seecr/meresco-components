@@ -31,3 +31,4 @@ from srurecordupdate import SRURecordUpdate
 from sruparser import SruParser
 from sruhandler import SruHandler
 from srw import Srw
+from suggestions import Suggestions

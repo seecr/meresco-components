@@ -48,13 +48,14 @@ ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', '
 millis = Decimal('0.001')
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False, querySuggestionsCount=0):
         Observable.__init__(self)
         self._drilldownSortedByTermCount = drilldownSortedByTermCount
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
         self._extraXParameters = set(extraXParameters or [])
         self._extraXParameters.add("x-recordSchema")
         self._includeQueryTimes = includeQueryTimes
+        self._querySuggestionsCount = querySuggestionsCount
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
         SRU_IS_ONE_BASED = 1
@@ -73,6 +74,7 @@ class SruHandler(Observable):
                     sortBy=sortBy,
                     sortDescending=sortDescending,
                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                    suggestionsCount=self._querySuggestionsCount,
                     **kwargs)
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)

@@ -319,6 +319,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(0, methodKwargs['start'])
         self.assertEquals(2, methodKwargs['stop'])
         self.assertEquals('extraValue', methodKwargs['x_extra_key'])
+        self.assertEquals(0, methodKwargs['suggestionsCount'])
 
         self.assertEquals(6, sum(yieldRecordCalls))
 
@@ -559,6 +560,26 @@ class SruHandlerTest(SeecrTestCase):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
         self.assertEqualsWS(xsd, localxsd)
+
+    def testSearchRetrieveWithSuggestions(self):
+        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
+
+        observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
+        response = Response(total=0, hits=[])
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        handler = SruHandler(querySuggestionsCount=5)
+        handler.addObserver(observer)
+
+        result = "".join(compose(handler.searchRetrieve(**arguments)))
+        self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        executeQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+        self.assertEquals('executeQuery', executeQueryMethod.name)
+        methodKwargs = executeQueryMethod.kwargs
+        self.assertEquals(5, methodKwargs['suggestionsCount'])
 
 def hitsRange(*args):
     return ['%s' % i for i in range(*args)]
