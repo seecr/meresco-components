@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -558,7 +559,6 @@ class SruHandlerTest(SeecrTestCase):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
         self.assertEqualsWS(xsd, localxsd)
-
 
 def hitsRange(*args):
     return ['%s' % i for i in range(*args)]

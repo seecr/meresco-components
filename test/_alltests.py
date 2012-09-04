@@ -116,6 +116,7 @@ from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest
 from sru.srurecordupdatetest import SRURecordUpdateTest
 from sru.srwtest import SrwTest
+from sru.suggestionstest import SuggestionsTest
 
 from xml_generic.validatetest import ValidateTest
 
