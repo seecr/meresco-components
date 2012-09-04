@@ -562,7 +562,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEqualsWS(xsd, localxsd)
 
     def testSearchRetrieveWithSuggestions(self):
-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
+        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x_suggestionsQuery': "value"}
 
         observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
         response = Response(total=0, hits=[])
@@ -580,6 +580,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals('executeQuery', executeQueryMethod.name)
         methodKwargs = executeQueryMethod.kwargs
         self.assertEquals(5, methodKwargs['suggestionsCount'])
+        self.assertEquals("value", methodKwargs['suggestionsQuery'])
 
 def hitsRange(*args):
     return ['%s' % i for i in range(*args)]

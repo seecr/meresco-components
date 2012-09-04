@@ -57,7 +57,7 @@ class SruHandler(Observable):
         self._includeQueryTimes = includeQueryTimes
         self._querySuggestionsCount = querySuggestionsCount
 
-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
+    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, x_suggestionsQuery=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         t0 = self._timeNow()
@@ -75,6 +75,7 @@ class SruHandler(Observable):
                     sortDescending=sortDescending,
                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
                     suggestionsCount=self._querySuggestionsCount,
+                    suggestionsQuery=x_suggestionsQuery,
                     **kwargs)
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)

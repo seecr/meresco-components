@@ -24,7 +24,7 @@
 # 
 ## end license ##
 
-class Suggestions(object):
+class AddSuggestionsResponseData(object):
 
     def extraResponseData(self, response, **kwargs):
         if not hasattr(response, 'suggestions'):

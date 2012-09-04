@@ -25,14 +25,14 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from meresco.components.sru.suggestions import Suggestions
+from meresco.components.sru.addsuggestionsresponsedata import AddSuggestionsResponseData
 from meresco.components.facetindex import Response
 from weightless.core import compose
 
-class SuggestionsTest(SeecrTestCase):
+class AddSuggestionsResponseDataTest(SeecrTestCase):
 
     def testCreateExtraResponseData(self):
-        suggestions = Suggestions()
+        suggestions = AddSuggestionsResponseData()
         response = Response(total=0, hits=[])
         response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
         responseData = ''.join(compose(suggestions.extraResponseData(response=response)))
@@ -46,7 +46,7 @@ class SuggestionsTest(SeecrTestCase):
 """, responseData)
 
     def testDoNothingIfNoSuggestionsInResponse(self):
-        suggestions = Suggestions()
+        suggestions = AddSuggestionsResponseData()
         response = Response(total=0, hits=[])
         responseData = list(compose(suggestions.extraResponseData(response=response)))
         self.assertEquals([], responseData)
