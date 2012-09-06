@@ -1,0 +1,834 @@
+Changeset created on Thu Sep 06 11:54:40 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Suggestions in executeQuery
+
+    Suggestions by SOLR are added as extraResponseData with queries
+
+Baseline version: master
+
+From 9dbbc324d5916bb92719d0b4f8290adfb3d9fc56 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Tue, 4 Sep 2012 10:35:22 +0100
+Subject: [PATCH 1/6] JJ/HM: Remove error messages from test output
+
+---
+ test/sru/sruhandlertest.py |   19 ++++++++++++-------
+ test/sru/srwtest.py        |    3 ++-
+ 2 files changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index dae2906..7a0b186 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -32,6 +32,7 @@
+ from os.path import join
+ from StringIO import StringIO
+ from urllib2 import urlopen
++import sys
+ 
+ import traceback
+ from lxml.etree import parse, tostring
+@@ -487,13 +488,17 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertTrue("diagnostic" in result)
+ 
+     def testDiagnosticOnExecuteCql(self):
+-        class RaisesException(object):
+-            def executeQuery(self, *args, **kwargs):
+-                raise Exception("Test Exception")
+-        component = SruHandler()
+-        component.addObserver(RaisesException())
+-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
+-        self.assertTrue("diagnostic" in result)
++        sys.stderr = StringIO()
++        try:
++            class RaisesException(object):
++                def executeQuery(self, *args, **kwargs):
++                    raise Exception("Test Exception")
++            component = SruHandler()
++            component.addObserver(RaisesException())
++            result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
++            self.assertTrue("diagnostic" in result)
++        finally:
++            sys.stderr = sys.__stderr__
+     
+     def testValidXml(self):
+         component = SruParser()
+diff --git a/test/sru/srwtest.py b/test/sru/srwtest.py
+index dd790eb..ebfbcc9 100644
+--- a/test/sru/srwtest.py
++++ b/test/sru/srwtest.py
+@@ -34,6 +34,7 @@ from meresco.components.sru import SruHandler, SruParser
+ from meresco.components.sru.srw import Srw
+ from meresco.components.facetindex import Response
+ from meresco.core import asyncnoreturnvalue
++from meresco.solr.solrresponse import SolrResponse
+ 
+ from weightless.core import compose
+ 
+@@ -136,7 +137,7 @@ Content-Type: text/xml; charset=utf-8
+         def methodAsGenerator(**kwargs):
+             pass
+         def executeQuery(**kwargs):
+-            raise StopIteration([1, [0]])
++            raise StopIteration(SolrResponse(total=1, hits=[0]))
+             yield
+         observer = CallTrace(
+             methods={
+-- 
+1.7.1
+
+
+From e3779d38ea0e2037be950413ede11d226ce219ed Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Tue, 4 Sep 2012 11:17:32 +0100
+Subject: [PATCH 2/6] JJ/HM: Added suggestions components which add suggestions to the extraResponseData
+
+---
+ meresco/components/sru/suggestions.py |   38 ++++++++++++++++++++++++
+ test/_alltests.py                     |    1 +
+ test/sru/sruhandlertest.py            |    2 +-
+ test/sru/suggestionstest.py           |   52 +++++++++++++++++++++++++++++++++
+ 4 files changed, 92 insertions(+), 1 deletions(-)
+ create mode 100644 meresco/components/sru/suggestions.py
+ create mode 100644 test/sru/suggestionstest.py
+
+diff --git a/meresco/components/sru/suggestions.py b/meresco/components/sru/suggestions.py
+new file mode 100644
+index 0000000..2943f1f
+--- /dev/null
++++ b/meresco/components/sru/suggestions.py
+@@ -0,0 +1,38 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++class Suggestions(object):
++
++    def extraResponseData(self, response, **kwargs):
++        if not hasattr(response, 'suggestions'):
++            return
++        yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
++        for word, (start, stop, suggestions) in response.suggestions.items():
++            yield '<word start="%s" end="%s" name="%s">\n' % (start, stop, word)
++            yield '\n'.join('<suggestion>%s</suggestion>' % s for s in suggestions)
++            yield '</word>\n'
++        yield '</suggestions>\n'
++
+diff --git a/test/_alltests.py b/test/_alltests.py
+index 5e8fc1e..e5e1e12 100644
+--- a/test/_alltests.py
++++ b/test/_alltests.py
+@@ -116,6 +116,7 @@ from sru.sruhandlertest import SruHandlerTest
+ from sru.sruparsertest import SruParserTest
+ from sru.srurecordupdatetest import SRURecordUpdateTest
+ from sru.srwtest import SrwTest
++from sru.suggestionstest import SuggestionsTest
+ 
+ from xml_generic.validatetest import ValidateTest
+ 
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index 7a0b186..565b730 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -10,6 +10,7 @@
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -559,6 +560,5 @@ class SruHandlerTest(SeecrTestCase):
+         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
+         self.assertEqualsWS(xsd, localxsd)
+ 
+-
+ def hitsRange(*args):
+     return ['%s' % i for i in range(*args)]
+diff --git a/test/sru/suggestionstest.py b/test/sru/suggestionstest.py
+new file mode 100644
+index 0000000..e03fb47
+--- /dev/null
++++ b/test/sru/suggestionstest.py
+@@ -0,0 +1,52 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++from seecr.test import SeecrTestCase
++from meresco.components.sru.suggestions import Suggestions
++from meresco.components.facetindex import Response
++from weightless.core import compose
++
++class SuggestionsTest(SeecrTestCase):
++
++    def testCreateExtraResponseData(self):
++        suggestions = Suggestions()
++        response = Response(total=0, hits=[])
++        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
++        responseData = ''.join(compose(suggestions.extraResponseData(response=response)))
++        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
++    <word start="0" end="5" name="query">
++        <suggestion>que</suggestion>
++        <suggestion>emery</suggestion>
++        <suggestion>queen</suggestion>
++    </word>
++</suggestions>
++""", responseData)
++
++    def testDoNothingIfNoSuggestionsInResponse(self):
++        suggestions = Suggestions()
++        response = Response(total=0, hits=[])
++        responseData = list(compose(suggestions.extraResponseData(response=response)))
++        self.assertEquals([], responseData)
+-- 
+1.7.1
+
+
+From f6ea23fff955087309aaa582438fd64b567e8e8a Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Tue, 4 Sep 2012 13:01:39 +0100
+Subject: [PATCH 3/6] JJ/HM: Added querySuggestionsCount argument to sruHandler (default=0)
+
+---
+ meresco/components/sru/__init__.py   |    1 +
+ meresco/components/sru/sruhandler.py |    4 +++-
+ test/sru/sruhandlertest.py           |   21 +++++++++++++++++++++
+ 3 files changed, 25 insertions(+), 1 deletions(-)
+
+diff --git a/meresco/components/sru/__init__.py b/meresco/components/sru/__init__.py
+index e164e86..970b17b 100644
+--- a/meresco/components/sru/__init__.py
++++ b/meresco/components/sru/__init__.py
+@@ -31,3 +31,4 @@ from srurecordupdate import SRURecordUpdate
+ from sruparser import SruParser
+ from sruhandler import SruHandler
+ from srw import Srw
++from suggestions import Suggestions
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index fe13ec2..83279f4 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -48,13 +48,14 @@ ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', '
+ millis = Decimal('0.001')
+ 
+ class SruHandler(Observable):
+-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False):
++    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False, querySuggestionsCount=0):
+         Observable.__init__(self)
+         self._drilldownSortedByTermCount = drilldownSortedByTermCount
+         self._extraRecordDataNewStyle = extraRecordDataNewStyle
+         self._extraXParameters = set(extraXParameters or [])
+         self._extraXParameters.add("x-recordSchema")
+         self._includeQueryTimes = includeQueryTimes
++        self._querySuggestionsCount = querySuggestionsCount
+ 
+     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
+         SRU_IS_ONE_BASED = 1
+@@ -73,6 +74,7 @@ class SruHandler(Observable):
+                     sortBy=sortBy,
+                     sortDescending=sortDescending,
+                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
++                    suggestionsCount=self._querySuggestionsCount,
+                     **kwargs)
+             total, recordIds = response.total, response.hits
+             drilldownData = getattr(response, "drilldownData", None)
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index 565b730..3c1608d 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -319,6 +319,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals(0, methodKwargs['start'])
+         self.assertEquals(2, methodKwargs['stop'])
+         self.assertEquals('extraValue', methodKwargs['x_extra_key'])
++        self.assertEquals(0, methodKwargs['suggestionsCount'])
+ 
+         self.assertEquals(6, sum(yieldRecordCalls))
+ 
+@@ -560,5 +561,25 @@ class SruHandlerTest(SeecrTestCase):
+         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
+         self.assertEqualsWS(xsd, localxsd)
+ 
++    def testSearchRetrieveWithSuggestions(self):
++        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
++
++        observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
++        response = Response(total=0, hits=[])
++        def executeQuery(**kwargs):
++            raise StopIteration(response)
++            yield
++        observer.methods['executeQuery'] = executeQuery
++
++        handler = SruHandler(querySuggestionsCount=5)
++        handler.addObserver(observer)
++
++        result = "".join(compose(handler.searchRetrieve(**arguments)))
++        self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
++        executeQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
++        self.assertEquals('executeQuery', executeQueryMethod.name)
++        methodKwargs = executeQueryMethod.kwargs
++        self.assertEquals(5, methodKwargs['suggestionsCount'])
++
+ def hitsRange(*args):
+     return ['%s' % i for i in range(*args)]
+-- 
+1.7.1
+
+
+From bbf9161382ca2383c9d772ffb0892628423affd7 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Tue, 4 Sep 2012 14:50:39 +0100
+Subject: [PATCH 4/6] JJ/HM: Rename Suggestions to AddSuggestionsResponseData; pass x-suggestionsQuery from sru
+
+---
+ .../components/sru/addsuggestionsresponsedata.py   |   38 ++++++++++++++
+ meresco/components/sru/sruhandler.py               |    3 +-
+ meresco/components/sru/suggestions.py              |   38 --------------
+ test/sru/addsuggestionsresponsedatatest.py         |   52 ++++++++++++++++++++
+ test/sru/sruhandlertest.py                         |    3 +-
+ test/sru/suggestionstest.py                        |   52 --------------------
+ 6 files changed, 94 insertions(+), 92 deletions(-)
+ create mode 100644 meresco/components/sru/addsuggestionsresponsedata.py
+ delete mode 100644 meresco/components/sru/suggestions.py
+ create mode 100644 test/sru/addsuggestionsresponsedatatest.py
+ delete mode 100644 test/sru/suggestionstest.py
+
+diff --git a/meresco/components/sru/addsuggestionsresponsedata.py b/meresco/components/sru/addsuggestionsresponsedata.py
+new file mode 100644
+index 0000000..feac937
+--- /dev/null
++++ b/meresco/components/sru/addsuggestionsresponsedata.py
+@@ -0,0 +1,38 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++class AddSuggestionsResponseData(object):
++
++    def extraResponseData(self, response, **kwargs):
++        if not hasattr(response, 'suggestions'):
++            return
++        yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
++        for word, (start, stop, suggestions) in response.suggestions.items():
++            yield '<word start="%s" end="%s" name="%s">\n' % (start, stop, word)
++            yield '\n'.join('<suggestion>%s</suggestion>' % s for s in suggestions)
++            yield '</word>\n'
++        yield '</suggestions>\n'
++
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index 83279f4..a8b961b 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -57,7 +57,7 @@ class SruHandler(Observable):
+         self._includeQueryTimes = includeQueryTimes
+         self._querySuggestionsCount = querySuggestionsCount
+ 
+-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, **kwargs):
++    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, x_suggestionsQuery=None, **kwargs):
+         SRU_IS_ONE_BASED = 1
+ 
+         t0 = self._timeNow()
+@@ -75,6 +75,7 @@ class SruHandler(Observable):
+                     sortDescending=sortDescending,
+                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                     suggestionsCount=self._querySuggestionsCount,
++                    suggestionsQuery=x_suggestionsQuery,
+                     **kwargs)
+             total, recordIds = response.total, response.hits
+             drilldownData = getattr(response, "drilldownData", None)
+diff --git a/meresco/components/sru/suggestions.py b/meresco/components/sru/suggestions.py
+deleted file mode 100644
+index 2943f1f..0000000
+--- a/meresco/components/sru/suggestions.py
++++ /dev/null
+@@ -1,38 +0,0 @@
+-## begin license ##
+-# 
+-# "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+-# 
+-# This file is part of "Meresco Components"
+-# 
+-# "Meresco Components" is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# "Meresco Components" is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with "Meresco Components"; if not, write to the Free Software
+-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
+-## end license ##
+-
+-class Suggestions(object):
+-
+-    def extraResponseData(self, response, **kwargs):
+-        if not hasattr(response, 'suggestions'):
+-            return
+-        yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
+-        for word, (start, stop, suggestions) in response.suggestions.items():
+-            yield '<word start="%s" end="%s" name="%s">\n' % (start, stop, word)
+-            yield '\n'.join('<suggestion>%s</suggestion>' % s for s in suggestions)
+-            yield '</word>\n'
+-        yield '</suggestions>\n'
+-
+diff --git a/test/sru/addsuggestionsresponsedatatest.py b/test/sru/addsuggestionsresponsedatatest.py
+new file mode 100644
+index 0000000..8b8196e
+--- /dev/null
++++ b/test/sru/addsuggestionsresponsedatatest.py
+@@ -0,0 +1,52 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++from seecr.test import SeecrTestCase
++from meresco.components.sru.addsuggestionsresponsedata import AddSuggestionsResponseData
++from meresco.components.facetindex import Response
++from weightless.core import compose
++
++class AddSuggestionsResponseDataTest(SeecrTestCase):
++
++    def testCreateExtraResponseData(self):
++        suggestions = AddSuggestionsResponseData()
++        response = Response(total=0, hits=[])
++        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
++        responseData = ''.join(compose(suggestions.extraResponseData(response=response)))
++        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
++    <word start="0" end="5" name="query">
++        <suggestion>que</suggestion>
++        <suggestion>emery</suggestion>
++        <suggestion>queen</suggestion>
++    </word>
++</suggestions>
++""", responseData)
++
++    def testDoNothingIfNoSuggestionsInResponse(self):
++        suggestions = AddSuggestionsResponseData()
++        response = Response(total=0, hits=[])
++        responseData = list(compose(suggestions.extraResponseData(response=response)))
++        self.assertEquals([], responseData)
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index 3c1608d..8a80a5c 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -562,7 +562,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEqualsWS(xsd, localxsd)
+ 
+     def testSearchRetrieveWithSuggestions(self):
+-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
++        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x_suggestionsQuery': "value"}
+ 
+         observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
+         response = Response(total=0, hits=[])
+@@ -580,6 +580,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals('executeQuery', executeQueryMethod.name)
+         methodKwargs = executeQueryMethod.kwargs
+         self.assertEquals(5, methodKwargs['suggestionsCount'])
++        self.assertEquals("value", methodKwargs['suggestionsQuery'])
+ 
+ def hitsRange(*args):
+     return ['%s' % i for i in range(*args)]
+diff --git a/test/sru/suggestionstest.py b/test/sru/suggestionstest.py
+deleted file mode 100644
+index e03fb47..0000000
+--- a/test/sru/suggestionstest.py
++++ /dev/null
+@@ -1,52 +0,0 @@
+-## begin license ##
+-# 
+-# "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+-# 
+-# This file is part of "Meresco Components"
+-# 
+-# "Meresco Components" is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# "Meresco Components" is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with "Meresco Components"; if not, write to the Free Software
+-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
+-## end license ##
+-
+-from seecr.test import SeecrTestCase
+-from meresco.components.sru.suggestions import Suggestions
+-from meresco.components.facetindex import Response
+-from weightless.core import compose
+-
+-class SuggestionsTest(SeecrTestCase):
+-
+-    def testCreateExtraResponseData(self):
+-        suggestions = Suggestions()
+-        response = Response(total=0, hits=[])
+-        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
+-        responseData = ''.join(compose(suggestions.extraResponseData(response=response)))
+-        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
+-    <word start="0" end="5" name="query">
+-        <suggestion>que</suggestion>
+-        <suggestion>emery</suggestion>
+-        <suggestion>queen</suggestion>
+-    </word>
+-</suggestions>
+-""", responseData)
+-
+-    def testDoNothingIfNoSuggestionsInResponse(self):
+-        suggestions = Suggestions()
+-        response = Response(total=0, hits=[])
+-        responseData = list(compose(suggestions.extraResponseData(response=response)))
+-        self.assertEquals([], responseData)
+-- 
+1.7.1
+
+
+From 010e1a8020ad272eab5545c97a74ad40e08dc9fd Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Tue, 4 Sep 2012 15:53:32 +0100
+Subject: [PATCH 5/6] JJ/HM: Suggest new queries in sru based on original suggestionsQuery
+
+---
+ meresco/components/sru/__init__.py                 |    2 +-
+ .../components/sru/addsuggestionsresponsedata.py   |   18 ++++++++++----
+ meresco/components/sru/sruhandler.py               |    5 ++-
+ test/_alltests.py                                  |    2 +-
+ test/sru/addsuggestionsresponsedatatest.py         |   25 +++++++++++++------
+ test/sru/sruhandlertest.py                         |    4 +-
+ 6 files changed, 37 insertions(+), 19 deletions(-)
+
+diff --git a/meresco/components/sru/__init__.py b/meresco/components/sru/__init__.py
+index 970b17b..6331c4d 100644
+--- a/meresco/components/sru/__init__.py
++++ b/meresco/components/sru/__init__.py
+@@ -31,4 +31,4 @@ from srurecordupdate import SRURecordUpdate
+ from sruparser import SruParser
+ from sruhandler import SruHandler
+ from srw import Srw
+-from suggestions import Suggestions
++from addsuggestionsresponsedata import AddSuggestionsResponseData
+diff --git a/meresco/components/sru/addsuggestionsresponsedata.py b/meresco/components/sru/addsuggestionsresponsedata.py
+index feac937..eaf8d30 100644
+--- a/meresco/components/sru/addsuggestionsresponsedata.py
++++ b/meresco/components/sru/addsuggestionsresponsedata.py
+@@ -26,13 +26,21 @@
+ 
+ class AddSuggestionsResponseData(object):
+ 
+-    def extraResponseData(self, response, **kwargs):
++    def extraResponseData(self, response, suggestionsQuery, **kwargs):
+         if not hasattr(response, 'suggestions'):
+             return
+         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
+-        for word, (start, stop, suggestions) in response.suggestions.items():
+-            yield '<word start="%s" end="%s" name="%s">\n' % (start, stop, word)
+-            yield '\n'.join('<suggestion>%s</suggestion>' % s for s in suggestions)
+-            yield '</word>\n'
++
++        allSuggestions = [suggestions for (start, stop, suggestions) in response.suggestions.values()]
++
++        shortest = min([len(suggestions) for suggestions in allSuggestions])
++        for i in range(shortest):
++            indexShift = 0
++            newSuggestionsQuery = suggestionsQuery
++            for word, (start, stop, suggestions) in response.suggestions.items():
++                replaceWord = suggestions[i]
++                newSuggestionsQuery = newSuggestionsQuery[:start+indexShift] + replaceWord + newSuggestionsQuery[1+stop+indexShift:]
++                indexShift += len(replaceWord) - len(word)
++            yield "<suggestion>%s</suggestion>\n" % newSuggestionsQuery
+         yield '</suggestions>\n'
+ 
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index a8b961b..4c6616c 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -65,6 +65,7 @@ class SruHandler(Observable):
+         cqlAbstractSyntaxTree = parseCQL(query)
+ 
+         drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(x_term_drilldown)
++        suggestionsQuery = x_suggestionsQuery[0] if x_suggestionsQuery else None
+ 
+         try:
+             response = yield self.any.executeQuery(
+@@ -75,7 +76,7 @@ class SruHandler(Observable):
+                     sortDescending=sortDescending,
+                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                     suggestionsCount=self._querySuggestionsCount,
+-                    suggestionsQuery=x_suggestionsQuery,
++                    suggestionsQuery=suggestionsQuery,
+                     **kwargs)
+             total, recordIds = response.total, response.hits
+             drilldownData = getattr(response, "drilldownData", None)
+@@ -102,7 +103,7 @@ class SruHandler(Observable):
+                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
+ 
+         yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
+-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, **kwargs)
++        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, **kwargs)
+         yield self._endResults()
+ 
+     def _writeEchoedSearchRetrieveRequest(self, **kwargs):
+diff --git a/test/_alltests.py b/test/_alltests.py
+index e5e1e12..b1d9bb7 100644
+--- a/test/_alltests.py
++++ b/test/_alltests.py
+@@ -116,7 +116,7 @@ from sru.sruhandlertest import SruHandlerTest
+ from sru.sruparsertest import SruParserTest
+ from sru.srurecordupdatetest import SRURecordUpdateTest
+ from sru.srwtest import SrwTest
+-from sru.suggestionstest import SuggestionsTest
++from sru.addsuggestionsresponsedatatest import AddSuggestionsResponseDataTest
+ 
+ from xml_generic.validatetest import ValidateTest
+ 
+diff --git a/test/sru/addsuggestionsresponsedatatest.py b/test/sru/addsuggestionsresponsedatatest.py
+index 8b8196e..a486494 100644
+--- a/test/sru/addsuggestionsresponsedatatest.py
++++ b/test/sru/addsuggestionsresponsedatatest.py
+@@ -31,22 +31,31 @@ from weightless.core import compose
+ 
+ class AddSuggestionsResponseDataTest(SeecrTestCase):
+ 
+-    def testCreateExtraResponseData(self):
++    def testCreateExtraResponseDataWithSingleSuggestions(self):
+         suggestions = AddSuggestionsResponseData()
+         response = Response(total=0, hits=[])
+         response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
+-        responseData = ''.join(compose(suggestions.extraResponseData(response=response)))
++        responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
+         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
+-    <word start="0" end="5" name="query">
+-        <suggestion>que</suggestion>
+-        <suggestion>emery</suggestion>
+-        <suggestion>queen</suggestion>
+-    </word>
++    <suggestion>que</suggestion>
++    <suggestion>emery</suggestion>
++    <suggestion>queen</suggestion>
++</suggestions>
++""", responseData)
++
++    def testCreateExtraResponseDataWithMultipleSuggestions(self):
++        suggestions = AddSuggestionsResponseData()
++        response = Response(total=0, hits=[])
++        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (9, 14, ['valu', 'ot']) }
++        responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query AND value")))
++        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
++    <suggestion>que AND valu</suggestion>
++    <suggestion>emery AND ot</suggestion>
+ </suggestions>
+ """, responseData)
+ 
+     def testDoNothingIfNoSuggestionsInResponse(self):
+         suggestions = AddSuggestionsResponseData()
+         response = Response(total=0, hits=[])
+-        responseData = list(compose(suggestions.extraResponseData(response=response)))
++        responseData = list(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
+         self.assertEquals([], responseData)
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index 8a80a5c..707eddf 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -400,7 +400,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals((), echoedExtraRequestDataMethod.args)
+         self.assertEquals(set(['version', 'x_term_drilldown', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x_extra_key']), set(echoedExtraRequestDataMethod.kwargs.keys()))
+         self.assertEquals((), extraResponseDataMethod.args)
+-        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'x_extra_key', 'queryTime']), set(extraResponseDataMethod.kwargs.keys()))
++        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'x_extra_key', 'queryTime', 'suggestionsQuery']), set(extraResponseDataMethod.kwargs.keys()))
+  
+     def testExtraRecordDataOldStyle(self):
+         arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
+@@ -562,7 +562,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEqualsWS(xsd, localxsd)
+ 
+     def testSearchRetrieveWithSuggestions(self):
+-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x_suggestionsQuery': "value"}
++        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x_suggestionsQuery': ["value"]}
+ 
+         observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
+         response = Response(total=0, hits=[])
+-- 
+1.7.1
+
+
+From eebd2d435901b3a55c2a45ab5a8d30548fb04a43 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 6 Sep 2012 11:01:31 +0100
+Subject: [PATCH 6/6] JJ: fixed suggestion replace
+
+---
+ .../components/sru/addsuggestionsresponsedata.py   |   17 +++++++++++------
+ test/sru/addsuggestionsresponsedatatest.py         |   15 ++++++++++++++-
+ 2 files changed, 25 insertions(+), 7 deletions(-)
+
+diff --git a/meresco/components/sru/addsuggestionsresponsedata.py b/meresco/components/sru/addsuggestionsresponsedata.py
+index eaf8d30..8e0fc6e 100644
+--- a/meresco/components/sru/addsuggestionsresponsedata.py
++++ b/meresco/components/sru/addsuggestionsresponsedata.py
+@@ -29,18 +29,23 @@ class AddSuggestionsResponseData(object):
+     def extraResponseData(self, response, suggestionsQuery, **kwargs):
+         if not hasattr(response, 'suggestions'):
+             return
+-        yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
+ 
+-        allSuggestions = [suggestions for (start, stop, suggestions) in response.suggestions.values()]
++        sortedSuggestions = sorted(response.suggestions.items(), key=lambda (word, (start, stop, suggestions)): start)
++        allSuggestions = [suggestions for (word, (start, stop, suggestions)) in sortedSuggestions]
++
++        if not allSuggestions:
++            return
+ 
++        yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
+         shortest = min([len(suggestions) for suggestions in allSuggestions])
+         for i in range(shortest):
+-            indexShift = 0
+             newSuggestionsQuery = suggestionsQuery
+-            for word, (start, stop, suggestions) in response.suggestions.items():
++            for word, (start, stop, suggestions) in reversed(sortedSuggestions):
+                 replaceWord = suggestions[i]
+-                newSuggestionsQuery = newSuggestionsQuery[:start+indexShift] + replaceWord + newSuggestionsQuery[1+stop+indexShift:]
+-                indexShift += len(replaceWord) - len(word)
++                leftPart = newSuggestionsQuery[:start]
++                rightPart = newSuggestionsQuery[stop:]
++
++                newSuggestionsQuery = leftPart + replaceWord + rightPart
+             yield "<suggestion>%s</suggestion>\n" % newSuggestionsQuery
+         yield '</suggestions>\n'
+ 
+diff --git a/test/sru/addsuggestionsresponsedatatest.py b/test/sru/addsuggestionsresponsedatatest.py
+index a486494..17da0b5 100644
+--- a/test/sru/addsuggestionsresponsedatatest.py
++++ b/test/sru/addsuggestionsresponsedatatest.py
+@@ -46,7 +46,7 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
+     def testCreateExtraResponseDataWithMultipleSuggestions(self):
+         suggestions = AddSuggestionsResponseData()
+         response = Response(total=0, hits=[])
+-        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (9, 14, ['valu', 'ot']) }
++        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (10, 15, ['valu', 'ot']) }
+         responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query AND value")))
+         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
+     <suggestion>que AND valu</suggestion>
+@@ -59,3 +59,16 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
+         response = Response(total=0, hits=[])
+         responseData = list(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
+         self.assertEquals([], responseData)
++
++    def testHarriePoter(self):
++        suggestions = AddSuggestionsResponseData()
++        response = Response(total=0, hits=[])
++        response.suggestions={'harrie': (0, 6, ['harry', 'marie']), 'poter': (11, 16, ['potter', 'peter']) }
++        responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="harrie AND poter")))
++        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
++    <suggestion>harry AND potter</suggestion>
++    <suggestion>marie AND peter</suggestion>
++</suggestions>
++""", responseData)
++
++
+-- 
+1.7.1
+
