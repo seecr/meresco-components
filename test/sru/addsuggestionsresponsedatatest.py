@@ -46,7 +46,7 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
     def testCreateExtraResponseDataWithMultipleSuggestions(self):
         suggestions = AddSuggestionsResponseData()
         response = Response(total=0, hits=[])
-        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (9, 14, ['valu', 'ot']) }
+        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (10, 15, ['valu', 'ot']) }
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query AND value")))
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
     <suggestion>que AND valu</suggestion>
@@ -59,3 +59,16 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
         response = Response(total=0, hits=[])
         responseData = list(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
         self.assertEquals([], responseData)
+
+    def testHarriePoter(self):
+        suggestions = AddSuggestionsResponseData()
+        response = Response(total=0, hits=[])
+        response.suggestions={'harrie': (0, 6, ['harry', 'marie']), 'poter': (11, 16, ['potter', 'peter']) }
+        responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="harrie AND poter")))
+        self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
+    <suggestion>harry AND potter</suggestion>
+    <suggestion>marie AND peter</suggestion>
+</suggestions>
+""", responseData)
+
+
