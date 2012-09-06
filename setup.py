@@ -51,7 +51,7 @@ setup(
     ],
     package_data={
         'meresco.components': ['rules/*.rules'],
-        'meresco.components.autocomplete': ['js/*.js'],
+        'meresco.components.autocomplete': ['files/*.js', 'files/*.css'],
         'meresco.components.xml_generic': [
             'schemas/*',
             'schemas-lom/*.xsd',
