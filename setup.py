@@ -11,6 +11,7 @@
 # Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -38,13 +39,14 @@ setup(
     packages = [
         'meresco.components',
         'meresco.components.autocomplete',
+        'meresco.components.cql',
         'meresco.components.drilldown',
         'meresco.components.facetindex',
         'meresco.components.http',
         'meresco.components.log',
+        'meresco.components.msgbox',
         'meresco.components.ngram',
         'meresco.components.numeric',
-        'meresco.components.msgbox',
         'meresco.components.sru',
         'meresco.components.web',
         'meresco.components.xml_generic',

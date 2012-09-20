@@ -85,6 +85,8 @@ from xmlxpathtest import XmlXPathTest
 from xpath2fieldtest import XPath2FieldTest
 from xsltcrosswalktest import XsltCrosswalkTest
 
+from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
+
 from autocomplete.autocompletetest import AutocompleteTest
 
 from drilldown.srufielddrilldowntest import SRUFieldDrilldownTest
