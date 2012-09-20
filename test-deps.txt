@@ -1,2 +1,2 @@
-seecr-test (>= 1.0.1)
-seecr-test (<< 1.1)
+seecr-test (>= 1.2.10)
+seecr-test (<< 1.3)
