@@ -37,6 +37,7 @@ from StringIO import StringIO
 from os.path import join
 
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.io import stderr_replaced
 from weightless.core import be
 from weightless.io import  Suspend
 from meresco.core import Observable
@@ -127,9 +128,19 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEquals("addWriter", reactor.calledMethods[-1].name)
         self.assertEquals("localhost:8899: error in sockopt\n", downloader._err.getvalue()) # remains 1 error
  
+    def testVerboseDeprecationWarning(self):
+        with stderr_replaced() as s:
+            PeriodicDownload(reactor='x', host='x', port='x')
+            result = s.getvalue()
+            self.assertEquals('', result)
+
+        with stderr_replaced() as s:
+            PeriodicDownload(reactor='x', host='x', port='x', verbose=True)
+            result = s.getvalue()
+            self.assertTrue('DeprecationWarning: Verbose flag is deprecated' in result, result)
 
     def testErrorResponse(self):
-        with server(['HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
+        with server(['HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request']) as (port, msgs):
             downloader, observer, reactor = self.getDownloader("localhost", port)
             callback = reactor.calledMethods[0].args[1]
             callback() # connect
@@ -141,7 +152,7 @@ class PeriodicDownloadTest(SeecrTestCase):
 
             callback() # yield After Error 
 
-            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue())
+            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue())
             self.assertEquals(['buildRequest'], [m.name for m in observer.calledMethods])
             self.assertReactorState(reactor)
 

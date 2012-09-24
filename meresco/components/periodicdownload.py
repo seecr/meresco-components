@@ -41,18 +41,20 @@ from weightless.core import compose, Yield
 from sys import stderr, stdout
 from time import time
 from tempfile import TemporaryFile
+from warnings import warn
+
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host, port, period=1, verbose=False, prio=None, err=None):
-        super(PeriodicDownload, self).__init__()
+    def __init__(self, reactor, host, port, period=1, verbose=None, prio=None, name=None, err=None):
+        super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host
         self._port = port 
         self._period = period
         self._prio = prio
         self._err = err or stderr
-        if not verbose:
-            self._log = lambda x: None
+        if verbose in [True, False]:
+            warn('Verbose flag is deprecated', DeprecationWarning)
 
     def observer_init(self):
         self.startTimer()
@@ -91,7 +93,7 @@ class PeriodicDownload(Observable):
             headers, body = response.split(2 * CRLF, 1)
             statusLine = headers.split(CRLF)[0]
             if not statusLine.strip().lower().endswith('200 ok'):
-                yield self._retryAfterError('Unexpected response: ' + statusLine, request=requestString)
+                yield self._retryAfterError('Unexpected response: ' + response, request=requestString)
                 return
 
             self._reactor.addProcess(self._processOne.next)
@@ -151,7 +153,7 @@ class PeriodicDownload(Observable):
         self._logError(message, request)
         self.startTimer(additionalTime=additionalTime)
         yield
-        
+
     def _logError(self, message, request=None):
         self._err.write("%s:%s: " % (self._host, self._port))
         self._err.write(message)
@@ -163,10 +165,4 @@ class PeriodicDownload(Observable):
             if not request.endswith('\n'):
                 self._err.write('\n')
         self._err.flush()
-
-    def _log(self, message):
-        stdout.write(message)
-        if not message.endswith('\n'):
-            stdout.write('\n')
-        stdout.flush()
 
