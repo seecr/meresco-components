@@ -61,7 +61,8 @@ class SearchTermFilterAndModifierTest(TestCase):
             self.convert(
                 cql='afield exact value',
                 shouldModifyFieldValue=lambda name, relation, value: name=='afield' and value.startswith('P'), 
-                valueModifier=lambda value: 'newvalue'))
+                valueModifier=lambda value: 'newvalue',
+                fieldnameModifier=lambda field: 'newfield'))
 
         self.assertEquals(
             'afield=Pvalue', 
@@ -70,11 +71,29 @@ class SearchTermFilterAndModifierTest(TestCase):
                 shouldModifyFieldValue=lambda name, relation, value: name=='afield' and relation=='exact' and value.startswith('P'), 
                 valueModifier=lambda value: 'newvalue'))
 
-    def convert(self, cql, shouldModifyFieldValue, valueModifier):
+    def testModifyField(self):
+        self.assertEquals(
+            'newfield exact Pvalue', 
+            self.convert(
+                cql='afield exact Pvalue', 
+                shouldModifyFieldValue=lambda name, relation, value: name=='afield' and relation=='exact' and value.startswith('P'), 
+                fieldnameModifier=lambda value: 'newfield'))
+
+        self.assertEquals(
+            'newfield=newvalue', 
+            self.convert(
+                cql='somefield=Pvalue',
+                shouldModifyFieldValue=lambda name, relation, value: value.startswith('P') and relation=='=', 
+                valueModifier=lambda value: 'newvalue',
+                fieldnameModifier=lambda field: 'newfield'))
+
+
+    def convert(self, cql, shouldModifyFieldValue, valueModifier=None, fieldnameModifier=None):
         converter = CqlMultiSearchClauseConversion([
             SearchTermFilterAndModifier(
                 shouldModifyFieldValue=shouldModifyFieldValue,
-                valueModifier=valueModifier).filterAndModifier(),
+                valueModifier=valueModifier,
+                fieldnameModifier=fieldnameModifier).filterAndModifier(),
             ], fromKwarg="cqlAbstractSyntaxTree")  
         return cql2string(converter._convert(parseString(cql)))
 

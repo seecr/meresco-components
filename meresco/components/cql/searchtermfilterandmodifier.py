@@ -26,9 +26,10 @@
 ## end license ##
 
 class SearchTermFilterAndModifier(object):
-    def __init__(self, shouldModifyFieldValue, valueModifier):
+    def __init__(self, shouldModifyFieldValue, valueModifier=None, fieldnameModifier=None):
         self._shouldModifyFieldValue = shouldModifyFieldValue
         self._valueModifier = valueModifier
+        self._fieldnameModifier = fieldnameModifier
 
     def canModify(self, node):
         #SEARCH_CLAUSE(INDEX(TERM(...)), RELATION(COMPARITOR(...)), SEARCH_TERM(...))
@@ -41,8 +42,12 @@ class SearchTermFilterAndModifier(object):
         return False
 
     def modify(self, node):
-        searchTerm = node.children[2].children[0]
-        searchTerm.children = (str(self._valueModifier(searchTerm.children[0])),)
+        if self._valueModifier:
+            searchTerm = node.children[2].children[0]
+            searchTerm.children = (str(self._valueModifier(searchTerm.children[0])),)
+        if self._fieldnameModifier:
+            field = node.children[0].children[0]
+            field.children = (str(self._fieldnameModifier(field.children[0])),)
         return node
 
     def filterAndModifier(self):
