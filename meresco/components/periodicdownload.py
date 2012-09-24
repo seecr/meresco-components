@@ -101,18 +101,20 @@ class PeriodicDownload(Observable):
             try:
                 gen = self.all.handle(data=body)
                 g = compose(gen)
-                for response  in g:
-                    if callable(response) and not response is Yield:
-                        response(self._reactor, self._processOne.next)
+                for _response  in g:
+                    if callable(_response) and not _response is Yield:
+                        _response(self._reactor, self._processOne.next)
                         yield
-                        response.resumeProcess()
+                        _response.resumeProcess()
                     yield
             finally:
                 self._reactor.removeProcess()
         except (AssertionError, KeyboardInterrupt, SystemExit), e:
             raise
         except Exception:
-            self._logError(format_exc())
+            message = format_exc()
+            message += 'Error while processing response: ' + response
+            self._logError(message, request=requestString)
         self.startTimer()
         yield
 

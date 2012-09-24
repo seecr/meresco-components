@@ -38,11 +38,21 @@ from os.path import join
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
+from seecr.test.utils import ignoreLineNumbers
+
 from weightless.core import be
 from weightless.io import  Suspend
+
 from meresco.core import Observable
+
 from meresco.components.http.utils import CRLF
 from meresco.components import PeriodicDownload
+
+def _dunderFile(): pass
+fileDict = {
+    '__file__': _dunderFile.func_code.co_filename,
+    'periodicdownload.py': PeriodicDownload.__init__.func_code.co_filename,
+}
 
 DROP_CONNECTION = object()
 
@@ -237,6 +247,43 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertReactorState(reactor)
 
+    def testRaiseInHandle(self):
+        def handleGenerator():
+            yield 'first'
+            raise Exception('xcptn')
+            yield
+
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            downloader, observer, reactor = self.getDownloader("localhost", port, handleGenerator=handleGenerator())
+            callback = self.doConnect() # _processOne.next
+            callback() # _processOne.next -> HTTP GET
+            self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            sleep(0.01)
+            self.assertEquals(['GET /path?argument=value HTTP/1.0\r\n\r\n'], msgs) # message received, getting response
+            callback() # _processOne.next -> sok.recv
+            callback() # _processOne.next -> recv = ''; then addProcess
+            callback() # first self.all.handle(data=body) -> 1st response
+
+            result = downloader._err.getvalue()
+            self.assertEquals('', result)
+
+            callback() # 2nd response / raise Exception(...)
+            result = downloader._err.getvalue()
+            self.assertTrue('Traceback' in result, result)
+            expected =  ignoreLineNumbers("""localhost:%(port)s: Traceback (most recent call last):
+  File "%%(periodicdownload.py)s", line 104, in processOne
+    for _response  in g:
+  File "%%(__file__)s", line 243, in handleGenerator
+    raise Exception('xcptn')
+Exception: xcptn
+Error while processing response: HTTP/1.0 200 OK \r\n\r\n<aap:noot xmlns:aap="mies"><record>ignored</record></aap:noot>
+For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fileDict)
+            self.assertEquals(expected, ignoreLineNumbers(result))
+
+            self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
+            self.assertEquals('addTimer', reactor.calledMethods[-1].name)
+            self.assertReactorState(reactor)
+
     def testAssertionErrorReraised(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self.getDownloader("localhost", port)
@@ -368,6 +415,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals(len([n for n in names if n == 'add%s' % what]),
                 len([n for n in names if n == 'remove%s' % what]), 
                 'Expected same amount of add and remove for %s' % what)
+
 
 HTTP_SEPARATOR = 2 * CRLF
 STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
