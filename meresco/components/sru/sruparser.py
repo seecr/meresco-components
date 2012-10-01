@@ -152,8 +152,7 @@ class SruParser(Observable):
         if 'sortKeys' in arguments :
             try:
                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
-                sruArgs['sortBy'] = sortBy.strip()
-                sruArgs['sortDescending'] = bool(int(sortDirection))
+                sruArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
             except ValueError:
                 pass
 

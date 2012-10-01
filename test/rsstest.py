@@ -164,8 +164,10 @@ class RssTest(SeecrTestCase):
 
         method = observer.calledMethods[0]
         self.assertEquals('executeQuery', method.name)
-        self.assertEquals(sortKey, method.kwargs['sortBy'])
-        self.assertEquals(sortDirection, method.kwargs['sortDescending'])
+        if sortKey is not None:
+            self.assertEquals([{'sortBy': sortKey, 'sortDescending': sortDirection}], method.kwargs['sortKeys'])
+        else:
+            self.assertEquals(None, method.kwargs['sortKeys'])
         self.assertEquals(maximumRecords, len(recordIds))
 
     def testMaxAndSort(self):
@@ -200,8 +202,7 @@ class RssTest(SeecrTestCase):
 
         result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two')))
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
 
@@ -218,8 +219,7 @@ class RssTest(SeecrTestCase):
         result = "".join(compose(rss.handleRequest(RequestURI='/?query=not+fiets')))
         
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
         self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
@@ -237,8 +237,7 @@ class RssTest(SeecrTestCase):
         result = ''.join(compose(rss.handleRequest(RequestURI='/?query=')))
         
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
         self.assertCql(parseCql("antiunary"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
@@ -255,8 +254,7 @@ class RssTest(SeecrTestCase):
 
         result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2')))
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
+        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
         self.assertCql(parseCql("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])

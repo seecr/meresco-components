@@ -105,14 +105,12 @@ class Rss(Observable):
         yield """</channel>"""
         yield """</rss>"""
 
-    def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False, **kwargs):
+    def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False):
         response = yield self.any.executeQuery(
             cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
             start=start,
             stop=stop,
-            sortBy=sortBy,
-            sortDescending=sortDescending,
-            **kwargs
+            sortKeys=[{'sortBy': sortBy, 'sortDescending': sortDescending}] if sortBy is not None else None
         )
         total, hits = response.total, response.hits
         for identifier in hits:

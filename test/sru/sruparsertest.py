@@ -183,7 +183,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         sruHandler.returnValues['searchRetrieve'] = (x for x in ["<result>mock result XML</result>"])
         component.addObserver(sruHandler)
 
-        response = "".join(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'])))
+        response = "".join(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'], sortKeys=['aField,,1'])))
 
         self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
         self.assertEquals((), sruHandler.calledMethods[0].args)
@@ -193,6 +193,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         self.assertEquals('searchRetrieve', kwargs['operation'])
         self.assertEquals(11, kwargs['startRecord'])
         self.assertEquals(15, kwargs['maximumRecords'])
+        self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
 
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue(XML_HEADER in response)
