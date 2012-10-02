@@ -57,7 +57,7 @@ class SruHandler(Observable):
         self._includeQueryTimes = includeQueryTimes
         self._querySuggestionsCount = querySuggestionsCount
 
-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, sruArguments=None, **kwargs):
+    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         t0 = self._timeNow()
@@ -77,8 +77,6 @@ class SruHandler(Observable):
                     cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                     start=start,
                     stop=start + maximumRecords,
-                    sortBy=sortBy,
-                    sortDescending=sortDescending,
                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
                     suggestionsCount=self._querySuggestionsCount,
                     suggestionsQuery=suggestionsQuery,
@@ -109,7 +107,7 @@ class SruHandler(Observable):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
