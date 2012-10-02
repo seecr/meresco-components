@@ -1,0 +1,787 @@
+Changeset created on Tue Oct 02 13:44:58 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Accept mulitple sortKeys for executeQuery
+
+    SortKeys now passed as a list of dictionaries with the sortBy field and the 
+    sortDescending.
+    SruHandler refactored to pass explicit sruArgs and the queryArgs as kwargs.
+    x-.. parameters are no longer parse by SruParser, but sent in sruArgs
+
+Baseline version: 4.1.7
+
+From cfa9aa0b7554cf34854dd510a23e878db3e08b38 Mon Sep 17 00:00:00 2001
+From: Seecr <development@seecr.nl>
+Date: Mon, 1 Oct 2012 11:19:33 +0200
+Subject: [PATCH 1/3] TS/HM: SortKeys as list in arguments of executeQuery iso. sortBy and sortDescending
+
+---
+ meresco/components/rss.py           |    6 ++----
+ meresco/components/sru/sruparser.py |    3 +--
+ test/rsstest.py                     |   18 ++++++++----------
+ test/sru/sruparsertest.py           |    3 ++-
+ 4 files changed, 13 insertions(+), 17 deletions(-)
+
+diff --git a/meresco/components/rss.py b/meresco/components/rss.py
+index 6cd6a5f..ce8b1ef 100644
+--- a/meresco/components/rss.py
++++ b/meresco/components/rss.py
+@@ -105,14 +105,12 @@ class Rss(Observable):
+         yield """</channel>"""
+         yield """</rss>"""
+ 
+-    def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False, **kwargs):
++    def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False):
+         response = yield self.any.executeQuery(
+             cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+             start=start,
+             stop=stop,
+-            sortBy=sortBy,
+-            sortDescending=sortDescending,
+-            **kwargs
++            sortKeys=[{'sortBy': sortBy, 'sortDescending': sortDescending}] if sortBy is not None else None
+         )
+         total, hits = response.total, response.hits
+         for identifier in hits:
+diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+index f626d78..c73ca8b 100644
+--- a/meresco/components/sru/sruparser.py
++++ b/meresco/components/sru/sruparser.py
+@@ -152,8 +152,7 @@ class SruParser(Observable):
+         if 'sortKeys' in arguments :
+             try:
+                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
+-                sruArgs['sortBy'] = sortBy.strip()
+-                sruArgs['sortDescending'] = bool(int(sortDirection))
++                sruArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
+             except ValueError:
+                 pass
+ 
+diff --git a/test/rsstest.py b/test/rsstest.py
+index eab8db8..12c49ae 100644
+--- a/test/rsstest.py
++++ b/test/rsstest.py
+@@ -164,8 +164,10 @@ class RssTest(SeecrTestCase):
+ 
+         method = observer.calledMethods[0]
+         self.assertEquals('executeQuery', method.name)
+-        self.assertEquals(sortKey, method.kwargs['sortBy'])
+-        self.assertEquals(sortDirection, method.kwargs['sortDescending'])
++        if sortKey is not None:
++            self.assertEquals([{'sortBy': sortKey, 'sortDescending': sortDirection}], method.kwargs['sortKeys'])
++        else:
++            self.assertEquals(None, method.kwargs['sortKeys'])
+         self.assertEquals(maximumRecords, len(recordIds))
+ 
+     def testMaxAndSort(self):
+@@ -200,8 +202,7 @@ class RssTest(SeecrTestCase):
+ 
+         result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two')))
+         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
++        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
+         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
+ 
+@@ -218,8 +219,7 @@ class RssTest(SeecrTestCase):
+         result = "".join(compose(rss.handleRequest(RequestURI='/?query=not+fiets')))
+         
+         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
++        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
+         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
+         self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+@@ -237,8 +237,7 @@ class RssTest(SeecrTestCase):
+         result = ''.join(compose(rss.handleRequest(RequestURI='/?query=')))
+         
+         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
++        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
+         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
+         self.assertCql(parseCql("antiunary"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+@@ -255,8 +254,7 @@ class RssTest(SeecrTestCase):
+ 
+         result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2')))
+         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortDescending'])
+-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortBy'])
++        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
+         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
+         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
+         self.assertCql(parseCql("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+index 8c5f608..6a632e9 100644
+--- a/test/sru/sruparsertest.py
++++ b/test/sru/sruparsertest.py
+@@ -183,7 +183,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         sruHandler.returnValues['searchRetrieve'] = (x for x in ["<result>mock result XML</result>"])
+         component.addObserver(sruHandler)
+ 
+-        response = "".join(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'])))
++        response = "".join(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'], sortKeys=['aField,,1'])))
+ 
+         self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
+         self.assertEquals((), sruHandler.calledMethods[0].args)
+@@ -193,6 +193,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         self.assertEquals('searchRetrieve', kwargs['operation'])
+         self.assertEquals(11, kwargs['startRecord'])
+         self.assertEquals(15, kwargs['maximumRecords'])
++        self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
+ 
+         self.assertTrue("HTTP/1.0 200 OK" in response)
+         self.assertTrue(XML_HEADER in response)
+-- 
+1.7.2.5
+
+
+From 4a34163a5eab43609062c8873ecf7f9b20bf4458 Mon Sep 17 00:00:00 2001
+From: Seecr <development@seecr.nl>
+Date: Tue, 2 Oct 2012 11:19:01 +0200
+Subject: [PATCH 2/3] JJ/HM/TS: extraArguments in executeQuery; sruArguments in searchRetrieve
+
+---
+ doc/license.conf                                  |    6 +-
+ meresco/components/drilldown/srufielddrilldown.py |   22 ++++----
+ meresco/components/drilldown/srutermdrilldown.py  |    7 ++-
+ meresco/components/log/querylog.py                |   20 ++------
+ meresco/components/sru/sruhandler.py              |   30 +++++++-----
+ meresco/components/sru/sruparser.py               |   15 +++---
+ meresco/components/sru/srw.py                     |    8 ++--
+ test/drilldown/srufielddrilldowntest.py           |    5 +-
+ test/drilldown/srutermdrilldowntest.py            |    4 +-
+ test/log/querylogtest.py                          |    2 +-
+ test/sru/sruhandlertest.py                        |   52 ++++++++++++--------
+ test/sru/sruparsertest.py                         |    7 ++-
+ 12 files changed, 93 insertions(+), 85 deletions(-)
+
+diff --git a/doc/license.conf b/doc/license.conf
+index 37f2004..dd1b3cf 100644
+--- a/doc/license.conf
++++ b/doc/license.conf
+@@ -4,15 +4,15 @@
+     "license": "GPLv2",
+     "copyrights": [
+         {"name": "Seecr (Seek You Too B.V.)", "url": "http://seecr.nl", "years": [2012]},
+-        {"name": "Stichting Bibliotheek.nl (BNL)", "url": "http://stichting.bibliotheek.nl", "years": [2012]}
++        {"name": "Stichting Kennisnet", "url": "http://www.kennisnet.nl", "years": [2012]}
+     ],
+     "copyrights_unused": [
+         {"name": "Deltares", "url": "http://www.deltares.nl", "years": [2011]},
+         {"name": "SURF Foundation.", "url": "http://www.surf.nl", "years": [2007, 2008, 2009]},
+         {"name": "Delft University of Technology", "url": "http://www.tudelft.nl", "years": [2009]},
+         {"name": "Tilburg University", "url": "http://www.uvt.nl", "years": [2009]},
+-        {"name": "Stichting Kennisnet", "url": "http://www.kennisnet.nl", "years": [2011]},
+         {"name": "Stichting Bibliotheek.nl (BNL)", "url": "http://stichting.bibliotheek.nl", "years": [2012]},
+-        {"name": "Netherlands Institute for Sound and Vision", "url": "http://instituut.beeldengeluid.nl/", "years": [2011]}
++        {"name": "Netherlands Institute for Sound and Vision", "url": "http://instituut.beeldengeluid.nl/", "years": [2011]},
++        {"name": "Stichting Bibliotheek.nl (BNL)", "url": "http://stichting.bibliotheek.nl", "years": [2012]}
+     ]
+ }
+diff --git a/meresco/components/drilldown/srufielddrilldown.py b/meresco/components/drilldown/srufielddrilldown.py
+index 61bd5d4..e767ba1 100644
+--- a/meresco/components/drilldown/srufielddrilldown.py
++++ b/meresco/components/drilldown/srufielddrilldown.py
+@@ -8,7 +8,7 @@
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -38,14 +38,14 @@ from meresco.core.generatorutils import decorateWith
+ from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+ 
+ class SRUFieldDrilldown(Observable):
+-    def extraResponseData(self, query=None, x_field_drilldown=None, x_field_drilldown_fields=None, **kwargs):
+-        if not x_field_drilldown or len(x_field_drilldown) != 1:
++    def extraResponseData(self, query=None, sruArguments=None, **kwargs):
++        if not 'x-field-drilldown' in sruArguments or len(sruArguments['x-field-drilldown']) != 1:
+             return
+-        if not x_field_drilldown_fields or len(x_field_drilldown_fields) != 1:
++        if not 'x-field-drilldown-fields' in sruArguments or len(sruArguments['x-field-drilldown-fields']) != 1:
+             return
+         
+-        term = x_field_drilldown[0]
+-        fields = x_field_drilldown_fields[0].split(',')
++        term = sruArguments['x-field-drilldown'][0]
++        fields = sruArguments['x-field-drilldown-fields'][0].split(',')
+ 
+         drilldownResults = yield self.drilldown(query, term, fields)
+         yield _fieldDrilldown(drilldownResults)
+@@ -59,14 +59,14 @@ class SRUFieldDrilldown(Observable):
+         raise StopIteration(drilldownResult)
+ 
+     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
+-    def echoedExtraRequestData(self, x_field_drilldown=None, x_field_drilldown_fields=None, **kwargs):
+-        if x_field_drilldown and len(x_field_drilldown) == 1:
++    def echoedExtraRequestData(self, sruArguments, **kwargs):
++        if 'x-field-drilldown' in sruArguments and len(sruArguments['x-field-drilldown']) == 1:
+             yield "<dd:field-drilldown>"
+-            yield escape(x_field_drilldown[0])
++            yield escape(sruArguments['x-field-drilldown'][0])
+             yield "</dd:field-drilldown>"
+-        if x_field_drilldown_fields and len(x_field_drilldown_fields) == 1:
++        if 'x-field-drilldown-fields' in sruArguments and len(sruArguments['x-field-drilldown-fields']) == 1:
+             yield "<dd:field-drilldown-fields>"
+-            yield escape(x_field_drilldown_fields[0])
++            yield escape(sruArguments['x-field-drilldown-fields'][0])
+             yield "</dd:field-drilldown-fields>"
+ 
+ @decorateWith(DRILLDOWN_HEADER + "<dd:field-drilldown>", "</dd:field-drilldown>" + DRILLDOWN_FOOTER)
+diff --git a/meresco/components/drilldown/srutermdrilldown.py b/meresco/components/drilldown/srutermdrilldown.py
+index 60d70dd..84a9be7 100644
+--- a/meresco/components/drilldown/srutermdrilldown.py
++++ b/meresco/components/drilldown/srutermdrilldown.py
+@@ -4,6 +4,7 @@
+ # and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -68,8 +69,8 @@ class SRUTermDrilldown(Observable):
+             return
+         
+     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
+-    def echoedExtraRequestData(self, x_term_drilldown=None, **kwargs):
+-        if x_term_drilldown and len(x_term_drilldown) == 1:
++    def echoedExtraRequestData(self, sruArguments, **kwargs):
++        if 'x-term-drilldown' in sruArguments and len(sruArguments['x-term-drilldown']) == 1:
+             yield "<dd:term-drilldown>"
+-            yield xmlEscape(x_term_drilldown[0])
++            yield xmlEscape(sruArguments['x-term-drilldown'][0])
+             yield "</dd:term-drilldown>"
+diff --git a/meresco/components/log/querylog.py b/meresco/components/log/querylog.py
+index a6aa7a1..0ec08ce 100644
+--- a/meresco/components/log/querylog.py
++++ b/meresco/components/log/querylog.py
+@@ -75,26 +75,14 @@ class QueryLog(Transparent):
+         return time()
+ 
+ 
+-SKIP_ARGS = ['sortBy', 'sortDescending']
+-
+-def duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
+-    return '_' in key and key.replace('_','-') in kwargs
+-
+ class QueryLogHelperForSru(Observable):
+-    def searchRetrieve(self, **kwargs):
+-        queryArguments = self.ctx.queryLogValues['queryArguments']
+-        for key, value in kwargs.items():
+-            if duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
+-                continue
+-            if key in SKIP_ARGS:
+-                continue
+-            queryArguments[key] = value
+-        yield self.all.searchRetrieve(**kwargs)
++    def searchRetrieve(self, sruArguments, **kwargs):
++        self.ctx.queryLogValues['queryArguments'].update(sruArguments)
++        yield self.all.searchRetrieve(sruArguments=sruArguments, **kwargs)
+ 
+ class QueryLogHelper(Observable):
+     def handleRequest(self, arguments, **kwargs):
+-        queryArguments = self.ctx.queryLogValues['queryArguments']
+-        queryArguments.update(arguments)
++        self.ctx.queryLogValues['queryArguments'].update(arguments)
+         yield self.all.handleRequest(arguments=arguments, **kwargs)
+ 
+ class QueryLogHelperForExecuteCQL(Transparent):
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index 4c6616c..175aa76 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -57,16 +57,21 @@ class SruHandler(Observable):
+         self._includeQueryTimes = includeQueryTimes
+         self._querySuggestionsCount = querySuggestionsCount
+ 
+-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, x_suggestionsQuery=None, **kwargs):
++    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, sruArguments=None, **kwargs):
+         SRU_IS_ONE_BASED = 1
+ 
+         t0 = self._timeNow()
+         start = startRecord - SRU_IS_ONE_BASED
+         cqlAbstractSyntaxTree = parseCQL(query)
+ 
+-        drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(x_term_drilldown)
+-        suggestionsQuery = x_suggestionsQuery[0] if x_suggestionsQuery else None
++        drilldownFieldnamesAndMaximums = None
++        if 'x-term-drilldown' in sruArguments:
++            drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
++        suggestionsQuery = None
++        if 'x-suggestionsQuery' in sruArguments:
++            suggestionsQuery = sruArguments['x-suggestionsQuery'][0]
+ 
++        extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
+         try:
+             response = yield self.any.executeQuery(
+                     cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+@@ -77,6 +82,7 @@ class SruHandler(Observable):
+                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                     suggestionsCount=self._querySuggestionsCount,
+                     suggestionsQuery=suggestionsQuery,
++                    extraArguments=extraArguments,
+                     **kwargs)
+             total, recordIds = response.total, response.hits
+             drilldownData = getattr(response, "drilldownData", None)
+@@ -93,7 +99,7 @@ class SruHandler(Observable):
+         for recordId in recordIds:
+             if not recordsWritten:
+                 yield '<srw:records>'
+-            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, version=version, **kwargs)
++            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, version=version, sruArguments=sruArguments, **kwargs)
+             recordsWritten += 1
+ 
+         if recordsWritten:
+@@ -102,19 +108,19 @@ class SruHandler(Observable):
+             if nextRecordPosition < total:
+                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
+ 
+-        yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
+-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, **kwargs)
++        yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
++        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
+         yield self._endResults()
+ 
+-    def _writeEchoedSearchRetrieveRequest(self, **kwargs):
++    def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
+         yield '<srw:echoedSearchRetrieveRequest>'
+         for paramSets in ECHOED_PARAMETER_NAMES, self._extraXParameters:
+             for parameterName in paramSets:
+-                value = kwargs.get(parameterName.replace('-', '_'), [])
++                value = sruArguments.get(parameterName, [])
+                 for v in (value if isinstance(value, list) else [value]):
+                     aValue = xmlEscape(str(v))
+                     yield '<srw:%(parameterName)s>%(aValue)s</srw:%(parameterName)s>' % locals()
+-        for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(**kwargs)), '</srw:extraRequestData>'):
++        for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(sruArguments=sruArguments, **kwargs)), '</srw:extraRequestData>'):
+             yield chunk
+         yield '</srw:echoedSearchRetrieveRequest>'
+ 
+@@ -190,12 +196,12 @@ class SruHandler(Observable):
+         yield self._catchErrors(self._yieldRecordForRecordPacking(recordId, schema, recordPacking), schema, recordId)
+         yield '</recordData>'
+ 
+-    def _writeExtraRecordData(self, x_recordSchema=None, recordPacking=None, recordId=None, **kwargs):
+-        if not x_recordSchema:
++    def _writeExtraRecordData(self, sruArguments=None, recordPacking=None, recordId=None, **kwargs):
++        if not 'x-recordSchema' in sruArguments:
+             raise StopIteration()
+ 
+         yield '<srw:extraRecordData>'
+-        for schema in x_recordSchema:
++        for schema in sruArguments['x-recordSchema']:
+             if not self._extraRecordDataNewStyle:
+                 yield self._writeOldStyleExtraRecordData(schema, recordPacking, recordId)
+                 continue
+diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+index c73ca8b..761f8eb 100644
+--- a/meresco/components/sru/sruparser.py
++++ b/meresco/components/sru/sruparser.py
+@@ -8,7 +8,7 @@
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011 Seecr http://seecr.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+ # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+@@ -117,9 +117,8 @@ class SruParser(Observable):
+             raise e
+ 
+     def _searchRetrieve(self, arguments, **kwargs):
+-        sruArgs = self.parseSruArgs(arguments)
+-        arguments.update(sruArgs)
+-        yield self.all.searchRetrieve(**arguments)
++        sruArgs, queryArgs = self.parseSruArgs(arguments)
++        yield self.all.searchRetrieve(sruArguments=sruArgs, **queryArgs)
+ 
+     def parseSruArgs(self, arguments):
+         sruArgs = {
+@@ -148,19 +147,21 @@ class SruParser(Observable):
+         except CQLTokenizerException, e:
+             raise SruException(QUERY_FEATURE_UNSUPPORTED, str(e))
+         sruArgs['query'] = query
++        queryArgs = sruArgs.copy()
+ 
+         if 'sortKeys' in arguments :
+             try:
+                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
+-                sruArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
++                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
++                sruArgs['sortKeys'] = arguments['sortKeys']
+             except ValueError:
+                 pass
+ 
+         for key in arguments:
+             if not key in sruArgs:
+-                sruArgs[key.replace('-', '_')] = arguments[key]
++                sruArgs[key] = arguments[key]
+ 
+-        return sruArgs
++        return sruArgs, queryArgs
+ 
+ 
+     def _parseArguments(self, arguments):
+diff --git a/meresco/components/sru/srw.py b/meresco/components/sru/srw.py
+index 74f6e33..678f291 100644
+--- a/meresco/components/sru/srw.py
++++ b/meresco/components/sru/srw.py
+@@ -7,7 +7,7 @@
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+ # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+@@ -80,15 +80,15 @@ class Srw(Observable):
+         try:
+             operation, arguments = self.call._parseArguments(arguments)
+             self._srwSpecificValidation(operation, arguments)
+-            sruArgs = self.call.parseSruArgs(arguments)
+-            arguments.update(sruArgs)
++            sruArgs, queryArgs = self.call.parseSruArgs(arguments)
++            arguments.update(queryArgs)
+         except SruException, e:
+             yield SOAP % DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
+             raise StopIteration()
+ 
+         try:
+             yield SOAP_HEADER
+-            yield self.all.searchRetrieve(**arguments)
++            yield self.all.searchRetrieve(sruArguments=sruArgs, **arguments)
+             yield SOAP_FOOTER
+         except Exception, e:
+             yield "Unexpected Exception:\n"
+diff --git a/test/drilldown/srufielddrilldowntest.py b/test/drilldown/srufielddrilldowntest.py
+index 8db650d..4cf8084 100644
+--- a/test/drilldown/srufielddrilldowntest.py
++++ b/test/drilldown/srufielddrilldowntest.py
+@@ -9,6 +9,7 @@
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -56,7 +57,7 @@ class SRUFieldDrilldownTest(SeecrTestCase):
+         sruFieldDrilldown.addObserver(observer)
+         observer.methods["executeQuery"] = executeQuery
+ 
+-        result = compose(sruFieldDrilldown.extraResponseData(x_field_drilldown=['term'], x_field_drilldown_fields=['field0,field1'], query='original'))
++        result = compose(sruFieldDrilldown.extraResponseData(sruArguments={'x-field-drilldown': ['term'], 'x-field-drilldown-fields': ['field0,field1']}, query='original'))
+         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:field-drilldown>
+ <dd:field name="field0">5</dd:field>
+ <dd:field name="field1">10</dd:field></dd:field-drilldown></dd:drilldown>""", "".join(result))
+@@ -85,6 +86,6 @@ class SRUFieldDrilldownTest(SeecrTestCase):
+ 
+     def testEchoedExtraRequestData(self):
+         d = SRUFieldDrilldown()
+-        result = "".join(d.echoedExtraRequestData(x_field_drilldown=['term'], x_field_drilldown_fields = ['field0,field1'], otherArgument=['ignored']))
++        result = "".join(d.echoedExtraRequestData(sruArguments={'x-field-drilldown': ['term'], 'x-field-drilldown-fields': ['field0,field1'], 'otherArgument': ['ignored']}))
+         self.assertEquals(DRILLDOWN_HEADER + '<dd:field-drilldown>term</dd:field-drilldown><dd:field-drilldown-fields>field0,field1</dd:field-drilldown-fields></dd:drilldown>', result)
+ 
+diff --git a/test/drilldown/srutermdrilldowntest.py b/test/drilldown/srutermdrilldowntest.py
+index 8dba882..1b5f8c8 100644
+--- a/test/drilldown/srutermdrilldowntest.py
++++ b/test/drilldown/srutermdrilldowntest.py
+@@ -8,7 +8,7 @@
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+ # This file is part of "Meresco Components"
+ # 
+@@ -108,7 +108,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
+     def testEchoedExtraRequestData(self):
+         component = SRUTermDrilldown()
+ 
+-        result = "".join(list(component.echoedExtraRequestData(x_term_drilldown=['field0,field1'], version='1.1')))
++        result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0,field1'], 'version': '1.1'}, version='1.1')))
+         
+         self.assertEqualsWS(DRILLDOWN_HEADER \
+         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
+diff --git a/test/log/querylogtest.py b/test/log/querylogtest.py
+index 6009ab6..87db56b 100644
+--- a/test/log/querylogtest.py
++++ b/test/log/querylogtest.py
+@@ -147,7 +147,7 @@ class QueryLogTest(SeecrTestCase):
+         def searchRetrieve(**kwargs):
+             yield 'result'
+         observer.methods['searchRetrieve'] = searchRetrieve
+-        list(compose(helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})))
++        list(compose(helper.searchRetrieve(query=['query'], sortKeys=[dict(sortBy='field', sortDescending=False)], sruArguments={'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0', 'query': ['query']})))
+         self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
+         
+     def testQueryLogHelper(self):
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index 707eddf..1f59d7e 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -58,10 +58,10 @@ SUCCESS = "SUCCESS"
+ class SruHandlerTest(SeecrTestCase):
+ 
+     def testEchoedSearchRetrieveRequest(self):
+-        arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string'}
++        sruArguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string'}
+         component = SruHandler()
+ 
+-        result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
++        result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
+         self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
+     <srw:version>1.1</srw:version>
+     <srw:query>query &gt;= 3</srw:query>
+@@ -70,10 +70,10 @@ class SruHandlerTest(SeecrTestCase):
+ </srw:echoedSearchRetrieveRequest>""", result)
+ 
+     def testEchoedSearchRetrieveRequestWithExtraXParameters(self):
+-        arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_link_filter': 'True'}
++        sruArguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x-link-filter': 'True'}
+         component = SruHandler(extraXParameters=['x-link-filter'])
+ 
+-        result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
++        result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
+         self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
+     <srw:version>1.1</srw:version>
+     <srw:query>query &gt;= 3</srw:query>
+@@ -83,14 +83,14 @@ class SruHandlerTest(SeecrTestCase):
+ </srw:echoedSearchRetrieveRequest>""", result)
+ 
+     def testEchoedSearchRetrieveRequestWithExtraRequestData(self):
+-        arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_term_drilldown':['field0,field1']}
++        sruArguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x-term-drilldown':['field0,field1']}
+         observer = CallTrace('ExtraRequestData')
+         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in '<some>extra request data</some>')
+         component = SruHandler()
+         component.addObserver(SRUTermDrilldown())
+         component.addObserver(observer)
+ 
+-        result = "".join(list(component._writeEchoedSearchRetrieveRequest(**arguments)))
++        result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
+         
+         drilldownRequestData = DRILLDOWN_HEADER \
+         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
+@@ -169,7 +169,10 @@ class SruHandlerTest(SeecrTestCase):
+         component = SruHandler()
+         component.addObserver(observer)
+ 
+-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema', x_term_drilldown=["field0:1,fie:ld1:2,field2,fie:ld3"])))
++        queryArguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema') 
++        sruArguments = queryArguments
++        sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
++        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+         self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+         self.assertEquals([('field0', 1, False), ('fie:ld1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False), ('fie:ld3', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
+         extraResponseDataMethod = observer.calledMethods[-1]
+@@ -189,7 +192,8 @@ class SruHandlerTest(SeecrTestCase):
+         component = SruHandler()
+         component.addObserver(observer)
+ 
+-        result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
++        arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
++        result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
+         self.assertTrue("<srw:nextRecordPosition>26</srw:nextRecordPosition>" in result, result)
+ 
+         executeCqlCallKwargs = observer.calledMethods[0].kwargs
+@@ -197,7 +201,8 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals(25, executeCqlCallKwargs['stop'])
+     
+     def testSearchRetrieveVersion11(self):
+-        arguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
++        queryArguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
++        sruArguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore']}
+ 
+         observer = CallTrace()
+         response = Response(total=100, hits=hitsRange(11, 13))
+@@ -218,7 +223,7 @@ class SruHandlerTest(SeecrTestCase):
+         component = SruHandler()
+         component.addObserver(observer)
+ 
+-        result = "".join(compose(component.searchRetrieve(**arguments)))
++        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+ 
+         self.assertEqualsWS("""
+ <srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+@@ -289,7 +294,8 @@ class SruHandlerTest(SeecrTestCase):
+ """, result)
+ 
+     def testSearchRetrieveVersion12(self):
+-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore'], 'x_extra_key': 'extraValue'}
++        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore'], 'x-extra-key': 'extraValue'}
++        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
+ 
+         observer = CallTrace()
+         response = Response(total=100, hits=['<aap&noot>', 'vuur'])
+@@ -310,7 +316,7 @@ class SruHandlerTest(SeecrTestCase):
+         component = SruHandler()
+         component.addObserver(observer)
+ 
+-        result = "".join(compose(component.searchRetrieve(**arguments)))
++        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+         self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+         executeQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+         self.assertEquals('executeQuery', executeQueryMethod.name)
+@@ -318,8 +324,8 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
+         self.assertEquals(0, methodKwargs['start'])
+         self.assertEquals(2, methodKwargs['stop'])
+-        self.assertEquals('extraValue', methodKwargs['x_extra_key'])
+         self.assertEquals(0, methodKwargs['suggestionsCount'])
++        self.assertEquals({'x-recordSchema': ['extra', 'evenmore'], 'x-extra-key': 'extraValue'}, methodKwargs['extraArguments'])
+ 
+         self.assertEquals(6, sum(yieldRecordCalls))
+ 
+@@ -398,12 +404,13 @@ class SruHandlerTest(SeecrTestCase):
+ """, result)
+         
+         self.assertEquals((), echoedExtraRequestDataMethod.args)
+-        self.assertEquals(set(['version', 'x_term_drilldown', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x_extra_key']), set(echoedExtraRequestDataMethod.kwargs.keys()))
++        self.assertEquals(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
+         self.assertEquals((), extraResponseDataMethod.args)
+-        self.assertEquals(set(['version', 'recordSchema', 'x_recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'x_extra_key', 'queryTime', 'suggestionsQuery']), set(extraResponseDataMethod.kwargs.keys()))
++        self.assertEquals(set(['version', 'recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'queryTime', 'suggestionsQuery', 'sruArguments']), set(extraResponseDataMethod.kwargs.keys()))
+  
+     def testExtraRecordDataOldStyle(self):
+-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x_recordSchema':['extra', 'evenmore']}
++        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
++        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore']}
+ 
+         observer = CallTrace()
+         response = Response(total=100, hits=['11'])
+@@ -423,7 +430,7 @@ class SruHandlerTest(SeecrTestCase):
+         component = SruHandler(extraRecordDataNewStyle=False)
+         component.addObserver(observer)
+ 
+-        result = "".join(compose(component.searchRetrieve(**arguments)))
++        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+ 
+         strippedResult = result[result.index('<srw:record>'):result.index('</srw:records>')]
+         self.assertEqualsWS("""<srw:record>
+@@ -497,7 +504,8 @@ class SruHandlerTest(SeecrTestCase):
+                     raise Exception("Test Exception")
+             component = SruHandler()
+             component.addObserver(RaisesException())
+-            result = "".join(compose(component.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
++            arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
++            result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
+             self.assertTrue("diagnostic" in result)
+         finally:
+             sys.stderr = sys.__stderr__
+@@ -544,7 +552,8 @@ class SruHandlerTest(SeecrTestCase):
+             yield
+         observer.methods['executeQuery'] = executeQuery
+         handler.addObserver(observer)
+-        result = "".join(compose(handler.searchRetrieve(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')))
++        arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
++        result = "".join(compose(handler.searchRetrieve(sruArguments=arguments, **arguments)))
+         sruResponse = parse(StringIO(result))
+         extraResponseData = sruResponse.xpath('/srw:searchRetrieveResponse/srw:extraResponseData', namespaces={'srw':"http://www.loc.gov/zing/srw/"})[0]
+         self.assertEqualsWS("""<srw:extraResponseData xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+@@ -562,7 +571,8 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEqualsWS(xsd, localxsd)
+ 
+     def testSearchRetrieveWithSuggestions(self):
+-        arguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x_suggestionsQuery': ["value"]}
++        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value'}
++        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x-suggestionsQuery': ["value"]}
+ 
+         observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
+         response = Response(total=0, hits=[])
+@@ -574,7 +584,7 @@ class SruHandlerTest(SeecrTestCase):
+         handler = SruHandler(querySuggestionsCount=5)
+         handler.addObserver(observer)
+ 
+-        result = "".join(compose(handler.searchRetrieve(**arguments)))
++        result = "".join(compose(handler.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+         self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+         executeQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+         self.assertEquals('executeQuery', executeQueryMethod.name)
+diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+index 6a632e9..1bb202a 100644
+--- a/test/sru/sruparsertest.py
++++ b/test/sru/sruparsertest.py
+@@ -8,7 +8,7 @@
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011 Seecr http://seecr.nl
+-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
++# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+ # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+ # 
+ # This file is part of "Meresco Components"
+@@ -194,6 +194,8 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         self.assertEquals(11, kwargs['startRecord'])
+         self.assertEquals(15, kwargs['maximumRecords'])
+         self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
++        self.assertEquals('aQuery', kwargs['sruArguments']['query'])
++        self.assertEquals(['aField,,1'], kwargs['sruArguments']['sortKeys'])
+ 
+         self.assertTrue("HTTP/1.0 200 OK" in response)
+         self.assertTrue(XML_HEADER in response)
+@@ -210,6 +212,5 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
+         self.assertEquals((), sruHandler.calledMethods[0].args)
+         kwargs = sruHandler.calledMethods[0].kwargs
+-        self.assertEquals(['something'], kwargs['x-something'])
+-        self.assertEquals(['something'], kwargs['x_something'])
++        self.assertEquals(['something'], kwargs['sruArguments']['x-something'])
+ 
+-- 
+1.7.2.5
+
+
+From 5cf6712537a70a5f4dcd690846a7070e77e75db6 Mon Sep 17 00:00:00 2001
+From: Seecr <development@seecr.nl>
+Date: Tue, 2 Oct 2012 11:26:19 +0200
+Subject: [PATCH 3/3] JJ/HM: Removed sortBy and sortDescending
+
+---
+ meresco/components/sru/sruhandler.py |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index 175aa76..82d662f 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -57,7 +57,7 @@ class SruHandler(Observable):
+         self._includeQueryTimes = includeQueryTimes
+         self._querySuggestionsCount = querySuggestionsCount
+ 
+-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, sruArguments=None, **kwargs):
++    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, **kwargs):
+         SRU_IS_ONE_BASED = 1
+ 
+         t0 = self._timeNow()
+@@ -77,8 +77,6 @@ class SruHandler(Observable):
+                     cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+                     start=start,
+                     stop=start + maximumRecords,
+-                    sortBy=sortBy,
+-                    sortDescending=sortDescending,
+                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                     suggestionsCount=self._querySuggestionsCount,
+                     suggestionsQuery=suggestionsQuery,
+@@ -109,7 +107,7 @@ class SruHandler(Observable):
+                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
+ 
+         yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
+-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
++        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
+         yield self._endResults()
+ 
+     def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
+-- 
+1.7.2.5
+
