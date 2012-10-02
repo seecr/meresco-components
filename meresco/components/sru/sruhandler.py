@@ -57,16 +57,21 @@ class SruHandler(Observable):
         self._includeQueryTimes = includeQueryTimes
         self._querySuggestionsCount = querySuggestionsCount
 
-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, x_term_drilldown=None, x_suggestionsQuery=None, **kwargs):
+    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sortBy=None, sortDescending=False, sruArguments=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         t0 = self._timeNow()
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
 
-        drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(x_term_drilldown)
-        suggestionsQuery = x_suggestionsQuery[0] if x_suggestionsQuery else None
+        drilldownFieldnamesAndMaximums = None
+        if 'x-term-drilldown' in sruArguments:
+            drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
+        suggestionsQuery = None
+        if 'x-suggestionsQuery' in sruArguments:
+            suggestionsQuery = sruArguments['x-suggestionsQuery'][0]
 
+        extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
         try:
             response = yield self.any.executeQuery(
                     cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
@@ -77,6 +82,7 @@ class SruHandler(Observable):
                     fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
                     suggestionsCount=self._querySuggestionsCount,
                     suggestionsQuery=suggestionsQuery,
+                    extraArguments=extraArguments,
                     **kwargs)
             total, recordIds = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)
@@ -93,7 +99,7 @@ class SruHandler(Observable):
         for recordId in recordIds:
             if not recordsWritten:
                 yield '<srw:records>'
-            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, version=version, **kwargs)
+            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, version=version, sruArguments=sruArguments, **kwargs)
             recordsWritten += 1
 
         if recordsWritten:
@@ -102,19 +108,19 @@ class SruHandler(Observable):
             if nextRecordPosition < total:
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
-        yield self._writeEchoedSearchRetrieveRequest(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, x_term_drilldown=x_term_drilldown, **kwargs)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, **kwargs)
+        yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, sortBy=sortBy, sortDescending=sortDescending, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
         yield self._endResults()
 
-    def _writeEchoedSearchRetrieveRequest(self, **kwargs):
+    def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
         yield '<srw:echoedSearchRetrieveRequest>'
         for paramSets in ECHOED_PARAMETER_NAMES, self._extraXParameters:
             for parameterName in paramSets:
-                value = kwargs.get(parameterName.replace('-', '_'), [])
+                value = sruArguments.get(parameterName, [])
                 for v in (value if isinstance(value, list) else [value]):
                     aValue = xmlEscape(str(v))
                     yield '<srw:%(parameterName)s>%(aValue)s</srw:%(parameterName)s>' % locals()
-        for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(**kwargs)), '</srw:extraRequestData>'):
+        for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(sruArguments=sruArguments, **kwargs)), '</srw:extraRequestData>'):
             yield chunk
         yield '</srw:echoedSearchRetrieveRequest>'
 
@@ -190,12 +196,12 @@ class SruHandler(Observable):
         yield self._catchErrors(self._yieldRecordForRecordPacking(recordId, schema, recordPacking), schema, recordId)
         yield '</recordData>'
 
-    def _writeExtraRecordData(self, x_recordSchema=None, recordPacking=None, recordId=None, **kwargs):
-        if not x_recordSchema:
+    def _writeExtraRecordData(self, sruArguments=None, recordPacking=None, recordId=None, **kwargs):
+        if not 'x-recordSchema' in sruArguments:
             raise StopIteration()
 
         yield '<srw:extraRecordData>'
-        for schema in x_recordSchema:
+        for schema in sruArguments['x-recordSchema']:
             if not self._extraRecordDataNewStyle:
                 yield self._writeOldStyleExtraRecordData(schema, recordPacking, recordId)
                 continue

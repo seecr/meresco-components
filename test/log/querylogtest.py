@@ -147,7 +147,7 @@ class QueryLogTest(SeecrTestCase):
         def searchRetrieve(**kwargs):
             yield 'result'
         observer.methods['searchRetrieve'] = searchRetrieve
-        list(compose(helper.searchRetrieve(query=['query'], x_term_drilldown='drilldown', sortBy='field', sortDescending=False, **{'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0'})))
+        list(compose(helper.searchRetrieve(query=['query'], sortKeys=[dict(sortBy='field', sortDescending=False)], sruArguments={'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0', 'query': ['query']})))
         self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
         
     def testQueryLogHelper(self):

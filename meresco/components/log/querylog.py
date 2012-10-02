@@ -75,26 +75,14 @@ class QueryLog(Transparent):
         return time()
 
 
-SKIP_ARGS = ['sortBy', 'sortDescending']
-
-def duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
-    return '_' in key and key.replace('_','-') in kwargs
-
 class QueryLogHelperForSru(Observable):
-    def searchRetrieve(self, **kwargs):
-        queryArguments = self.ctx.queryLogValues['queryArguments']
-        for key, value in kwargs.items():
-            if duplicatedInvalidArgPutInBySRUParse_GET_RID_OF_THAT_(key, kwargs):
-                continue
-            if key in SKIP_ARGS:
-                continue
-            queryArguments[key] = value
-        yield self.all.searchRetrieve(**kwargs)
+    def searchRetrieve(self, sruArguments, **kwargs):
+        self.ctx.queryLogValues['queryArguments'].update(sruArguments)
+        yield self.all.searchRetrieve(sruArguments=sruArguments, **kwargs)
 
 class QueryLogHelper(Observable):
     def handleRequest(self, arguments, **kwargs):
-        queryArguments = self.ctx.queryLogValues['queryArguments']
-        queryArguments.update(arguments)
+        self.ctx.queryLogValues['queryArguments'].update(arguments)
         yield self.all.handleRequest(arguments=arguments, **kwargs)
 
 class QueryLogHelperForExecuteCQL(Transparent):

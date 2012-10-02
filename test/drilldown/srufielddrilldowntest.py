@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -56,7 +57,7 @@ class SRUFieldDrilldownTest(SeecrTestCase):
         sruFieldDrilldown.addObserver(observer)
         observer.methods["executeQuery"] = executeQuery
 
-        result = compose(sruFieldDrilldown.extraResponseData(x_field_drilldown=['term'], x_field_drilldown_fields=['field0,field1'], query='original'))
+        result = compose(sruFieldDrilldown.extraResponseData(sruArguments={'x-field-drilldown': ['term'], 'x-field-drilldown-fields': ['field0,field1']}, query='original'))
         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:field-drilldown>
 <dd:field name="field0">5</dd:field>
 <dd:field name="field1">10</dd:field></dd:field-drilldown></dd:drilldown>""", "".join(result))
@@ -85,6 +86,6 @@ class SRUFieldDrilldownTest(SeecrTestCase):
 
     def testEchoedExtraRequestData(self):
         d = SRUFieldDrilldown()
-        result = "".join(d.echoedExtraRequestData(x_field_drilldown=['term'], x_field_drilldown_fields = ['field0,field1'], otherArgument=['ignored']))
+        result = "".join(d.echoedExtraRequestData(sruArguments={'x-field-drilldown': ['term'], 'x-field-drilldown-fields': ['field0,field1'], 'otherArgument': ['ignored']}))
         self.assertEquals(DRILLDOWN_HEADER + '<dd:field-drilldown>term</dd:field-drilldown><dd:field-drilldown-fields>field0,field1</dd:field-drilldown-fields></dd:drilldown>', result)
 

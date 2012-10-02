@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
@@ -80,15 +80,15 @@ class Srw(Observable):
         try:
             operation, arguments = self.call._parseArguments(arguments)
             self._srwSpecificValidation(operation, arguments)
-            sruArgs = self.call.parseSruArgs(arguments)
-            arguments.update(sruArgs)
+            sruArgs, queryArgs = self.call.parseSruArgs(arguments)
+            arguments.update(queryArgs)
         except SruException, e:
             yield SOAP % DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
             raise StopIteration()
 
         try:
             yield SOAP_HEADER
-            yield self.all.searchRetrieve(**arguments)
+            yield self.all.searchRetrieve(sruArguments=sruArgs, **arguments)
             yield SOAP_FOOTER
         except Exception, e:
             yield "Unexpected Exception:\n"

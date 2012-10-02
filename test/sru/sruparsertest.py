@@ -8,7 +8,7 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Seecr http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Meresco Components"
@@ -194,6 +194,8 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         self.assertEquals(11, kwargs['startRecord'])
         self.assertEquals(15, kwargs['maximumRecords'])
         self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
+        self.assertEquals('aQuery', kwargs['sruArguments']['query'])
+        self.assertEquals(['aField,,1'], kwargs['sruArguments']['sortKeys'])
 
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue(XML_HEADER in response)
@@ -210,6 +212,5 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
         self.assertEquals((), sruHandler.calledMethods[0].args)
         kwargs = sruHandler.calledMethods[0].kwargs
-        self.assertEquals(['something'], kwargs['x-something'])
-        self.assertEquals(['something'], kwargs['x_something'])
+        self.assertEquals(['something'], kwargs['sruArguments']['x-something'])
 

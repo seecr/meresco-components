@@ -8,7 +8,7 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -108,7 +108,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
     def testEchoedExtraRequestData(self):
         component = SRUTermDrilldown()
 
-        result = "".join(list(component.echoedExtraRequestData(x_term_drilldown=['field0,field1'], version='1.1')))
+        result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0,field1'], 'version': '1.1'}, version='1.1')))
         
         self.assertEqualsWS(DRILLDOWN_HEADER \
         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\

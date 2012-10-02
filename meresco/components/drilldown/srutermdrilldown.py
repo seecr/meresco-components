@@ -4,6 +4,7 @@
 # and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -68,8 +69,8 @@ class SRUTermDrilldown(Observable):
             return
         
     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
-    def echoedExtraRequestData(self, x_term_drilldown=None, **kwargs):
-        if x_term_drilldown and len(x_term_drilldown) == 1:
+    def echoedExtraRequestData(self, sruArguments, **kwargs):
+        if 'x-term-drilldown' in sruArguments and len(sruArguments['x-term-drilldown']) == 1:
             yield "<dd:term-drilldown>"
-            yield xmlEscape(x_term_drilldown[0])
+            yield xmlEscape(sruArguments['x-term-drilldown'][0])
             yield "</dd:term-drilldown>"
