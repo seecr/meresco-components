@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -37,6 +38,8 @@ from meresco.core import Observable
 
 from converter import Converter
 
+def lxmltostring(lxmlNode, **kwargs):
+    return tostring(lxmlNode, encoding="UTF-8", **kwargs)
 
 class XmlParseAmara(Converter):
     def _convert(self, anObject):
@@ -56,7 +59,7 @@ class XmlParseLxml(Converter):
         
 class XmlPrintLxml(Converter):
     def _convert(self, anObject):
-        return tostring(anObject, pretty_print = True, encoding="UTF-8")
+        return lxmltostring(anObject, pretty_print=True)
 
 class Amara2Lxml(Converter):
     def _convert(self, anObject):
@@ -64,5 +67,5 @@ class Amara2Lxml(Converter):
 
 class Lxml2Amara(Converter):
     def _convert(self, anObject):
-        return bind_string(tostring(anObject, encoding="UTF-8")).childNodes[0]
+        return bind_string(lxmltostring(anObject)).childNodes[0]
 
