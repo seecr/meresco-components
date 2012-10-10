@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -32,7 +33,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
 from meresco.core import Observable, asyncnoreturnvalue
-from lxml.etree import tostring
+from meresco.components import lxmltostring
 from escaping import unescapeFilename, escapeFilename
 
 from os.path import join, isdir
@@ -142,7 +143,7 @@ class ReindexTest(SeecrTestCase):
         self.assertEquals(['add']*3, [m.name for m in observer.calledMethods])
         self.assertEquals(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
         self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
-        self.assertEquals(['<empty/>']*3, [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+        self.assertEquals(['<empty/>']*3, [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 
     def testRemoveFilesAndDirectoryAfterProcess(self):
         storage = self.setupStorage([
@@ -224,5 +225,5 @@ class ReindexTest(SeecrTestCase):
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         self.assertEquals([identifier], [m.kwargs['identifier'] for m in observer.calledMethods])
         self.assertEquals(['ignoredName'], [m.kwargs['partname'] for m in observer.calledMethods])
-        self.assertEquals(['<empty/>'], [tostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+        self.assertEquals(['<empty/>'], [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 

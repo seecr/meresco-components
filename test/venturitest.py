@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -32,7 +33,8 @@
 from StringIO import StringIO
 
 from seecr.test import SeecrTestCase, CallTrace
-from lxml.etree import parse, tostring
+from lxml.etree import parse
+from meresco.components import lxmltostring
 
 from meresco.components.venturi import Venturi, VenturiException
 from meresco.core import TransactionScope, Observable
@@ -78,7 +80,7 @@ class VenturiTest(SeecrTestCase):
         self.assertEquals('identifier', interceptor.calledMethods[2].kwargs['identifier'])
         self.assertEquals('parttwo', interceptor.calledMethods[2].kwargs['partname'])
         secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
-        self.assertEquals('<second>message</second>', tostring(secondXml))
+        self.assertEquals('<second>message</second>', lxmltostring(secondXml))
         self.assertEquals('second', secondXml.getroot().tag)
 
     def testOnlyPassPartsSpecified(self):
@@ -87,7 +89,7 @@ class VenturiTest(SeecrTestCase):
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('<some>message</some>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
 
     def testReadFromStorage(self):
         inputEvent = fromstring('<document/>')
@@ -99,7 +101,7 @@ class VenturiTest(SeecrTestCase):
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()')], [], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<some>this is partone</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('<some>this is partone</some>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
         self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
 
     def testReadFromStorageAsString(self):
@@ -120,7 +122,7 @@ class VenturiTest(SeecrTestCase):
         v = createVenturiHelix([], [('one', '/document/one')], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('<one/>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
 
     def testCouldHaveAsString(self):
         inputEvent = fromstring('<document><one>some text</one></document>')
@@ -139,7 +141,7 @@ class VenturiTest(SeecrTestCase):
         v = createVenturiHelix([], [('one', '/document/one')], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
-        self.assertEquals('<one/>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('<one/>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
         self.assertEquals(('identifier', 'one'), storage.calledMethods[1].args)
 
     def testCouldHaveButDoesnot(self):
@@ -223,9 +225,9 @@ class VenturiTest(SeecrTestCase):
         v = createVenturiHelix([('partone', '/document/part[@name="partone"]/text()'), ('parttwo', '/document/part/second')], [], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
 
-        self.assertEquals('<some>message</some>', tostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEquals('<some>message</some>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
         secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
-        self.assertEquals('<second>message</second>', tostring(secondXml))
+        self.assertEquals('<second>message</second>', lxmltostring(secondXml))
 
     def testPartsWithUnicodeChars(self):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;t€xt&lt;/some&gt;\n\n\n\n</part><part name="parttwo"><second>t€xt</second>\n\n\n\n</part></document>""")
@@ -234,10 +236,10 @@ class VenturiTest(SeecrTestCase):
         list(compose(v.all.add('identifier', 'document', inputEvent)))
 
         firstXml = interceptor.calledMethods[1].kwargs['lxmlNode']
-        self.assertEquals('<some>t&#8364;xt</some>', tostring(firstXml))
+        self.assertEquals('<some>t€xt</some>', lxmltostring(firstXml))
         self.assertEquals('t€xt', firstXml.getroot().text)
         secondXml = interceptor.calledMethods[2].kwargs['lxmlNode']
-        self.assertEquals('<second>t&#8364;xt</second>', tostring(secondXml))
+        self.assertEquals('<second>t€xt</second>', lxmltostring(secondXml))
         self.assertEquals('t€xt', secondXml.getroot().text)
 
     def testEmptyIdInAddNotAllowed(self):

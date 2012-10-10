@@ -6,6 +6,7 @@
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -28,7 +29,8 @@
 from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMsgbox, Msgbox
 from weightless.core import compose
 from seecr.test import SeecrTestCase, CallTrace
-from lxml.etree import parse, tostring
+from lxml.etree import parse
+from meresco.components import lxmltostring
 from StringIO import StringIO
 from os.path import basename, join
 from os import makedirs
