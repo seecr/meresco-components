@@ -8,6 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -27,11 +28,12 @@
 # 
 ## end license ##
 
-from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree, tostring
+from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree
 from StringIO import StringIO
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
+from meresco.components import lxmltostring
 
 class ValidateException(Exception):
     pass
@@ -89,7 +91,7 @@ def assertValid(xmlString, schemaPath):
 
 def formatException(schema, lxmlNode):
     message = str(schema.error_log.last_error) + "\n\n"
-    for nr, line in enumerate(tostring(lxmlNode, encoding="utf-8", pretty_print=True).split('\n')):
+    for nr, line in enumerate(lxmltostring(lxmlNode, pretty_print=True).split('\n')):
         message += "%s %s\n" % (nr+1, line)
     return message
 

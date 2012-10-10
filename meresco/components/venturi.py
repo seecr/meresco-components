@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -28,12 +29,13 @@
 # 
 ## end license ##
 
-from lxml.etree import _Element, ElementTree, parse, XMLParser, tostring
+from lxml.etree import _Element, ElementTree, parse, XMLParser
 from StringIO import StringIO
 
 from meresco.core import Observable
 
 from meresco.components.xmlxpath import lxmlElementUntail
+from meresco.components import lxmltostring
 from warnings import warn
 
 
@@ -92,7 +94,7 @@ class Venturi(Observable):
 
     def _elementOrText2Text(self, elementOrText):
         if type(elementOrText) == _Element:
-            return tostring(elementOrText)
+            return lxmltostring(elementOrText)
         return elementOrText
 
 

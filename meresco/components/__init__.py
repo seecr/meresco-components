@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -32,6 +33,7 @@ from converter import Converter
 from timeddictionary import TimedDictionary
 from xmlcompose import XmlCompose
 
+from xmlpump import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from clausecollector import ClauseCollector
 from combineparts import CombineParts
@@ -61,7 +63,6 @@ from statisticsxml import StatisticsXml
 from storagecomponent import StorageComponent, defaultSplit, defaultJoin
 from venturi import Venturi
 from xml2fields import Xml2Fields
-from xmlpump import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 from xmlxpath import XmlXPath
 from xpath2field import XPath2Field
 from xsltcrosswalk import XsltCrosswalk
