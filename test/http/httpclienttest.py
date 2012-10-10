@@ -4,6 +4,7 @@
 # and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -30,7 +31,7 @@ from meresco.components.http.httpclient import HttpClient
 
 from weightless.core import compose
 
-from lxml.etree import tostring
+from meresco.components import lxmltostring
 
 class HttpClientTest(SeecrTestCase):
 
@@ -59,5 +60,5 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = self.sendAndReceive(gen,  """HTTP/1.0 200 Ok\r\nContent-Type: text/xml\r\n\r\n<xml/>""")
         
-        self.assertEquals('<xml/>', tostring(body))
+        self.assertEquals('<xml/>', lxmltostring(body))
         self.assertEquals(['HTTP/1.0 200 Ok', 'Content-Type: text/xml'], headers.split(CRLF))

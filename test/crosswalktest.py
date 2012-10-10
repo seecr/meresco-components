@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -32,7 +33,8 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.xml import XMLRewrite
 
 from StringIO import StringIO
-from lxml.etree import parse, tostring, XMLParser
+from lxml.etree import parse, XMLParser
+from meresco.components import lxmltostring
 from difflib import unified_diff
 
 from re import match
@@ -89,7 +91,7 @@ class CrosswalkTest(SeecrTestCase):
         self.observer.methods['add'] = lambda *args, **kwargs: (x for x in [])
         list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertFalse('2006-11-28 19:00' in tostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
+        self.assertFalse('2006-11-28 19:00' in lxmltostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
 
     def testReplacePrefix(self):
         rules = [('classification/taxonPath/taxon/entry', 'imsmd:classification/imsmd:taxonpath/imsmd:taxon/imsmd:entry', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<string language="%s">%s</string>',

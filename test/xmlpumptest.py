@@ -35,7 +35,8 @@ from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
 from amara import binderytools
-from lxml.etree import _ElementTree, tostring, parse, _ElementStringResult, _ElementUnicodeResult
+from lxml.etree import _ElementTree, parse, _ElementStringResult, _ElementUnicodeResult
+from meresco.components import lxmltostring
 
 from meresco.components import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml
 
@@ -124,7 +125,7 @@ class XmlPumpTest(SeecrTestCase):
         amaraNode = binderytools.bind_string('<a><b>“c</b></a>')
         list(compose(amara2lxml.all_unknown('ape', amaraNode=amaraNode)))
         self.assertEquals(_ElementTree, type(self.lxmlNode))
-        self.assertEquals('<a><b>“c</b></a>', tostring(self.lxmlNode, encoding='utf-8'))
+        self.assertEquals('<a><b>“c</b></a>', lxmltostring(self.lxmlNode))
 
     def testLxml2Amara(self):
         class Observer:
@@ -226,11 +227,11 @@ class XmlPumpTest(SeecrTestCase):
 
         observable.do.someMessage(filedata=a)
         lxmlA = observer.calledMethods[0].kwargs['lxmlNode']
-        self.assertEquals('<a>aaa</a>', tostring(lxmlA))
+        self.assertEquals('<a>aaa</a>', lxmltostring(lxmlA))
 
         observable.do.someMessage(filedata=b)
         lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
-        self.assertEquals('<b>bbb</b>', tostring(lxmlB))
+        self.assertEquals('<b>bbb</b>', lxmltostring(lxmlB))
 
     def testRenameKwargOnConvert(self):
         observer = CallTrace()

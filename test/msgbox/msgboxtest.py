@@ -7,6 +7,7 @@
 # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -36,7 +37,7 @@ from weightless.io import Reactor
 
 from os.path import join, isfile, basename
 from os import makedirs, rename, listdir, system, chmod, remove
-from lxml.etree import tostring
+from meresco.components import lxmltostring
 from re import sub
 from shutil import rmtree
 from stat import S_IXUSR, S_IRUSR, S_IWUSR

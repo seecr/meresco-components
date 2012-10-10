@@ -36,7 +36,8 @@ from urllib2 import urlopen
 import sys
 
 import traceback
-from lxml.etree import parse, tostring
+from lxml.etree import parse
+from meresco.components import lxmltostring
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
 from weightless.core import compose
@@ -561,8 +562,8 @@ class SruHandlerTest(SeecrTestCase):
             <sru>PT1.500S</sru>        
             <index>PT0.005S</index>    
         </querytimes>
-</srw:extraResponseData>""", tostring(extraResponseData))
-        queryTimes = tostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
+</srw:extraResponseData>""", lxmltostring(extraResponseData))
+        queryTimes = lxmltostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
         assertValid(queryTimes, join(schemasPath, 'timing-20120827.xsd'))
 
     def testTestXSDequalsPublishedXSD(self):
