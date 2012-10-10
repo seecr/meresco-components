@@ -406,7 +406,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals((), echoedExtraRequestDataMethod.args)
         self.assertEquals(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
         self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(set(['version', 'recordSchema', 'sortDescending', 'sortBy', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'queryTime', 'suggestionsQuery', 'sruArguments']), set(extraResponseDataMethod.kwargs.keys()))
+        self.assertEquals(sorted(['version', 'recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'queryTime', 'suggestionsQuery', 'sruArguments']), sorted(extraResponseDataMethod.kwargs.keys()))
  
     def testExtraRecordDataOldStyle(self):
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
