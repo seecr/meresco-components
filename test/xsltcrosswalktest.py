@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -30,7 +31,8 @@
 
 from seecr.test import SeecrTestCase
 from os.path import join
-from lxml.etree import parse, tostring, _ElementTree
+from lxml.etree import parse, _ElementTree
+from meresco.components import lxmltostring
 
 from weightless.core import be
 from meresco.core import Observable
@@ -90,7 +92,7 @@ class XsltCrosswalkTest(SeecrTestCase):
 
         class Intercept:
             def someMessage(innerself, lxmlNode):
-                self.crosswalkedNode.append(tostring(lxmlNode, pretty_print=True))
+                self.crosswalkedNode.append(lxmltostring(lxmlNode, pretty_print=True))
                 self.assertEquals(_ElementTree, type(lxmlNode))
         root = be(
             (Observable(),

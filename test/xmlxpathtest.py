@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -31,7 +32,8 @@
 
 import sys
 from StringIO import StringIO
-from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType, tostring
+from lxml.etree import parse, ElementTree, _ElementTree as ElementTreeType
+from meresco.components import lxmltostring
 
 from seecr.test import SeecrTestCase, CallTrace
 
@@ -65,8 +67,8 @@ class XmlXPathTest(SeecrTestCase):
         self.assertEquals('test', method.name)
         self.assertEquals(1, len(method.args))
         self.assertEquals('een tekst', method.args[0])
-        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
-        self.assertEquals('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEqualsWS('<path><to>me</to></path>', lxmltostring(method.kwargs['lxmlNode']))
+        self.assertEquals('<path><to>me</to></path>', lxmltostring(method.kwargs['lxmlNode']))
 
     def testSimpleXPathWithUnicodeChars(self):
         self.createXmlXPath(['/root/text()'], {})
@@ -85,7 +87,7 @@ class XmlXPathTest(SeecrTestCase):
         self.assertEquals('aMethod', method.name)
         self.assertEquals(1, len(method.args))
         self.assertEquals(set(['otherKeyword', 'lxmlNode']), set(method.kwargs.keys()))
-        self.assertEqualsWS('<path><to>me</to></path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEqualsWS('<path><to>me</to></path>', lxmltostring(method.kwargs['lxmlNode']))
 
     def testFromKwargMissingRaisesKeyError(self):
         self.createXmlXPath(['/root/path'], {})
@@ -119,7 +121,7 @@ class XmlXPathTest(SeecrTestCase):
 </root>""")
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEqualsWS('<data>This data</data>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+        self.assertEqualsWS('<data>This data</data>', lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
 
     def testXPathWithMultipleResults(self):
         self.createXmlXPath(['/root/element/data'], {})
@@ -133,8 +135,8 @@ class XmlXPathTest(SeecrTestCase):
     </element>
 </root>""")
         self.assertEquals(2, len(self.observer.calledMethods))
-        self.assertEqualsWS('<data>one</data>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
-        self.assertEqualsWS('<data>two</data>', tostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEqualsWS('<data>one</data>', lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+        self.assertEqualsWS('<data>two</data>', lxmltostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
 
     def testXPathWithNoResults(self):
         self.createXmlXPath(['/does/not/exist'], {})
@@ -146,7 +148,7 @@ class XmlXPathTest(SeecrTestCase):
         xmlXPath = XmlXPath(['/a'], fromKwarg='lxmlNode')
         lxmlNode = parse(StringIO('<a>a</a>'))
         list(compose(xmlXPath.all_unknown('message', lxmlNode=lxmlNode)))
-        self.assertEquals('<a>a</a>', tostring(lxmlNode))
+        self.assertEquals('<a>a</a>', lxmltostring(lxmlNode))
 
     def testNamespaces(self):
         xmlXPath = XmlXPath(['/a:aNode/b:bNode'], fromKwarg='lxmlNode', namespaceMap={'a':'aNamespace', 'b':'bNamespace' })
@@ -161,10 +163,10 @@ class XmlXPathTest(SeecrTestCase):
         message = observer.calledMethods[0]
         self.assertEquals('message', message.name)
         newNode = message.kwargs['lxmlNode']
-        self.assertEqualsWS('<bNode xmlns="bNamespace">ccc</bNode>', tostring(newNode))
+        self.assertEqualsWS('<bNode xmlns="bNamespace">ccc</bNode>', lxmltostring(newNode))
 
         newNamespaces = newNode.getroot().nsmap
-        nameSpacesAfterParsing = parse(StringIO(tostring(newNode))).getroot().nsmap
+        nameSpacesAfterParsing = parse(StringIO(lxmltostring(newNode))).getroot().nsmap
         self.assertEquals(nameSpacesAfterParsing, newNamespaces)
 
     def testFindUsingMultipleXPaths(self):
@@ -176,9 +178,9 @@ class XmlXPathTest(SeecrTestCase):
         allResults = []
         for method in self.observer.calledMethods:
             allResults.append(method.kwargs['lxmlNode'])
-        self.assertEqualsWS('<b><c>one</c></b>', tostring(allResults[0]))
-        self.assertEqualsWS('<b><d>two</d></b>', tostring(allResults[1]))
-        self.assertEqualsWS('<c>one</c>', tostring(allResults[2]))
+        self.assertEqualsWS('<b><c>one</c></b>', lxmltostring(allResults[0]))
+        self.assertEqualsWS('<b><d>two</d></b>', lxmltostring(allResults[1]))
+        self.assertEqualsWS('<c>one</c>', lxmltostring(allResults[2]))
 
     def testTestWithCondition(self):
         self.createXmlXPath(['/a/*[not(self::b) and not(self::c)]'], {})
@@ -186,7 +188,7 @@ class XmlXPathTest(SeecrTestCase):
         self.observable.do.test(data='<a><b>zero</b><c>one</c><d>two</d></a>')
 
         self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEqualsWS('<d>two</d>', tostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+        self.assertEqualsWS('<d>two</d>', lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
 
     def testTestWithConditionAndNS(self):
         self.createXmlXPath(['/a:a/*[not(self::a:b) and not(self::a:c)]'], {"a":"aSpace"})
@@ -232,19 +234,19 @@ class XmlXPathTest(SeecrTestCase):
 </root>"""
 
         lxmlNode = parse(StringIO(XML))
-        self.assertEquals(XML, tostring(lxmlNode))
+        self.assertEquals(XML, lxmltostring(lxmlNode))
         list(compose(observable.all.test('een tekst', lxmlNode=lxmlNode)))
 
         self.assertEquals(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
         self.assertEquals('test', method.name)
-        self.assertEqualsWS('<myns:path xmlns:myns="http://myns.org/" xmlns="http://myns.org/"><to>me</to></myns:path>', tostring(method.kwargs['lxmlNode']))
+        self.assertEqualsWS('<myns:path xmlns:myns="http://myns.org/" xmlns="http://myns.org/"><to>me</to></myns:path>', lxmltostring(method.kwargs['lxmlNode']))
         self.assertEquals("""\
 <myns:path xmlns:myns="http://myns.org/" xmlns="http://myns.org/">
         <to>me</to>
-    </myns:path>""", tostring(method.kwargs['lxmlNode']))
+    </myns:path>""", lxmltostring(method.kwargs['lxmlNode']))
 
-        self.assertEquals(XML, tostring(lxmlNode))
+        self.assertEquals(XML, lxmltostring(lxmlNode))
 
 
     def testLxmlElementUntail(self):
@@ -260,5 +262,5 @@ class XmlXPathTest(SeecrTestCase):
         newElement = lxmlElementUntail(element)
         self.assertFalse(newElement is element)
         self.assertEquals(None, newElement.tail)
-        self.assertEquals('<a xmlns="http://myns.org/"><b>c</b>\n\n</a>', tostring(newElement))
+        self.assertEquals('<a xmlns="http://myns.org/"><b>c</b>\n\n</a>', lxmltostring(newElement))
 

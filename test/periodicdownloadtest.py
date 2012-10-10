@@ -7,6 +7,7 @@
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -32,7 +33,7 @@ from random import randint
 from threading import Event, Thread
 from time import sleep
 from socket import socket, error as SocketError
-from lxml.etree import tostring
+from meresco.components import lxmltostring
 from StringIO import StringIO
 from os.path import join
 
