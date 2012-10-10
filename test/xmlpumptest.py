@@ -1,4 +1,4 @@
-# encoding=utf-8
+# -*- coding=utf-8
 ## begin license ##
 # 
 # "Meresco Components" are components to build searchengines, repositories
@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -136,6 +137,21 @@ class XmlPumpTest(SeecrTestCase):
         lxmlNode = parse(StringIO('<a><b>“c</b></a>'))
         list(compose(lxml2amara.all_unknown('ape', lxmlNode=lxmlNode)))
         self.assertEquals('<a><b>“c</b></a>', self.amaraNode.xml())
+
+    def testXmlPrintLxml(self):
+        observable = Observable()
+        xmlprintlxml = XmlPrintLxml(fromKwarg='lxmlNode', toKwarg="data")
+        observer = CallTrace('observer', emptyGeneratorMethods=['someMessage'])
+        xmlprintlxml.addObserver(observer)
+        observable.addObserver(xmlprintlxml)
+        list(compose(observable.all.someMessage(lxmlNode=parse(StringIO('<a><b>“c</b></a>')))))
+        self.assertEquals(['someMessage'], observer.calledMethodNames())
+        self.assertEquals(['data'], observer.calledMethods[0].kwargs.keys())
+        self.assertEquals('''<a>
+  <b>“c</b>
+</a>
+''', observer.calledMethods[0].kwargs['data'])
+
 
     def testXmlParseAmaraRespondsToEveryMessage(self):
         self.observable.do.aMethodCall('do not parse this', data='<parse>this</parse>')
