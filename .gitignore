@@ -1,2 +1,3 @@
 build/
+deps.d
 meresco/components/facetindex/_facetindex.so
