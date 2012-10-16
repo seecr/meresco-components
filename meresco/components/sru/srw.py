@@ -81,14 +81,13 @@ class Srw(Observable):
             operation, arguments = self.call._parseArguments(arguments)
             self._srwSpecificValidation(operation, arguments)
             sruArgs, queryArgs = self.call.parseSruArgs(arguments)
-            arguments.update(queryArgs)
         except SruException, e:
             yield SOAP % DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
             raise StopIteration()
 
         try:
             yield SOAP_HEADER
-            yield self.all.searchRetrieve(sruArguments=sruArgs, **arguments)
+            yield self.all.searchRetrieve(sruArguments=sruArgs, **queryArgs)
             yield SOAP_FOOTER
         except Exception, e:
             yield "Unexpected Exception:\n"

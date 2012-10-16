@@ -173,6 +173,21 @@ Content-Type: text/xml; charset=utf-8
 
         self.assertEqualsWS(httpResponse % soapEnvelope % wrappedMockAnswer % ('recordId', 'dc.author = "jones" and  dc.title = "smith"'), result)
 
+    def testEmptySortKeys(self):
+        request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % "<SRW:sortKeys/>"
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=0, hits=[]))
+            yield
+        observer = CallTrace(
+                emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'],
+                methods={'executeQuery': executeQuery})
+        self.sruHandler.addObserver(observer)
+
+        result = "".join(compose(self.srw.handleRequest(Body=request)))
+
+        executeQueryKwargs = observer.calledMethods[0].kwargs
+        self.assertFalse("sortKeys" in executeQueryKwargs, executeQueryKwargs)
+
     def testArgumentsAreNotUnicodeStrings(self):
         """JJ/TJ: unicode strings somehow paralyse server requests.
         So ensure every argument is a str!"""
