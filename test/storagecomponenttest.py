@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -30,12 +31,13 @@
 
 from seecr.test import SeecrTestCase
 
-from meresco.components.storagecomponent import StorageComponent
+from meresco.components.storagecomponent import StorageComponent, DefaultStrategy, HashDistributeStrategy
 from storage import HierarchicalStorage, Storage
 from cStringIO import StringIO
 from meresco.core import Observable
 from subprocess import Popen, PIPE
 from weightless.core import compose
+from os.path import join
 
 
 class StorageComponentTest(SeecrTestCase):
@@ -175,5 +177,57 @@ class StorageComponentTest(SeecrTestCase):
         s = StorageComponent(self.tempdir, name="name")
         self.assertEquals("name", s.observable_name())
 
+    def testDirectoryStrategy(self):
+        class TestStrategy:
+            @classmethod
+            def split(self, (identifier, partname)):
+                return identifier.swapcase(), partname.swapcase()
+            join = None
+        s = StorageComponent(self.tempdir, strategy=TestStrategy)
+        list(compose(s.add("AnIdentifier", "Part1", "Contents")))
+        self.assertEquals("Contents", open(join(self.tempdir, "aNiDENTIFIER", "pART1")).read())
 
+    def testDirectorySplit(self):
+        class TestStrategy:
+            @classmethod
+            def split(self, (identifier, partname)):
+                return tuple(c for c in identifier) + (partname,)
+            join = None
+        s = StorageComponent(self.tempdir, strategy=TestStrategy)
+        list(compose(s.add("id09", "Part1", "Contents")))
+        self.assertEquals("Contents", open(join(self.tempdir, "i", "d", "0", "9", "Part1")).read())
 
+    def testDirectoryStrategyJoin(self):
+        class TestStrategy:
+            @classmethod
+            def split(self, (identifier, partname)):
+                result = tuple(c for c in identifier)
+                return result if not partname else result + (partname,)
+            @classmethod
+            def join(self, parts):
+                return ''.join(parts[:-1]), parts[-1]
+        s = StorageComponent(self.tempdir, strategy=TestStrategy)
+        list(compose(s.add("id09", "Part1", "Contents")))
+        self.assertEquals(["id09"], list(s.listIdentifiers()))
+
+    def testDefaultStrategy(self):
+        s = DefaultStrategy
+        self.assertEquals(["a", "b", "c"], s.split(("a:b", "c")))
+        self.assertEquals(("a:b", "c"), s.join(("a", "b", "c")))
+        self.assertEquals(["a", "b"], s.split(("a:b", None)))
+        self.assertEquals(["a", "b:c", "d"], s.split(("a:b:c", "d")))
+        self.assertEquals(("a:b:c", "d"), s.join(("a", "b:c", "d")))
+
+    def testDefaultStrategyIsDefaultStrategy(self):
+        s = StorageComponent(self.tempdir)
+        list(compose(s.add("a:b:c", "d", "Hi")))
+        self.assertEquals("Hi", open(join(self.tempdir, "a", "b:c", "d")).read())
+
+    def testHashDistributeStrategy(self):
+        s = HashDistributeStrategy()
+        self.assertEquals(("58", "eb", "58eb8a535f07b1f7b94cd6083e664137301048a7.rdf"), s.split(("AnIdentifier", "rdf")))
+        self.assertEquals(("58", "eb", "58eb8a535f07b1f7b94cd6083e664137301048a7.xml"), s.split(("AnIdentifier", "xml")))
+        self.assertEquals(("35", "6a", "356a192b7913b04c54574d18c28d46e6395428ab."), s.split(("1", "")))
+        self.assertEquals(("35", "6a", "356a192b7913b04c54574d18c28d46e6395428ab."), s.split(("1", None)))
+
+        self.assertRaises(KeyError, lambda: s.join("NA"))

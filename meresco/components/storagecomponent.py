@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -28,24 +29,44 @@
 # 
 ## end license ##
 
+from hashlib import sha1
+
 from storage import HierarchicalStorage, Storage
 from meresco.core import asyncnoreturnvalue
 
-def defaultSplit((identifier, partname)):
-    result = identifier.split(':',1)
-    if partname != None:
-        result += [partname]
-    return result
+class DefaultStrategy(object):
 
-def defaultJoin(parts):
-    identifier = ":".join(parts[:-1])
-    partname = parts[-1]
-    return identifier, partname
+    @classmethod
+    def split(self, (identifier, partname)):
+        result = identifier.split(':',1)
+        if partname != None:
+            result += [partname]
+        return result
+
+    @classmethod
+    def join(self, parts):
+        identifier = ":".join(parts[:-1])
+        partname = parts[-1]
+        return identifier, partname
+
+defaultSplit = DefaultStrategy.split
+defaultJoin = DefaultStrategy.join
+
+class HashDistributeStrategy(object):
+
+    def split(self, (identifier, partname)):
+        hash = sha1(identifier).hexdigest()
+        if partname is None:
+            partname = ""
+        return hash[0:2], hash[2:4], hash + '.' + partname
+
+    def join(self, _):
+        raise KeyError("Unable to join due to hashing of identifiers")
 
 class StorageComponent(object):
-    def __init__(self, directory, split=defaultSplit, join=defaultJoin, partsRemovedOnDelete=None, partsRemovedOnPurge=None, name=None):
+    def __init__(self, directory, partsRemovedOnDelete=None, partsRemovedOnPurge=None, name=None, strategy=DefaultStrategy):
         assert type(directory) == str, 'Please use directory as first parameter'
-        self._storage = HierarchicalStorage(Storage(directory), split, join)
+        self._storage = HierarchicalStorage(Storage(directory), strategy.split, strategy.join)
         self._partsRemovedOnDelete = set([]) if partsRemovedOnDelete is None else set(partsRemovedOnDelete)
         self._partsRemovedOnPurge = self._partsRemovedOnDelete if partsRemovedOnPurge is None else self._partsRemovedOnDelete.union(set(partsRemovedOnPurge))
         self._name = name
@@ -113,5 +134,6 @@ class StorageComponent(object):
         def filterPrefixAndPart((identifier, partname)):
             return identifier.startswith(prefix) and (wantedPartname == None or wantedPartname == partname)
 
-        return ((identifier, partname) for (identifier, partname) in self._storage.glob((prefix, wantedPartname)) if filterPrefixAndPart((identifier, partname)))
+        return ((identifier, partname) for (identifier, partname) in self._storage.glob((prefix, wantedPartname))
+                if filterPrefixAndPart((identifier, partname)))
 
