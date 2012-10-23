@@ -510,7 +510,92 @@ class SruHandlerTest(SeecrTestCase):
             self.assertTrue("diagnostic" in result)
         finally:
             sys.stderr = sys.__stderr__
-    
+
+    def testSearchRetrieveAssertsDrilldownMaximumMaximumResultsWhenSet(self):
+        drilldownMaximumMaximumResults = 3
+        self.assertTrue(drilldownMaximumMaximumResults < DEFAULT_MAXIMUM_TERMS)
+
+        def sruHandlerKwargs(x_term_drilldown):
+            arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'blissfully_ignored', 'recordSchema':'blissfully_ignored', 'recordPacking':'string'}
+            arguments['x_term_drilldown'] = [x_term_drilldown]
+            arguments['sruArguments'] = dict((k.replace('_', '-'),v) for k,v in arguments.items())
+            return arguments
+
+        # No problem - max
+        kwargs = sruHandlerKwargs(x_term_drilldown='field0:3,fielddefault')
+        sruHandler = SruHandler(drilldownMaximumMaximumResults=drilldownMaximumMaximumResults)
+        observer = CallTrace('observer')
+        sruHandler.addObserver(observer)
+        def executeQuery(**kwargs):
+            raise KeyboardInterrupt('Ok')
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        try:
+            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+        except KeyboardInterrupt, e:
+            self.assertEquals('Ok', str(e))
+        else:
+            self.fail('Should not come here')
+
+        self.assertEquals(['executeQuery'], observer.calledMethodNames())
+        self.assertEquals([('field0', 3, False), ('fielddefault', 3, False)], observer.calledMethods[0].kwargs['fieldnamesAndMaximums'])
+
+        # No problem - min
+        kwargs = sruHandlerKwargs(x_term_drilldown='field0:1')
+        observer.calledMethods.reset()
+        try:
+            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+        except KeyboardInterrupt, e:
+            self.assertEquals('Ok', str(e))
+        else:
+            self.fail('Should not come here')
+
+        self.assertEquals(['executeQuery'], observer.calledMethodNames())
+        self.assertEquals([('field0', 1, False)], observer.calledMethods[0].kwargs['fieldnamesAndMaximums'])
+
+        # Too high
+        kwargs = sruHandlerKwargs(x_term_drilldown='field0:4')
+
+        sruHandler = SruHandler(drilldownMaximumMaximumResults=drilldownMaximumMaximumResults)
+        observer = CallTrace('observer')
+        sruHandler.addObserver(observer)
+        def executeQuery(**kwargs):
+            raise KeyboardInterrupt('Should have failed before triggering this exception!')
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        try:
+            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+        except SruException, e:
+            self.assertEquals('field0; drilldown with maximumResults > 3', str(e))
+        except KeyboardInterrupt, e:
+            self.fail(str(e))
+        else:
+            self.fail('Should not come here')
+
+        # Too low
+        kwargs = sruHandlerKwargs(x_term_drilldown='field55:0')
+        try:
+            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+        except SruException, e:
+            self.assertEquals('field55; drilldown with maximumResults < 1', str(e))
+        except KeyboardInterrupt, e:
+            self.fail(str(e))
+        else:
+            self.fail('Should not come here')
+
+        # Freezing
+        kwargs = sruHandlerKwargs(x_term_drilldown='field55:-1')
+        try:
+            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+        except SruException, e:
+            self.assertEquals('field55; drilldown with maximumResults < 1', str(e))
+        except KeyboardInterrupt, e:
+            self.fail(str(e))
+        else:
+            self.fail('Should not come here')
+
     def testValidXml(self):
         component = SruParser()
         sruHandler = SruHandler()

@@ -32,6 +32,7 @@ from xml.sax.saxutils import quoteattr, escape as xmlEscape
 
 from meresco.core import Observable, decorate
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+from meresco.components.sru.sruparser import SruException
 from weightless.core import compose, Yield
 
 from cqlparser import parseString as parseCQL
@@ -41,6 +42,7 @@ from time import time
 from decimal import Decimal
 from traceback import print_exc
 
+from diagnostic import UNSUPPORTED_PARAMETER_VALUE
 from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
@@ -48,7 +50,7 @@ ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', '
 millis = Decimal('0.001')
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False, querySuggestionsCount=0):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False, querySuggestionsCount=0, drilldownMaximumMaximumResults=None):
         Observable.__init__(self)
         self._drilldownSortedByTermCount = drilldownSortedByTermCount
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
@@ -56,6 +58,7 @@ class SruHandler(Observable):
         self._extraXParameters.add("x-recordSchema")
         self._includeQueryTimes = includeQueryTimes
         self._querySuggestionsCount = querySuggestionsCount
+        self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, **kwargs):
         SRU_IS_ONE_BASED = 1
@@ -231,16 +234,21 @@ class SruHandler(Observable):
             return
 
         def splitTermAndMaximum(field):
-            maxTerms = DEFAULT_MAXIMUM_TERMS
+            maxTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
             splitted = field.rsplit(":", 1)
             if len(splitted) == 2:
                 try:
                     field, maxTerms = splitted[0], int(splitted[1])
+                    if self._drilldownMaximumMaximumResults is not None:
+                        if maxTerms > self._drilldownMaximumMaximumResults:
+                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults > %s' % (field, self._drilldownMaximumMaximumResults))
+                        elif maxTerms < 1:
+                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % field)
                 except ValueError:
                     pass
             return field, maxTerms, self._drilldownSortedByTermCount
 
-        return (splitTermAndMaximum(field) for field in x_term_drilldown[0].split(","))
+        return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
 
     def _timeNow(self):
         return time()
