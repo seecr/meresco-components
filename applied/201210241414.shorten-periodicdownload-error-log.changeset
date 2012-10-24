@@ -1,0 +1,62 @@
+Changeset created on Wed Oct 24 14:14:49 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Shorten PeriodicDownload error log
+
+    On an error only a part of the response is written to the error log. The
+    complete stacktrace is still printed.
+
+Baseline version: 4.3.2
+
+From 9c6a098a1e3bffac33e797eb513f22c75ef3e061 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Wed, 24 Oct 2012 15:13:58 +0100
+Subject: [PATCH] TJ: periodicdownload will now log part of the response.
+
+---
+ meresco/components/periodicdownload.py |    9 ++++++++-
+ test/periodicdownloadtest.py           |    5 +++++
+ 2 files changed, 13 insertions(+), 1 deletions(-)
+
+diff --git a/meresco/components/periodicdownload.py b/meresco/components/periodicdownload.py
+index ed996f4..71f76e5 100644
+--- a/meresco/components/periodicdownload.py
++++ b/meresco/components/periodicdownload.py
+@@ -113,7 +113,7 @@ class PeriodicDownload(Observable):
+             raise
+         except Exception:
+             message = format_exc()
+-            message += 'Error while processing response: ' + response
++            message += 'Error while processing response: ' + shorten(response)
+             self._logError(message, request=requestString)
+         self.startTimer()
+         yield
+@@ -168,3 +168,10 @@ class PeriodicDownload(Observable):
+                 self._err.write('\n')
+         self._err.flush()
+ 
++MAX_LENGTH=1500
++def shorten(response):
++    if len(response) < MAX_LENGTH:
++        return response
++    headLength = 2*MAX_LENGTH/3
++    tailLength = MAX_LENGTH - headLength 
++    return "%s ... %s" % (response[:headLength], response[-tailLength:])
+diff --git a/test/periodicdownloadtest.py b/test/periodicdownloadtest.py
+index 3677ad9..4270b7a 100644
+--- a/test/periodicdownloadtest.py
++++ b/test/periodicdownloadtest.py
+@@ -417,6 +417,11 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
+                 len([n for n in names if n == 'remove%s' % what]), 
+                 'Expected same amount of add and remove for %s' % what)
+ 
++    def testShortenErrorMessage(self):
++        from meresco.components.periodicdownload import shorten
++        longMessage = "a"*100000
++        self.assertTrue(len(shorten(longMessage)) < len(longMessage)/10)
++
+ 
+ HTTP_SEPARATOR = 2 * CRLF
+ STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
+-- 
+1.7.1
+
