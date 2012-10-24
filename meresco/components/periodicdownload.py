@@ -113,7 +113,7 @@ class PeriodicDownload(Observable):
             raise
         except Exception:
             message = format_exc()
-            message += 'Error while processing response: ' + response
+            message += 'Error while processing response: ' + shorten(response)
             self._logError(message, request=requestString)
         self.startTimer()
         yield
@@ -168,3 +168,10 @@ class PeriodicDownload(Observable):
                 self._err.write('\n')
         self._err.flush()
 
+MAX_LENGTH=1500
+def shorten(response):
+    if len(response) < MAX_LENGTH:
+        return response
+    headLength = 2*MAX_LENGTH/3
+    tailLength = MAX_LENGTH - headLength 
+    return "%s ... %s" % (response[:headLength], response[-tailLength:])

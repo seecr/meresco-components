@@ -417,6 +417,11 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
                 len([n for n in names if n == 'remove%s' % what]), 
                 'Expected same amount of add and remove for %s' % what)
 
+    def testShortenErrorMessage(self):
+        from meresco.components.periodicdownload import shorten
+        longMessage = "a"*100000
+        self.assertTrue(len(shorten(longMessage)) < len(longMessage)/10)
+
 
 HTTP_SEPARATOR = 2 * CRLF
 STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
