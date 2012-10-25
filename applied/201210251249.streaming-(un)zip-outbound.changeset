@@ -1,0 +1,435 @@
+Changeset created on Thu Oct 25 12:49:36 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Streaming (un)zip outbound refactoring
+
+    Added IteratorAsStream to make iterators act like a stream
+    Refactored ZipOutbound and UnzipOutbound to behave streamwise
+
+Baseline version: 4.3.3
+
+From 38a9581a6c1f687f269464fbb8cf6c7872afff7d Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 25 Oct 2012 13:16:26 +0100
+Subject: [PATCH] TS/TJ: more streaming
+
+- Added IteratorAsStream to make iterators act like a stream
+- Refactored ZipOutbound and UnzipOutbound to behave streamwise
+---
+ meresco/components/__init__.py         |    2 +
+ meresco/components/datapump.py         |   71 +++++++++++++++++-----
+ meresco/components/iteratorasstream.py |   58 ++++++++++++++++++
+ test/_alltests.py                      |    1 +
+ test/datapumptest.py                   |   47 ++++++++++++---
+ test/iteratorasstreamtest.py           |  102 ++++++++++++++++++++++++++++++++
+ 6 files changed, 256 insertions(+), 25 deletions(-)
+ create mode 100644 meresco/components/iteratorasstream.py
+ create mode 100644 test/iteratorasstreamtest.py
+
+diff --git a/meresco/components/__init__.py b/meresco/components/__init__.py
+index ea78e5c..784c361 100644
+--- a/meresco/components/__init__.py
++++ b/meresco/components/__init__.py
+@@ -48,6 +48,7 @@ from filelist import SortedFileList, FileList
+ from filtermessages import FilterMessages
+ from filterpartbyname import FilterPartByName
+ from inbox import Inbox
++from iteratorasstream import IteratorAsStream
+ from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
+ from parsecql import ParseCQL
+ from periodicdownload import PeriodicDownload
+@@ -66,3 +67,4 @@ from xml2fields import Xml2Fields
+ from xmlxpath import XmlXPath
+ from xpath2field import XPath2Field
+ from xsltcrosswalk import XsltCrosswalk
++
+diff --git a/meresco/components/datapump.py b/meresco/components/datapump.py
+index 239d0e5..8b0ee33 100644
+--- a/meresco/components/datapump.py
++++ b/meresco/components/datapump.py
+@@ -1,38 +1,39 @@
+ ## begin license ##
+ # 
+-# "Edurep" is a service for searching in educational repositories.
+-# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
+-# Seek You Too (http://www.cq2.nl). The project is based on the opensource
+-# project Meresco (http://www.meresco.com). 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+ # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+-# This file is part of "Edurep"
++# This file is part of "Meresco Components"
+ # 
+-# "Edurep" is free software; you can redistribute it and/or modify
++# "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+ # 
+-# "Edurep" is distributed in the hope that it will be useful,
++# "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # 
+ # You should have received a copy of the GNU General Public License
+-# along with "Edurep"; if not, write to the Free Software
++# along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ # 
+ ## end license ##
+ 
+-from meresco.components import Converter
+-from zlib import compress as _compress, decompress
++from meresco.components import Converter, IteratorAsStream
++from zlib import compress as _compress, decompress, decompressobj as DeflateDecompressObj, compressobj as DeflateCompressObj
+ from base64 import encodestring, decodestring
+ from weightless.core import compose
+ from meresco.core import Transparent
+ from StringIO import StringIO
+ 
++from weightless.core import compose, Yield
++
+ compress = lambda data: _compress(data)
+ 
+ class _OutboundConverter(Transparent):
+@@ -48,15 +49,51 @@ class ZipInbound(Converter):
+     def _convert(self, data):
+         return compress(data)
+ 
+-class ZipOutbound(_OutboundConverter):
+-    def _convert(self, data):
+-        return compress(data)
++class _DeflateIterator(object):
++    def __init__(self, aStream, deflateClass, deflateMethodName):
++        self.__aStream = aStream
++        self._deflateObject = deflateClass()
++        self._deflateMethod = getattr(self._deflateObject, deflateMethodName)
+ 
+-class UnzipInbound(Converter):
+-    def _convert(self, data):
+-        return decompress(data)
++    def __iter__(self):
++        for data in self.__aStream:
++            yield self._deflateMethod(data)
++        f = self._deflateObject.flush()
++        if f:
++            yield f
+ 
+-class UnzipOutbound(_OutboundConverter):
++class _DeflateOutbound(Transparent):
++    def yieldRecord(self, *args, **kwargs):
++        allCall = compose(self.all.yieldRecord(*args, **kwargs))
++        deflateObject = self.deflateClass()
++        deflate = getattr(deflateObject, self.deflateMethodName)
++        for data in allCall:
++            if data is Yield or callable(data):
++                yield data
++                continue
++            yield deflate(data)
++        f = deflateObject.flush()
++        if f:
++            yield f
++
++    def getStream(self, *args, **kwargs):
++        return IteratorAsStream(
++                _DeflateIterator(
++                    self.call.getStream(*args, **kwargs),
++                    deflateClass=self.deflateClass,
++                    deflateMethodName=self.deflateMethodName
++                )
++            )
++
++class ZipOutbound(_DeflateOutbound):
++    deflateClass = DeflateCompressObj
++    deflateMethodName = "compress"
++
++class UnzipOutbound(_DeflateOutbound):
++    deflateClass = DeflateDecompressObj
++    deflateMethodName = "decompress"
++
++class UnzipInbound(Converter):
+     def _convert(self, data):
+         return decompress(data)
+ 
+diff --git a/meresco/components/iteratorasstream.py b/meresco/components/iteratorasstream.py
+new file mode 100644
+index 0000000..417d612
+--- /dev/null
++++ b/meresco/components/iteratorasstream.py
+@@ -0,0 +1,58 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++
++class IteratorAsStream(object):
++    def __init__(self, iterator):
++        self._iterator = iter(iterator)
++        self._leftover = ''
++
++    def read(self, size=None):
++        if size is None or size < 0:
++            data = self._leftover
++            self._leftover = ''
++            return data + ''.join(self._iterator)
++        while len(self._leftover) < size:
++            try:
++                self._leftover += self._iterator.next()
++            except StopIteration:
++                break
++        data = self._leftover[:size]
++        self._leftover = self._leftover[size:]
++        return data
++
++    def next(self):
++        if self._leftover:
++            data = self._leftover
++            self._leftover = ''
++            return data
++        return self._iterator.next()
++
++    def __iter__(self):
++        return self
++
++        
++
+diff --git a/test/_alltests.py b/test/_alltests.py
+index 088630a..155226a 100644
+--- a/test/_alltests.py
++++ b/test/_alltests.py
+@@ -60,6 +60,7 @@ from filelisttest import FileListTest
+ from filtermessagestest import FilterMessagesTest
+ from filterpartbynametest import FilterPartByNameTest
+ from inboxtest import InboxTest
++from iteratorasstreamtest import IteratorAsStreamTest
+ from multileveldrilldowntest import MultiLevelDrilldownTest
+ from packertest import PackerTest
+ from parsecqltest import ParseCQLTest
+diff --git a/test/datapumptest.py b/test/datapumptest.py
+index c0b666a..e0a7212 100644
+--- a/test/datapumptest.py
++++ b/test/datapumptest.py
+@@ -1,27 +1,26 @@
+ ## begin license ##
+ # 
+-# "Edurep" is a service for searching in educational repositories.
+-# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
+-# Seek You Too (http://www.cq2.nl). The project is based on the opensource
+-# project Meresco (http://www.meresco.com). 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
+ # 
+ # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+ # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+ # 
+-# This file is part of "Edurep"
++# This file is part of "Meresco Components"
+ # 
+-# "Edurep" is free software; you can redistribute it and/or modify
++# "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+ # 
+-# "Edurep" is distributed in the hope that it will be useful,
++# "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # 
+ # You should have received a copy of the GNU General Public License
+-# along with "Edurep"; if not, write to the Free Software
++# along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ # 
+ ## end license ##
+@@ -32,6 +31,8 @@ from meresco.components.datapump import ZipInbound, UnzipInbound, Base64DecodeIn
+ from meresco.core import Observable
+ from time import time
+ from StringIO import StringIO
++from xml.sax.saxutils import escape as xmlEscape
++from lxml.etree import parse
+ 
+ class DataPumpTest(SeecrTestCase):
+ 
+@@ -86,12 +87,42 @@ class DataPumpTest(SeecrTestCase):
+         data = [realData[i:i+4096] for i in xrange(0, len(realData), 4096)]
+         observer = CallTrace('observer')
+         observer.methods['getStream'] = lambda **kwargs: StringIO(str(HUGE))
++        def yieldRecord(**kwargs):
++            for d in data:
++                yield d
++        observer.methods['yieldRecord'] = yieldRecord
+         outbound = ZipOutbound()
+         outbound.addObserver(observer)
+         yieldResult = ''.join(compose(outbound.yieldRecord(identifier='identifier', partname='part')))
+         streamResult = outbound.getStream(identifier='identifier', partname='part').read()
+         self.assertEquals(len(yieldResult), len(streamResult))
+ 
++    def testHugeXml(self):
++        xml = StringIO()
++        xml.write('<root>')
++        for k,values in HUGE.items():
++            for v in values:
++                xml.write('<field name="%s">%s</field>' % (xmlEscape(k), xmlEscape(v)))
++        xml.write('</root>')
++        xml.seek(0)
++        parse(xml)
++        observer = CallTrace('observer')
++        observer.methods['getStream'] = lambda **kwargs: StringIO(xml.getvalue())
++
++        root = be((Observable(),
++            (UnzipOutbound(),
++                (Base64DecodeOutbound(),
++                    (Base64EncodeOutbound(),
++                        (ZipOutbound(),
++                            (observer,)
++                        )
++                    )
++                )
++            )
++        ))
++
++        result = parse(root.call.getStream(identifier='identifier', partname='part'))
++
+ 
+ def unicodeValues(aFieldsDict):
+     newDict = {}
+diff --git a/test/iteratorasstreamtest.py b/test/iteratorasstreamtest.py
+new file mode 100644
+index 0000000..a4062dd
+--- /dev/null
++++ b/test/iteratorasstreamtest.py
+@@ -0,0 +1,102 @@
++## begin license ##
++# 
++# "Meresco Components" are components to build searchengines, repositories
++# and archives, based on "Meresco Core". 
++# 
++# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
++# 
++# This file is part of "Meresco Components"
++# 
++# "Meresco Components" is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# "Meresco Components" is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with "Meresco Components"; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++# 
++## end license ##
++
++from seecr.test import SeecrTestCase
++from StringIO import StringIO
++
++from meresco.components import IteratorAsStream
++
++class IteratorAsStreamTest(SeecrTestCase):
++    def testEmptyIterator(self):
++        stream = IteratorAsStream(iter([]))
++        self.assertEquals('', stream.read())
++
++    def testReadWithSize(self):
++        def assertStream1(stream):
++            self.assertEquals("12345", stream.read(5))
++            self.assertEquals("67890", stream.read(42))
++            self.assertEquals('', stream.read())
++            self.assertEquals('', stream.read())
++        def assertStream2(stream):
++            self.assertEquals("12345", stream.read(5))
++            self.assertEquals("", stream.read(0))
++            self.assertEquals("67890", stream.read(-1))
++            self.assertEquals('', stream.read())
++        def assertStream3(stream):
++            self.assertEquals("12345", stream.read(5))
++            self.assertEquals("67890", stream.read())
++            self.assertEquals('', stream.read())
++        def assertStream4(stream):
++            self.assertEquals("1234567890", stream.read(-19))
++        def assertStream5(stream):
++            self.assertEquals("1234567890", stream.read())
++
++        assertStream1(StringIO("1234567890"))
++        assertStream2(StringIO("1234567890"))
++        assertStream3(StringIO("1234567890"))
++        assertStream4(StringIO("1234567890"))
++        assertStream5(StringIO("1234567890"))
++
++        assertStream1(IteratorAsStream("1234567890"))
++        assertStream2(IteratorAsStream("1234567890"))
++        assertStream3(IteratorAsStream("1234567890"))
++        assertStream4(IteratorAsStream("1234567890"))
++        assertStream5(IteratorAsStream("1234567890"))
++
++        assertStream1(IteratorAsStream(iter("1234567890")))
++        assertStream2(IteratorAsStream(iter("1234567890")))
++        assertStream3(IteratorAsStream(iter("1234567890")))
++        assertStream4(IteratorAsStream(iter("1234567890")))
++        assertStream5(IteratorAsStream(iter("1234567890")))
++        
++        assertStream1(IteratorAsStream((f for f in ["123","456","78","90"])))
++        assertStream2(IteratorAsStream((f for f in ["123","456","78","90"])))
++        assertStream3(IteratorAsStream((f for f in ["123","456","78","90"])))
++        assertStream4(IteratorAsStream((f for f in ["123","456","78","90"])))
++        assertStream5(IteratorAsStream((f for f in ["123","456","78","90"])))
++
++
++    def testStreamAsIterator(self):
++        stream = IteratorAsStream((f for f in ["123","456","78","90"]))
++
++        self.assertEquals("123", stream.next())
++        self.assertEquals("45", stream.read(2))
++        self.assertEquals("6", stream.next())
++        self.assertEquals("78", stream.next())
++        self.assertEquals("90", stream.next())
++        self.assertRaises(StopIteration, stream.next)
++
++        stream = IteratorAsStream((f for f in ["123","456","78","90"]))
++        self.assertEquals(["123","456","78","90"], [f for f in stream])
++        stream = IteratorAsStream((f for f in ["123","456","78","90"]))
++        self.assertEquals("123, 456, 78, 90", ', '.join(stream))
++
++        stream = IteratorAsStream((f for f in ["123","456","78","90"]))
++        stream.read()
++        self.assertRaises(StopIteration, stream.next)
++
++        stream = IteratorAsStream((f for f in []))
++        self.assertRaises(StopIteration, stream.next)
+-- 
+1.7.1
+
