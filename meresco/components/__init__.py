@@ -48,6 +48,7 @@ from filelist import SortedFileList, FileList
 from filtermessages import FilterMessages
 from filterpartbyname import FilterPartByName
 from inbox import Inbox
+from iteratorasstream import IteratorAsStream
 from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
 from parsecql import ParseCQL
 from periodicdownload import PeriodicDownload
@@ -66,3 +67,4 @@ from xml2fields import Xml2Fields
 from xmlxpath import XmlXPath
 from xpath2field import XPath2Field
 from xsltcrosswalk import XsltCrosswalk
+

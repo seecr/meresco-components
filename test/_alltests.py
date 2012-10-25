@@ -60,6 +60,7 @@ from filelisttest import FileListTest
 from filtermessagestest import FilterMessagesTest
 from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
+from iteratorasstreamtest import IteratorAsStreamTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from packertest import PackerTest
 from parsecqltest import ParseCQLTest

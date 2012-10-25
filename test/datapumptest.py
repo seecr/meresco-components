@@ -1,27 +1,26 @@
 ## begin license ##
 # 
-# "Edurep" is a service for searching in educational repositories.
-# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
-# Seek You Too (http://www.cq2.nl). The project is based on the opensource
-# project Meresco (http://www.meresco.com). 
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
-# This file is part of "Edurep"
+# This file is part of "Meresco Components"
 # 
-# "Edurep" is free software; you can redistribute it and/or modify
+# "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 # 
-# "Edurep" is distributed in the hope that it will be useful,
+# "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with "Edurep"; if not, write to the Free Software
+# along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # 
 ## end license ##
@@ -32,6 +31,8 @@ from meresco.components.datapump import ZipInbound, UnzipInbound, Base64DecodeIn
 from meresco.core import Observable
 from time import time
 from StringIO import StringIO
+from xml.sax.saxutils import escape as xmlEscape
+from lxml.etree import parse
 
 class DataPumpTest(SeecrTestCase):
 
@@ -86,11 +87,41 @@ class DataPumpTest(SeecrTestCase):
         data = [realData[i:i+4096] for i in xrange(0, len(realData), 4096)]
         observer = CallTrace('observer')
         observer.methods['getStream'] = lambda **kwargs: StringIO(str(HUGE))
+        def yieldRecord(**kwargs):
+            for d in data:
+                yield d
+        observer.methods['yieldRecord'] = yieldRecord
         outbound = ZipOutbound()
         outbound.addObserver(observer)
         yieldResult = ''.join(compose(outbound.yieldRecord(identifier='identifier', partname='part')))
         streamResult = outbound.getStream(identifier='identifier', partname='part').read()
         self.assertEquals(len(yieldResult), len(streamResult))
+
+    def testHugeXml(self):
+        xml = StringIO()
+        xml.write('<root>')
+        for k,values in HUGE.items():
+            for v in values:
+                xml.write('<field name="%s">%s</field>' % (xmlEscape(k), xmlEscape(v)))
+        xml.write('</root>')
+        xml.seek(0)
+        parse(xml)
+        observer = CallTrace('observer')
+        observer.methods['getStream'] = lambda **kwargs: StringIO(xml.getvalue())
+
+        root = be((Observable(),
+            (UnzipOutbound(),
+                (Base64DecodeOutbound(),
+                    (Base64EncodeOutbound(),
+                        (ZipOutbound(),
+                            (observer,)
+                        )
+                    )
+                )
+            )
+        ))
+
+        result = parse(root.call.getStream(identifier='identifier', partname='part'))
 
 
 def unicodeValues(aFieldsDict):

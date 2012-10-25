@@ -1,37 +1,38 @@
 ## begin license ##
 # 
-# "Edurep" is a service for searching in educational repositories.
-# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
-# Seek You Too (http://www.cq2.nl). The project is based on the opensource
-# project Meresco (http://www.meresco.com). 
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # 
-# This file is part of "Edurep"
+# This file is part of "Meresco Components"
 # 
-# "Edurep" is free software; you can redistribute it and/or modify
+# "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 # 
-# "Edurep" is distributed in the hope that it will be useful,
+# "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # 
 # You should have received a copy of the GNU General Public License
-# along with "Edurep"; if not, write to the Free Software
+# along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # 
 ## end license ##
 
-from meresco.components import Converter
-from zlib import compress as _compress, decompress
+from meresco.components import Converter, IteratorAsStream
+from zlib import compress as _compress, decompress, decompressobj as DeflateDecompressObj, compressobj as DeflateCompressObj
 from base64 import encodestring, decodestring
 from weightless.core import compose
 from meresco.core import Transparent
 from StringIO import StringIO
+
+from weightless.core import compose, Yield
 
 compress = lambda data: _compress(data)
 
@@ -48,15 +49,51 @@ class ZipInbound(Converter):
     def _convert(self, data):
         return compress(data)
 
-class ZipOutbound(_OutboundConverter):
-    def _convert(self, data):
-        return compress(data)
+class _DeflateIterator(object):
+    def __init__(self, aStream, deflateClass, deflateMethodName):
+        self.__aStream = aStream
+        self._deflateObject = deflateClass()
+        self._deflateMethod = getattr(self._deflateObject, deflateMethodName)
+
+    def __iter__(self):
+        for data in self.__aStream:
+            yield self._deflateMethod(data)
+        f = self._deflateObject.flush()
+        if f:
+            yield f
+
+class _DeflateOutbound(Transparent):
+    def yieldRecord(self, *args, **kwargs):
+        allCall = compose(self.all.yieldRecord(*args, **kwargs))
+        deflateObject = self.deflateClass()
+        deflate = getattr(deflateObject, self.deflateMethodName)
+        for data in allCall:
+            if data is Yield or callable(data):
+                yield data
+                continue
+            yield deflate(data)
+        f = deflateObject.flush()
+        if f:
+            yield f
+
+    def getStream(self, *args, **kwargs):
+        return IteratorAsStream(
+                _DeflateIterator(
+                    self.call.getStream(*args, **kwargs),
+                    deflateClass=self.deflateClass,
+                    deflateMethodName=self.deflateMethodName
+                )
+            )
+
+class ZipOutbound(_DeflateOutbound):
+    deflateClass = DeflateCompressObj
+    deflateMethodName = "compress"
+
+class UnzipOutbound(_DeflateOutbound):
+    deflateClass = DeflateDecompressObj
+    deflateMethodName = "decompress"
 
 class UnzipInbound(Converter):
-    def _convert(self, data):
-        return decompress(data)
-
-class UnzipOutbound(_OutboundConverter):
     def _convert(self, data):
         return decompress(data)
 
