@@ -260,4 +260,29 @@ class XmlPumpTest(SeecrTestCase):
         observable.do.something('identifier', 'partname', data=parse(StringIO('<someXml/>')))
         self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
 
+    def testLxmltostring(self):
+        uri = "some:Baháma's"
+        xml = """<root><sub attribute="%s"/></root>""" % uri
+        lxmlNode = parse(StringIO(xml))
+        print 'lxmltostring(lxmlNode) >>>', lxmltostring(lxmlNode)
+        subnode = lxmlNode.xpath("sub")[0]
+        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
+        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
+        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
+        print
 
+        xml = """<root attribute="%s"><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri, uri)
+        lxmlNode = parse(StringIO(xml))
+        subnode = lxmlNode.xpath("sub")[0]
+        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
+        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
+        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
+        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
+        print
+
+
+        xml = """<root><sub><subsub>%s</subsub></sub></root>""" % uri
+        lxmlNode = parse(StringIO(xml))
+        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
+        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
+        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
