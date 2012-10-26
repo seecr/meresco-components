@@ -261,28 +261,28 @@ class XmlPumpTest(SeecrTestCase):
         self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
 
     def testLxmltostring(self):
-        uri = "some:Baháma's"
-        xml = """<root><sub attribute="%s"/></root>""" % uri
-        lxmlNode = parse(StringIO(xml))
-        print 'lxmltostring(lxmlNode) >>>', lxmltostring(lxmlNode)
-        subnode = lxmlNode.xpath("sub")[0]
-        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
-        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
-        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
-        print
-
-        xml = """<root attribute="%s"><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri, uri)
+        from lxml.etree import tostring
+        uri = "Baháma's"
+        xml = """<root><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri)
         lxmlNode = parse(StringIO(xml))
         subnode = lxmlNode.xpath("sub")[0]
-        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
-        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
-        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
-        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
-        print
+        self.assertEquals("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode))
+        subsubnode = lxmlNode.xpath("sub/subsub")[0]
+        self.assertEquals("""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
+        self.assertEquals("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode))
 
 
-        xml = """<root><sub><subsub>%s</subsub></sub></root>""" % uri
-        lxmlNode = parse(StringIO(xml))
-        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
-        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
-        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
+    def testLxmltostringFixes(self):
+        from meresco.components.xmlpump import _fixLxmltostringRootElement
+
+        self.assertEquals('<root><sub ...', _fixLxmltostringRootElement('<root><sub ...'))
+        self.assertEquals('<root attrib="aap&amp;noot"><sub ...', 
+                _fixLxmltostringRootElement('<root attrib="aap&amp;noot"><sub ...'))
+        self.assertEquals('<root attrib="aap&euro;noot"><sub ...', 
+                _fixLxmltostringRootElement('<root attrib="aap&euro;noot"><sub ...'))
+        self.assertEquals('<root attrib="ĳs"><sub ...', 
+                _fixLxmltostringRootElement('<root attrib="&#307;s"><sub ...'))
+        self.assertEquals('<root attrib="ĳs"><sub ...', 
+                _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub ...'))
+        self.assertEquals('<root attrib="ĳs"><sub attrib="&#x133;s">...', 
+                _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub attrib="&#x133;s">...'))
