@@ -1,0 +1,160 @@
+Changeset created on Fri Oct 26 09:27:33 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Character reference fix for lxmltostring
+
+    The method lxml.etree.tostring may create character references (e.g. &#x133;). This
+    seems to be a bug in lxml or libxml2 and only happens in the top element of the 
+    given lxmlNode. This reference will now be replaced by the correct UTF-8 character.
+
+Baseline version: 4.3.4
+
+From a683fda25a025c90e4ea53e0186d8f6e446343bf Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Fri, 26 Oct 2012 08:27:14 +0100
+Subject: [PATCH 1/2] TS/TJ: search for a corner case with lxmltostring.
+
+---
+ test/xmlpumptest.py |   27 ++++++++++++++++++++++++++-
+ 1 files changed, 26 insertions(+), 1 deletions(-)
+
+diff --git a/test/xmlpumptest.py b/test/xmlpumptest.py
+index 502d39e..cba0f97 100644
+--- a/test/xmlpumptest.py
++++ b/test/xmlpumptest.py
+@@ -260,4 +260,29 @@ class XmlPumpTest(SeecrTestCase):
+         observable.do.something('identifier', 'partname', data=parse(StringIO('<someXml/>')))
+         self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
+ 
+-
++    def testLxmltostring(self):
++        uri = "some:Baháma's"
++        xml = """<root><sub attribute="%s"/></root>""" % uri
++        lxmlNode = parse(StringIO(xml))
++        print 'lxmltostring(lxmlNode) >>>', lxmltostring(lxmlNode)
++        subnode = lxmlNode.xpath("sub")[0]
++        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
++        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
++        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
++        print
++
++        xml = """<root attribute="%s"><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri, uri)
++        lxmlNode = parse(StringIO(xml))
++        subnode = lxmlNode.xpath("sub")[0]
++        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
++        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
++        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
++        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
++        print
++
++
++        xml = """<root><sub><subsub>%s</subsub></sub></root>""" % uri
++        lxmlNode = parse(StringIO(xml))
++        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
++        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
++        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
+-- 
+1.7.1
+
+
+From 50542e2dad89f9d769f86c41161f800c1b9e5ff9 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Fri, 26 Oct 2012 10:21:25 +0100
+Subject: [PATCH 2/2] TS/TJ: lxmltostring fix for lxml bug.
+
+---
+ meresco/components/xmlpump.py |   16 +++++++++++++-
+ test/xmlpumptest.py           |   46 ++++++++++++++++++++--------------------
+ 2 files changed, 38 insertions(+), 24 deletions(-)
+
+diff --git a/meresco/components/xmlpump.py b/meresco/components/xmlpump.py
+index ea1ef90..0a921de 100644
+--- a/meresco/components/xmlpump.py
++++ b/meresco/components/xmlpump.py
+@@ -37,9 +37,11 @@ from amara.binderytools import bind_string
+ from meresco.core import Observable
+ 
+ from converter import Converter
++from re import compile as compileRe
++
+ 
+ def lxmltostring(lxmlNode, **kwargs):
+-    return tostring(lxmlNode, encoding="UTF-8", **kwargs)
++    return _fixLxmltostringRootElement(tostring(lxmlNode, encoding="UTF-8", **kwargs))
+ 
+ class XmlParseAmara(Converter):
+     def _convert(self, anObject):
+@@ -69,3 +71,15 @@ class Lxml2Amara(Converter):
+     def _convert(self, anObject):
+         return bind_string(lxmltostring(anObject)).childNodes[0]
+ 
++_CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
++def _replCharRef(matchObj):
++    code = matchObj.groupdict()['code']
++    code = int(code[1:], base=16) if 'x' in code else int(code)
++    return str(unichr(code))
++
++def _fixLxmltostringRootElement(aString):
++    firstGt = aString.find('>')
++    if aString.find('&#', 0, firstGt) > -1:
++        return _CHAR_REF.sub(_replCharRef, aString[:firstGt]) + aString[firstGt:]
++
++    return aString
+diff --git a/test/xmlpumptest.py b/test/xmlpumptest.py
+index cba0f97..6ab331c 100644
+--- a/test/xmlpumptest.py
++++ b/test/xmlpumptest.py
+@@ -261,28 +261,28 @@ class XmlPumpTest(SeecrTestCase):
+         self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
+ 
+     def testLxmltostring(self):
+-        uri = "some:Baháma's"
+-        xml = """<root><sub attribute="%s"/></root>""" % uri
++        from lxml.etree import tostring
++        uri = "Baháma's"
++        xml = """<root><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri)
+         lxmlNode = parse(StringIO(xml))
+-        print 'lxmltostring(lxmlNode) >>>', lxmltostring(lxmlNode)
+         subnode = lxmlNode.xpath("sub")[0]
+-        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
+-        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
+-        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
+-        print
+-
+-        xml = """<root attribute="%s"><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri, uri)
+-        lxmlNode = parse(StringIO(xml))
+-        subnode = lxmlNode.xpath("sub")[0]
+-        print 'lxmltostring(subnode) >>>', lxmltostring(subnode)
+-        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
+-        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
+-        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
+-        print
+-
+-
+-        xml = """<root><sub><subsub>%s</subsub></sub></root>""" % uri
+-        lxmlNode = parse(StringIO(xml))
+-        print 'lxmltostring(root) >>>', lxmltostring(lxmlNode.getroot())
+-        print 'lxmltostring(root.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0])
+-        print 'lxmltostring(root.child.child) >>>', lxmltostring(lxmlNode.getroot().getchildren()[0].getchildren()[0])
++        self.assertEquals("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode))
++        subsubnode = lxmlNode.xpath("sub/subsub")[0]
++        self.assertEquals("""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
++        self.assertEquals("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode))
++
++
++    def testLxmltostringFixes(self):
++        from meresco.components.xmlpump import _fixLxmltostringRootElement
++
++        self.assertEquals('<root><sub ...', _fixLxmltostringRootElement('<root><sub ...'))
++        self.assertEquals('<root attrib="aap&amp;noot"><sub ...', 
++                _fixLxmltostringRootElement('<root attrib="aap&amp;noot"><sub ...'))
++        self.assertEquals('<root attrib="aap&euro;noot"><sub ...', 
++                _fixLxmltostringRootElement('<root attrib="aap&euro;noot"><sub ...'))
++        self.assertEquals('<root attrib="ĳs"><sub ...', 
++                _fixLxmltostringRootElement('<root attrib="&#307;s"><sub ...'))
++        self.assertEquals('<root attrib="ĳs"><sub ...', 
++                _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub ...'))
++        self.assertEquals('<root attrib="ĳs"><sub attrib="&#x133;s">...', 
++                _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub attrib="&#x133;s">...'))
+-- 
+1.7.1
+
