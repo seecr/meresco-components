@@ -407,41 +407,6 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
         self.assertEquals([], reactor.calledMethodNames())
 
     def testPauseResume(self):
-        # Copy/Paste of 'def server(...)'
-        # could not match both servers, some test keep 'hanging'
-        @contextmanager
-        def server2(responses, bufsize=4096):
-            port = randint(10000,60000)
-            start = Event()
-            messages = []
-            def serverThread():
-                s = socket()
-                s.bind(('127.0.0.1', port))
-                s.listen(0)
-                start.set()
-                while responses:
-                    try:
-                        connection, address = s.accept()
-                        msg = connection.recv(bufsize)
-                        messages.append(msg)
-                        response = responses.pop()
-                        connection.send(response)
-                        connection.close()
-                    except:
-                        pass
-            thread = Thread(None, serverThread)
-            thread.start()
-            start.wait()
-            yield port, messages
-            thread.join()
-            responsesLeft = len(responses)
-            if False and responsesLeft > 0:
-                del responses[:]
-                sok = socket()
-                sok.connect(('127.0.0.1', port))
-                sok.close()
-            assert responsesLeft == 0, "Expected no more responses, but %s left." % responsesLeft
-
         reactor = Reactor()
         stepping = [True]
         def uit():
@@ -464,7 +429,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
                 return
                 yield
 
-        with server2(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*5) as (port, msgs):
+        with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*5) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, period=0.1, err=StringIO())
             dna = be(
             (Observable(),
