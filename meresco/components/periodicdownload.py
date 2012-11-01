@@ -45,7 +45,7 @@ from warnings import warn
 
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host, port, period=1, verbose=None, prio=None, name=None, err=None):
+    def __init__(self, reactor, host, port, period=1, verbose=None, prio=None, name=None, err=None, autoStart=True):
         super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host
@@ -53,6 +53,7 @@ class PeriodicDownload(Observable):
         self._period = period
         self._prio = prio
         self._err = err or stderr
+        self._paused = not autoStart
         if verbose in [True, False]:
             warn('Verbose flag is deprecated', DeprecationWarning)
 
@@ -60,7 +61,19 @@ class PeriodicDownload(Observable):
         self.startTimer()
 
     def startTimer(self, additionalTime=0):
-        self._reactor.addTimer(self._period + additionalTime, self.startProcess)
+        if not self._paused:
+            self._reactor.addTimer(self._period + additionalTime, self.startProcess)
+
+    def pause(self):
+        self._paused = True
+        self._logError("PAUSED")
+
+    def resume(self):
+        if not self._paused:
+            return
+        self._paused = False
+        self._logError("RESUMED")
+        self.startTimer()
 
     def startProcess(self):
         self._processOne = compose(self.processOne())
