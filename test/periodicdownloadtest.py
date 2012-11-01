@@ -454,6 +454,53 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             'PAUSE',
             ], receivedData)
 
+    def testPauseResumeWithError(self):
+        reactor = Reactor()
+        stepping = [True]
+        def uit():
+            stepping[0] = False
+        reactor.addTimer(2, uit)
+
+        receivedData = []
+        
+        class TestHandler(Observable):
+            def __init__(self):
+                Observable.__init__(self)
+                self._t0 = time()
+            def buildRequest(self):
+                return 'request'
+            def handle(self, data):
+                receivedData.append(('%.1fs' % (time() - self._t0), data))
+                if len(receivedData) >= 2:
+                    receivedData.append('PAUSE')
+                    self.call.pause()
+                    raise ValueError('You shall not pass!')
+                return
+                yield
+
+        with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*4) as (port, msgs):
+            download = PeriodicDownload(reactor, '127.0.0.1', port, period=0.1, err=StringIO())
+            dna = be(
+            (Observable(),
+                (download,
+                    (TestHandler(),
+                        (download,)
+                    )
+                )
+            ))
+            list(compose(dna.once.observer_init()))
+
+            reactor.addTimer(1, lambda: dna.call.resume())
+            while stepping[0]:
+                reactor.step()
+            self.assertEquals('message', urlopen('http://127.0.0.1:%s/request' % port).read())
+        self.assertEquals([
+            ('0.1s', 'message'),
+            ('0.2s', 'message'),
+            'PAUSE',
+            ('1.1s', 'message'),
+            'PAUSE',
+            ], receivedData)
     
     def getDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')
