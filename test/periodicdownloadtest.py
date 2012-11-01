@@ -393,6 +393,17 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             self.assertEquals('removeProcess', reactor.calledMethods[6].name)
             self.assertReactorState(reactor)
              
+    def testShortenErrorMessage(self):
+        from meresco.components.periodicdownload import shorten
+        longMessage = "a"*100000
+        self.assertTrue(len(shorten(longMessage)) < len(longMessage)/10)
+
+    def testAutoStartOff(self):
+        reactor = CallTrace("reactor")
+        downloader = PeriodicDownload(reactor, 'host', 12345, autoStart=False)
+        downloader.observer_init()
+        self.assertEquals([], reactor.calledMethodNames())
+
     def getDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')
         self._reactor = CallTrace("reactor")
@@ -416,12 +427,6 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             self.assertEquals(len([n for n in names if n == 'add%s' % what]),
                 len([n for n in names if n == 'remove%s' % what]), 
                 'Expected same amount of add and remove for %s' % what)
-
-    def testShortenErrorMessage(self):
-        from meresco.components.periodicdownload import shorten
-        longMessage = "a"*100000
-        self.assertTrue(len(shorten(longMessage)) < len(longMessage)/10)
-
 
 HTTP_SEPARATOR = 2 * CRLF
 STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
