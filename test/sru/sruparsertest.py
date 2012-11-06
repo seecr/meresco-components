@@ -44,7 +44,7 @@ class SruParserTest(SeecrTestCase):
     def testExplainWithPresetValues(self):
         component = SruParser(host='TEST_SERVER_HOST', port='TEST_SERVER_PORT', description='TEST_SERVER_DESCRIPTION', modifiedDate='TEST_SERVER_DATE', database='DATABASE', wsdl='http://somewhe.re/wsdl')
 
-        result = "".join(list(component.handleRequest(arguments={}, Headers={'Host': '1.2.3.4:80'}, RequestURI="/sru")))
+        result = "".join(compose(component.handleRequest(arguments={}, Headers={'Host': '1.2.3.4:80'}, RequestURI="/sru")))
         self.assertEqualsWS("""HTTP/1.0 200 OK
 Content-Type: text/xml; charset=utf-8
 
@@ -78,7 +78,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
     def testExplainWithoutPresetValues(self):
         component = SruParser()
 
-        result = "".join(list(component.handleRequest(arguments={'operation': ['explain'], 'version': ['1.2']}, Headers={'Host': '1.2.3.4:8080'}, RequestURI="/sru?operation=explain&version=1.2")))
+        result = "".join(compose(component.handleRequest(arguments={'operation': ['explain'], 'version': ['1.2']}, Headers={'Host': '1.2.3.4:8080'}, RequestURI="/sru?operation=explain&version=1.2")))
         self.assertEqualsWS("""HTTP/1.0 200 OK
 Content-Type: text/xml; charset=utf-8
 
@@ -183,7 +183,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         sruHandler.returnValues['searchRetrieve'] = (x for x in ["<result>mock result XML</result>"])
         component.addObserver(sruHandler)
 
-        response = "".join(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'], sortKeys=['aField,,1'])))
+        response = "".join(compose(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'], sortKeys=['aField,,1']))))
 
         self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
         self.assertEquals((), sruHandler.calledMethods[0].args)
@@ -207,7 +207,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         sruHandler.returnValues['searchRetrieve'] = (x for x in ["<result>mock result XML</result>"])
         component.addObserver(sruHandler)
 
-        list(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve'], 'x-something':['something']}))
+        list(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve'], 'x-something':['something']})))
 
         self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
         self.assertEquals((), sruHandler.calledMethods[0].args)

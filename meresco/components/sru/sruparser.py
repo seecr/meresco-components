@@ -104,8 +104,7 @@ class SruParser(Observable):
             operationMethod = self._explain
             if operation == 'searchRetrieve':
                 operationMethod = self._searchRetrieve
-            for data in compose(operationMethod(arguments, **kwargs)):
-                yield data
+            yield operationMethod(arguments, **kwargs)
         except SruException, e:
             yield DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
             raise StopIteration()
