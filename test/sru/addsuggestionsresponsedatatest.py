@@ -34,12 +34,13 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
     def testCreateExtraResponseDataWithSingleSuggestions(self):
         suggestions = AddSuggestionsResponseData()
         response = Response(total=0, hits=[])
-        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen'])}
+        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen', 'qu<een'])}
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
     <suggestion>que</suggestion>
     <suggestion>emery</suggestion>
     <suggestion>queen</suggestion>
+    <suggestion>qu&lt;een</suggestion>
 </suggestions>
 """, responseData)
 

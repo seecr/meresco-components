@@ -24,6 +24,8 @@
 # 
 ## end license ##
 
+from xml.sax.saxutils import escape as xmlEscape
+
 class AddSuggestionsResponseData(object):
 
     def extraResponseData(self, response, suggestionsQuery, **kwargs):
@@ -46,6 +48,6 @@ class AddSuggestionsResponseData(object):
                 rightPart = newSuggestionsQuery[stop:]
 
                 newSuggestionsQuery = leftPart + replaceWord + rightPart
-            yield "<suggestion>%s</suggestion>\n" % newSuggestionsQuery
+            yield "<suggestion>%s</suggestion>\n" % xmlEscape(newSuggestionsQuery)
         yield '</suggestions>\n'
 
