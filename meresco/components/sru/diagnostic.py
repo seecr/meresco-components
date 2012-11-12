@@ -31,6 +31,7 @@ UNSUPPORTED_VERSION = [5, "Unsupported Version"]
 UNSUPPORTED_PARAMETER_VALUE = [6, "Unsupported Parameter Value"]
 MANDATORY_PARAMETER_NOT_SUPPLIED = [7, "Mandatory Parameter Not Supplied"]
 UNSUPPORTED_PARAMETER = [8, "Unsupported Parameter"]
+TOO_MANY_CHARACTERS_IN_QUERY = [12, "Too many characters in query"]
 QUERY_FEATURE_UNSUPPORTED = [48, "Query Feature Unsupported"]
 
 DIAGNOSTIC = """<diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
