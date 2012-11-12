@@ -1,0 +1,46 @@
+Changeset created on Mon Nov 12 13:40:37 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Diagnostics for 'Too many characters in query'
+
+    Sru diagnostics for 'Too many characters in query' added.
+
+Baseline version: 4.3.7
+
+From 7a6fa0464db173d3e931babc3d32e140c6ca9b46 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Mon, 12 Nov 2012 14:21:00 +0100
+Subject: [PATCH] TS/HM: Added TOO_MANY_CHARACTERS_IN_QUERY for sru diagnostics
+
+---
+ meresco/components/sru/__init__.py   |    2 +-
+ meresco/components/sru/diagnostic.py |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/meresco/components/sru/__init__.py b/meresco/components/sru/__init__.py
+index 6331c4d..285315d 100644
+--- a/meresco/components/sru/__init__.py
++++ b/meresco/components/sru/__init__.py
+@@ -28,7 +28,7 @@
+ ## end license ##
+ 
+ from srurecordupdate import SRURecordUpdate
+-from sruparser import SruParser
++from sruparser import SruParser, SruException
+ from sruhandler import SruHandler
+ from srw import Srw
+ from addsuggestionsresponsedata import AddSuggestionsResponseData
+diff --git a/meresco/components/sru/diagnostic.py b/meresco/components/sru/diagnostic.py
+index a0fc928..1576587 100644
+--- a/meresco/components/sru/diagnostic.py
++++ b/meresco/components/sru/diagnostic.py
+@@ -31,6 +31,7 @@ UNSUPPORTED_VERSION = [5, "Unsupported Version"]
+ UNSUPPORTED_PARAMETER_VALUE = [6, "Unsupported Parameter Value"]
+ MANDATORY_PARAMETER_NOT_SUPPLIED = [7, "Mandatory Parameter Not Supplied"]
+ UNSUPPORTED_PARAMETER = [8, "Unsupported Parameter"]
++TOO_MANY_CHARACTERS_IN_QUERY = [12, "Too many characters in query"]
+ QUERY_FEATURE_UNSUPPORTED = [48, "Query Feature Unsupported"]
+ 
+ DIAGNOSTIC = """<diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
+-- 
+1.7.2.5
+
