@@ -60,7 +60,7 @@ class SruHandler(Observable):
         self._querySuggestionsCount = querySuggestionsCount
         self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
 
-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, **kwargs):
+    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         t0 = self._timeNow()
@@ -110,6 +110,7 @@ class SruHandler(Observable):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
+        yield self._writeDiagnostics(diagnostics=diagnostics)
         yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, suggestionsQuery=suggestionsQuery, sruArguments=sruArguments, **kwargs)
         yield self._endResults()
 
@@ -124,6 +125,14 @@ class SruHandler(Observable):
         for chunk in decorate('<srw:extraRequestData>', compose(self.all.echoedExtraRequestData(sruArguments=sruArguments, **kwargs)), '</srw:extraRequestData>'):
             yield chunk
         yield '</srw:echoedSearchRetrieveRequest>'
+
+    def _writeDiagnostics(self, diagnostics):
+        if not diagnostics:
+            return
+        yield '<srw:diagnostics>'
+        for code, details, message in diagnostics:
+            yield DIAGNOSTIC % (code, xmlEscape(details), xmlEscape(message))
+        yield '</srw:diagnostics>'
 
     def _writeExtraResponseData(self, response=None, queryTime=None, **kwargs):
         result = compose(self._extraResponseDataTryExcept(response=response, queryTime=queryTime, **kwargs))

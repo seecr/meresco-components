@@ -511,6 +511,53 @@ class SruHandlerTest(SeecrTestCase):
         finally:
             sys.stderr = sys.__stderr__
 
+    def testDiagnosticWarning(self):
+        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, }
+        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
+
+        observer = CallTrace()
+        response = Response(total=100, hits=['<aap&noot>', 'vuur'])
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        yieldRecordCalls = []
+        def yieldRecord(identifier, partname):
+            yieldRecordCalls.append(1)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), partname)
+        observer.yieldRecord = yieldRecord
+
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+
+        component = SruHandler()
+        component.addObserver(observer)
+
+        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, diagnostics=[(998, 'Diagnostic 998', 'The <tag> message'), (999, 'Diagnostic 999', 'Some message')], **queryArguments)))
+
+        response = parse(StringIO(result))
+
+        self.assertEquals([t % namespaces for t in [
+                '{%(srw)s}version',
+                '{%(srw)s}numberOfRecords',
+                '{%(srw)s}records',
+                '{%(srw)s}nextRecordPosition',
+                '{%(srw)s}echoedSearchRetrieveRequest',
+                '{%(srw)s}diagnostics',
+                '{%(srw)s}extraResponseData',
+            ]], [t.tag for t in xpath(response, '//srw:searchRetrieveResponse/*')])
+
+        diagnostics = [(xpath(d, 'diag:uri/text()')[0], 
+            xpath(d, 'diag:details/text()')[0],
+            xpath(d, 'diag:message/text()')[0]) for d in 
+                xpath(response, '/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic')]
+        self.assertEquals([
+            ('info://srw/diagnostics/1/998', 'Diagnostic 998', 'The <tag> message'), 
+            ('info://srw/diagnostics/1/999', 'Diagnostic 999', 'Some message'),
+            ], diagnostics)
+
+
     def testSearchRetrieveAssertsDrilldownMaximumMaximumResultsWhenSet(self):
         drilldownMaximumMaximumResults = 3
         self.assertTrue(drilldownMaximumMaximumResults < DEFAULT_MAXIMUM_TERMS)
@@ -678,5 +725,13 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(5, methodKwargs['suggestionsCount'])
         self.assertEquals("value", methodKwargs['suggestionsQuery'])
 
+def xpath(lxmlNode, path):
+    return lxmlNode.xpath(path, namespaces=namespaces)
+
+namespaces = {
+        'ti': "http://meresco.org/namespace/timing",
+        'srw': "http://www.loc.gov/zing/srw/",
+        'diag': "http://www.loc.gov/zing/srw/diagnostic/", 
+    }
 def hitsRange(*args):
     return ['%s' % i for i in range(*args)]
