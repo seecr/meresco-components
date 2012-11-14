@@ -42,8 +42,8 @@ from time import time
 from decimal import Decimal
 from traceback import print_exc
 
-from diagnostic import UNSUPPORTED_PARAMETER_VALUE
-from sruparser import DIAGNOSTICS, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, RESPONSE_HEADER, RESPONSE_FOOTER
+from diagnostic import DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
+from sruparser import DIAGNOSTICS, RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
