@@ -501,6 +501,28 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             ('1.1s', 'message'),
             'PAUSE',
             ], receivedData)
+
+    def testGetState(self):
+        reactor = CallTrace("reactor")
+        downloader = PeriodicDownload(reactor, 'host', 12345, name='theName')
+        s = downloader.getState()
+
+        self.assertEquals('theName', s.name)
+        self.assertEquals('host', s.host)
+        self.assertEquals(12345, s.port)
+        self.assertEquals(False, s.paused)
+
+        reactor = CallTrace("reactor")
+        downloader = PeriodicDownload(reactor, 'unhost', 54321, name='anotherName', autoStart=False)
+        s = downloader.getState()
+
+        self.assertEquals('anotherName', s.name)
+        self.assertEquals('unhost', s.host)
+        self.assertEquals(54321, s.port)
+        self.assertEquals(True, s.paused)
+
+        #self.assertEquals([], reactor.calledMethodNames())
+
     
     def getDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')

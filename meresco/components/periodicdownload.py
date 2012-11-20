@@ -79,6 +79,9 @@ class PeriodicDownload(Observable):
         self._processOne = compose(self.processOne())
         self._processOne.next()
 
+    def getState(self):
+        return PeriodicDownloadStateView(self)
+
     def processOne(self):
         sok = yield self._tryConnect()
         requestString = self.call.buildRequest()
@@ -180,6 +183,28 @@ class PeriodicDownload(Observable):
             if not request.endswith('\n'):
                 self._err.write('\n')
         self._err.flush()
+
+
+class PeriodicDownloadStateView(object):
+    def __init__(self, periodicDownload):
+        self._periodicDownload = periodicDownload
+        self._name = self._periodicDownload.observable_name()
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def host(self):
+        return self._periodicDownload._host
+
+    @property
+    def port(self):
+        return self._periodicDownload._port
+
+    @property
+    def paused(self):
+        return self._periodicDownload._paused
 
 MAX_LENGTH=1500
 def shorten(response):
