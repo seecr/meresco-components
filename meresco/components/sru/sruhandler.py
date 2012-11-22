@@ -42,7 +42,7 @@ from time import time
 from decimal import Decimal
 from traceback import print_exc
 
-from diagnostic import DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
+from diagnostic import createDiagnostic, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
 from sruparser import DIAGNOSTICS, RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
@@ -89,7 +89,7 @@ class SruHandler(Observable):
             drilldownData = getattr(response, "drilldownData", None)
         except Exception, e:
             print_exc()
-            yield DIAGNOSTICS % ( QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], xmlEscape(str(e)))
+            yield createDiagnostic(uri=QUERY_FEATURE_UNSUPPORTED[0], message=QUERY_FEATURE_UNSUPPORTED[1], details=xmlEscape(str(e)))
             return
 
         queryTime = str(self._timeNow() - t0)
@@ -130,8 +130,8 @@ class SruHandler(Observable):
         if not diagnostics:
             return
         yield '<srw:diagnostics>'
-        for code, details, message in diagnostics:
-            yield DIAGNOSTIC % (code, xmlEscape(details), xmlEscape(message))
+        for code, message, details in diagnostics:
+            yield createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
         yield '</srw:diagnostics>'
 
     def _writeExtraResponseData(self, response=None, queryTime=None, **kwargs):
@@ -168,7 +168,7 @@ class SruHandler(Observable):
         try:
             yield self.all.extraResponseData(**kwargs)
         except Exception, e:
-            yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape(str(e))])
+            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _startResults(self, numberOfRecords, version):
         yield RESPONSE_HEADER
@@ -197,9 +197,9 @@ class SruHandler(Observable):
         try:
             yield dataGenerator
         except IOError, e:
-            yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId))])
+            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
         except Exception, e:
-            yield DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [xmlEscape(str(e))])
+            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):
         yield '<recordData recordSchema="%s">' % xmlEscape(schema)

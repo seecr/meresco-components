@@ -35,10 +35,9 @@ from StringIO import StringIO
 from urllib2 import urlopen
 import sys
 
-import traceback
 from lxml.etree import parse
 from meresco.components import lxmltostring
-from xml.sax.saxutils import quoteattr, escape as xmlEscape
+from xml.sax.saxutils import escape as xmlEscape
 
 from weightless.core import compose
 
@@ -52,7 +51,7 @@ from meresco.components.xml_generic import schemasPath
 from meresco.components.facetindex import Response
 
 from seecr.test import SeecrTestCase, CallTrace
-
+from seecr.test.io import stderr_replaced
 
 SUCCESS = "SUCCESS"
 
@@ -476,17 +475,19 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
-        self.assertTrue("diagnostic" in result, result)
-        self.assertTrue("recordSchema 'schema' for identifier 'ID' does not exist" in result, result)
-
+        self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
+        self.assertTrue("<message>General System Error</message>" in result)
+        self.assertTrue("<details>recordSchema 'schema' for identifier 'ID' does not exist</details>" in result)
+        
     def testExceptionInWriteRecordData(self):
         observer = CallTrace()
         observer.exceptions["yieldRecord"] = Exception("Test Exception")
         component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
-        self.assertTrue("diagnostic" in result, result)
-        self.assertTrue("Test Exception" in result, result)
+        self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
+        self.assertTrue("<message>General System Error</message>" in result)
+        self.assertTrue("<details>Test Exception</details>" in result)
 
     def testExceptionInWriteExtraRecordData(self):
         class RaisesException(object):
@@ -495,22 +496,26 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(RaisesException())
         result = "".join(compose(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
-        self.assertTrue("diagnostic" in result)
+        self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
+        self.assertTrue("<message>General System Error</message>" in result)
+        self.assertTrue("<details>Test Exception</details>" in result)
 
     def testDiagnosticOnExecuteCql(self):
-        sys.stderr = StringIO()
-        try:
+        with stderr_replaced():
             class RaisesException(object):
                 def executeQuery(self, *args, **kwargs):
                     raise Exception("Test Exception")
             component = SruHandler()
             component.addObserver(RaisesException())
             arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
-            result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
-            self.assertTrue("diagnostic" in result)
-        finally:
-            sys.stderr = sys.__stderr__
-
+            result = parse(StringIO("".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))))
+            namespaces = {'diag': 'http://www.loc.gov/zing/srw/diagnostic/'}
+            diagnostic = result.xpath("//diag:diagnostic", namespaces=namespaces)
+            self.assertEquals(1, len(diagnostic))
+            self.assertEquals(["info://srw/diagnostics/1/48"], diagnostic[0].xpath("diag:uri/text()", namespaces=namespaces))
+            self.assertEquals(["Query Feature Unsupported"], diagnostic[0].xpath("diag:message/text()", namespaces=namespaces))
+            self.assertEquals(["Test Exception"], diagnostic[0].xpath("diag:details/text()", namespaces=namespaces))
+        
     def testDiagnosticWarning(self):
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, }
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
@@ -548,13 +553,13 @@ class SruHandlerTest(SeecrTestCase):
                 '{%(srw)s}extraResponseData',
             ]], [t.tag for t in xpath(response, '//srw:searchRetrieveResponse/*')])
 
-        diagnostics = [(xpath(d, 'diag:uri/text()')[0], 
-            xpath(d, 'diag:details/text()')[0],
-            xpath(d, 'diag:message/text()')[0]) for d in 
+        diagnostics = [{'uri': xpath(d, 'diag:uri/text()')[0], 
+            'details': xpath(d, 'diag:details/text()')[0],
+            'message': xpath(d, 'diag:message/text()')[0]} for d in 
                 xpath(response, '/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic')]
         self.assertEquals([
-            ('info://srw/diagnostics/1/998', 'Diagnostic 998', 'The <tag> message'), 
-            ('info://srw/diagnostics/1/999', 'Diagnostic 999', 'Some message'),
+            {'uri': 'info://srw/diagnostics/1/998', 'message': 'Diagnostic 998', 'details': 'The <tag> message'}, 
+            {'uri': 'info://srw/diagnostics/1/999', 'message': 'Diagnostic 999', 'details': 'Some message'},
             ], diagnostics)
 
 
