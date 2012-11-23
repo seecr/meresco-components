@@ -1,0 +1,248 @@
+Changeset created on Fri Nov 23 13:25:58 UTC 2012 by Seecr (Seek You Too B.V.)
+
+Description: Add an additional message to sru diagnostics details 
+
+    A component with additionalDiagnosticDetails() method add's a message to 
+    every diagnostics details in the sru output 
+
+Baseline version: 4.3.11
+
+From 85f0cf945dca18071ab129b7d059d274a558fbca Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Fri, 23 Nov 2012 13:37:53 +0100
+Subject: [PATCH] HM/JJ: additional diagnostic text can be added
+
+---
+ meresco/components/sru/diagnostic.py |    4 +-
+ meresco/components/sru/sruhandler.py |   15 ++++++++----
+ meresco/components/sru/sruparser.py  |    4 ++-
+ test/sru/sruhandlertest.py           |   39 ++++++++++++++++++++++++++++-----
+ test/sru/sruparsertest.py            |   20 ++++++++++++++++-
+ 5 files changed, 67 insertions(+), 15 deletions(-)
+
+diff --git a/meresco/components/sru/diagnostic.py b/meresco/components/sru/diagnostic.py
+index 7ee4c97..c790877 100644
+--- a/meresco/components/sru/diagnostic.py
++++ b/meresco/components/sru/diagnostic.py
+@@ -39,9 +39,9 @@ DIAGNOSTIC = """<diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
+         <details>%s</details>
+         <message>%s</message>
+     </diagnostic>"""
+-    
++
+ def generalSystemError(message):
+     return DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [message])
+ 
+ def createDiagnostic(uri, message, details):
+-	return DIAGNOSTIC % (uri, details, message)
++    return DIAGNOSTIC % (uri, details, message)
+diff --git a/meresco/components/sru/sruhandler.py b/meresco/components/sru/sruhandler.py
+index 4bec59d..8671b68 100644
+--- a/meresco/components/sru/sruhandler.py
++++ b/meresco/components/sru/sruhandler.py
+@@ -91,7 +91,7 @@ class SruHandler(Observable):
+             drilldownData = getattr(response, "drilldownData", None)
+         except Exception, e:
+             print_exc()
+-            yield createDiagnostic(uri=QUERY_FEATURE_UNSUPPORTED[0], message=QUERY_FEATURE_UNSUPPORTED[1], details=xmlEscape(str(e)))
++            yield self._createDiagnostic(uri=QUERY_FEATURE_UNSUPPORTED[0], message=QUERY_FEATURE_UNSUPPORTED[1], details=xmlEscape(str(e)))
+             return
+ 
+         queryTime = str(self._timeNow() - t0)
+@@ -133,7 +133,7 @@ class SruHandler(Observable):
+             return
+         yield '<srw:diagnostics>'
+         for code, message, details in diagnostics:
+-            yield createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
++            yield self._createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
+         yield '</srw:diagnostics>'
+ 
+     def _writeExtraResponseData(self, response=None, queryTime=None, **kwargs):
+@@ -170,7 +170,7 @@ class SruHandler(Observable):
+         try:
+             yield self.all.extraResponseData(**kwargs)
+         except Exception, e:
+-            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
++            yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
+ 
+     def _startResults(self, numberOfRecords, version):
+         yield RESPONSE_HEADER
+@@ -199,9 +199,9 @@ class SruHandler(Observable):
+         try:
+             yield dataGenerator
+         except IOError, e:
+-            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
++            yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
+         except Exception, e:
+-            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
++            yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
+ 
+     def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):
+         yield '<recordData recordSchema="%s">' % xmlEscape(schema)
+@@ -261,5 +261,10 @@ class SruHandler(Observable):
+ 
+         return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
+ 
++    def _createDiagnostic(self, uri, message, details):
++        additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
++        details = ' - '.join([details] + list(additionalDiagnosticDetails))
++        return createDiagnostic(uri=uri, message=message, details=details)
++
+     def _timeNow(self):
+         return time()
+diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+index 15e8bf0..315ca7b 100644
+--- a/meresco/components/sru/sruparser.py
++++ b/meresco/components/sru/sruparser.py
+@@ -106,7 +106,9 @@ class SruParser(Observable):
+                 operationMethod = self._searchRetrieve
+             yield operationMethod(arguments, **kwargs)
+         except SruException, e:
+-            yield DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
++            additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
++            details = ' - '.join([e.details] + list(additionalDiagnosticDetails))
++            yield DIAGNOSTICS % (e.code, xmlEscape(details), xmlEscape(e.message))
+             raise StopIteration()
+         except Exception, e:
+             from traceback import print_exc
+diff --git a/test/sru/sruhandlertest.py b/test/sru/sruhandlertest.py
+index 840c9fe..d95a074 100644
+--- a/test/sru/sruhandlertest.py
++++ b/test/sru/sruhandlertest.py
+@@ -39,7 +39,7 @@ from lxml.etree import parse
+ from meresco.components import lxmltostring
+ from xml.sax.saxutils import escape as xmlEscape
+ 
+-from weightless.core import compose
++from weightless.core import compose, be
+ 
+ from cqlparser import parseString
+ 
+@@ -49,6 +49,7 @@ from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRI
+ from meresco.components.xml_generic.validate import assertValid
+ from meresco.components.xml_generic import schemasPath
+ from meresco.components.facetindex import Response
++from meresco.core import Observable
+ 
+ from seecr.test import SeecrTestCase, CallTrace
+ from seecr.test.io import stderr_replaced
+@@ -179,7 +180,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
+ 
+     def testNextRecordPosition(self):
+-        observer = CallTrace()
++        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
+         response = Response(total=100, hits=hitsRange(11, 26))
+         def executeQuery(**kwargs):
+             raise StopIteration(response)
+@@ -201,7 +202,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals(25, executeCqlCallKwargs['stop'])
+     
+     def testNextRecordPositionNotShownIfAfterLimitBeyond(self):
+-        observer = CallTrace()
++        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
+         response = Response(total=100, hits=hitsRange(10, 11))
+         def executeQuery(**kwargs):
+             raise StopIteration(response)
+@@ -488,7 +489,7 @@ class SruHandlerTest(SeecrTestCase):
+             '</srw:recordData>'], result)
+ 
+     def testIOErrorInWriteRecordData(self):
+-        observer = CallTrace()
++        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
+         observer.exceptions["yieldRecord"] = IOError()
+         component = SruHandler()
+         component.addObserver(observer)
+@@ -498,7 +499,7 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertTrue("<details>recordSchema 'schema' for identifier 'ID' does not exist</details>" in result)
+         
+     def testExceptionInWriteRecordData(self):
+-        observer = CallTrace()
++        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
+         observer.exceptions["yieldRecord"] = Exception("Test Exception")
+         component = SruHandler()
+         component.addObserver(observer)
+@@ -538,7 +539,7 @@ class SruHandlerTest(SeecrTestCase):
+         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, }
+         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
+ 
+-        observer = CallTrace()
++        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
+         response = Response(total=100, hits=['<aap&noot>', 'vuur'])
+         def executeQuery(**kwargs):
+             raise StopIteration(response)
+@@ -748,6 +749,32 @@ class SruHandlerTest(SeecrTestCase):
+         self.assertEquals(5, methodKwargs['suggestionsCount'])
+         self.assertEquals("value", methodKwargs['suggestionsQuery'])
+ 
++    def testDiagnosticGetHandledByObserver(self):
++        def mockAdditionalDiagnosticDetails(**kwargs):
++            yield "additional details"
++        def mockExecuteQuery(*args, **kwargs):
++            raise Exception("Zo maar iets")
++            yield
++
++        observer = CallTrace(methods={
++            'additionalDiagnosticDetails': mockAdditionalDiagnosticDetails,
++            'executeQuery': mockExecuteQuery})
++
++
++        dna = be(
++            (Observable(),
++                (SruHandler(),
++                    (observer, )
++                )
++            )
++        )
++   
++        with stderr_replaced():
++            response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
++            self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
++            self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
++
++
+ def xpath(lxmlNode, path):
+     return lxmlNode.xpath(path, namespaces=namespaces)
+ 
+diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+index 6aef46f..d3c9035 100644
+--- a/test/sru/sruparsertest.py
++++ b/test/sru/sruparsertest.py
+@@ -31,11 +31,12 @@
+ 
+ from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException, XML_HEADER
+ from meresco.components.sru import SruParser, SruHandler
++from meresco.core import Observable
+ 
+ from seecr.test import SeecrTestCase, CallTrace
+ from lxml.etree import parse
+ from StringIO import StringIO
+-from weightless.core import compose
++from weightless.core import compose, be
+ 
+ SUCCESS = "SUCCESS"
+ 
+@@ -214,3 +215,20 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         kwargs = sruHandler.calledMethods[0].kwargs
+         self.assertEquals(['something'], kwargs['sruArguments']['x-something'])
+ 
++    def testDiagnosticGetHandledByObserver(self):
++        def mockAdditionalDiagnosticDetails(**kwargs):
++            yield "additional details"
++        observer = CallTrace(methods={'additionalDiagnosticDetails': mockAdditionalDiagnosticDetails})
++
++        dna = be(
++            (Observable(),
++                (SruParser(),
++                    (observer, )
++                )
++            )
++        )
++    
++        response = ''.join(compose(dna.all.handleRequest(arguments={'startRecord': ['aap']})))
++        self.assertEquals(['additionalDiagnosticDetails'], observer.calledMethodNames())
++        self.assertTrue("<details>operation - additional details</details>" in response, response)
++
+-- 
+1.7.2.5
+
