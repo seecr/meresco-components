@@ -39,7 +39,7 @@ from lxml.etree import parse
 from meresco.components import lxmltostring
 from xml.sax.saxutils import escape as xmlEscape
 
-from weightless.core import compose
+from weightless.core import compose, be
 
 from cqlparser import parseString
 
@@ -49,6 +49,7 @@ from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRI
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
 from meresco.components.facetindex import Response
+from meresco.core import Observable
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
@@ -179,7 +180,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
 
     def testNextRecordPosition(self):
-        observer = CallTrace()
+        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         response = Response(total=100, hits=hitsRange(11, 26))
         def executeQuery(**kwargs):
             raise StopIteration(response)
@@ -201,7 +202,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(25, executeCqlCallKwargs['stop'])
     
     def testNextRecordPositionNotShownIfAfterLimitBeyond(self):
-        observer = CallTrace()
+        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         response = Response(total=100, hits=hitsRange(10, 11))
         def executeQuery(**kwargs):
             raise StopIteration(response)
@@ -488,7 +489,7 @@ class SruHandlerTest(SeecrTestCase):
             '</srw:recordData>'], result)
 
     def testIOErrorInWriteRecordData(self):
-        observer = CallTrace()
+        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         observer.exceptions["yieldRecord"] = IOError()
         component = SruHandler()
         component.addObserver(observer)
@@ -498,7 +499,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertTrue("<details>recordSchema 'schema' for identifier 'ID' does not exist</details>" in result)
         
     def testExceptionInWriteRecordData(self):
-        observer = CallTrace()
+        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         observer.exceptions["yieldRecord"] = Exception("Test Exception")
         component = SruHandler()
         component.addObserver(observer)
@@ -538,7 +539,7 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, }
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
 
-        observer = CallTrace()
+        observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         response = Response(total=100, hits=['<aap&noot>', 'vuur'])
         def executeQuery(**kwargs):
             raise StopIteration(response)
@@ -747,6 +748,32 @@ class SruHandlerTest(SeecrTestCase):
         methodKwargs = executeQueryMethod.kwargs
         self.assertEquals(5, methodKwargs['suggestionsCount'])
         self.assertEquals("value", methodKwargs['suggestionsQuery'])
+
+    def testDiagnosticGetHandledByObserver(self):
+        def mockAdditionalDiagnosticDetails(**kwargs):
+            yield "additional details"
+        def mockExecuteQuery(*args, **kwargs):
+            raise Exception("Zo maar iets")
+            yield
+
+        observer = CallTrace(methods={
+            'additionalDiagnosticDetails': mockAdditionalDiagnosticDetails,
+            'executeQuery': mockExecuteQuery})
+
+
+        dna = be(
+            (Observable(),
+                (SruHandler(),
+                    (observer, )
+                )
+            )
+        )
+   
+        with stderr_replaced():
+            response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
+            self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
+            self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
+
 
 def xpath(lxmlNode, path):
     return lxmlNode.xpath(path, namespaces=namespaces)

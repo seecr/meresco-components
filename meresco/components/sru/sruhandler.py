@@ -91,7 +91,7 @@ class SruHandler(Observable):
             drilldownData = getattr(response, "drilldownData", None)
         except Exception, e:
             print_exc()
-            yield createDiagnostic(uri=QUERY_FEATURE_UNSUPPORTED[0], message=QUERY_FEATURE_UNSUPPORTED[1], details=xmlEscape(str(e)))
+            yield self._createDiagnostic(uri=QUERY_FEATURE_UNSUPPORTED[0], message=QUERY_FEATURE_UNSUPPORTED[1], details=xmlEscape(str(e)))
             return
 
         queryTime = str(self._timeNow() - t0)
@@ -133,7 +133,7 @@ class SruHandler(Observable):
             return
         yield '<srw:diagnostics>'
         for code, message, details in diagnostics:
-            yield createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
+            yield self._createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
         yield '</srw:diagnostics>'
 
     def _writeExtraResponseData(self, response=None, queryTime=None, **kwargs):
@@ -170,7 +170,7 @@ class SruHandler(Observable):
         try:
             yield self.all.extraResponseData(**kwargs)
         except Exception, e:
-            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
+            yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _startResults(self, numberOfRecords, version):
         yield RESPONSE_HEADER
@@ -199,9 +199,9 @@ class SruHandler(Observable):
         try:
             yield dataGenerator
         except IOError, e:
-            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
+            yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
         except Exception, e:
-            yield createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
+            yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):
         yield '<recordData recordSchema="%s">' % xmlEscape(schema)
@@ -260,6 +260,11 @@ class SruHandler(Observable):
             return field, maxTerms, self._drilldownSortedByTermCount
 
         return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
+
+    def _createDiagnostic(self, uri, message, details):
+        additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
+        details = ' - '.join([details] + list(additionalDiagnosticDetails))
+        return createDiagnostic(uri=uri, message=message, details=details)
 
     def _timeNow(self):
         return time()

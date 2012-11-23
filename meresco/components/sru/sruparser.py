@@ -106,7 +106,9 @@ class SruParser(Observable):
                 operationMethod = self._searchRetrieve
             yield operationMethod(arguments, **kwargs)
         except SruException, e:
-            yield DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
+            additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
+            details = ' - '.join([e.details] + list(additionalDiagnosticDetails))
+            yield DIAGNOSTICS % (e.code, xmlEscape(details), xmlEscape(e.message))
             raise StopIteration()
         except Exception, e:
             from traceback import print_exc

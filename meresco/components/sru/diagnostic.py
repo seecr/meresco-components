@@ -39,9 +39,9 @@ DIAGNOSTIC = """<diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
         <details>%s</details>
         <message>%s</message>
     </diagnostic>"""
-    
+
 def generalSystemError(message):
     return DIAGNOSTIC % tuple(GENERAL_SYSTEM_ERROR + [message])
 
 def createDiagnostic(uri, message, details):
-	return DIAGNOSTIC % (uri, details, message)
+    return DIAGNOSTIC % (uri, details, message)

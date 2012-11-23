@@ -31,11 +31,12 @@
 
 from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException, XML_HEADER
 from meresco.components.sru import SruParser, SruHandler
+from meresco.core import Observable
 
 from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse
 from StringIO import StringIO
-from weightless.core import compose
+from weightless.core import compose, be
 
 SUCCESS = "SUCCESS"
 
@@ -213,4 +214,21 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         self.assertEquals((), sruHandler.calledMethods[0].args)
         kwargs = sruHandler.calledMethods[0].kwargs
         self.assertEquals(['something'], kwargs['sruArguments']['x-something'])
+
+    def testDiagnosticGetHandledByObserver(self):
+        def mockAdditionalDiagnosticDetails(**kwargs):
+            yield "additional details"
+        observer = CallTrace(methods={'additionalDiagnosticDetails': mockAdditionalDiagnosticDetails})
+
+        dna = be(
+            (Observable(),
+                (SruParser(),
+                    (observer, )
+                )
+            )
+        )
+    
+        response = ''.join(compose(dna.all.handleRequest(arguments={'startRecord': ['aap']})))
+        self.assertEquals(['additionalDiagnosticDetails'], observer.calledMethodNames())
+        self.assertTrue("<details>operation - additional details</details>" in response, response)
 
