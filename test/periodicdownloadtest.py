@@ -80,6 +80,7 @@ def server(responses, bufsize=4096):
             except:
                 pass
     thread = Thread(None, serverThread)
+    thread.daemon = True
     thread.start()
     start.wait()
     yield port, messages
@@ -89,7 +90,7 @@ def server(responses, bufsize=4096):
 class PeriodicDownloadTest(SeecrTestCase):
     def testOne(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEquals('addTimer', reactor.calledMethods[0].name)
             self.assertEquals(1, reactor.calledMethods[0].args[0])
             callback = reactor.calledMethods[0].args[1]
@@ -113,33 +114,33 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
             callback()
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testNoConnectionPossibleWithNonIntegerPort(self):
-        downloader, observer, reactor = self.getDownloader("some.nl", 'no-port')
+        downloader, observer, reactor = self._prepareDownloader("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
-        self.assertEquals("some.nl:no-port: an integer is required\n", downloader._err.getvalue())
-        self.assertReactorState(reactor)
+        self.assertEquals("%s: an integer is required\n" % repr(downloader), downloader._err.getvalue())
+        self.assertReactorStateClean(reactor)
 
     def testNoConnectionPossible(self):
-        downloader, observer, reactor = self.getDownloader("localhost", 8899)
+        downloader, observer, reactor = self._prepareDownloader("localhost", 8899)
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
         reactor.exceptions['removeWriter'] = IOError("error in sockopt") ## Simulate IOError as raised from sok.getsockopt
         callback = reactor.calledMethods[1].args[1]
         callback() # HTTP GET
-        self.assertEquals("localhost:8899: error in sockopt\n", downloader._err.getvalue())
+        self.assertEquals("%s: error in sockopt\n" % repr(downloader), downloader._err.getvalue())
         del reactor.exceptions['removeWriter']
         self.assertEquals('addTimer', reactor.calledMethods[-1].name)
         self.assertEquals(1 + 5*60, reactor.calledMethods[-1].args[0])
 
-        self.assertReactorState(reactor)
+        self.assertReactorStateClean(reactor)
 
         callback = reactor.calledMethods[-1].args[1]
         callback() # connect
         self.assertEquals("addWriter", reactor.calledMethods[-1].name)
-        self.assertEquals("localhost:8899: error in sockopt\n", downloader._err.getvalue()) # remains 1 error
+        self.assertEquals("%s: error in sockopt\n" % downloader, downloader._err.getvalue()) # remains 1 error
  
     def testVerboseDeprecationWarning(self):
         with stderr_replaced() as s:
@@ -154,7 +155,7 @@ class PeriodicDownloadTest(SeecrTestCase):
 
     def testErrorResponse(self):
         with server(['HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request']) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = reactor.calledMethods[0].args[1]
             callback() # connect
             callback = reactor.calledMethods[1].args[1]
@@ -165,12 +166,12 @@ class PeriodicDownloadTest(SeecrTestCase):
 
             callback() # yield After Error 
 
-            self.assertEquals("localhost:%d: Unexpected response: HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue())
+            self.assertEquals("%s: Unexpected response: HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % repr(downloader), downloader._err.getvalue())
             self.assertEquals(['buildRequest'], [m.name for m in observer.calledMethods])
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testInvalidPortConnectionRefused(self):
-        downloader, observer, reactor = self.getDownloader("localhost", 88)
+        downloader, observer, reactor = self._prepareDownloader("localhost", 88)
         callback = reactor.calledMethods[0].args[1]
         callback() # startProcess
         self.assertEquals("addWriter", reactor.calledMethods[1].name)
@@ -178,35 +179,35 @@ class PeriodicDownloadTest(SeecrTestCase):
         callback() # _processOne.next
         self.assertEquals("removeWriter", reactor.calledMethods[2].name)
         self.assertEquals("addTimer", reactor.calledMethods[3].name)
-        self.assertEquals("localhost:88: Connection refused.\n", downloader._err.getvalue())
-        self.assertReactorState(reactor)
+        self.assertEquals("%s: Connection refused.\n" % downloader, downloader._err.getvalue())
+        self.assertReactorStateClean(reactor)
 
     def testInvalidHost(self):
         strangeHost = "UEYR^$*FD(#>NDJ.khfd9.(*njnd.nl"
-        downloader, observer, reactor = self.getDownloader(strangeHost, 88)
+        downloader, observer, reactor = self._prepareDownloader(strangeHost, 88)
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
         self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-        nameOrServiceNotKnown = strangeHost + ":88: -2: Name or service not known\n" ==  downloader._err.getvalue()
-        noAddressAssociatedWithHost = strangeHost + ":88: -5: No address associated with hostname\n" == downloader._err.getvalue()
+        nameOrServiceNotKnown = ("%s: -2: Name or service not known\n" % downloader ==  downloader._err.getvalue())
+        noAddressAssociatedWithHost = ("%s: -5: No address associated with hostname\n" % downloader == downloader._err.getvalue())
         self.assertTrue(nameOrServiceNotKnown or noAddressAssociatedWithHost, downloader._err.getvalue())
-        self.assertReactorState(reactor)
+        self.assertReactorStateClean(reactor)
 
     def testInvalidHostConnectionRefused(self):
-        downloader, observer, reactor = self.getDownloader("127.0.0.255", 9876)
+        downloader, observer, reactor = self._prepareDownloader("127.0.0.255", 9876)
         callback = reactor.calledMethods[0].args[1]
         callback() # startProcess
         self.assertEquals("addWriter", reactor.calledMethods[1].name)
         callback = reactor.calledMethods[1].args[1]
         callback() # _processOne.next
-        self.assertEquals("127.0.0.255:9876: Connection refused.\n", downloader._err.getvalue())
+        self.assertEquals("%s: Connection refused.\n" % downloader, downloader._err.getvalue())
         self.assertEquals("removeWriter", reactor.calledMethods[2].name)
         self.assertEquals("addTimer", reactor.calledMethods[3].name)
-        self.assertReactorState(reactor)
+        self.assertReactorStateClean(reactor)
 
     def testSuccess(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEquals(1, downloader._period)
             callback = self.doConnect() # _processOne.next
             callback() # _processOne.next -> HTTP GET
@@ -222,12 +223,12 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # _processOne.next
             self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testSuccessWithSuspend(self):
         suspendObject = Suspend()
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port, handleGenerator=(x for x in ['X', suspendObject]))
+            downloader, observer, reactor = self._prepareDownloader("localhost", port, handleGenerator=(x for x in ['X', suspendObject]))
             self.assertEquals(1, downloader._period)
             callback = self.doConnect() # _processOne.next
             callback() # _processOne.next -> HTTP GET
@@ -248,7 +249,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback()
             self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testRaiseInHandle(self):
         def handleGenerator():
@@ -257,7 +258,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             yield
 
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port, handleGenerator=handleGenerator())
+            downloader, observer, reactor = self._prepareDownloader("localhost", port, handleGenerator=handleGenerator())
             callback = self.doConnect() # _processOne.next
             callback() # _processOne.next -> HTTP GET
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
@@ -273,23 +274,23 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # 2nd response / raise Exception(...)
             result = downloader._err.getvalue()
             self.assertTrue('Traceback' in result, result)
-            expected =  ignoreLineNumbers("""localhost:%(port)s: Traceback (most recent call last):
+            expected =  ignoreLineNumbers("""%s: Traceback (most recent call last):
   File "%%(periodicdownload.py)s", line 104, in processOne
     for _response  in g:
   File "%%(__file__)s", line 243, in handleGenerator
     raise Exception('xcptn')
 Exception: xcptn
 Error while processing response: HTTP/1.0 200 OK \r\n\r\n<aap:noot xmlns:aap="mies"><record>ignored</record></aap:noot>
-For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fileDict)
+For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % fileDict)
             self.assertEquals(expected, ignoreLineNumbers(result))
 
             self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testAssertionErrorReraised(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             observer.methods['handle'] = lambda *args, **kwargs: None  # will cause AssertionError in Observable
 
             self.assertEquals(1, downloader._period)
@@ -308,7 +309,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
           
     def testSuccessHttp1dot1Server(self):
         with server([STATUSLINE_ALTERNATIVE + ONE_RECORD]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = self.doConnect()
             callback() # HTTP GET
             sleep(0.01)
@@ -320,11 +321,11 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
             callback()
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testPeriod(self):
         with server([RESPONSE_TWO_RECORDS, 'HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port, period=2)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port, period=2)
             callback = self.doConnect()
             callback() # HTTP GET
             sleep(0.01)
@@ -349,17 +350,17 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             # error status
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testRecoveringAfterDroppedConnection(self):
         with server([DROP_CONNECTION, RESPONSE_ONE_RECORD]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = self.doConnect()
             callback() # HTTP GET
             sleep(0.01)
             callback = reactor.calledMethods[-1].args[1]
             callback() # _processOne.next -> sok.recv
-            self.assertEquals("localhost:%d: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % port, downloader._err.getvalue()) 
+            self.assertEquals("%s: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % repr(downloader), downloader._err.getvalue()) 
             callback = reactor.calledMethods[-1].args[1]
             callback() # startProcess
             callback = reactor.calledMethods[-1].args[1]
@@ -371,11 +372,11 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             callback() # _processOne.next -> addProcess
             self.assertEquals(['buildRequest', 'buildRequest', 'handle'], [m.name for m in observer.calledMethods])
             callback()
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
 
     def testDriver(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
-            downloader, observer, reactor = self.getDownloader("localhost", port)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEquals(1, reactor.calledMethods[0].args[0])
             callback = reactor.calledMethods[0].args[1]
             callback() # connect
@@ -393,7 +394,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
             except StopIteration:
                 pass
             self.assertEquals('removeProcess', reactor.calledMethods[6].name)
-            self.assertReactorState(reactor)
+            self.assertReactorStateClean(reactor)
              
     def testShortenErrorMessage(self):
         from meresco.components.periodicdownload import shorten
@@ -406,6 +407,20 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
         downloader.observer_init()
         self.assertEquals([], reactor.calledMethodNames())
 
+    def testHostAndPortRequiredUnlessAutostartFalse(self):
+        reactor = CallTrace("reactor")
+        self.assertRaises(ValueError, lambda: PeriodicDownload(reactor))
+        self.assertRaises(ValueError, lambda: PeriodicDownload(reactor, host='example.com'))
+        self.assertRaises(ValueError, lambda: PeriodicDownload(reactor, port=123))
+        downloader = PeriodicDownload(reactor, autoStart=False)
+
+    def testRepr(self):
+        reactor = CallTrace("reactor")
+        downloader = PeriodicDownload(reactor, host='example.com', port=80)
+        self.assertEquals("PeriodicDownload(host='example.com', port=80)", repr(downloader))
+        downloader = PeriodicDownload(reactor, name="theName", autoStart=False)
+        self.assertEquals("PeriodicDownload(name='theName')", repr(downloader))
+        
     def testPauseResume(self):
         reactor = Reactor()
         stepping = [True]
@@ -521,10 +536,54 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
         self.assertEquals(54321, s.port)
         self.assertEquals(True, s.paused)
 
-        #self.assertEquals([], reactor.calledMethodNames())
+        self.assertEquals([], reactor.calledMethodNames())
 
-    
-    def getDownloader(self, host, port, period=1, handleGenerator=None):
+    def testSetDownloadAddress(self):
+        reactor = CallTrace("reactor")
+        downloader = PeriodicDownload(reactor, host=None, port=None, autoStart=False)
+        downloader.setDownloadAddress(host='host', port=12345)
+        s = downloader.getState()
+        self.assertEquals('host', s.host)
+        self.assertEquals(12345, s.port)
+        downloader.setDownloadAddress(host='anotherHost', port=54321)
+        s = downloader.getState()
+        self.assertEquals('anotherHost', s.host)
+        self.assertEquals(54321, s.port)
+
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
+            self.assertEquals('addTimer', reactor.calledMethods[0].name)
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # connect
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # HTTP GET
+            sleep(0.01)
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # sok.recv
+            callback() # sok.recv
+            callback() # addProcess
+            self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
+            callback()
+            self.assertReactorStateClean(reactor)
+            oldPort = port
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            self.assertNotEquals(oldPort, port)
+            downloader.setDownloadAddress(host='localhost', port=port)
+            self._observer.methods['handle'] = lambda data: (x for x in 'X')
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # connect
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # HTTP GET
+            sleep(0.01)
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # sok.recv
+            callback() # sok.recv
+            callback() # addProcess
+            self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
+            callback()
+            self.assertReactorStateClean(reactor)
+
+    def _prepareDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')
         self._reactor = CallTrace("reactor")
         self._downloader = PeriodicDownload(self._reactor, host, port, period=period, prio=0, err=StringIO())
@@ -541,12 +600,14 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % {'port': port} % fil
         callback = self._reactor.calledMethods[1].args[1]
         return callback # _processOne.next
 
-    def assertReactorState(self, reactor):
+    def assertReactorStateClean(self, reactor):
         names = [m.name for m in reactor.calledMethods]
         for what in ['Writer', 'Reader', 'Process']: 
-            self.assertEquals(len([n for n in names if n == 'add%s' % what]),
+            self.assertEquals(
+                len([n for n in names if n == 'add%s' % what]),
                 len([n for n in names if n == 'remove%s' % what]), 
                 'Expected same amount of add and remove for %s' % what)
+
 
 HTTP_SEPARATOR = 2 * CRLF
 STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
@@ -558,4 +619,5 @@ ONE_RECORD = BODY % (EMBEDDED_RECORD)
 TWO_RECORDS = BODY % (EMBEDDED_RECORD * 2) 
 RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD 
 RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS 
+
 

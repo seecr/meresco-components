@@ -45,7 +45,7 @@ from warnings import warn
 
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host, port, period=1, verbose=None, prio=None, name=None, err=None, autoStart=True):
+    def __init__(self, reactor, host=None, port=None, period=1, verbose=None, prio=None, name=None, err=None, autoStart=True):
         super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host
@@ -54,8 +54,14 @@ class PeriodicDownload(Observable):
         self._prio = prio
         self._err = err or stderr
         self._paused = not autoStart
+        if autoStart and (not self._host or not self._port):
+            raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
             warn('Verbose flag is deprecated', DeprecationWarning)
+
+    def setDownloadAddress(self, host, port):
+        self._host = host
+        self._port = port
 
     def observer_init(self):
         self.startTimer()
@@ -65,14 +71,15 @@ class PeriodicDownload(Observable):
             self._reactor.addTimer(self._period + additionalTime, self.startProcess)
 
     def pause(self):
-        self._paused = True
-        self._logError("PAUSED")
+        if not self._paused:
+            self._paused = True
+            self._logInfo("paused")
 
     def resume(self):
         if not self._paused:
             return
         self._paused = False
-        self._logError("RESUMED")
+        self._logInfo("resumed")
         self.startTimer()
 
     def startProcess(self):
@@ -173,16 +180,31 @@ class PeriodicDownload(Observable):
         yield
 
     def _logError(self, message, request=None):
-        self._err.write("%s:%s: " % (self._host, self._port))
-        self._err.write(message)
+        self._log(self._err, message, request)
+
+    def _logInfo(self, message):
+        self._log(self._err, message)
+
+    def _log(self, out, message, request=None):
+        out.write("%s: " % repr(self))
+        out.write(message)
         if not message.endswith('\n'):
-            self._err.write('\n')
+            out.write('\n')
         if request:
-            self._err.write('For request: ')
-            self._err.write(request)
+            out.write('For request: ')
+            out.write(request)
             if not request.endswith('\n'):
-                self._err.write('\n')
-        self._err.flush()
+                out.write('\n')
+        out.flush()
+
+    def __repr__(self):
+        kwargsList = [
+            '%s=%s' % (name, repr(value))
+            for name, value 
+            in [('host', self._host), ('port', self._port), ('name', self._name)]
+            if value
+        ]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(kwargsList))
 
 
 class PeriodicDownloadStateView(object):
