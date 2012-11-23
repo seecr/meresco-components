@@ -200,6 +200,24 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(10, executeCqlCallKwargs['start']) # SRU is 1 based
         self.assertEquals(25, executeCqlCallKwargs['stop'])
     
+    def testNextRecordPositionNotShownIfAfterLimitBeyond(self):
+        observer = CallTrace()
+        response = Response(total=100, hits=hitsRange(10, 11))
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+        observer.returnValues['yieldRecord'] = lambda *a, **kw: (x for x in "record")
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+
+        component = SruHandler()
+        component.addObserver(observer)
+
+        arguments = dict(startRecord=10, maximumRecords=2, query='query', recordPacking='string', recordSchema='schema', limitBeyond=10)
+        result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
+        self.assertFalse("<srw:nextRecordPosition>" in result, result)
+   
     def testSearchRetrieveVersion11(self):
         queryArguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
         sruArguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore']}

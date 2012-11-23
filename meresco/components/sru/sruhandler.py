@@ -63,6 +63,8 @@ class SruHandler(Observable):
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
+        limitBeyond = kwargs.get('limitBeyond', None)
+
         t0 = self._timeNow()
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
@@ -106,7 +108,7 @@ class SruHandler(Observable):
         if recordsWritten:
             yield '</srw:records>'
             nextRecordPosition = start + recordsWritten
-            if nextRecordPosition < total:
+            if nextRecordPosition < total and (limitBeyond == None or (limitBeyond != None and limitBeyond > nextRecordPosition)):
                 yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
 
         yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
