@@ -38,8 +38,13 @@ find tmp -name '*.py' -exec sed -r -e \
 
 if [ -f /etc/debian_version ]; then
     SITE_PACKAGE_DIR=`pwd`/tmp/usr/local/lib/${fullPythonVersion}/dist-packages
-else
+elif [ -d "`pwd`/tmp/usr/lib/${fullPythonVersion}" ]; then
     SITE_PACKAGE_DIR=`pwd`/tmp/usr/lib/${fullPythonVersion}/site-packages
+elif [ -d "`pwd`/tmp/usr/lib64/${fullPythonVersion}" ]; then
+    SITE_PACKAGE_DIR=`pwd`/tmp/usr/lib64/${fullPythonVersion}/site-packages
+else
+    echo "Could not find 'SITE_PACKAGE_DIR' to use!"
+    exit 1
 fi
 
 cp meresco/__init__.py ${SITE_PACKAGE_DIR}/meresco
