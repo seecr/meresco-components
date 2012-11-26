@@ -144,7 +144,10 @@ Content-Type: text/xml; charset=utf-8
                 'executeQuery': executeQuery,
                 'extraResponseData': methodAsGenerator,
                 'echoedExtraRequestData': methodAsGenerator,
-            })
+            },
+            emptyGeneratorMethods=[
+                'additionalDiagnosticDetails',
+            ])
         self.sruHandler.addObserver(observer)
 
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
@@ -264,7 +267,10 @@ Content-Type: text/xml; charset=utf-8
                 'executeQuery': executeQuery,
                 'extraResponseData': methodAsGenerator,
                 'echoedExtraRequestData': methodAsGenerator,
-            })
+            },
+            emptyGeneratorMethods=[
+                'additionalDiagnosticDetails',
+            ])
 
         self.sruHandler.addObserver(observer)
         response = "".join(compose(srw.handleRequest(Body=request)))
