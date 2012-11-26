@@ -54,6 +54,7 @@ class PeriodicDownload(Observable):
         self._prio = prio
         self._err = err or stderr
         self._paused = not autoStart
+        self._currentTimer = None
         if autoStart and (not self._host or not self._port):
             raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
@@ -63,12 +64,19 @@ class PeriodicDownload(Observable):
         self._host = host
         self._port = port
 
+    def setPeriod(self, period):
+        if self._period != period:
+            self._period = period
+            if self._currentTimer:
+                self._reactor.removeTimer(self._currentTimer)
+                self.startTimer()
+            
     def observer_init(self):
         self.startTimer()
 
     def startTimer(self, additionalTime=0):
         if not self._paused:
-            self._reactor.addTimer(self._period + additionalTime, self.startProcess)
+            self._currentTimer = self._reactor.addTimer(self._period + additionalTime, self.startProcess)
 
     def pause(self):
         if not self._paused:
@@ -83,6 +91,7 @@ class PeriodicDownload(Observable):
         self.startTimer()
 
     def startProcess(self):
+        self._currentTimer = None
         self._processOne = compose(self.processOne())
         self._processOne.next()
 
@@ -227,6 +236,11 @@ class PeriodicDownloadStateView(object):
     @property
     def paused(self):
         return self._periodicDownload._paused
+
+    @property
+    def period(self):
+        return self._periodicDownload._period
+
 
 MAX_LENGTH=1500
 def shorten(response):

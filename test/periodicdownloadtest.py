@@ -38,6 +38,7 @@ from StringIO import StringIO
 from os.path import join
 from urllib2 import urlopen
 from time import time
+from itertools import count
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
@@ -583,9 +584,38 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback()
             self.assertReactorStateClean(reactor)
 
+    def testSetPeriod(self):
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
+            self.assertEquals('addTimer', reactor.calledMethods[0].name)
+            self.assertEquals(1, reactor.calledMethods[-1].args[0])
+            downloader.setPeriod(42)
+            self.assertEquals(42, downloader.getState().period)
+            self.assertEquals('removeTimer', reactor.calledMethods[-2].name)
+            self.assertEquals('timerObject0', reactor.calledMethods[-2].args[0])
+            self.assertEquals('addTimer', reactor.calledMethods[-1].name)
+            self.assertEquals(42, reactor.calledMethods[-1].args[0])
+
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # connect
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # HTTP GET
+            sleep(0.01)
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # sok.recv
+            callback() # sok.recv
+            callback() # addProcess
+            self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
+            callback()
+            self.assertReactorStateClean(reactor)
+            self.assertEquals('addTimer', reactor.calledMethods[-1].name)
+            self.assertEquals(42, reactor.calledMethods[-1].args[0])
+
     def _prepareDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')
         self._reactor = CallTrace("reactor")
+        timerCounter = count(0)
+        self._reactor.methods['addTimer'] = lambda *args, **kwargs: 'timerObject%s' % timerCounter.next()
         self._downloader = PeriodicDownload(self._reactor, host, port, period=period, prio=0, err=StringIO())
         self._observer = CallTrace("observer", methods={'handle': lambda data: handleGenerator})
         self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
