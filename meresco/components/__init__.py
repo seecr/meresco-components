@@ -51,6 +51,7 @@ from inbox import Inbox
 from iteratorasstream import IteratorAsStream
 from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
 from parsecql import ParseCQL
+from parsearguments import ParseArguments
 from periodicdownload import PeriodicDownload
 from persistentsortedintegerlist import PersistentSortedIntegerList
 from reindex import Reindex

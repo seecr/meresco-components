@@ -64,6 +64,7 @@ from iteratorasstreamtest import IteratorAsStreamTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from packertest import PackerTest
 from parsecqltest import ParseCQLTest
+from parseargumentstest import ParseArgumentsTest
 from periodicdownloadtest import PeriodicDownloadTest
 from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
