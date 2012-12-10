@@ -83,6 +83,10 @@ serverErrorXml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
                  ContentTypeHeader + ContentTypeXml + CRLF + \
                  CRLF
 
+serverErrorPlainText = "HTTP/1.0 500 Internal Server Error" + CRLF +\
+                 ContentTypeHeader + ContentTypePlainText + CRLF + \
+                 CRLF
+
 serverErrorHtml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
                   ContentTypeHeader + ContentTypeHtml + CRLF + \
                   CRLF
