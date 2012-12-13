@@ -58,6 +58,12 @@ okPlainText = "HTTP/1.0 200 OK" + CRLF + \
         ContentTypeHeader + ContentTypePlainText + CRLF + \
         CRLF
 
+#204
+successNoContentPlainText = "HTTP/1.0 204 No Content" + CRLF +\
+        ContentTypeHeader + ContentTypePlainText + CRLF + \
+        CRLF
+
+#302
 redirectHttp = "HTTP/1.0 302 Redirect" + CRLF + \
               "Location: %s" + CRLF + \
               CRLF
