@@ -258,7 +258,7 @@ class SruHandler(Observable):
                             raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % field)
                 except ValueError:
                     pass
-            return dict(field=field, maxTerms=maxTerms, sortByTerm=self._drilldownSortedByTermCount)
+            return dict(field=field, maxTerms=maxTerms, sortByTerm=not self._drilldownSortedByTermCount)
 
         return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
 

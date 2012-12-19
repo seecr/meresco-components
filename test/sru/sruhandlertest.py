@@ -168,7 +168,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
-        component = SruHandler()
+        component = SruHandler(drilldownSortedByTermCount=True)
         component.addObserver(observer)
 
         queryArguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema') 
@@ -617,8 +617,8 @@ class SruHandlerTest(SeecrTestCase):
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
         self.assertEquals([
-                dict(field='field0', maxTerms=3, sortByTerm=False), 
-                dict(field='fielddefault', maxTerms=3, sortByTerm=False)
+                dict(field='field0', maxTerms=3, sortByTerm=True), 
+                dict(field='fielddefault', maxTerms=3, sortByTerm=True)
             ], observer.calledMethods[0].kwargs['facets'])
 
         # No problem - min
@@ -632,7 +632,7 @@ class SruHandlerTest(SeecrTestCase):
             self.fail('Should not come here')
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        self.assertEquals([dict(field='field0', maxTerms=1, sortByTerm=False)], observer.calledMethods[0].kwargs['facets'])
+        self.assertEquals([dict(field='field0', maxTerms=1, sortByTerm=True)], observer.calledMethods[0].kwargs['facets'])
 
         # Too high
         kwargs = sruHandlerKwargs(x_term_drilldown='field0:4')
