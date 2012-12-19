@@ -28,7 +28,7 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.fields2xmlfields import Fields2XmlFields, generateXml
-from meresco.core import Observable, TransactionScope
+from meresco.core import Observable, TransactionScope, Transaction
 from weightless.core import compose, be
 
 NAMESPACE="http://example.org/namespace"
@@ -42,7 +42,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         SeecrTestCase.setUp(self)
 
         ctx = CallTrace('CTX')
-        tx = CallTrace('TX', returnValues={'getId': 1234})
+        tx = Transaction('TX')
         tx.locals = {'id': 'identifier'}
         tx.name = "tsName"
         self.fxf = Fields2XmlFields("tsName", "fields-partname", namespace=NAMESPACE)
@@ -54,7 +54,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
     def testAddField(self):
         self.fxf.begin(name='tsName')
         self.fxf.addField("key.sub", "value")
-        list(compose(self.fxf.commit(id=1234)))
+        list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
         self.assertEquals(["add"], [m.name for m in self.observer.calledMethods])
         kwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals("identifier", kwargs['identifier'])
@@ -66,7 +66,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
     def testAddFieldWithXmlInKeyAndValue(self):
         self.fxf.begin(name='tsName')
         self.fxf.addField("""<name>"&'""", """<value>"&'""")
-        list(compose(self.fxf.commit(id=1234)))
+        list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
         self.assertEquals(["add"], [m.name for m in self.observer.calledMethods])
         kwargs = self.observer.calledMethods[0].kwargs
         self.assertEqualsWS("""<fields xmlns="%s">
@@ -75,7 +75,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
 
     def testNoCommitWhenAddFieldNotCalled(self):
         self.fxf.begin(name='tsName')
-        list(compose(self.fxf.commit(id=1234)))
+        list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
         self.assertEquals([], self.observer.calledMethods)
 
     def testWorksWithRealTransactionScope(self):
@@ -117,7 +117,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         self.fxf.addField("key.sub", "othervalue")
         self.fxf.addField("key.sub", "value")
         self.fxf.addField("key.sub", "separatedbyvalue")
-        list(compose(self.fxf.commit(id=1234)))
+        list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
 
         self.assertEquals(['add'], [m.name for m in self.observer.calledMethods])
         self.assertEqualsWS("""<fields xmlns="%s">
@@ -126,10 +126,11 @@ class Fields2XmlFieldsTest(SeecrTestCase):
                <field name="key.sub">value</field>
                <field name="key.sub">separatedbyvalue</field>
             </fields>""" % NAMESPACE, self.observer.calledMethods[0].kwargs['data'])
+        self.assertEquals([('key.sub', 'value'), ('key.sub', 'othervalue'), ('key.sub', 'value'), ('key.sub', 'separatedbyvalue')], self.fxf.ctx.tx.objectScope(self.fxf)['fields'])
 
     def testEmptyNamespace(self):
         ctx = CallTrace('CTX')
-        tx = CallTrace('TX', returnValues={'getId': 1234})
+        tx = Transaction('TX')
         tx.locals = {'id': 'identifier'}
         tx.name = "tsName"
         fxf = Fields2XmlFields("tsName", "fields-partname")
@@ -140,7 +141,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         
         fxf.begin(name='tsName')
         fxf.addField("key.sub", "value")
-        list(compose(fxf.commit(id=1234)))
+        list(compose(fxf.commit(tx.getId())))
 
         self.assertEquals(['add'], [m.name for m in observer.calledMethods])
         self.assertEqualsWS("""<fields>

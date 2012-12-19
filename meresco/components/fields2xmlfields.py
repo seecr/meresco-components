@@ -35,25 +35,23 @@ class Fields2XmlFields(Observable):
         self._transactionName = transactionName
         self._partname = partname
         self._namespace = namespace
-        self.txs = {}
 
     def begin(self, name):
         if name != self._transactionName:
             return
         tx = self.ctx.tx
         tx.join(self)
-        self.txs[tx.getId()] = []
 
     def addField(self, name, value):
         tx = self.ctx.tx
-        self.txs[tx.getId()].append((name, value))
+        tx.objectScope(self).setdefault('fields', []).append((name, value))
 
     def commit(self, id):
-        fields = self.txs.pop(id)
+        tx = self.ctx.tx
+        fields = tx.objectScope(self).get('fields')
         if not fields:
             return
 
-        tx = self.ctx.tx
         ns = self._namespace != None and ' xmlns="%s"' % self._namespace or ''
         xml = '<fields%s>%s</fields>' % (ns, generateXml(fields))
         yield self.all.add(identifier=tx.locals["id"], partname=self._partname, data=xml)
