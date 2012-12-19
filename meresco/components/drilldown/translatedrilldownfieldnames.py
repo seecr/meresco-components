@@ -3,6 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core". 
 # 
+# Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
@@ -32,19 +33,21 @@ class TranslateDrilldownFieldnames(Observable):
         Observable.__init__(self)
         self.translate = translate
 
-    def executeQuery(self, fieldnamesAndMaximums=None, *args, **kwargs):
-        fieldnamesAndMaximums = fieldnamesAndMaximums or []
+    def executeQuery(self, facets=None, *args, **kwargs):
+        facets = facets or []
         reverseLookup = {}
-        translatedFields = []
-        for field, maximum, sort in fieldnamesAndMaximums:
-            translated = self.translate(field)
-            translatedFields.append((translated, maximum, sort))
-            reverseLookup[translated] = field
-        if translatedFields:
-            kwargs['fieldnamesAndMaximums'] = translatedFields
+        translatedFacets = []
+        for facet in facets:
+            translatedFacet = facet.copy()
+            translatedFacet['field'] = self.translate(facet['field'])
+            translatedFacets.append(translatedFacet)
+            reverseLookup[translatedFacet['field']] = facet['field']
+        if translatedFacets:
+            kwargs['facets'] = translatedFacets
         response = yield self.any.executeQuery(*args, **kwargs)
         if hasattr(response, 'drilldownData'):
             response.drilldownData = [(reverseLookup[field], termCounts)
                 for field, termCounts in response.drilldownData]
+            response.drilldownDict = dict(response.drilldownData)
         raise StopIteration(response)
 

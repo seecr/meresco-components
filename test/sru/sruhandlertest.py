@@ -10,6 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
@@ -175,7 +176,12 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
         self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        self.assertEquals([('field0', 1, False), ('fie:ld1', 2, False), ('field2', DEFAULT_MAXIMUM_TERMS, False), ('fie:ld3', DEFAULT_MAXIMUM_TERMS, False)], list(observer.calledMethods[0].kwargs['fieldnamesAndMaximums']))
+        self.assertEquals([
+            dict(field='field0', maxTerms=1, sortByTerm=False), 
+            dict(field='fie:ld1', maxTerms=2, sortByTerm=False), 
+            dict(field='field2', maxTerms=DEFAULT_MAXIMUM_TERMS, sortByTerm=False), 
+            dict(field='fie:ld3', maxTerms=DEFAULT_MAXIMUM_TERMS, sortByTerm=False)
+            ], list(observer.calledMethods[0].kwargs['facets']))
         extraResponseDataMethod = observer.calledMethods[-1]
         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
 
@@ -610,7 +616,10 @@ class SruHandlerTest(SeecrTestCase):
             self.fail('Should not come here')
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        self.assertEquals([('field0', 3, False), ('fielddefault', 3, False)], observer.calledMethods[0].kwargs['fieldnamesAndMaximums'])
+        self.assertEquals([
+                dict(field='field0', maxTerms=3, sortByTerm=False), 
+                dict(field='fielddefault', maxTerms=3, sortByTerm=False)
+            ], observer.calledMethods[0].kwargs['facets'])
 
         # No problem - min
         kwargs = sruHandlerKwargs(x_term_drilldown='field0:1')
@@ -623,7 +632,7 @@ class SruHandlerTest(SeecrTestCase):
             self.fail('Should not come here')
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        self.assertEquals([('field0', 1, False)], observer.calledMethods[0].kwargs['fieldnamesAndMaximums'])
+        self.assertEquals([dict(field='field0', maxTerms=1, sortByTerm=False)], observer.calledMethods[0].kwargs['facets'])
 
         # Too high
         kwargs = sruHandlerKwargs(x_term_drilldown='field0:4')

@@ -3,6 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core". 
 # 
+# Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
@@ -36,11 +37,11 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.response = Response(total=10, hits=[])
-        def executeQuery(fieldnamesAndMaximums=None, **kwargs):
-            if not fieldnamesAndMaximums is None:
+        def executeQuery(facets=None, **kwargs):
+            if not facets is None:
                 self.response.drilldownData = []
-                for fieldName, _, _ in fieldnamesAndMaximums:
-                    self.response.drilldownData.append((fieldName,  [('value1', 1), ('value2', 2)]))
+                for facet in facets:
+                    self.response.drilldownData.append((facet['field'],  [('value1', 1), ('value2', 2)]))
             raise StopIteration(self.response)
             yield
         self.observer = CallTrace('observer', methods={'executeQuery': executeQuery})
@@ -55,10 +56,10 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                 translate=names.get,
                 queryKwargs=dict(
                     query='query', 
-                    fieldnamesAndMaximums=[('name1', 10, True)]))
+                    facets=[dict(field='name1', maxTerms=10, sortByTerm=True)]))
 
         self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals(dict(query='query', fieldnamesAndMaximums=[('internal.name1', 10, True)]), self.observer.calledMethods[0].kwargs)
+        self.assertEquals(dict(query='query', facets=[dict(field='internal.name1', maxTerms=10, sortByTerm=True)]), self.observer.calledMethods[0].kwargs)
         self.assertEquals(self.response.hits, result.hits)
         self.assertEquals(self.response.total, result.total)
         self.assertEquals([
@@ -75,12 +76,12 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
         self.assertEquals(self.response.total, result.total)
         self.assertFalse(hasattr(result, 'drilldownData'))
 
-    def testFieldnamesAndMaximumsNone(self):
+    def testFacetsNone(self):
         result = self._doDrilldown(
                 translate=lambda name: 'ignored',
                 queryKwargs=dict(
                     query='query', 
-                    fieldnamesAndMaximums=None))
+                    facets=None))
 
         self.assertEquals("[executeQuery(query='query')]", str(self.observer.calledMethods))
         self.assertEquals(self.response.hits, result.hits)

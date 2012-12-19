@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012 SURF http://www.surf.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -69,9 +70,9 @@ class SruHandler(Observable):
         start = startRecord - SRU_IS_ONE_BASED
         cqlAbstractSyntaxTree = parseCQL(query)
 
-        drilldownFieldnamesAndMaximums = None
+        facets = None
         if 'x-term-drilldown' in sruArguments:
-            drilldownFieldnamesAndMaximums = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
+            facets = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
         suggestionsQuery = None
         if 'x-suggestionsQuery' in sruArguments:
             suggestionsQuery = sruArguments['x-suggestionsQuery'][0]
@@ -82,7 +83,7 @@ class SruHandler(Observable):
                     cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
                     start=start,
                     stop=start + maximumRecords,
-                    fieldnamesAndMaximums=drilldownFieldnamesAndMaximums,
+                    facets=facets,
                     suggestionsCount=self._querySuggestionsCount,
                     suggestionsQuery=suggestionsQuery,
                     extraArguments=extraArguments,
@@ -257,7 +258,7 @@ class SruHandler(Observable):
                             raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % field)
                 except ValueError:
                     pass
-            return field, maxTerms, self._drilldownSortedByTermCount
+            return dict(field=field, maxTerms=maxTerms, sortByTerm=self._drilldownSortedByTermCount)
 
         return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
 
