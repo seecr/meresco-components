@@ -48,6 +48,5 @@ class TranslateDrilldownFieldnames(Observable):
         if hasattr(response, 'drilldownData'):
             response.drilldownData = [(reverseLookup[field], termCounts)
                 for field, termCounts in response.drilldownData]
-            response.drilldownDict = dict(response.drilldownData)
         raise StopIteration(response)
 

@@ -50,10 +50,13 @@ ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', '
 
 millis = Decimal('0.001')
 
+DRILLDOWN_SORTBY_INDEX = 'index'
+DRILLDOWN_SORTBY_COUNT = 'count'
+
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortedByTermCount=False, extraXParameters=None, includeQueryTimes=False, querySuggestionsCount=0, drilldownMaximumMaximumResults=None):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, querySuggestionsCount=0, drilldownMaximumMaximumResults=None):
         Observable.__init__(self)
-        self._drilldownSortedByTermCount = drilldownSortedByTermCount
+        self._drilldownSortBy = drilldownSortBy
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
         self._extraXParameters = set(extraXParameters or [])
         self._extraXParameters.add("x-recordSchema")
@@ -258,7 +261,7 @@ class SruHandler(Observable):
                             raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % field)
                 except ValueError:
                     pass
-            return dict(field=field, maxTerms=maxTerms, sortByTerm=not self._drilldownSortedByTermCount)
+            return dict(field=field, maxTerms=maxTerms, sortBy=self._drilldownSortBy)
 
         return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
 

@@ -30,6 +30,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
 from meresco.core import Observable
 from meresco.components.facetindex import Response
+from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_INDEX
 
 from meresco.components.drilldown import TranslateDrilldownFieldnames
 
@@ -56,10 +57,10 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                 translate=names.get,
                 queryKwargs=dict(
                     query='query', 
-                    facets=[dict(field='name1', maxTerms=10, sortByTerm=True)]))
+                    facets=[dict(field='name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]))
 
         self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals(dict(query='query', facets=[dict(field='internal.name1', maxTerms=10, sortByTerm=True)]), self.observer.calledMethods[0].kwargs)
+        self.assertEquals(dict(query='query', facets=[dict(field='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]), self.observer.calledMethods[0].kwargs)
         self.assertEquals(self.response.hits, result.hits)
         self.assertEquals(self.response.total, result.total)
         self.assertEquals([

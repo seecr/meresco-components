@@ -46,6 +46,7 @@ from cqlparser import parseString
 
 from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException
 from meresco.components.sru import SruHandler, SruParser
+from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
@@ -168,7 +169,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
-        component = SruHandler(drilldownSortedByTermCount=True)
+        component = SruHandler(drilldownSortBy='somevalue')
         component.addObserver(observer)
 
         queryArguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema') 
@@ -177,10 +178,10 @@ class SruHandlerTest(SeecrTestCase):
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
         self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([
-            dict(field='field0', maxTerms=1, sortByTerm=False), 
-            dict(field='fie:ld1', maxTerms=2, sortByTerm=False), 
-            dict(field='field2', maxTerms=DEFAULT_MAXIMUM_TERMS, sortByTerm=False), 
-            dict(field='fie:ld3', maxTerms=DEFAULT_MAXIMUM_TERMS, sortByTerm=False)
+            dict(field='field0', maxTerms=1, sortBy='somevalue'), 
+            dict(field='fie:ld1', maxTerms=2, sortBy='somevalue'), 
+            dict(field='field2', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue'), 
+            dict(field='fie:ld3', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue')
             ], list(observer.calledMethods[0].kwargs['facets']))
         extraResponseDataMethod = observer.calledMethods[-1]
         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
@@ -617,8 +618,8 @@ class SruHandlerTest(SeecrTestCase):
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
         self.assertEquals([
-                dict(field='field0', maxTerms=3, sortByTerm=True), 
-                dict(field='fielddefault', maxTerms=3, sortByTerm=True)
+                dict(field='field0', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT), 
+                dict(field='fielddefault', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT)
             ], observer.calledMethods[0].kwargs['facets'])
 
         # No problem - min
@@ -632,7 +633,7 @@ class SruHandlerTest(SeecrTestCase):
             self.fail('Should not come here')
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        self.assertEquals([dict(field='field0', maxTerms=1, sortByTerm=True)], observer.calledMethods[0].kwargs['facets'])
+        self.assertEquals([dict(field='field0', maxTerms=1, sortBy=DRILLDOWN_SORTBY_COUNT)], observer.calledMethods[0].kwargs['facets'])
 
         # Too high
         kwargs = sruHandlerKwargs(x_term_drilldown='field0:4')
