@@ -42,7 +42,7 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
             if not facets is None:
                 self.response.drilldownData = []
                 for facet in facets:
-                    self.response.drilldownData.append((facet['field'],  [('value1', 1), ('value2', 2)]))
+                    self.response.drilldownData.append({'fieldname': facet['fieldname'], 'terms':[{'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2}]})
             raise StopIteration(self.response)
             yield
         self.observer = CallTrace('observer', methods={'executeQuery': executeQuery})
@@ -56,15 +56,20 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
         result = self._doDrilldown(
                 translate=names.get,
                 queryKwargs=dict(
-                    query='query', 
-                    facets=[dict(field='name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]))
+                    query='query',
+                    facets=[dict(fieldname='name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]))
 
         self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals(dict(query='query', facets=[dict(field='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]), self.observer.calledMethods[0].kwargs)
+        self.assertEquals(dict(query='query', facets=[dict(fieldname='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]), self.observer.calledMethods[0].kwargs)
         self.assertEquals(self.response.hits, result.hits)
         self.assertEquals(self.response.total, result.total)
         self.assertEquals([
-            ('name1', [('value1', 1), ('value2', 2)]),
+            {
+                'fieldname': 'name1', 
+                'terms': [
+                    {'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2}
+                ]
+            }
         ], result.drilldownData)
 
     def testNoDrilldown(self):

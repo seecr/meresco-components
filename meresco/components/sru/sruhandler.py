@@ -248,22 +248,22 @@ class SruHandler(Observable):
         if x_term_drilldown == None or len(x_term_drilldown) != 1:
             return
 
-        def splitTermAndMaximum(field):
+        def splitTermAndMaximum(fieldname):
             maxTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
-            splitted = field.rsplit(":", 1)
+            splitted = fieldname.rsplit(":", 1)
             if len(splitted) == 2:
                 try:
-                    field, maxTerms = splitted[0], int(splitted[1])
+                    fieldname, maxTerms = splitted[0], int(splitted[1])
                     if self._drilldownMaximumMaximumResults is not None:
                         if maxTerms > self._drilldownMaximumMaximumResults:
-                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults > %s' % (field, self._drilldownMaximumMaximumResults))
+                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults > %s' % (fieldname, self._drilldownMaximumMaximumResults))
                         elif maxTerms < 1:
-                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % field)
+                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % fieldname)
                 except ValueError:
                     pass
-            return dict(field=field, maxTerms=maxTerms, sortBy=self._drilldownSortBy)
+            return dict(fieldname=fieldname, maxTerms=maxTerms, sortBy=self._drilldownSortBy)
 
-        return [splitTermAndMaximum(field) for field in x_term_drilldown[0].split(",")]
+        return [splitTermAndMaximum(fieldname) for fieldname in x_term_drilldown[0].split(",")]
 
     def _createDiagnostic(self, uri, message, details):
         additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())

@@ -34,19 +34,21 @@ class TranslateDrilldownFieldnames(Observable):
         self.translate = translate
 
     def executeQuery(self, facets=None, *args, **kwargs):
+        print facets
+        from sys import stdout; stdout.flush()
         facets = facets or []
         reverseLookup = {}
         translatedFacets = []
         for facet in facets:
             translatedFacet = facet.copy()
-            translatedFacet['field'] = self.translate(facet['field'])
+            translatedFacet['fieldname'] = self.translate(facet['fieldname'])
             translatedFacets.append(translatedFacet)
-            reverseLookup[translatedFacet['field']] = facet['field']
+            reverseLookup[translatedFacet['fieldname']] = facet['fieldname']
         if translatedFacets:
             kwargs['facets'] = translatedFacets
         response = yield self.any.executeQuery(*args, **kwargs)
         if hasattr(response, 'drilldownData'):
-            response.drilldownData = [(reverseLookup[field], termCounts)
-                for field, termCounts in response.drilldownData]
+            response.drilldownData = [{'fieldname': reverseLookup[facet['fieldname']], 'terms': facet['terms']}
+                for facet in response.drilldownData]
         raise StopIteration(response)
 
