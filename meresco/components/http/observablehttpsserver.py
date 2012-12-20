@@ -38,56 +38,35 @@ from urlparse import urlsplit
 from StringIO import StringIO
 from socket import gethostname
 
+from observablehttpserver import ObservableHttpServer
 
-class ObservableHttpsServer(Observable):
-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, keyfile=None, certfile=None, compressResponse=False, bindAddress=None):
-        Observable.__init__(self)
-        self._port = port
-        self._reactor = reactor
-        self._timeout = timeout
-        self._started = False
-        self._prio = prio
-        self._keyfile = keyfile
-        self._certfile = certfile
-        self._sok = sok
-        self._compressResponse = compressResponse
-        self._bindAddress = bindAddress
+class ObservableHttpsServer(ObservableHttpServer):
+    def __init__(self, *args, **kwargs):
+        self._keyfile = kwargs.pop('keyfile')
+        self._certfile = kwargs.pop('certfile')
+        ObservableHttpServer.__init__(self, *args, **kwargs)
 
     def startServer(self):
         """Starts server,
 
-        When running a http server on port 80, this method should be called by the
+        When running a https server on port 443, this method should be called by the
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
         self._httpsserver = HttpsServer(
-                self._reactor,
-                self._port,
-                self._connect,
+                reactor=self._reactor,
+                port=self._port,
+                generatorFactory=self._connect,
                 timeout=self._timeout,
                 prio=self._prio,
                 sok=self._sok,
                 keyfile=self._keyfile,
                 certfile=self._certfile,
+                maxConnections=self._maxConnections,
+                errorHandler=self._error,
                 compressResponse=self._compressResponse,
                 bindAddress=self._bindAddress
             )
+        self._httpsserver.listen()
         self._started = True
-
-    def observer_init(self):
-        if not self._started:
-            self.startServer()
-
-    def _connect(self, **kwargs):
-        return self.handleRequest(port=self._port, **kwargs)
-
-    def handleRequest(self, RequestURI=None, **kwargs):
-        scheme, netloc, path, query, fragments = urlsplit(RequestURI)
-        arguments = parse_qs(query, keep_blank_values=True)
-        requestArguments = {
-            'scheme': scheme, 'netloc': netloc, 'path': path, 'query': query, 'fragments': fragments,
-            'arguments': arguments,
-            'RequestURI': RequestURI}
-        requestArguments.update(kwargs)
-        return self.all.handleRequest(**requestArguments)
 
