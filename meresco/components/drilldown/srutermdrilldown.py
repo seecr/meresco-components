@@ -50,18 +50,18 @@ class SRUTermDrilldown(Observable):
     @decorateWith(DRILLDOWN_HEADER + "<dd:term-drilldown>", "</dd:term-drilldown>" + DRILLDOWN_FOOTER)
     @compose
     def _termDrilldown(self, drilldownData):
-        for fieldname, termCounts in drilldownData:
-            yield self._dd_navigator(fieldname, termCounts)
+        for facet in drilldownData:
+            yield self._dd_navigator(facet['fieldname'], facet['terms'])
 
-    def _dd_navigator(self, fieldname, termCounts):
+    def _dd_navigator(self, fieldname, terms):
         try:
-            firstTerm, firstCount = termCounts.next()
+            firstTerm = terms[0]
             yield '<dd:navigator name=%s>' % quoteattr(fieldname)
-            yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(firstCount)), xmlEscape(str(firstTerm)))
-            for term, count in termCounts:
-                yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(count)), xmlEscape(str(term)))
+            yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(firstTerm['count'])), xmlEscape(str(firstTerm['term'])))
+            for term in terms[1:]:
+                yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(term['count'])), xmlEscape(str(term['term'])))
             yield '</dd:navigator>'
-        except StopIteration:
+        except IndexError:
             yield '<dd:navigator name=%s/>' % quoteattr(fieldname)
             return
         except Exception, e:

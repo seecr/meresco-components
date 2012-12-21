@@ -28,22 +28,21 @@
 # 
 ## end license ##
 
-from seecr.test import SeecrTestCase, CallTrace
+from seecr.test import SeecrTestCase
 from weightless.core import compose
 
-from meresco.components.sru.diagnostic import generalSystemError
-
-from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 from meresco.components.drilldown import SRUTermDrilldown
 
 class SRUTermDrilldownTest(SeecrTestCase):
     def testSRUTermDrilldown(self):
         sruTermDrilldown = SRUTermDrilldown()
 
-        drilldownData = iter([
-                ('field0', iter([('value0_0', 14)])),
-                ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
-                ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))])
+        drilldownData = [
+                {'fieldname': 'field0', 'terms': [{'term': 'value0_0', 'count': 14}]},
+                {'fieldname': 'field1', 'terms': [{'term': 'value1_0', 'count': 13}, {'term': 'value1_1', 'count': 11}]},
+                {'fieldname': 'field2', 'terms': [{'term': 'value2_0', 'count': 3}, {'term': 'value2_1', 'count': 2}, {'term': 'value2_2', 'count': 1}]}
+        ]
 
         response = ''.join(compose(sruTermDrilldown.extraResponseData(drilldownData)))
         
@@ -63,9 +62,9 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
     def testDrilldownNoResults(self):
         sruTermDrilldown = SRUTermDrilldown()
-        drilldownData = iter([
-                ('field0', iter([])),
-            ])
+        drilldownData = [
+                {'fieldname': 'field0', 'terms': []},
+            ]
 
         composedGenerator = compose(sruTermDrilldown.extraResponseData(drilldownData))
         result = "".join(composedGenerator)
@@ -76,34 +75,6 @@ class SRUTermDrilldownTest(SeecrTestCase):
             </dd:term-drilldown>
         """ + DRILLDOWN_FOOTER
         self.assertEqualsWS(expected, result)
-
-    def testDrilldownInternalRaisesExceptionNotTheFirst(self):
-        sruTermDrilldown = SRUTermDrilldown()
-        def raiser(*args):
-            raise Exception("Some Exception")
-            yield
-        drilldownData = iter([
-                ('field0', iter([('value0_0', 14)])),
-                ('field1', raiser()),
-            ])
-
-        composedGenerator = compose(sruTermDrilldown.extraResponseData(drilldownData))
-        result = "".join(composedGenerator)
-
-        expected = DRILLDOWN_HEADER + """
-            <dd:term-drilldown>
-                <dd:navigator name="field0">
-                    <dd:item count="14">value0_0</dd:item>
-                </dd:navigator>
-                <diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
-                    <uri>info://srw/diagnostics/1/1</uri>
-                    <details>General System Error</details>
-                    <message>Some Exception</message>
-                </diagnostic>
-            </dd:term-drilldown>
-        """ + DRILLDOWN_FOOTER
-        self.assertEqualsWS(expected, result)
-
 
     def testEchoedExtraRequestData(self):
         component = SRUTermDrilldown()

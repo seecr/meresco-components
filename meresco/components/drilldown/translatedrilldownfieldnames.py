@@ -34,8 +34,6 @@ class TranslateDrilldownFieldnames(Observable):
         self.translate = translate
 
     def executeQuery(self, facets=None, *args, **kwargs):
-        print facets
-        from sys import stdout; stdout.flush()
         facets = facets or []
         reverseLookup = {}
         translatedFacets = []

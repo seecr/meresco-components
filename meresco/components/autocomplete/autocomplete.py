@@ -66,7 +66,7 @@ class Autocomplete(Observable):
     def _prefixSearch(self, arguments):
         prefix = arguments['prefix'][0]
 
-        field = arguments.get('field', [self._defaultField])[0]
+        fieldname = arguments.get('field', [self._defaultField])[0]
         limit = int(arguments.get('limit', [self._defaultLimit])[0])
         
         terms = []
@@ -79,7 +79,7 @@ class Autocomplete(Observable):
         yield CRLF
         hits = []
         if len(prefix) >= self._minimumLength:
-            response = yield self.any.prefixSearch(field=field, prefix=prefix.lower(), limit=limit)
+            response = yield self.any.prefixSearch(fieldname=fieldname, prefix=prefix.lower(), limit=limit)
             hits = response.hits
         yield dumps_json([prefix, hits])
 

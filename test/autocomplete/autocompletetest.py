@@ -63,7 +63,7 @@ class AutocompleteTest(SeecrTestCase):
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEquals("""["Te", ["term0", "term&/\\""]]""", body)
         self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'field':'lom', 'limit':50}, observer.calledMethods[0].kwargs)
+        self.assertEquals({'prefix':'te', 'fieldname':'lom', 'limit':50}, observer.calledMethods[0].kwargs)
         
     def testHandleRequest(self):
         queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
@@ -92,7 +92,7 @@ class AutocompleteTest(SeecrTestCase):
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEquals("""["te", ["term0", "term&/\\""]]""", body)
         self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'field':'field.one', 'limit':5}, observer.calledMethods[0].kwargs)
+        self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, observer.calledMethods[0].kwargs)
 
     def testMinimumLength(self):
         queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
