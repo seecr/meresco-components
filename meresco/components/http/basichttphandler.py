@@ -7,7 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -27,12 +28,15 @@
 # 
 ## end license ##
 
-from utils import notFoundHtml
+from utils import notFoundHtml, redirectHttp
 
 from meresco.core import Transparent
 from weightless.core import compose, Yield
 
 class BasicHttpHandler(Transparent):
+    def __init__(self, notFoundMethod=None):
+        Transparent.__init__(self)
+        self.notFound = self._notFound if notFoundMethod is None else notFoundMethod
 
     def handleRequest(self, *args, **kwargs):
         yielded = False
@@ -42,6 +46,13 @@ class BasicHttpHandler(Transparent):
                 yielded = True
             yield x
         if not yielded:
-            yield notFoundHtml
-            yield "<html><body>404 Not Found</body></html>"
+            yield self.notFound()
+
+    def _notFound(self):
+        yield notFoundHtml
+        yield "<html><body>404 Not Found</body></html>"
+
+    @classmethod
+    def createWithRedirect(cls, url):
+        return cls(lambda: redirectHttp % url)
 

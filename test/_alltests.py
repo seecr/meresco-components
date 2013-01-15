@@ -9,8 +9,8 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2010-2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2010-2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
 # This file is part of "Meresco Components"
@@ -98,6 +98,7 @@ from drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldna
 from http.apacheloggertest import ApacheLoggerTest
 from http.argumentsinsessiontest import ArgumentsInSessionTest
 from http.basicauthenticationtest import BasicAuthenticationTest
+from http.basichttphandlertest import BasicHttpHandlerTest
 from http.deproxytest import DeproxyTest
 from http.fileservertest import FileServerTest
 from http.handlerequestfiltertest import HandleRequestFilterTest
