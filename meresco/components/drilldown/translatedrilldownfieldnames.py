@@ -4,9 +4,9 @@
 # and archives, based on "Meresco Core". 
 # 
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012-2013 Stichting Kennisnet http://www.kennisnet.nl
 # 
 # This file is part of "Meresco Components"
 # 
@@ -38,15 +38,28 @@ class TranslateDrilldownFieldnames(Observable):
         reverseLookup = {}
         translatedFacets = []
         for facet in facets:
-            translatedFacet = facet.copy()
-            translatedFacet['fieldname'] = self.translate(facet['fieldname'])
-            translatedFacets.append(translatedFacet)
-            reverseLookup[translatedFacet['fieldname']] = facet['fieldname']
+            if isinstance(facet, dict):
+                translatedFacets.append(self._translateFacet(facet, reverseLookup))
+            else:
+                translatedFacets.append([self._translateFacet(pivot, reverseLookup) \
+                        for pivot in facet])
         if translatedFacets:
             kwargs['facets'] = translatedFacets
         response = yield self.any.executeQuery(*args, **kwargs)
         if hasattr(response, 'drilldownData'):
-            response.drilldownData = [{'fieldname': reverseLookup[facet['fieldname']], 'terms': facet['terms']}
-                for facet in response.drilldownData]
+            response.drilldownData = [self._reverseTranslateFacet(facet, reverseLookup) \
+                    for facet in response.drilldownData]
         raise StopIteration(response)
 
+    def _translateFacet(self, facet, reverseLookup):
+        translatedFacet = facet.copy()
+        translatedFacet['fieldname'] = self.translate(facet['fieldname'])
+        reverseLookup[translatedFacet['fieldname']] = facet['fieldname']
+        return translatedFacet
+
+    def _reverseTranslateFacet(self, facet, reverseLookup):
+        terms = facet['terms']
+        for term in terms:
+            if 'pivot' in term:
+                term['pivot'] = self._reverseTranslateFacet(term['pivot'], reverseLookup)
+        return {'fieldname': reverseLookup[facet['fieldname']], 'terms': terms}
