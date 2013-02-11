@@ -95,6 +95,25 @@ class FileServerTest(TestCase):
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue("Some Contents" in response)
 
+    def testServeFileWithCorrectContentType(self):
+        for extension, expectedType in [
+                ('.js', 'application/javascript'),
+                ('.xhtml', 'application/xhtml+xml'),
+                ('.png', 'image/png'),
+                ('.css', 'text/css')]:
+            filename = 'someFile' + extension
+            f = open(join(self.directory, filename), 'w')
+            f.write("Some Contents")
+            f.close()
+
+            fileServer = FileServer(self.directory)
+            response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={})))
+            headersList = response.split('\r\n\r\n', 1)[0].split('\r\n')
+
+            self.assertTrue("HTTP/1.0 200 OK" in response)
+            self.assertTrue("Some Contents" in response)
+            self.assertTrue('Content-Type: %s' % expectedType in headersList, headersList)
+
     def testFirstOneWins(self):
         f = open(join(self.directory, 'someFile'), 'w').write("Some Contents")
         f = open(join(self.directory2, 'someFile'), 'w').write("Different Contents")

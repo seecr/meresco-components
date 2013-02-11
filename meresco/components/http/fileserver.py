@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from os.path import isfile, join, normpath, commonprefix
+from os.path import isfile, join, normpath, commonprefix, abspath
 from rfc822 import formatdate
 from time import time
 from stat import ST_MTIME
@@ -45,6 +45,9 @@ import mimetypes
 mimetypes.init()
 # Override defaults (for redhat systems)
 mimetypes.add_type("application/javascript", ".js")
+
+# Add types
+mimetypes.add_type("application/xhtml+xml", ".xhtml")
 
 
 class File(object):
@@ -85,6 +88,7 @@ class FileServer(object):
         self._documentRoots = documentRoot
         if hasattr(documentRoot, 'endswith'):
             self._documentRoots = [documentRoot]
+        self._documentRoots = [abspath(d) for d in self._documentRoots]
 
     def handleRequest(self, path, port=None, Client=None, Method=None, Headers=None, **kwargs):
         file = self._findFile(path)
