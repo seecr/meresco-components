@@ -8,8 +8,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # 
@@ -43,7 +43,7 @@ from weightless.core import compose, be
 
 from cqlparser import parseString
 
-from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException
+from meresco.components.sru.sruparser import SruException
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
@@ -93,7 +93,7 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(observer)
 
         result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
-        
+
         drilldownRequestData = DRILLDOWN_HEADER \
         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
         + DRILLDOWN_FOOTER
@@ -782,6 +782,19 @@ class SruHandlerTest(SeecrTestCase):
             response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
             self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
             self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
+
+
+    def testParseDrilldownArguments(self):
+        handler = SruHandler(drilldownSortBy='count')
+        self.assertEquals(None, handler._parseDrilldownArgs([]))
+        self.assertEquals([], handler._parseDrilldownArgs(['']))
+        self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field']))
+        self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field,']))
+        self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20']))
+        self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20,field2']))
+        self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}]], handler._parseDrilldownArgs(['field:20/field2']))
+        self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}],{'fieldname':'field3', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20/field2,field3']))
+        self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
 
 
 def xpath(lxmlNode, path):

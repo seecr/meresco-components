@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # 
 # This file is part of "Meresco Components"
@@ -63,6 +63,7 @@ class SruHandler(Observable):
         self._includeQueryTimes = includeQueryTimes
         self._querySuggestionsCount = querySuggestionsCount
         self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
+        self._drilldownMaximumTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
@@ -245,25 +246,29 @@ class SruHandler(Observable):
             raise Exception("Unknown Record Packing: %s" % recordPacking)
 
     def _parseDrilldownArgs(self, x_term_drilldown):
-        if x_term_drilldown == None or len(x_term_drilldown) != 1:
+        if x_term_drilldown == None or len(x_term_drilldown) < 1:
             return
 
-        def splitTermAndMaximum(fieldname):
-            maxTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
-            splitted = fieldname.rsplit(":", 1)
+        def splitTermAndMaximum(request):
+            result = dict(fieldname=request, maxTerms=self._drilldownMaximumTerms, sortBy=self._drilldownSortBy)
+            splitted = request.rsplit(":", 1)
             if len(splitted) == 2:
                 try:
-                    fieldname, maxTerms = splitted[0], int(splitted[1])
+                    result['fieldname'], result['maxTerms'] = splitted[0], int(splitted[1])
                     if self._drilldownMaximumMaximumResults is not None:
-                        if maxTerms > self._drilldownMaximumMaximumResults:
-                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults > %s' % (fieldname, self._drilldownMaximumMaximumResults))
-                        elif maxTerms < 1:
-                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % fieldname)
+                        if result['maxTerms'] > self._drilldownMaximumMaximumResults:
+                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults > %s' % (result['fieldname'], self._drilldownMaximumMaximumResults))
+                        elif result['maxTerms'] < 1:
+                            raise SruException(UNSUPPORTED_PARAMETER_VALUE, '%s; drilldown with maximumResults < 1' % result['fieldname'])
                 except ValueError:
                     pass
-            return dict(fieldname=fieldname, maxTerms=maxTerms, sortBy=self._drilldownSortBy)
+            return result
 
-        return [splitTermAndMaximum(fieldname) for fieldname in x_term_drilldown[0].split(",")]
+        def parseRequest(request):
+            if '/' in request:
+                return [splitTermAndMaximum(f) for f in request.split('/')]
+            return splitTermAndMaximum(request)
+        return [parseRequest(singleRequest) for request in x_term_drilldown for singleRequest in request.split(",") if singleRequest.strip()]
 
     def _createDiagnostic(self, uri, message, details):
         additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
