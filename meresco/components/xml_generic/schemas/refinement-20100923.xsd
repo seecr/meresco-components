@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://meresco.org/namespace/refinement" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:mr="http://meresco.org/namespace/refinement">
+
+    <element name="refinement" type="mr:refinementType"/>
+	<complexType name="refinementType">
+		<sequence minOccurs="1" maxOccurs="unbounded">
+			<element ref="mr:field"></element>
+		</sequence>
+    </complexType>
+
+    <element name="field" type="mr:fieldType"/>
+    <complexType name="fieldType">
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <element ref="mr:term"></element>
+        </sequence>
+        <attribute name="name" type="string"/>
+    </complexType>
+
+    <element name="term" type="string"/>
+
+</schema>
