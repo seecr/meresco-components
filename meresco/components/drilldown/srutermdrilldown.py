@@ -34,18 +34,16 @@ from meresco.components.sru.diagnostic import generalSystemError
 
 from weightless.core import compose
 
+FORMAT_OLD_XML = 'xml2007'
 FORMAT_XML = 'xml'
 FORMAT_JSON = 'json'
 
 class SRUTermDrilldown(Observable):
 
-    def __init__(self, defaultFormat=FORMAT_XML, extendedFormat=False):
+    def __init__(self, defaultFormat=FORMAT_OLD_XML):
         Observable.__init__(self)
-        if not extendedFormat and defaultFormat != FORMAT_XML:
-            raise ValueError("Format '%s' only supported when using extendedFormat." % defaultFormat)
-        if defaultFormat not in [FORMAT_JSON, FORMAT_XML]:
+        if defaultFormat not in [FORMAT_JSON, FORMAT_XML, FORMAT_OLD_XML]:
             raise ValueError("Format '%s' not supported." % defaultFormat)
-        self._dd_item = self._dd_item_new if extendedFormat else self._dd_item_old
         self._defaultFormat = defaultFormat
 
     def extraResponseData(self, drilldownData, sruArguments, **kwargs):
@@ -64,11 +62,16 @@ class SRUTermDrilldown(Observable):
     @decorateWith(DRILLDOWN_HEADER + "<dd:term-drilldown>", "</dd:term-drilldown>" + DRILLDOWN_FOOTER)
     @compose
     def _termDrilldown(self, drilldownData, format):
-        if format == 'xml':
+        if format == FORMAT_XML:
+            self._dd_item = self._dd_item_new
             for facet in drilldownData:
                 yield self._dd_navigator(facet['fieldname'], facet['terms'])
-        elif format == 'json':
+        elif format == FORMAT_JSON:
             yield dumps(drilldownData, indent=4)
+        elif format == FORMAT_OLD_XML:
+            self._dd_item = self._dd_item_old
+            for facet in drilldownData:
+                yield self._dd_navigator(facet['fieldname'], facet['terms'])
         else:
             raise ValueError("Expected x-drilldown-format to be one of: %s" % str([FORMAT_XML, FORMAT_JSON]))
 

@@ -38,6 +38,7 @@ from seecr.test.io import stderr_replace_decorator
 
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 from meresco.components.drilldown import SRUTermDrilldown
+from meresco.components.drilldown.srutermdrilldown import FORMAT_JSON, FORMAT_XML
 from meresco.xml import xpathFirst
 
 class SRUTermDrilldownTest(SeecrTestCase):
@@ -51,7 +52,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
         ]
 
         response = ''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={})))
-        
+
         self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:term-drilldown><dd:navigator name="field0">
     <dd:item count="14">value0_0</dd:item>
 </dd:navigator>
@@ -66,7 +67,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 </dd:navigator></dd:term-drilldown></dd:drilldown>""", response)
 
     def testSRUTermDrilldownWithPivots(self):
-        sruTermDrilldown = SRUTermDrilldown(extendedFormat=True)
+        sruTermDrilldown = SRUTermDrilldown(defaultFormat=FORMAT_XML)
 
         drilldownData = [
                 {
@@ -110,7 +111,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 </dd:navigator></dd:term-drilldown></dd:drilldown>""", response)
 
     def testSRUTermDrilldownWithPivotsInJson(self):
-        sruTermDrilldown = SRUTermDrilldown(extendedFormat=True)
+        sruTermDrilldown = SRUTermDrilldown(defaultFormat=FORMAT_JSON)
 
         drilldownData = [
                 {
@@ -162,9 +163,8 @@ class SRUTermDrilldownTest(SeecrTestCase):
         self.assertEqualsWS(expected, result)
 
     def testDefaultFormat(self):
-        self.assertRaises(ValueError, lambda: SRUTermDrilldown(defaultFormat='json'))
-        self.assertRaises(ValueError, lambda: SRUTermDrilldown(extendedFormat=True, defaultFormat='text'))
-        sruTermDrilldown = SRUTermDrilldown(defaultFormat='json', extendedFormat=True)
+        self.assertRaises(ValueError, lambda: SRUTermDrilldown(defaultFormat='text'))
+        sruTermDrilldown = SRUTermDrilldown(defaultFormat='json')
         drilldownData = [
                 {
                     'fieldname': 'field0',
@@ -183,7 +183,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
     @stderr_replace_decorator
     def testWrongFormat(self):
-        sruTermDrilldown = SRUTermDrilldown(extendedFormat=True)
+        sruTermDrilldown = SRUTermDrilldown()
         drilldownData = [
                 {
                     'fieldname': 'field0',
