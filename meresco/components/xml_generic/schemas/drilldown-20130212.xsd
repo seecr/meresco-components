@@ -1,20 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema targetNamespace="http://meresco.org/namespace/drilldown" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:dd="http://meresco.org/namespace/drilldown">
+    <!--
+
+                    ___  ___  ___  ___ _ _
+              /\   / __|/ _ \/ _ \/ __| '_|
+              \//\ \__ \  __/  __/ (__| |
+  Crafted by  /\\/ |___/\___|\___|\___|_|
+              \/
+                   Software Craftsmanship
+                   http://seecr.nl
+    -->
 
     <element name="drilldown" type="dd:drilldownType"/>
     <complexType name="drilldownType">
-        <all minOccurs="1" maxOccurs="1">
-                <element ref="dd:term-drilldown" minOccurs="0" maxOccurs="1"></element>
-                <element ref="dd:field-drilldown" minOccurs="0" maxOccurs="1"></element>
-        </all>
+        <choice minOccurs="1" maxOccurs="1">
+            <sequence minOccurs="1" maxOccurs="1">
+                    <element ref="dd:term-drilldown" minOccurs="0" maxOccurs="1"/>
+                    <element ref="dd:field-drilldown" minOccurs="0" maxOccurs="1"/>
+            </sequence>
+            <element ref="dd:request" minOccurs="0" maxOccurs="1"/>
+        </choice>
     </complexType>
 
     <element name="term-drilldown" type="dd:termDrilldownType"/>
     <complexType name="termDrilldownType">
         <choice minOccurs="1" maxOccurs="1">
-            <element ref="dd:json"></element>
+            <element ref="dd:json"/>
             <sequence minOccurs="1" maxOccurs="unbounded">
-                <element ref="dd:navigator"></element>
+                <element ref="dd:navigator"/>
             </sequence>
         </choice>
     </complexType>
@@ -22,42 +35,46 @@
     <element name="field-drilldown" type="dd:fieldDrilldownType"/>
     <complexType name="fieldDrilldownType">
         <sequence minOccurs="1" maxOccurs="unbounded">
-            <element ref="dd:field"></element>
+            <element ref="dd:field"/>
         </sequence>
     </complexType>
 
-    <element name="navigator" type="dd:navigatorType"></element>
+    <element name="request" type="dd:requestType"/>
+    <complexType name="requestType">
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <element ref="dd:x-term-drilldown" maxOccurs="unbounded"/>
+            <element ref="dd:x-drilldown-format"/>
+        </sequence>
+    </complexType>
+
+    <element name="navigator" type="dd:navigatorType"/>
     <complexType name="navigatorType">
         <sequence maxOccurs="unbounded" minOccurs="1">
-            <element ref="dd:item"></element>
+            <element ref="dd:item"/>
         </sequence>
-        <attribute name="name" type="string" use="required"></attribute>
+        <attribute name="name" type="string" use="required"/>
     </complexType>
 
-    <element name="item" type="dd:itemType"></element>
+    <element name="item" type="dd:itemType"/>
     <complexType name="itemType">
         <sequence maxOccurs="unbounded" minOccurs="0">
-            <element ref="dd:navigator"></element>
+            <element ref="dd:navigator"/>
         </sequence>
-        <attribute name="count" type="int" use="required"></attribute>
-        <attribute name="value" type="string" use="required"></attribute>
+        <attribute name="count" type="int" use="required"/>
+        <attribute name="value" type="string" use="required"/>
     </complexType>
 
-    <element name="field" type="dd:fieldType"></element>
+    <element name="field" type="dd:fieldType"/>
     <complexType name="fieldType">
         <simpleContent>
             <extension base="int">
-                <attribute name="name" type="string" use="required">
-                </attribute>
+                <attribute name="name" type="string" use="required"/>
             </extension>
         </simpleContent>
     </complexType>
 
-    <element name="json" type="dd:jsonType"></element>
-    <complexType name="jsonType">
-        <simpleContent>
-            <extension base="string"></extension>
-        </simpleContent>
-    </complexType>
+    <element name="json" type="string"/>
+    <element name="x-term-drilldown" type="string"/>
+    <element name="x-drilldown-format" type="string"/>
 
 </schema>

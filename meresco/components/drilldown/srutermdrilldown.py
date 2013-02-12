@@ -104,11 +104,20 @@ class SRUTermDrilldown(Observable):
         yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(term['count'])), xmlEscape(str(term['term'])))
 
     def echoedExtraRequestData(self, sruArguments, **kwargs):
-        if 'x-term-drilldown' in sruArguments and len(sruArguments['x-term-drilldown']) == 1:
+        requestedTerms = [singleRequest for request in sruArguments.get('x-term-drilldown',[]) for singleRequest in request.split(',') if singleRequest.strip()]
+        if requestedTerms:
             outputFormat = sruArguments.get('x-drilldown-format', [self._defaultFormat])[0]
-            drilldownHeader = _DRILLDOWN_HEADER % (_DRILLDOWN_XSD_2007 if outputFormat == FORMAT_OLD_XML else _DRILLDOWN_XSD_2013)
-            yield drilldownHeader
-            yield "<dd:term-drilldown>%s</dd:term-drilldown>" % xmlEscape(sruArguments['x-term-drilldown'][0])
+            if outputFormat == FORMAT_OLD_XML:
+                yield _DRILLDOWN_HEADER % _DRILLDOWN_XSD_2007
+                yield "<dd:term-drilldown>%s</dd:term-drilldown>" % xmlEscape(','.join(requestedTerms))
+                yield DRILLDOWN_FOOTER
+                return
+
+            yield _DRILLDOWN_HEADER % _DRILLDOWN_XSD_2013
+            yield '<dd:request>'
+            for term in requestedTerms:
+                yield "<dd:x-term-drilldown>%s</dd:x-term-drilldown>" % xmlEscape(term)
             if 'x-drilldown-format' in sruArguments:
-                yield "<dd:drilldown-format>%s</dd:drilldown-format>" % xmlEscape(outputFormat)
+                yield "<dd:x-drilldown-format>%s</dd:x-drilldown-format>" % xmlEscape(outputFormat)
+            yield '</dd:request>'
             yield DRILLDOWN_FOOTER

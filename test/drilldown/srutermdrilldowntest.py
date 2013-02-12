@@ -157,7 +157,6 @@ class SRUTermDrilldownTest(SeecrTestCase):
         xsdFilename = self._getXsdFilename(response)
         assertValid(response, join(schemasPath, xsdFilename))
 
-
     def testDrilldownNoResults(self):
         sruTermDrilldown = SRUTermDrilldown()
         drilldownData = [
@@ -222,15 +221,30 @@ class SRUTermDrilldownTest(SeecrTestCase):
         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
         + DRILLDOWN_FOOTER, result)
 
-    def testEchoedExtraRequestDataWithDrilldownFormat(self):
+    def testEchoedExtraRequestDataWithJsonFormat(self):
         component = SRUTermDrilldown()
 
-        result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0,field1'], 'version': '1.1', 'x-drilldown-format': ['json']}, version='1.1')))
+        result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0/field1,field2','field3'], 'version': '1.1', 'x-drilldown-format': ['json']}, version='1.1')))
 
-        self.assertEqualsWS(_DRILLDOWN_HEADER % _DRILLDOWN_XSD_2013 \
-        + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
-        + """<dd:drilldown-format>json</dd:drilldown-format>"""\
-        + DRILLDOWN_FOOTER, result)
+        self.assertEqualsWS(_DRILLDOWN_HEADER % _DRILLDOWN_XSD_2013 + """
+            <dd:request>
+                <dd:x-term-drilldown>field0/field1</dd:x-term-drilldown>
+                <dd:x-term-drilldown>field2</dd:x-term-drilldown>
+                <dd:x-term-drilldown>field3</dd:x-term-drilldown>
+                <dd:x-drilldown-format>json</dd:x-drilldown-format>
+            </dd:request>""" +\
+            DRILLDOWN_FOOTER, result)
+
+        xsdFilename = self._getXsdFilename(result)
+        assertValid(result, join(schemasPath, xsdFilename))
+        assertValid(open(join(schemasPath, xsdFilename)).read(), join(schemasPath, 'XMLSchema.xsd'))
+
+    def testEchoedExtraRequestDataWithEmptyTermDrilldownFormat(self):
+        component = SRUTermDrilldown(defaultFormat=FORMAT_XML)
+
+        result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': [''], 'version': '1.1'}, version='1.1')))
+
+        self.assertEqualsWS("", result)
 
     def _getXsdFilename(self, response):
         schemaLocation = xpathFirst(XML(response), '/drilldown:drilldown/@xsi:schemaLocation')

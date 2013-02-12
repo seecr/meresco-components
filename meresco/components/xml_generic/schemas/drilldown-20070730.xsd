@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema targetNamespace="http://meresco.org/namespace/drilldown" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:dd="http://meresco.org/namespace/drilldown">
+	<!--
+
+                    ___  ___  ___  ___ _ _
+              /\   / __|/ _ \/ _ \/ __| '_|
+              \//\ \__ \  __/  __/ (__| |
+  Crafted by  /\\/ |___/\___|\___|\___|_|
+              \/
+                   Software Craftsmanship
+                   http://seecr.nl
+    -->
 
 	<element name="drilldown" type="dd:drilldownType"/>
 	<complexType name="drilldownType">
