@@ -29,8 +29,13 @@
 
 DEFAULT_MAXIMUM_TERMS = 10
 
-DRILLDOWN_HEADER = """<dd:drilldown
+_DRILLDOWN_XSD_2007 = "drilldown-20070730.xsd"
+_DRILLDOWN_XSD_2013 = "drilldown-20130212.xsd"
+_DRILLDOWN_HEADER = """<dd:drilldown
     xmlns:dd="http://meresco.org/namespace/drilldown"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd">"""
+    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/%s">"""
+
+DRILLDOWN_HEADER = _DRILLDOWN_HEADER % _DRILLDOWN_XSD_2007
+
 DRILLDOWN_FOOTER = "</dd:drilldown>"

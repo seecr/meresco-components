@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://meresco.org/namespace/drilldown" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:dd="http://meresco.org/namespace/drilldown">
+
+    <element name="drilldown" type="dd:drilldownType"/>
+    <complexType name="drilldownType">
+        <all minOccurs="1" maxOccurs="1">
+                <element ref="dd:term-drilldown" minOccurs="0" maxOccurs="1"></element>
+                <element ref="dd:field-drilldown" minOccurs="0" maxOccurs="1"></element>
+        </all>
+    </complexType>
+
+    <element name="term-drilldown" type="dd:termDrilldownType"/>
+    <complexType name="termDrilldownType">
+        <choice minOccurs="1" maxOccurs="1">
+            <element ref="dd:json"></element>
+            <sequence minOccurs="1" maxOccurs="unbounded">
+                <element ref="dd:navigator"></element>
+            </sequence>
+        </choice>
+    </complexType>
+
+    <element name="field-drilldown" type="dd:fieldDrilldownType"/>
+    <complexType name="fieldDrilldownType">
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <element ref="dd:field"></element>
+        </sequence>
+    </complexType>
+
+    <element name="navigator" type="dd:navigatorType"></element>
+    <complexType name="navigatorType">
+        <sequence maxOccurs="unbounded" minOccurs="1">
+            <element ref="dd:item"></element>
+        </sequence>
+        <attribute name="name" type="string" use="required"></attribute>
+    </complexType>
+
+    <element name="item" type="dd:itemType"></element>
+    <complexType name="itemType">
+        <sequence maxOccurs="unbounded" minOccurs="0">
+            <element ref="dd:navigator"></element>
+        </sequence>
+        <attribute name="count" type="int" use="required"></attribute>
+        <attribute name="value" type="string" use="required"></attribute>
+    </complexType>
+
+    <element name="field" type="dd:fieldType"></element>
+    <complexType name="fieldType">
+        <simpleContent>
+            <extension base="int">
+                <attribute name="name" type="string" use="required">
+                </attribute>
+            </extension>
+        </simpleContent>
+    </complexType>
+
+    <element name="json" type="dd:jsonType"></element>
+    <complexType name="jsonType">
+        <simpleContent>
+            <extension base="string"></extension>
+        </simpleContent>
+    </complexType>
+
+</schema>

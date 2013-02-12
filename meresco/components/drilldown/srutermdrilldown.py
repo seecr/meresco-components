@@ -24,8 +24,8 @@
 # 
 ## end license ##
 
-from meresco.core import Observable, decorateWith
-from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+from meresco.core import Observable, decorateWith, decorate
+from drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2007, _DRILLDOWN_XSD_2013, DRILLDOWN_FOOTER
 from xml.sax.saxutils import escape as xmlEscape, quoteattr
 from traceback import print_exc
 from simplejson import dumps
@@ -50,16 +50,17 @@ class SRUTermDrilldown(Observable):
         if drilldownData is None:
             return
         outputFormat = sruArguments.get('x-drilldown-format', [self._defaultFormat])[0]
+        drilldownHeader = _DRILLDOWN_HEADER % (_DRILLDOWN_XSD_2007 if outputFormat == FORMAT_OLD_XML else _DRILLDOWN_XSD_2013)
         try:
-            yield self._termDrilldown(drilldownData, format=outputFormat)
+            yield decorate(drilldownHeader, self._termDrilldown(drilldownData, format=outputFormat), DRILLDOWN_FOOTER)
         except Exception, e:
             print_exc()
-            yield DRILLDOWN_HEADER + "<dd:term-drilldown>"
+            yield drilldownHeader + "<dd:term-drilldown>"
             yield generalSystemError(xmlEscape(e.args[0]))
             yield "</dd:term-drilldown>" + DRILLDOWN_FOOTER
             return
 
-    @decorateWith(DRILLDOWN_HEADER + "<dd:term-drilldown>", "</dd:term-drilldown>" + DRILLDOWN_FOOTER)
+    @decorateWith("<dd:term-drilldown>", "</dd:term-drilldown>")
     @compose
     def _termDrilldown(self, drilldownData, format):
         if format == FORMAT_XML:
@@ -67,7 +68,7 @@ class SRUTermDrilldown(Observable):
             for facet in drilldownData:
                 yield self._dd_navigator(facet['fieldname'], facet['terms'])
         elif format == FORMAT_JSON:
-            yield dumps(drilldownData, indent=4)
+            yield "<dd:json>%s</dd:json>" % dumps(drilldownData, indent=4)
         elif format == FORMAT_OLD_XML:
             self._dd_item = self._dd_item_old
             for facet in drilldownData:
@@ -102,9 +103,12 @@ class SRUTermDrilldown(Observable):
     def _dd_item_old(self, term):
         yield '<dd:item count=%s>%s</dd:item>' % (quoteattr(str(term['count'])), xmlEscape(str(term['term'])))
 
-    @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
     def echoedExtraRequestData(self, sruArguments, **kwargs):
         if 'x-term-drilldown' in sruArguments and len(sruArguments['x-term-drilldown']) == 1:
-            yield "<dd:term-drilldown>"
-            yield xmlEscape(sruArguments['x-term-drilldown'][0])
-            yield "</dd:term-drilldown>"
+            outputFormat = sruArguments.get('x-drilldown-format', [self._defaultFormat])[0]
+            drilldownHeader = _DRILLDOWN_HEADER % (_DRILLDOWN_XSD_2007 if outputFormat == FORMAT_OLD_XML else _DRILLDOWN_XSD_2013)
+            yield drilldownHeader
+            yield "<dd:term-drilldown>%s</dd:term-drilldown>" % xmlEscape(sruArguments['x-term-drilldown'][0])
+            if 'x-drilldown-format' in sruArguments:
+                yield "<dd:drilldown-format>%s</dd:drilldown-format>" % xmlEscape(outputFormat)
+            yield DRILLDOWN_FOOTER

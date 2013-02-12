@@ -30,16 +30,20 @@
 
 from seecr.test import SeecrTestCase
 from weightless.core import compose
-from lxml.etree import parse
+from lxml.etree import parse, XML
 from StringIO import StringIO
 from simplejson import loads
+from os.path import join, dirname, basename
 
 from seecr.test.io import stderr_replace_decorator
 
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+from meresco.components.drilldown.drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2013
 from meresco.components.drilldown import SRUTermDrilldown
 from meresco.components.drilldown.srutermdrilldown import FORMAT_JSON, FORMAT_XML
-from meresco.xml import xpathFirst
+from meresco.components.xml_generic.validate import assertValid
+from meresco.components.xml_generic import schemasPath
+from meresco.xml import xpathFirst, namespaces
 
 class SRUTermDrilldownTest(SeecrTestCase):
     def testSRUTermDrilldown(self):
@@ -65,6 +69,9 @@ class SRUTermDrilldownTest(SeecrTestCase):
     <dd:item count="2">value2_1</dd:item>
     <dd:item count="1">value2_2</dd:item>
 </dd:navigator></dd:term-drilldown></dd:drilldown>""", response)
+
+        xsdFilename = self._getXsdFilename(response)
+        assertValid(response, join(schemasPath, xsdFilename))
 
     def testSRUTermDrilldownWithPivots(self):
         sruTermDrilldown = SRUTermDrilldown(defaultFormat=FORMAT_XML)
@@ -100,7 +107,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
         response = ''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={})))
 
-        self.assertEqualsWS(DRILLDOWN_HEADER + """<dd:term-drilldown><dd:navigator name="field0">
+        self.assertEqualsWS(_DRILLDOWN_HEADER % _DRILLDOWN_XSD_2013 + """<dd:term-drilldown><dd:navigator name="field0">
     <dd:item count="1" value="value0">
         <dd:navigator name="field1">
             <dd:item count="10" value="value0_0"/>
@@ -109,6 +116,8 @@ class SRUTermDrilldownTest(SeecrTestCase):
     </dd:item>
     <dd:item count="2" value="value1"/>
 </dd:navigator></dd:term-drilldown></dd:drilldown>""", response)
+        xsdFilename = self._getXsdFilename(response)
+        assertValid(response, join(schemasPath, xsdFilename))
 
     def testSRUTermDrilldownWithPivotsInJson(self):
         sruTermDrilldown = SRUTermDrilldown(defaultFormat=FORMAT_JSON)
@@ -142,9 +151,12 @@ class SRUTermDrilldownTest(SeecrTestCase):
                 }
             ]
 
-        response = parse(StringIO(''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={'x-drilldown-format': ['json']})))))
+        response = ''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={'x-drilldown-format': ['json']})))
+        self.assertEquals(drilldownData, loads(xpathFirst(XML(response), '//drilldown:term-drilldown/drilldown:json/text()')))
 
-        self.assertEquals(drilldownData, loads(xpathFirst(response, '//drilldown:term-drilldown/text()')))
+        xsdFilename = self._getXsdFilename(response)
+        assertValid(response, join(schemasPath, xsdFilename))
+
 
     def testDrilldownNoResults(self):
         sruTermDrilldown = SRUTermDrilldown()
@@ -179,7 +191,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
         response = parse(StringIO(''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={})))))
 
-        self.assertEquals(drilldownData, loads(xpathFirst(response, '//drilldown:term-drilldown/text()')))
+        self.assertEquals(drilldownData, loads(xpathFirst(response, '//drilldown:term-drilldown/drilldown:json/text()')))
 
     @stderr_replace_decorator
     def testWrongFormat(self):
@@ -205,7 +217,25 @@ class SRUTermDrilldownTest(SeecrTestCase):
         component = SRUTermDrilldown()
 
         result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0,field1'], 'version': '1.1'}, version='1.1')))
-        
+
         self.assertEqualsWS(DRILLDOWN_HEADER \
         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
         + DRILLDOWN_FOOTER, result)
+
+    def testEchoedExtraRequestDataWithDrilldownFormat(self):
+        component = SRUTermDrilldown()
+
+        result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0,field1'], 'version': '1.1', 'x-drilldown-format': ['json']}, version='1.1')))
+
+        self.assertEqualsWS(_DRILLDOWN_HEADER % _DRILLDOWN_XSD_2013 \
+        + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
+        + """<dd:drilldown-format>json</dd:drilldown-format>"""\
+        + DRILLDOWN_FOOTER, result)
+
+    def _getXsdFilename(self, response):
+        schemaLocation = xpathFirst(XML(response), '/drilldown:drilldown/@xsi:schemaLocation')
+        namespace, xsd = schemaLocation.split()
+        self.assertEquals(namespaces['drilldown'], namespace)
+        self.assertEquals('http://meresco.org/files/xsd', dirname(xsd))
+        return basename(xsd)
+
