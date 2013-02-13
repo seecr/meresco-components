@@ -68,7 +68,7 @@ class SRUTermDrilldown(Observable):
             for facet in drilldownData:
                 yield self._dd_navigator(facet['fieldname'], facet['terms'])
         elif format == FORMAT_JSON:
-            yield "<dd:json>%s</dd:json>" % dumps(drilldownData, indent=4)
+            yield "<dd:json>%s</dd:json>" % xmlEscape(dumps(drilldownData, indent=4))
         elif format == FORMAT_OLD_XML:
             self._dd_item = self._dd_item_old
             for facet in drilldownData:

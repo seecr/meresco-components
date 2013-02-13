@@ -137,7 +137,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
                                         'count': 10,
                                     },
                                     {
-                                        'term': 'value0_1',
+                                        'term': 'value0 & 1',
                                         'count': 20
                                     }
                                 ]
