@@ -25,6 +25,7 @@
 # 
 ## end license ##
 
+from logcomponent import LogComponent
 from logfileserver import LogFileServer
 from querylog import QueryLog, QueryLogHelperForSru, QueryLogHelper, QueryLogHelperForExecuteCQL
 from directorylog import DirectoryLog
