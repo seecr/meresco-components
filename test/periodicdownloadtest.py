@@ -1,30 +1,30 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# 
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from __future__ import with_statement
@@ -32,10 +32,8 @@ from contextlib import contextmanager
 from random import randint
 from threading import Event, Thread
 from time import sleep
-from socket import socket, error as SocketError
-from meresco.components import lxmltostring
+from socket import socket
 from StringIO import StringIO
-from os.path import join
 from urllib2 import urlopen
 from time import time
 from itertools import count
@@ -50,7 +48,7 @@ from weightless.io import Reactor, Suspend
 from meresco.core import Observable
 
 from meresco.components.http.utils import CRLF
-from meresco.components import PeriodicDownload
+from meresco.components import PeriodicDownload, Schedule
 
 def _dunderFile(): pass
 fileDict = {
@@ -142,7 +140,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         callback() # connect
         self.assertEquals("addWriter", reactor.calledMethods[-1].name)
         self.assertEquals("%s: error in sockopt\n" % downloader, downloader._err.getvalue()) # remains 1 error
- 
+
     def testVerboseDeprecationWarning(self):
         with stderr_replaced() as s:
             PeriodicDownload(reactor='x', host='x', port='x')
@@ -165,7 +163,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
 
-            callback() # yield After Error 
+            callback() # yield After Error
 
             self.assertEquals("%s: Unexpected response: HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % repr(downloader), downloader._err.getvalue())
             self.assertEquals(['buildRequest'], [m.name for m in observer.calledMethods])
@@ -209,7 +207,7 @@ class PeriodicDownloadTest(SeecrTestCase):
     def testSuccess(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
-            self.assertEquals(1, downloader._period)
+            self.assertEquals(1, downloader.getState().schedule.secondsFromNow())
             callback = self.doConnect() # _processOne.next
             callback() # _processOne.next -> HTTP GET
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
@@ -230,7 +228,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         suspendObject = Suspend()
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port, handleGenerator=(x for x in ['X', suspendObject]))
-            self.assertEquals(1, downloader._period)
+            self.assertEquals(1, downloader.getState().schedule.secondsFromNow())
             callback = self.doConnect() # _processOne.next
             callback() # _processOne.next -> HTTP GET
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
@@ -243,7 +241,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEqualsWS(TWO_RECORDS, observer.calledMethods[1].kwargs['data'])
             self.assertEquals('addProcess', reactor.calledMethods[-1].name)
             callback = reactor.calledMethods[-1].args[0]
-            callback() 
+            callback()
             self.assertEquals('suspend', reactor.calledMethods[-1].name)
             suspendObject.resume("resume response")
             self.assertEquals('resumeProcess', reactor.calledMethods[-1].name)
@@ -294,7 +292,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             observer.methods['handle'] = lambda *args, **kwargs: None  # will cause AssertionError in Observable
 
-            self.assertEquals(1, downloader._period)
+            self.assertEquals(1, downloader.getState().schedule.secondsFromNow())
             callback = self.doConnect() # _processOne.next
             callback() # _processOne.next -> HTTP GET
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
@@ -307,7 +305,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 self.fail('should not get here')
             except AssertionError, e:
                 self.assertEquals('<bound method handle of <CallTrace: observer>> should have resulted in a generator.', str(e))
-          
+
     def testSuccessHttp1dot1Server(self):
         with server([STATUSLINE_ALTERNATIVE + ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
@@ -339,7 +337,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback() # _processOne.next
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(2, reactor.calledMethods[-1].args[0])
-            
+
             callback = reactor.calledMethods[-1].args[1]
             callback() # startProcess
             callback = reactor.calledMethods[-1].args[1]
@@ -361,7 +359,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             sleep(0.01)
             callback = reactor.calledMethods[-1].args[1]
             callback() # _processOne.next -> sok.recv
-            self.assertEquals("%s: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % repr(downloader), downloader._err.getvalue()) 
+            self.assertEquals("%s: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % repr(downloader), downloader._err.getvalue())
             callback = reactor.calledMethods[-1].args[1]
             callback() # startProcess
             callback = reactor.calledMethods[-1].args[1]
@@ -396,7 +394,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 pass
             self.assertEquals('removeProcess', reactor.calledMethods[6].name)
             self.assertReactorStateClean(reactor)
-             
+
     def testShortenErrorMessage(self):
         from meresco.components.periodicdownload import shorten
         longMessage = "a"*100000
@@ -413,15 +411,15 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         self.assertRaises(ValueError, lambda: PeriodicDownload(reactor))
         self.assertRaises(ValueError, lambda: PeriodicDownload(reactor, host='example.com'))
         self.assertRaises(ValueError, lambda: PeriodicDownload(reactor, port=123))
-        downloader = PeriodicDownload(reactor, autoStart=False)
+        PeriodicDownload(reactor, autoStart=False)
 
     def testRepr(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, host='example.com', port=80)
-        self.assertEquals("PeriodicDownload(host='example.com', port=80)", repr(downloader))
+        self.assertEquals("PeriodicDownload(host='example.com', port=80, schedule=Schedule(period=1))", repr(downloader))
         downloader = PeriodicDownload(reactor, name="theName", autoStart=False)
-        self.assertEquals("PeriodicDownload(name='theName')", repr(downloader))
-        
+        self.assertEquals("PeriodicDownload(name='theName', schedule=Schedule(period=1))", repr(downloader))
+
     def testPauseResume(self):
         reactor = Reactor()
         stepping = [True]
@@ -430,7 +428,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         reactor.addTimer(2, uit)
 
         receivedData = []
-        
+
         class TestHandler(Observable):
             def __init__(self):
                 Observable.__init__(self)
@@ -446,7 +444,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 yield
 
         with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*5) as (port, msgs):
-            download = PeriodicDownload(reactor, '127.0.0.1', port, period=0.1, err=StringIO())
+            download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.1), err=StringIO())
             dna = be(
             (Observable(),
                 (download,
@@ -478,7 +476,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         reactor.addTimer(2, uit)
 
         receivedData = []
-        
+
         class TestHandler(Observable):
             def __init__(self):
                 Observable.__init__(self)
@@ -495,7 +493,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 yield
 
         with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*4) as (port, msgs):
-            download = PeriodicDownload(reactor, '127.0.0.1', port, period=0.1, err=StringIO())
+            download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.1), err=StringIO())
             dna = be(
             (Observable(),
                 (download,
@@ -589,8 +587,8 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEquals('addTimer', reactor.calledMethods[0].name)
             self.assertEquals(1, reactor.calledMethods[-1].args[0])
-            downloader.setPeriod(42)
-            self.assertEquals(42, downloader.getState().period)
+            downloader.setSchedule(Schedule(period=42))
+            self.assertEquals(42, downloader.getState().schedule.secondsFromNow())
             self.assertEquals('removeTimer', reactor.calledMethods[-2].name)
             self.assertEquals('timerObject0', reactor.calledMethods[-2].args[0])
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
@@ -616,7 +614,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         self._reactor = CallTrace("reactor")
         timerCounter = count(0)
         self._reactor.methods['addTimer'] = lambda *args, **kwargs: 'timerObject%s' % timerCounter.next()
-        self._downloader = PeriodicDownload(self._reactor, host, port, period=period, prio=0, err=StringIO())
+        self._downloader = PeriodicDownload(self._reactor, host, port, schedule=Schedule(period=period), prio=0, err=StringIO())
         self._observer = CallTrace("observer", methods={'handle': lambda data: handleGenerator})
         self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._downloader.addObserver(self._observer)
@@ -632,10 +630,10 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 
     def assertReactorStateClean(self, reactor):
         names = [m.name for m in reactor.calledMethods]
-        for what in ['Writer', 'Reader', 'Process']: 
+        for what in ['Writer', 'Reader', 'Process']:
             self.assertEquals(
                 len([n for n in names if n == 'add%s' % what]),
-                len([n for n in names if n == 'remove%s' % what]), 
+                len([n for n in names if n == 'remove%s' % what]),
                 'Expected same amount of add and remove for %s' % what)
 
 
@@ -645,9 +643,9 @@ STATUSLINE_ALTERNATIVE = """HTTP/1.1 200 ok """ + HTTP_SEPARATOR
 
 EMBEDDED_RECORD = '<record>ignored</record>'
 BODY = """<aap:noot xmlns:aap="mies">%s</aap:noot>"""
-ONE_RECORD = BODY % (EMBEDDED_RECORD) 
-TWO_RECORDS = BODY % (EMBEDDED_RECORD * 2) 
-RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD 
-RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS 
+ONE_RECORD = BODY % (EMBEDDED_RECORD)
+TWO_RECORDS = BODY % (EMBEDDED_RECORD * 2)
+RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD
+RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS
 
 

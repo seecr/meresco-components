@@ -1,56 +1,60 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# 
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
-from socket import socket, error as SocketError, SHUT_WR, SHUT_RD, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
+from socket import socket, error as SocketError, SHUT_WR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
 from errno import EINPROGRESS, ECONNREFUSED
 from traceback import format_exc
-from os import makedirs, close, remove
-from os.path import join, isfile, isdir
-from urllib import urlencode
 
 from meresco.core import Observable
 from meresco.components.http.utils import CRLF
+from schedule import Schedule
 from weightless.core import compose, Yield
 
-from sys import stderr, stdout
-from time import time
-from tempfile import TemporaryFile
+from sys import stderr
 from warnings import warn
 
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host=None, port=None, period=1, verbose=None, prio=None, name=None, err=None, autoStart=True):
+    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None):
         super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host
-        self._port = port 
-        self._period = period
+        self._port = port
+        self._schedule = schedule
+        if schedule is None:
+            if period is None:
+                period = 1
+            else:
+                warn("Please use schedule instead of period.", DeprecationWarning) # since 2013-02-20
+            self._schedule = Schedule(period=period)
+        elif not period is None:
+            raise ValueError("Using both schedule and period is invalid")
         self._prio = prio
         self._err = err or stderr
         self._paused = not autoStart
@@ -65,18 +69,22 @@ class PeriodicDownload(Observable):
         self._port = port
 
     def setPeriod(self, period):
-        if self._period != period:
-            self._period = period
+        warn("Please use setSchedule(...)", DeprecationWarning)
+        self.setSchedule(Schedule(period=period))
+
+    def setSchedule(self, schedule):
+        if self._schedule != schedule:
+            self._schedule = schedule
             if self._currentTimer:
                 self._reactor.removeTimer(self._currentTimer)
                 self.startTimer()
-            
+
     def observer_init(self):
         self.startTimer()
 
     def startTimer(self, additionalTime=0):
         if not self._paused:
-            self._currentTimer = self._reactor.addTimer(self._period + additionalTime, self.startProcess)
+            self._currentTimer = self._reactor.addTimer(self._schedule.secondsFromNow() + additionalTime, self.startProcess)
 
     def pause(self):
         if not self._paused:
@@ -141,7 +149,7 @@ class PeriodicDownload(Observable):
                     yield
             finally:
                 self._reactor.removeProcess()
-        except (AssertionError, KeyboardInterrupt, SystemExit), e:
+        except (AssertionError, KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             message = format_exc()
@@ -208,10 +216,9 @@ class PeriodicDownload(Observable):
 
     def __repr__(self):
         kwargsList = [
-            '%s=%s' % (name, repr(value))
-            for name, value 
-            in [('host', self._host), ('port', self._port), ('name', self._name)]
-            if value
+            '%s=%s' % (name, repr(getattr(self, '_%s' % name)))
+            for name in ['host', 'port', 'prio', 'name', 'schedule']
+            if getattr(self, '_%s' % name)
         ]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(kwargsList))
 
@@ -239,7 +246,12 @@ class PeriodicDownloadStateView(object):
 
     @property
     def period(self):
-        return self._periodicDownload._period
+        warn("Please use schedule.", DeprecationWarning)
+        return self.schedule.secondsFromNow()
+
+    @property
+    def schedule(self):
+        return self._periodicDownload._schedule
 
 
 MAX_LENGTH=1500
@@ -247,5 +259,5 @@ def shorten(response):
     if len(response) < MAX_LENGTH:
         return response
     headLength = 2*MAX_LENGTH/3
-    tailLength = MAX_LENGTH - headLength 
+    tailLength = MAX_LENGTH - headLength
     return "%s ... %s" % (response[:headLength], response[-tailLength:])

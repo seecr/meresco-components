@@ -52,3 +52,20 @@ class ScheduleTest(SeecrTestCase):
 
 		s._time = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
 		self.assertEquals((5 * 24 + 23) * 60 * 60, s.secondsFromNow())
+
+	def testEqualsHash(self):
+		self.assertEquals(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00'))
+		self.assertEquals(Schedule(period=3), Schedule(period=3))
+		self.assertEquals(Schedule(timeOfDay='20:00', dayOfWeek=3), Schedule(timeOfDay='20:00', dayOfWeek=3))
+		self.assertNotEqual(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00', dayOfWeek=3))
+		self.assertEquals(hash(Schedule(timeOfDay='20:00')), hash(Schedule(timeOfDay='20:00')))
+		self.assertEquals(hash(Schedule(period=3)), hash(Schedule(period=3)))
+		self.assertEquals(hash(Schedule(timeOfDay='20:00', dayOfWeek=3)), hash(Schedule(timeOfDay='20:00', dayOfWeek=3)))
+		self.assertNotEqual(hash(Schedule(timeOfDay='20:00')), hash(Schedule(timeOfDay='20:00', dayOfWeek=3)))
+
+	def testRepr(self):
+		self.assertEquals('Schedule(period=1)', repr(Schedule(period=1)))
+		self.assertEquals("Schedule(timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00')))
+		self.assertEquals("Schedule(timeOfDay='21:00', dayOfWeek=1)", repr(Schedule(timeOfDay='21:00', dayOfWeek=1)))
+
+

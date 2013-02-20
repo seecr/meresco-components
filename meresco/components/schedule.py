@@ -27,7 +27,6 @@
 
 from datetime import datetime
 
-
 class Schedule(object):
 	def __init__(self, period=None, timeOfDay=None, dayOfWeek=None):
 		if (period and (timeOfDay or dayOfWeek)) or \
@@ -55,3 +54,11 @@ class Schedule(object):
 	def _time(self):
 		return datetime.utcnow()
 
+	def __repr__(self):
+		return "Schedule(%s)" % ', '.join('%s=%s' % (k, repr(getattr(self, '_%s' % k))) for k in ['period', 'timeOfDay', 'dayOfWeek'] if getattr(self, '_%s' % k))
+
+	def __cmp__(self, other):
+		return cmp(type(self), type(other)) or cmp(repr(self), repr(other))
+
+	def __hash__(self):
+		return hash(repr(self))
