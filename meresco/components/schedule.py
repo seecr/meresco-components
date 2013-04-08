@@ -28,37 +28,49 @@
 from datetime import datetime
 
 class Schedule(object):
-	def __init__(self, period=None, timeOfDay=None, dayOfWeek=None):
-		if (period and (timeOfDay or dayOfWeek)) or \
-		   		(dayOfWeek and not timeOfDay):
-			raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek'")
-		self._period = period
-		self._timeOfDay = timeOfDay
-		self._dayOfWeek = dayOfWeek
+    def __init__(self, period=None, timeOfDay=None, dayOfWeek=None):
+        if (period and (timeOfDay or dayOfWeek)) or \
+                (dayOfWeek and not timeOfDay):
+            raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek'")
+        self._period = period
+        self._timeOfDay = timeOfDay
+        self._dayOfWeek = dayOfWeek
 
-	def secondsFromNow(self):
-		if self._period:
-			return self._period
+    @property
+    def period(self):
+        return self._period
 
-		targetTime = datetime.strptime(self._timeOfDay, "%H:%M")
-		time = self._time()
-		currentTime = datetime.strptime("%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S")
-		timeDelta = targetTime - currentTime
-		daysDelta = 0
-		if self._dayOfWeek:
-			daysDelta = self._dayOfWeek - time.isoweekday() + timeDelta.days
-			if daysDelta < 0:
-				daysDelta += 7
-		return daysDelta * 24 * 60 * 60 + timeDelta.seconds
+    @property
+    def timeOfDay(self):
+        return self._timeOfDay
 
-	def _time(self):
-		return datetime.utcnow()
+    @property
+    def dayOfWeek(self):
+        return self._dayOfWeek
 
-	def __repr__(self):
-		return "Schedule(%s)" % ', '.join('%s=%s' % (k, repr(getattr(self, '_%s' % k))) for k in ['period', 'timeOfDay', 'dayOfWeek'] if getattr(self, '_%s' % k))
+    def secondsFromNow(self):
+        if self._period:
+            return self._period
 
-	def __cmp__(self, other):
-		return cmp(type(self), type(other)) or cmp(repr(self), repr(other))
+        targetTime = datetime.strptime(self._timeOfDay, "%H:%M")
+        time = self._time()
+        currentTime = datetime.strptime("%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S")
+        timeDelta = targetTime - currentTime
+        daysDelta = 0
+        if self._dayOfWeek:
+            daysDelta = self._dayOfWeek - time.isoweekday() + timeDelta.days
+            if daysDelta < 0:
+                daysDelta += 7
+        return daysDelta * 24 * 60 * 60 + timeDelta.seconds
 
-	def __hash__(self):
-		return hash(repr(self))
+    def _time(self):
+        return datetime.utcnow()
+
+    def __repr__(self):
+        return "Schedule(%s)" % ', '.join('%s=%s' % (k, repr(getattr(self, '_%s' % k))) for k in ['period', 'timeOfDay', 'dayOfWeek'] if getattr(self, '_%s' % k))
+
+    def __cmp__(self, other):
+        return cmp(type(self), type(other)) or cmp(repr(self), repr(other))
+
+    def __hash__(self):
+        return hash(repr(self))
