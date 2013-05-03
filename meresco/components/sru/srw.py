@@ -1,39 +1,40 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from xml.sax.saxutils import escape as xmlEscape
-from amara.binderytools import bind_string
 
-from cq2utils.amaraextension import getElements
 from meresco.core import Observable
+from meresco.xml import namespaces as _namespaces
 from meresco.components.http import utils as httputils
+from lxml.etree import parse
+from StringIO import StringIO
 
 SOAP_XML_URI = "http://schemas.xmlsoap.org/soap/envelope/"
 
@@ -97,17 +98,17 @@ class Srw(Observable):
     def _soapXmlToArguments(self, body):
         arguments = {}
         try:
-            envelope = bind_string(body).Envelope
+            lxmlNode = parse(StringIO(body))
         except Exception, e:
             raise  SoapException("SOAP:Server.userException", str(e))
-        if str(envelope.xmlnsUri) != SOAP_XML_URI:
+        envelope = xpathFirst(lxmlNode, '/soap:Envelope')
+        if envelope is None:
             raise SoapException("SOAP:VersionMismatch", "The processing party found an invalid namespace for the SOAP Envelope element")
 
-        request = envelope.Body.searchRetrieveRequest
-        for elem in getElements(request):
-            value = arguments.get(str(elem.localName), [])
-            value.append(str(elem))
-            arguments[str(elem.localName)] = value
+        request = xpathFirst(envelope, 'soap:Body/srw:searchRetrieveRequest')
+        for elem in request.getchildren():
+            key = localname(elem.tag)
+            arguments.setdefault(key, []).append(str(elem.text))
         arguments['operation'] = arguments.get('operation', ['searchRetrieve'])
         return arguments
 
@@ -116,3 +117,13 @@ class Srw(Observable):
             raise SruException(UNSUPPORTED_OPERATION, operation)
         if 'stylesheet' in arguments:
             raise SruException(UNSUPPORTED_PARAMETER, 'stylesheet')
+
+namespaces = _namespaces.copyUpdate(dict(
+    soap=SOAP_XML_URI,
+))
+xpath = namespaces.xpath
+xpathFirst = namespaces.xpathFirst
+
+def localname(tag):
+    _, _, name = tag.rpartition('}')
+    return str(name)
