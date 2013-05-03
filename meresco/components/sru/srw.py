@@ -36,28 +36,10 @@ from meresco.components.http import utils as httputils
 from lxml.etree import parse
 from StringIO import StringIO
 
-SOAP_XML_URI = "http://schemas.xmlsoap.org/soap/envelope/"
-
-SOAP_HEADER = """<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/"><SOAP:Body>"""
-
-SOAP_FOOTER = """</SOAP:Body></SOAP:Envelope>"""
-
-SOAP = SOAP_HEADER + "%s" + SOAP_FOOTER
-
 from meresco.components.sru import SruParser
 from meresco.components.sru.sruparser import SruException, DIAGNOSTICS, UNSUPPORTED_PARAMETER, UNSUPPORTED_OPERATION
 
-class SoapException(Exception):
-
-    def __init__(self, faultCode, faultString):
-        self._faultCode = faultCode
-        self._faultString = faultString
-
-    def asSoap(self):
-        return """<SOAP:Fault><faultcode>%s</faultcode><faultstring>%s</faultstring></SOAP:Fault>""" % (xmlEscape(self._faultCode), xmlEscape(self._faultString))
-
 class Srw(Observable):
-
     def __init__(self, defaultRecordSchema=None, defaultRecordPacking=None):
         Observable.__init__(self)
         self._defaultRecordSchema = defaultRecordSchema
@@ -118,8 +100,16 @@ class Srw(Observable):
         if 'stylesheet' in arguments:
             raise SruException(UNSUPPORTED_PARAMETER, 'stylesheet')
 
+class SoapException(Exception):
+    def __init__(self, faultCode, faultString):
+        self._faultCode = faultCode
+        self._faultString = faultString
+
+    def asSoap(self):
+        return """<SOAP:Fault><faultcode>%s</faultcode><faultstring>%s</faultstring></SOAP:Fault>""" % (xmlEscape(self._faultCode), xmlEscape(self._faultString))
+
 namespaces = _namespaces.copyUpdate(dict(
-    soap=SOAP_XML_URI,
+    soap="http://schemas.xmlsoap.org/soap/envelope/",
 ))
 xpath = namespaces.xpath
 xpathFirst = namespaces.xpathFirst
@@ -127,3 +117,10 @@ xpathFirst = namespaces.xpathFirst
 def localname(tag):
     _, _, name = tag.rpartition('}')
     return str(name)
+
+
+SOAP_HEADER = """<SOAP:Envelope xmlns:SOAP="%(soap)s"><SOAP:Body>""" % namespaces
+SOAP_FOOTER = """</SOAP:Body></SOAP:Envelope>"""
+
+SOAP = SOAP_HEADER + "%s" + SOAP_FOOTER
+
