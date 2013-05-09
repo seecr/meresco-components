@@ -1,0 +1,469 @@
+Changeset created on Thu May 09 13:08:52 UTC 2013 by Seecr (Seek You Too B.V.)
+
+Description: Use namespaces= instead of namespaceMap=
+
+    Using namespaces= as argument in XmlXPath, Venturi, XPath2Field. This
+    seems to be the current standard in all sorts of components. So using it
+    here as well.
+
+    It is backwards compatible, you'll get a DeprecationWarning for using the old 
+    namespaceMap=
+
+Baseline version: 4.4.9
+
+From 4b1a0805f9d2b63c9bffee533fac6bfd80886c81 Mon Sep 17 00:00:00 2001
+From: Thijs Janssen <thijs@seecr.nl>
+Date: Thu, 9 May 2013 15:08:25 +0200
+Subject: [PATCH] TJ: use namespaces= as argument, namespaceMap is now deprecated.
+
+---
+ meresco/components/venturi.py     |   28 ++++++++++++++-----------
+ meresco/components/xmlxpath.py    |   40 ++++++++++++++++++------------------
+ meresco/components/xpath2field.py |   31 ++++++++++++++++------------
+ test/venturitest.py               |   22 ++++++++++----------
+ test/xmlxpathtest.py              |   24 +++++++++++-----------
+ test/xpath2fieldtest.py           |   22 ++++++++++----------
+ 6 files changed, 88 insertions(+), 79 deletions(-)
+
+diff --git a/meresco/components/venturi.py b/meresco/components/venturi.py
+index 5bf39e2..73038f7 100644
+--- a/meresco/components/venturi.py
++++ b/meresco/components/venturi.py
+@@ -1,32 +1,32 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+ # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+-# 
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from lxml.etree import _Element, ElementTree, parse, XMLParser
+@@ -37,12 +37,16 @@ from meresco.core import Observable
+ from meresco.components.xmlxpath import lxmlElementUntail
+ from meresco.components import lxmltostring
+ from warnings import warn
++from meresco.xml.namespaces import namespaces as _namespaces
+ 
+ 
+ class Venturi(Observable):
+-    def __init__(self, should=None, could=None, namespaceMap={}):
++    def __init__(self, should=None, could=None, namespaces=None, namespaceMap=None):
+         Observable.__init__(self)
+-        self._namespaceMap = namespaceMap
++        if namespaceMap:
++            warn("Please use 'namespaces=...'", DeprecationWarning)
++            namespaces=namespaceMap
++        self.xpath = _namespaces.copyUpdate(namespaces or {}).xpath
+         self._should = _init(should)
+         self._could = _init(could)
+ 
+@@ -77,7 +81,7 @@ class Venturi(Observable):
+         yield self.all.delete(identifier=identifier)
+ 
+     def _findPart(self, identifier, partname, lxmlNode, partXPath, asString):
+-        matches = lxmlNode.xpath(partXPath, namespaces=self._namespaceMap)
++        matches = self.xpath(lxmlNode, partXPath)
+         if len(matches) > 1:
+             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
+         if len(matches) == 1:
+diff --git a/meresco/components/xmlxpath.py b/meresco/components/xmlxpath.py
+index d1e83d3..9f3c018 100644
+--- a/meresco/components/xmlxpath.py
++++ b/meresco/components/xmlxpath.py
+@@ -1,31 +1,31 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from copy import copy
+@@ -33,6 +33,8 @@ from StringIO import StringIO
+ from lxml.etree import ElementTree
+ 
+ from meresco.core import Observable
++from warnings import warn
++from meresco.xml.namespaces import namespaces as _namespaces
+ 
+ 
+ #HM: To support both lxml1.2 as 2.1
+@@ -42,22 +44,20 @@ except ImportError:
+     _ElementStringResult = str 
+     _ElementUnicodeResult = unicode
+ 
+-oftenUsedNamespaces = {
+-    'oai_dc': "http://www.openarchives.org/OAI/2.0/oai_dc/",
+-    'dc': "http://purl.org/dc/elements/1.1/",
+-    'oai': "http://www.openarchives.org/OAI/2.0/",
+-    'lom': "http://ltsc.ieee.org/xsd/LOM",
+-    'meta': "http://meresco.org/namespace/harvester/meta",
+-}
++oftenUsedNamespaces = _namespaces.copyUpdate(dict(
++    lom="http://ltsc.ieee.org/xsd/LOM",
++))
+ 
+ class XmlXPath(Observable):
+-    def __init__(self, xpathList, fromKwarg, toKwarg=None, namespaceMap=None):
++    def __init__(self, xpathList, fromKwarg, toKwarg=None, namespaces=None, namespaceMap=None):
+         Observable.__init__(self)
+         self._xpaths = xpathList
+         self._fromKwarg = fromKwarg
+         self._toKwarg = toKwarg if toKwarg else self._fromKwarg
+-        self._namespacesMap = oftenUsedNamespaces.copy()
+-        self._namespacesMap.update(namespaceMap or {})
++        if namespaceMap:
++            warn("Please use 'namespaces=...'", DeprecationWarning)
++            namespaces = namespaceMap
++        self.xpath = oftenUsedNamespaces.copyUpdate(namespaces or {}).xpath
+ 
+     def do_unknown(self, msg, *args, **kwargs):
+         for newArgs, newKwargs in self._convertArgs(*args, **kwargs):
+@@ -77,7 +77,7 @@ class XmlXPath(Observable):
+ 
+     def _findNewTree(self, elementTree):
+         for xpath in self._xpaths:
+-            for element in elementTree.xpath(xpath, namespaces=self._namespacesMap):
++            for element in self.xpath(elementTree, xpath):
+                 if type(element) in [_ElementStringResult, _ElementUnicodeResult]:
+                     yield element
+                 else:
+diff --git a/meresco/components/xpath2field.py b/meresco/components/xpath2field.py
+index 97be78d..c61cc9c 100644
+--- a/meresco/components/xpath2field.py
++++ b/meresco/components/xpath2field.py
+@@ -1,47 +1,52 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from meresco.core import Observable
+ from meresco.core.generatorutils import asyncnoreturnvalue
+ 
++from warnings import warn
++from meresco.xml.namespaces import namespaces as _namespaces
+ 
+ class XPath2Field(Observable):
+-    def __init__(self, attributeXpaths=[], namespaceMap={}, sendAsList=False):
++    def __init__(self, attributeXpaths=None, namespaceMap=None, sendAsList=False, namespaces=None):
+         Observable.__init__(self)
+-        self._attributeXpaths = attributeXpaths
+-        self._namespaceMap = namespaceMap
++        self._attributeXpaths = attributeXpaths or []
+         self._sendAsList = sendAsList
++        if namespaceMap:
++            warn("Please use 'namespaces=...'", DeprecationWarning)
++            namespaces=namespaceMap
++        self.xpath = _namespaces.copyUpdate(namespaces or {}).xpath
+ 
+     @asyncnoreturnvalue
+     def add(self, identifier=None, partname=None, lxmlNode=None):
+         for (xpath, dottedDestinationPath) in self._attributeXpaths:
+-            values = lxmlNode.xpath(xpath, namespaces=self._namespaceMap)
++            values = self.xpath(lxmlNode, xpath)
+             if self._sendAsList:
+                 values = [values]
+             for value in values:
+diff --git a/test/venturitest.py b/test/venturitest.py
+index 851be51..95fbcf2 100644
+--- a/test/venturitest.py
++++ b/test/venturitest.py
+@@ -1,33 +1,33 @@
+ # -*- coding=utf-8 -*-
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2010-2012 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+ # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+-# 
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from StringIO import StringIO
+@@ -59,7 +59,7 @@ def createVenturiHelix(should, could, *observers, **kwargs):
+                 (Venturi(
+                         should=should,
+                         could=could,
+-                        namespaceMap=kwargs.get('namespaceMap', {})),)
++                        namespaces=kwargs.get('namespaces', None)),)
+                     + tuple((observer,) for observer in observers)
+             )
+         )
+@@ -172,7 +172,7 @@ class VenturiTest(SeecrTestCase):
+     def testNamespace(self):
+         inputEvent = fromstring('<document xmlns="ns1" xmlns:ns2="ns2"><ns2:one/><two/></document>')
+         interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
+-        v = createVenturiHelix([{'partname': 'one', 'xpath': '/prefixone:document/prefixtwo:one'}, {'partname': 'two', 'xpath': '/prefixone:document/prefixone:two'}], [], interceptor, namespaceMap={'prefixone':'ns1', 'prefixtwo':'ns2'})
++        v = createVenturiHelix([{'partname': 'one', 'xpath': '/prefixone:document/prefixtwo:one'}, {'partname': 'two', 'xpath': '/prefixone:document/prefixone:two'}], [], interceptor, namespaces={'prefixone':'ns1', 'prefixtwo':'ns2'})
+         list(compose(v.all.add('identifier', 'document', inputEvent)))
+         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
+ 
+diff --git a/test/xmlxpathtest.py b/test/xmlxpathtest.py
+index 03dc4d7..a64de35 100644
+--- a/test/xmlxpathtest.py
++++ b/test/xmlxpathtest.py
+@@ -1,33 +1,33 @@
+ # -*- coding=utf-8 -*-
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+ # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+-# 
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ import sys
+@@ -49,7 +49,7 @@ class XmlXPathTest(SeecrTestCase):
+         self.observable = be(
+             (Observable(),
+                 (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode'),
+-                    (XmlXPath(xpathList, fromKwarg='lxmlNode', namespaceMap=nsMap),
++                    (XmlXPath(xpathList, fromKwarg='lxmlNode', namespaces=nsMap),
+                         (self.observer, ),
+                     )
+                 )
+@@ -151,7 +151,7 @@ class XmlXPathTest(SeecrTestCase):
+         self.assertEquals('<a>a</a>', lxmltostring(lxmlNode))
+ 
+     def testNamespaces(self):
+-        xmlXPath = XmlXPath(['/a:aNode/b:bNode'], fromKwarg='lxmlNode', namespaceMap={'a':'aNamespace', 'b':'bNamespace' })
++        xmlXPath = XmlXPath(['/a:aNode/b:bNode'], fromKwarg='lxmlNode', namespaces={'a':'aNamespace', 'b':'bNamespace' })
+         lxmlNode = parse(StringIO('<aNode xmlns="aNamespace"><bNode xmlns="bNamespace">ccc</bNode></aNode>'))
+         observer = CallTrace('Observer')
+         observable = Observable()
+@@ -219,7 +219,7 @@ class XmlXPathTest(SeecrTestCase):
+                 (XmlXPath(
+                         ['/myns:root/myns:path'],
+                         fromKwarg='lxmlNode',
+-                        namespaceMap={'myns': 'http://myns.org/'}
++                        namespaces={'myns': 'http://myns.org/'}
+                     ),
+                     (observer, ),
+                 )
+diff --git a/test/xpath2fieldtest.py b/test/xpath2fieldtest.py
+index cb5b97e..bac7450 100644
+--- a/test/xpath2fieldtest.py
++++ b/test/xpath2fieldtest.py
+@@ -1,30 +1,30 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from seecr.test import SeecrTestCase, CallTrace
+@@ -39,7 +39,7 @@ from StringIO import StringIO
+ class XPath2FieldTest(SeecrTestCase):
+     def testSingleXPath2Field(self):
+         observer = CallTrace()
+-        xpath2field = XPath2Field([('/a/b//@attr', 'a.b.attr')], namespaceMap={'ns': 'http://namespace.org/'})
++        xpath2field = XPath2Field([('/a/b//@attr', 'a.b.attr')], namespaces={'ns': 'http://namespace.org/'})
+         xpath2field.addObserver(observer)
+ 
+         node = parse(StringIO("""<a>
+@@ -55,7 +55,7 @@ class XPath2FieldTest(SeecrTestCase):
+ 
+     def testMultipleXPath2Field(self):
+         observer = CallTrace()
+-        xpath2field = XPath2Field([('/a/b//@attr', 'a.b.attr')], namespaceMap={'ns': 'http://namespace.org/'})
++        xpath2field = XPath2Field([('/a/b//@attr', 'a.b.attr')], namespaces={'ns': 'http://namespace.org/'})
+         xpath2field.addObserver(observer)
+ 
+         node = parse(StringIO("""<a>
+-- 
+1.7.2.5
+
