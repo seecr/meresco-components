@@ -45,7 +45,6 @@ from directorywatcher import DirectoryWatcher, DirectoryWatcherException
 from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
 from fields2xmlfields import Fields2XmlFields
 from fields2xml import Fields2Xml
-from filelist import SortedFileList, FileList
 from filtermessages import FilterMessages
 from filterpartbyname import FilterPartByName
 from inbox import Inbox

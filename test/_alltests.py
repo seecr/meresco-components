@@ -57,13 +57,11 @@ from directorywatchertest import DirectoryWatcherTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
-from filelisttest import FileListTest
 from filtermessagestest import FilterMessagesTest
 from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
-from packertest import PackerTest
 from parsecqltest import ParseCQLTest
 from parseargumentstest import ParseArgumentsTest
 from periodicdownloadtest import PeriodicDownloadTest
