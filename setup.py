@@ -74,6 +74,7 @@ setup(
                       '-O3'
                   ],
                   extra_link_args = [ 
+                      '-shared',
                       '-Wl,-soname,_integerlist.so',
                   ],
         )
