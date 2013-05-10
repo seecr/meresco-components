@@ -73,6 +73,9 @@ setup(
                       '-g', 
                       '-O3'
                   ],
+                  extra_link_args = [ 
+                      '-Wl,-soname,_integerlist.so',
+                  ],
         )
     ],
     version = '%VERSION%',
