@@ -72,10 +72,6 @@ setup(
                   extra_compile_args = [
                       '-g', 
                   ],
-                  extra_link_args = [ 
-                      '-shared',
-                      '-Wl,-soname,_integerlist.so',
-                  ],
         )
     ],
     version = '%VERSION%',
