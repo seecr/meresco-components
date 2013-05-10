@@ -31,6 +31,7 @@
 ## end license ##
 
 from StringIO import StringIO
+import warnings
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
@@ -278,7 +279,9 @@ class VenturiTest(SeecrTestCase):
             self.assertEquals("Empty identifier not allowed.", str(e))
 
     def testDeprecatedPartsSpecification(self):
-        with stderr_replaced() as s:
-            venturi = Venturi(should=[('partname', '/x/path')])
-            self.assertTrue("Please use {'partname'" in s.getvalue())
+        with warnings.catch_warnings():
+            warnings.simplefilter("default")
+            with stderr_replaced() as s:
+                venturi = Venturi(should=[('partname', '/x/path')])
+                self.assertTrue("Please use {'partname'" in s.getvalue())
 

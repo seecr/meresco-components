@@ -26,8 +26,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-
 from __future__ import with_statement
+import warnings
 from contextlib import contextmanager
 from random import randint
 from threading import Event, Thread
@@ -147,10 +147,12 @@ class PeriodicDownloadTest(SeecrTestCase):
             result = s.getvalue()
             self.assertEquals('', result)
 
-        with stderr_replaced() as s:
-            PeriodicDownload(reactor='x', host='x', port='x', verbose=True)
-            result = s.getvalue()
-            self.assertTrue('DeprecationWarning: Verbose flag is deprecated' in result, result)
+        with warnings.catch_warnings():
+            warnings.simplefilter("default")
+            with stderr_replaced() as s:
+                PeriodicDownload(reactor='x', host='x', port='x', verbose=True)
+                result = s.getvalue()
+                self.assertTrue('DeprecationWarning: Verbose flag is deprecated' in result, result)
 
     def testErrorResponse(self):
         with server(['HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request']) as (port, msgs):
