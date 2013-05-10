@@ -71,7 +71,6 @@ setup(
                   ],
                   extra_compile_args = [
                       '-g', 
-                      '-O3'
                   ],
                   extra_link_args = [ 
                       '-shared',
