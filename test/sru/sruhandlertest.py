@@ -49,7 +49,7 @@ from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
-from meresco.components.facetindex import Response
+from testhelpers import Response
 from meresco.core import Observable
 
 from seecr.test import SeecrTestCase, CallTrace

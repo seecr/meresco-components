@@ -1,37 +1,36 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
-# 
-# "NBC+" also known as "ZP (ZoekPlatform)" is
-#  initiated by Stichting Bibliotheek.nl to provide a new search service
-#  for all public libraries in the Netherlands. 
-# 
+#
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# 
-# This file is part of "NBC+ (Zoekplatform BNL)"
-# 
-# "NBC+ (Zoekplatform BNL)" is free software; you can redistribute it and/or modify
+#
+# This file is part of "Meresco Components"
+#
+# "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
-# "NBC+ (Zoekplatform BNL)" is distributed in the hope that it will be useful,
+#
+# "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
-# along with "NBC+ (Zoekplatform BNL)"; if not, write to the Free Software
+# along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from meresco.components.autocomplete import Autocomplete
 
-from meresco.solr.solrresponse import SolrResponse
+from testhelpers import Response as SolrResponse
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import compose
 

@@ -33,7 +33,7 @@ from urllib import urlencode
 from StringIO import StringIO
 from lxml.etree import parse
 
-from meresco.components.facetindex import Response
+from testhelpers import Response
 from meresco.components.rss import Rss
 
 from weightless.core import compose

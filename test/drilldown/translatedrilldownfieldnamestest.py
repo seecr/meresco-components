@@ -29,7 +29,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
 from meresco.core import Observable
-from meresco.components.facetindex import Response
+from testhelpers import Response
 from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_INDEX
 
 from meresco.components.drilldown import TranslateDrilldownFieldnames

@@ -127,7 +127,7 @@ from sru.addsuggestionsresponsedatatest import AddSuggestionsResponseDataTest
 
 from xml_generic.validatetest import ValidateTest
 
-from facetindex.integerlisttest import IntegerListTest
+from integerlist.integerlisttest import IntegerListTest
 
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
