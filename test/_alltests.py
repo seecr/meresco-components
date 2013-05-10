@@ -44,6 +44,8 @@ for path in glob('../deps.d/*'):                  #DO_NOT_DISTRIBUTE
 sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
 
 import unittest
+from warnings import simplefilter
+simplefilter('default')
 
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from clausecollectortest import ClauseCollectorTest

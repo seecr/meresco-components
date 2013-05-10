@@ -31,7 +31,7 @@
 from xml.sax.saxutils import escape as xmlEscape
 from xml.sax import SAXParseException
 
-from cgi import parse_qs
+from urlparse import parse_qs
 from urlparse import urlsplit
 
 from meresco.core import Observable
