@@ -1,17 +1,17 @@
-python-cqlparser (>=1.7)
+python-cqlparser (>=1.7.1)
 python-cqlparser (<<1.8)
-python-escaping (>= 0.1)
+python-escaping (>= 0.1.2)
 python-escaping (<< 0.2)
 python-levenshtein
 python-lxml (>=2.1)
 python-lxml (<<3.0)
 python-magic
-python-meresco-core (>= 4.0.3)
+python-meresco-core (>= 4.0.4)
 python-meresco-core (<< 4.1)
-python-meresco-xml (>= 4.0)
+python-meresco-xml (>= 4.1.2)
 python-meresco-xml (<< 4.2)
-python-storage (>= 6.0.2)
+python-storage (>= 6.0.3)
 python-storage (<< 6.1)
-python-weightless-core (>= 0.8)
+python-weightless-core (>= 0.8.2.1)
 python-weightless-core (<< 0.9)
 lsof
