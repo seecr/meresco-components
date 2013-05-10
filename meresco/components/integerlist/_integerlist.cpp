@@ -76,7 +76,7 @@ class TypedIntegerList : public IntegerList {
             return new TypedIntegerList<T>(this, start, stop);
         }
         virtual void delitems(int start, int stop) {
-            if (start >= 0 && stop <= v->size() && stop > start) {
+            if (start >= 0 && stop <= int(v->size()) && stop > start) {
                 v->erase(v->begin() + start, v->begin() + stop);
             }
         }
