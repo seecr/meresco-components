@@ -26,7 +26,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from __future__ import with_statement
 import warnings
 from contextlib import contextmanager
 from random import randint

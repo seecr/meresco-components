@@ -30,7 +30,6 @@
 #
 ## end license ##
 
-from __future__ import with_statement
 from seecr.test import SeecrTestCase
 from os import rename, remove, listdir
 from os.path import join, isfile

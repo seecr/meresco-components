@@ -26,7 +26,6 @@
 #
 ## end license ##
 
-from __future__ import with_statement
 
 from sys import exc_info
 from os.path import join, isdir, isfile, basename, abspath
