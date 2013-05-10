@@ -1,5 +1,3 @@
-python-amara (>=1.2a2)
-python-amara (<<1.3)
 python-cqlparser (>=1.7)
 python-cqlparser (<<1.8)
 python-escaping (>= 0.1)
