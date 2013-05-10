@@ -31,7 +31,6 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.sru.srurecordupdate import SruRecordUpdate
-from amara.binderytools import bind_string
 from lxml.etree import parse
 from meresco.xml.namespaces import xpathFirst
 from StringIO import StringIO
