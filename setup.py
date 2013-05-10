@@ -37,6 +37,7 @@ from distutils.extension import Extension
 setup(
     name = 'meresco-components',
     packages = [
+        'meresco',                          #DO_NOT_DISTRIBUTE
         'meresco.components',
         'meresco.components.autocomplete',
         'meresco.components.cql',
