@@ -41,6 +41,7 @@ from configuration import Configuration, readConfig
 from contextset import ContextSetList, ContextSet
 from cqlconversion import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
 from crosswalk import Crosswalk
+from directorywatcher import DirectoryWatcher, DirectoryWatcherException
 from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
 from fields2xmlfields import Fields2XmlFields
 from fields2xml import Fields2Xml

@@ -53,6 +53,7 @@ from cqlconversiontest import CQLConversionTest
 from combinepartstest import CombinePartsTest
 from crosswalktest import CrosswalkTest
 from datapumptest import DataPumpTest
+from directorywatchertest import DirectoryWatcherTest
 from fieldletstest import FieldletsTest
 from fields2xmltest import Fields2XmlTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest

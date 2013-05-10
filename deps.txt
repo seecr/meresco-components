@@ -2,8 +2,6 @@ python-cqlparser (>=1.7)
 python-cqlparser (<<1.8)
 python-escaping (>= 0.1)
 python-escaping (<< 0.2)
-python-cq2utils (>= 6.0)
-python-cq2utils (<< 6.1)
 python-levenshtein
 python-lxml (>=2.1)
 python-lxml (<<3.0)
