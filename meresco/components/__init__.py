@@ -33,7 +33,7 @@ from converter import Converter
 from timeddictionary import TimedDictionary
 from xmlcompose import XmlCompose
 
-from xmlpump import XmlParseAmara, XmlPrintAmara, Amara2Lxml, Lxml2Amara, XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
+from xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from clausecollector import ClauseCollector
 from combineparts import CombineParts
