@@ -120,7 +120,7 @@ from numeric.converttest import ConvertTest
 
 from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest
-from sru.srurecordupdatetest import SRURecordUpdateTest
+from sru.srurecordupdatetest import SruRecordUpdateTest
 from sru.srwtest import SrwTest
 from sru.addsuggestionsresponsedatatest import AddSuggestionsResponseDataTest
 

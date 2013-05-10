@@ -1,40 +1,44 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
 
-from meresco.components.sru.srurecordupdate import SRURecordUpdate
+from meresco.components.sru.srurecordupdate import SruRecordUpdate
 from amara.binderytools import bind_string
+from lxml.etree import parse
+from meresco.xml.namespaces import xpathFirst
+from StringIO import StringIO
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
 from meresco.core import asyncnoreturnvalue
+from meresco.components import lxmltostring
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -59,12 +63,13 @@ CREATE = "create"
 REPLACE = "replace"
 DELETE = "delete"
 
-class SRURecordUpdateTest(SeecrTestCase):
+class SruRecordUpdateTest(SeecrTestCase):
     """http://www.loc.gov/standards/sru/record-update/"""
 
     def setUp(self):
         SeecrTestCase.setUp(self)
-        self.sruRecordUpdate = SRURecordUpdate()
+        self.stderr = StringIO()
+        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr)
         @asyncnoreturnvalue
         def addOrDelete(*args, **kwargs):
             pass
@@ -100,7 +105,7 @@ class SRURecordUpdateTest(SeecrTestCase):
         self.assertEquals("123", method.kwargs['identifier'])
         self.assertEquals(str, type(method.kwargs['identifier']))
         self.assertEquals("irrelevantXML", method.kwargs['partname'])
-        self.assertEquals("<dc>empty</dc>", method.kwargs['amaraNode'].xml())
+        self.assertEquals('<dc xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">empty</dc>', lxmltostring(method.kwargs['lxmlNode']))
 
     def testDelete(self):
         requestBody = self.createRequestBody(action=DELETE)
@@ -127,6 +132,22 @@ class SRURecordUpdateTest(SeecrTestCase):
 
         method = self.observer.calledMethods[0]
         self.assertEquals("add", method.name)
+
+    def testAddXMLWithUcpUpdateRequest(self):
+        """It is not entirely sure if updateRequest is in the 'srw' or 'ucp' namespace.
+        We now assume it is in 'srw', but versions of meresco-harvester use 'ucp'.
+        We will accept both.
+        """
+        requestBody = self.createRequestBody()
+        requestBody = requestBody.replace('srw:updateRequest', 'ucp:updateRequest')
+        headers, result = self.performRequest(requestBody)
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+<srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+    <srw:version>1.0</srw:version>
+    <ucp:operationStatus>success</ucp:operationStatus>
+</srw:updateResponse>""", result)
+
+        self.assertEquals(['add'], self.observer.calledMethodNames())
 
     def testPassCallableObjectForAdd(self):
         def callable():
@@ -163,31 +184,32 @@ class SRURecordUpdateTest(SeecrTestCase):
         headers, result = self.performRequest("not_xml")
         self.assertTrue('<ucp:operationStatus>fail</ucp:operationStatus>' in result, result)
         self.assertEquals(0, len(self.observer.calledMethods))
+        self.assertTrue('XMLSyntaxError' in self.stderr.getvalue(), self.stderr.getvalue())
 
     def testErrorsAreNotPassed(self):
         self.observer.exceptions['add'] = Exception('Some <Exception>')
         headers, result = self.performRequest(self.createRequestBody())
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = bind_string(result)
-        self.assertTrue(str(diag.updateResponse.diagnostics.diagnostic.details).find("""Some <Exception>""") > -1)
+        diag = parse(StringIO(result))
+        self.assertTrue("Some <Exception>" in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
 
     def testValidationErrors(self):
         self.observer.exceptions['add'] = ValidateException('Some <Exception>')
         headers, result = self.performRequest(self.createRequestBody())
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = bind_string(result)
-        self.assertEquals("info:srw/diagnostic/12/12", str(diag.updateResponse.diagnostics.diagnostic.uri))
-        self.assertEquals("Some <Exception>", str(diag.updateResponse.diagnostics.diagnostic.details))
-        self.assertEquals("Invalid data:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
+        diag = parse(StringIO(result))
+        self.assertEquals("info:srw/diagnostic/12/12", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
+        self.assertEquals("Some <Exception>", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'))
+        self.assertEquals("Invalid data:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
 
     def testEmptyIdentifierNotAccepted(self):
         requestBody = self.createRequestBody(recordIdentifier="")
         headers, result = self.performRequest(requestBody)
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = bind_string(result)
-        self.assertEquals("info:srw/diagnostic/12/1", str(diag.updateResponse.diagnostics.diagnostic.uri))
-        self.assertTrue("Empty recordIdentifier not allowed." in str(diag.updateResponse.diagnostics.diagnostic.details))
-        self.assertEquals("Invalid component:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
+        diag = parse(StringIO(result))
+        self.assertEquals("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
+        self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
+        self.assertTrue("Invalid component:  record rejected" in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'), result)
 
     def testNoIdentifierNotAccepted(self):
         requestBody = """<?xml version="1.0" encoding="UTF-8"?>
@@ -202,8 +224,8 @@ class SRURecordUpdateTest(SeecrTestCase):
 </srw:updateRequest>"""
         headers, result = self.performRequest(requestBody)
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = bind_string(result)
-        self.assertEquals("info:srw/diagnostic/12/1", str(diag.updateResponse.diagnostics.diagnostic.uri))
-        self.assertTrue("no attribute \'recordIdentifier\'" in str(diag.updateResponse.diagnostics.diagnostic.details))
-        self.assertEquals("Invalid component:  record rejected", str(diag.updateResponse.diagnostics.diagnostic.message))
+        diag = parse(StringIO(result))
+        self.assertEquals("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
+        self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
+        self.assertEquals("Invalid component:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
 
