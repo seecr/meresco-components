@@ -1,0 +1,255 @@
+Changeset created on Mon May 13 09:11:17 UTC 2013 by Seecr (Seek You Too B.V.)
+
+Description: RequestScope is transparent
+
+    RequestScope previously only handled handleRequest(...) calls,
+    it now supports every method.
+
+Baseline version: 4.4.10
+
+From 335b42f54722ca04d0bde03e5a90caf58760a925 Mon Sep 17 00:00:00 2001
+From: Thijs Janssen <thijs@seecr.nl>
+Date: Mon, 13 May 2013 11:07:39 +0200
+Subject: [PATCH] TS/TJ: requestscope is now transparent.
+
+---
+ meresco/components/requestscope.py |   42 ++++++++++-----
+ test/requestscopetest.py           |  106 +++++++++++++++++++++++++++---------
+ 2 files changed, 109 insertions(+), 39 deletions(-)
+
+diff --git a/meresco/components/requestscope.py b/meresco/components/requestscope.py
+index 5fee604..bd7cd53 100644
+--- a/meresco/components/requestscope.py
++++ b/meresco/components/requestscope.py
+@@ -1,36 +1,52 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+-from meresco.core import Observable
++from meresco.core import Transparent
+ 
+-class RequestScope(Observable):
+-    def handleRequest(self, *args, **kwargs):
++class RequestScope(Transparent):
++    def all_unknown(self, message, *args, **kwargs):
+         __callstack_var_requestScope__ = {}
+-        yield self.all.handleRequest(*args, **kwargs)
++        yield self.all.unknown(message, *args, **kwargs)
++    def any_unknown(self, message, *args, **kwargs):
++        __callstack_var_requestScope__ = {}
++        try:
++            response = yield self.any.unknown(message, *args, **kwargs)
++        except NoneOfTheObserversRespond:
++            raise DeclineMessage
++        raise StopIteration(response)
++    def do_unknown(self, message, *args, **kwargs):
++        __callstack_var_requestScope__ = {}
++        self.do.unknown(message, *args, **kwargs)
++    def call_unknown(self, message, *args, **kwargs):
++        __callstack_var_requestScope__ = {}
++        try:
++            return self.call.unknown(message, *args, **kwargs)
++        except NoneOfTheObserversRespond:
++            raise DeclineMessage
+ 
+diff --git a/test/requestscopetest.py b/test/requestscopetest.py
+index 9d9e04f..bc3561c 100644
+--- a/test/requestscopetest.py
++++ b/test/requestscopetest.py
+@@ -1,37 +1,37 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from seecr.test import SeecrTestCase
+ from meresco.core import Observable
+ from meresco.components import RequestScope
+ 
+-from weightless.core import compose
++from weightless.core import compose, be
+ 
+ class RequestScopeTest(SeecrTestCase):
+     def testEverythingIsPassed(self):
+@@ -40,10 +40,13 @@ class RequestScopeTest(SeecrTestCase):
+             def handleRequest(innerself, *args, **kwargs):
+                 usedArgsKwargs.append((args, kwargs))
+                 yield 'result'
+-        r = RequestScope()
+-        r.addObserver(MyObserver())
++        dna = be((Observable(),
++            (RequestScope(),
++                (MyObserver(),)
++            )
++        ))
+ 
+-        result = list(compose(r.handleRequest("an arg", RequestURI='http://www.example.org/path')))
++        result = list(compose(dna.all.handleRequest("an arg", RequestURI='http://www.example.org/path')))
+ 
+         self.assertEquals(['result'], result)
+         self.assertEquals([(("an arg",), dict(RequestURI='http://www.example.org/path'))], usedArgsKwargs)
+@@ -60,13 +63,16 @@ class RequestScopeTest(SeecrTestCase):
+             def getArg(self):
+                 return self.ctx.requestScope["arg"]
+ 
+-        r = RequestScope()
+-        myObserver = MyObserver()
+-        myObserver.addObserver(SetArgObserver())
+-        myObserver.addObserver(GetArgObserver())
+-        r.addObserver(myObserver)
++        dna = be((Observable(),
++            (RequestScope(),
++                (MyObserver(),
++                    (SetArgObserver(),),
++                    (GetArgObserver(),)
++                )
++            )
++        ))
+ 
+-        result = list(compose(r.handleRequest("a request")))
++        result = list(compose(dna.all.handleRequest("a request")))
+ 
+         self.assertEquals(['value'], result)
+ 
+@@ -82,15 +88,63 @@ class RequestScopeTest(SeecrTestCase):
+             def getArg(self):
+                 return ';'.join('%s=%s' % (k,v) for k,v in self.ctx.requestScope.items())
+ 
+-        r = RequestScope()
+-        myObserver = MyObserver()
+-        myObserver.addObserver(SetArgObserver())
+-        myObserver.addObserver(GetArgObserver())
+-        r.addObserver(myObserver)
++        dna = be((Observable(),
++            (RequestScope(),
++                (MyObserver(),
++                    (SetArgObserver(),),
++                    (GetArgObserver(),)
++                )
++            )
++        ))
+ 
+-        result0 = list(compose(r.handleRequest("key0", "value0")))
+-        result1 = list(compose(r.handleRequest("key1", "value1")))
++        result0 = list(compose(dna.all.handleRequest("key0", "value0")))
++        result1 = list(compose(dna.all.handleRequest("key1", "value1")))
+ 
+         self.assertEquals(['key0=value0'], result0)
+         self.assertEquals(['key1=value1'], result1)
+         
++    def testRequestScopeForEveryMethod(self):
++        resultByDo = []
++        class MyObserver(Observable):
++            def someAnyMethod(self, key, value, *args, **kwargs):
++                self.do.setArg(key, value)
++                result = self.call.getArg(key)
++                raise StopIteration(result)
++                yield
++            def someAllMethod(self, key, value, *args, **kwargs):
++                self.do.setArg(key, value)
++                yield self.call.getArg(key)
++            def someCallMethod(self, key, value, *args, **kwargs):
++                self.do.setArg(key, value)
++                return self.call.getArg(key)
++            def someDoMethod(self, key, value, *args, **kwargs):
++                self.do.setArg(key, value)
++                resultByDo.append(self.call.getArg(key))
++        class SetArgObserver(Observable):
++            def setArg(self, key, value):
++                self.ctx.requestScope[key] = value
++        class GetArgObserver(Observable):
++            def getArg(self, key):
++                return self.ctx.requestScope[key]
++
++        dna = be((Observable(),
++            (RequestScope(),
++                (MyObserver(),
++                    (SetArgObserver(),),
++                    (GetArgObserver(),)
++                )
++            )
++        ))
++
++        try:
++            compose(dna.any.someAnyMethod(key='anykey', value='anyvalue')).next()
++            self.fail()
++        except StopIteration, e:
++            self.assertEquals('anyvalue', e.args[0])
++        self.assertEquals(['allvalue'], list(compose(dna.all.someAllMethod(key='allkey', value='allvalue'))))
++        dna.do.someDoMethod(key='dokey', value='dovalue')
++        self.assertEquals(['dovalue'], resultByDo)
++        self.assertEquals('callvalue', dna.call.someCallMethod(key='callkey', value='callvalue'))
++        
++
++
+-- 
+1.7.2.5
+
