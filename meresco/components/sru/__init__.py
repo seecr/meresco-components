@@ -27,7 +27,7 @@
 # 
 ## end license ##
 
-from srurecordupdate import SRURecordUpdate
+from srurecordupdate import SruRecordUpdate, SRURecordUpdate
 from sruparser import SruParser, SruException
 from sruhandler import SruHandler
 from srw import Srw
