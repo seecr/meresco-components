@@ -41,10 +41,12 @@ from sys import stdout
 from os.path import abspath, dirname, join, isdir, basename
 from os import makedirs
 from meresco.components.http import ObservableHttpServer
-from meresco.components.sru.srurecordupdate import RESPONSE_XML, DIAGNOSTIC_XML, escapeXml, bind_string
+from meresco.components.sru.srurecordupdate import RESPONSE_XML, DIAGNOSTIC_XML, escapeXml
 from meresco.core import Observable
 from re import compile
 from traceback import format_exc
+from lxml.etree import XML, tostring
+from meresco.xml import xpath, xpathFirst
 
 mydir = dirname(abspath(__file__))
 notWordCharRE = compile('\W+')
@@ -62,8 +64,8 @@ class Dump(object):
     def handleRequest(self, Body='', **kwargs):
         yield '\r\n'.join(['HTTP/1.0 200 Ok', 'Content-Type: text/xml; charset=utf-8\r\n', ''])
         try:
-            updateRequest = bind_string(Body).updateRequest
-            recordId = str(updateRequest.recordIdentifier)
+            updateRequest = xpathFirst(XML(Body), '/ucp:updateRequest')
+            recordId = xpathFirst(updateRequest, 'ucp:recordIdentifier/text()')
             normalizedRecordId = notWordCharRE.sub('_', recordId)
             self._number +=1
             if self._number <= self._maxCountNumber:
@@ -71,7 +73,7 @@ class Dump(object):
                 with open(join(self._dumpdir, filename), 'w') as f:
                     print recordId
                     stdout.flush()
-                    updateRequest.xml(f)
+                    f.write(tostring(updateRequest))
                 answer = RESPONSE_XML % {
                     "operationStatus": "success",
                     "diagnostics": ""}
@@ -80,11 +82,11 @@ class Dump(object):
                 print 'Reached maxCount'
                 answer = RESPONSE_XML % {
                     "operationStatus": "fail",
-                    "diagnostics": DIAGNOSTIC_XML % escapeXml("Enough is enough")}
+                    "diagnostics": DIAGNOSTIC_XML % {'uri': '', 'message': '', 'details': escapeXml("Enough is enough")}}
         except Exception, e:
             answer = RESPONSE_XML % {
                 "operationStatus": "fail",
-                "diagnostics": DIAGNOSTIC_XML % escapeXml(format_exc())}
+                "diagnostics": DIAGNOSTIC_XML % {'uri': '', 'message': '', 'details': escapeXml(format_exc())}}
 
         yield answer
 
