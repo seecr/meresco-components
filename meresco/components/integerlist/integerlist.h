@@ -41,11 +41,10 @@ class IntegerList {
         virtual ~IntegerList() {};
         virtual int size() = 0;
         virtual uint64_t get(int index) = 0;
-        virtual void append(uint64_t element) = 0;
-        virtual void set(int index, uint64_t value) = 0;
+        virtual int append(uint64_t element) = 0;
+        virtual int set(int index, uint64_t value) = 0;
         virtual IntegerList* slice(int start, int stop) = 0;
         virtual void delitems(int start, int stop) = 0;
-        virtual int mergeFromOffset(int offset) = 0;
         virtual int save(char* filename, int offset, bool append) = 0;
         virtual int extendFrom(char* filename) = 0;
 };
@@ -53,13 +52,12 @@ class IntegerList {
 extern "C" {
     IntegerList*    IntegerList_create               (int n, bool use64bits);
     void            IntegerList_delete               (IntegerList*);
-    void            IntegerList_append               (IntegerList*, uint64_t);
+    int             IntegerList_append               (IntegerList*, uint64_t);
     int             IntegerList_size                 (IntegerList*);
     uint64_t        IntegerList_get                  (IntegerList*, int);
-    void            IntegerList_set                  (IntegerList*, int, uint64_t);
+    int             IntegerList_set                  (IntegerList*, int, uint64_t);
     IntegerList*    IntegerList_slice                (IntegerList*, int, int);
     void            IntegerList_delitems             (IntegerList* list, int start, int stop);
-    int             IntegerList_mergeFromOffset      (IntegerList* list, int);
     int             IntegerList_save                 (IntegerList* list, char* filename, int offset, bool append);
     int             IntegerList_extendFrom           (IntegerList* list, char* filename);
 }

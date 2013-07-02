@@ -69,10 +69,6 @@ IntegerList_slice = libIntegerList.IntegerList_slice
 IntegerList_slice.argtypes = [INTEGERLIST, c_int, c_int]
 IntegerList_slice.restype = INTEGERLIST
 
-IntegerList_mergeFromOffset = libIntegerList.IntegerList_mergeFromOffset
-IntegerList_mergeFromOffset.argtypes = [INTEGERLIST, c_int]
-IntegerList_mergeFromOffset.restype = c_int
-
 IntegerList_save = libIntegerList.IntegerList_save
 IntegerList_save.argtypes = [INTEGERLIST, c_char_p, c_int, c_int]
 IntegerList_save.restype = c_int
@@ -148,9 +144,6 @@ class IntegerList(object):
 
     def copy(self):
         return IntegerList(cobj=IntegerList_slice(self, 0, len(self), 1))
-
-    def mergeFromOffset(self, offset):
-        return IntegerList_mergeFromOffset(self, offset)
 
     def getCObject(self):
         return self._cobj

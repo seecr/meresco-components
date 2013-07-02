@@ -32,7 +32,8 @@
 #include "integerlist.h"
 #include <vector>
 #include <errno.h>
-
+#include <limits.h>
+#include <algorithm>
 
 /* ----------------------- C++ ---------------------------------------------*/
 
@@ -41,6 +42,8 @@ template <typename T>
 class TypedIntegerList : public IntegerList {
     private:
         std::vector<T>* v;
+        std::vector<int>* deletes;
+        uint64_t DELETE_MARK;
     public:
         TypedIntegerList(int n) {
             v = new std::vector<T>();
@@ -48,45 +51,68 @@ class TypedIntegerList : public IntegerList {
             for (int i=0; i < n; i++) {
                 v->push_back(i);
             }
+            deletes = new std::vector<int>();
+            DELETE_MARK = use64bits() ? LONG_MAX : INT_MAX;
         }
-        TypedIntegerList(TypedIntegerList<T>* integerList, int start, int stop) {
-            if (start < 0 || stop > integerList->size() || stop <= start) {
+        TypedIntegerList(TypedIntegerList<T>* integerList, int start, int stop, int size) {
+            deletes = new std::vector<int>();
+            if (start < 0 || stop > size || stop <= start) {
                 v = new std::vector<T>();
             }
             else {
                 v = new std::vector<T>(integerList->v->begin() + start, integerList->v->begin() + stop);
+                for (std::vector<int>::iterator it=integerList->deletes->begin(); it != integerList->deletes->end(); ++it)
+                {
+                    int index = *it;
+                    if (index > start && index < stop) {
+                        deletes->push_back(index-start);
+                    }
+                }
             }
+            DELETE_MARK = integerList->DELETE_MARK;
         }
-        virtual ~TypedIntegerList() { delete v; }
-        virtual int size() { return v->size(); }
+        virtual ~TypedIntegerList() {
+            delete v;
+            delete deletes;
+        }
+        virtual int size() {
+            return v->size() - deletes->size();
+        }
         virtual uint64_t get(int index) {
             if (index < 0) {
                 index = size() + index;
             }
+            index = indexFor(index);
             if (!use64bits()) {
                 return (signed) v->at(index);
             }
             return v->at(index);
         }
-        virtual void append(uint64_t element) {
+        virtual int append(uint64_t element) {
+            if (element == DELETE_MARK) {
+                return -1;
+            }
             v->push_back((T) element);
+            return 0;
         }
-        virtual void set(int index, uint64_t element) { v->at(index) = (T) element; }
+        virtual int set(int index, uint64_t element) {
+            if (element == DELETE_MARK) {
+                return -1;
+            }
+            v->at(indexFor(index)) = (T) element;
+            return 0;
+        }
         virtual IntegerList* slice(int start, int stop) {
-            return new TypedIntegerList<T>(this, start, stop);
+            return new TypedIntegerList<T>(this, indexFor(start), indexFor(stop), v->size());
         }
         virtual void delitems(int start, int stop) {
             if (start >= 0 && stop <= int(v->size()) && stop > start) {
-                v->erase(v->begin() + start, v->begin() + stop);
-            }
-        }
-        virtual int mergeFromOffset(int offset) {
-            for (typename std::vector<T>::iterator it=v->end()-1; it != v->begin()+offset-1; it--) {
-                if ((int) *it < 0) {
-                    v->erase(it);
+                stop = indexFor(start) + (stop - start);
+                for (int i = indexFor(start); i < stop; i++) {
+                    v->at(i) = DELETE_MARK;
+                    deletes->insert(lower_bound(deletes->begin(), deletes->end(), i), i);
                 }
             }
-            return size() - offset;
         }
         virtual int save(char* filename, int offset, bool append) {
             if (offset < 0 || (offset >= size() && size() > 0)) {
@@ -96,8 +122,8 @@ class TypedIntegerList : public IntegerList {
             if (!fp) {
                 return errno;
             }
-            if (size()-offset > 0) {
-                fwrite(&(v->at(offset)), sizeof(T), size() - offset, fp);
+            if (v->size()-offset > 0) {
+                fwrite(&(v->at(offset)), sizeof(T), v->size() - offset, fp);
             }
             fclose(fp);
             return 0;
@@ -110,13 +136,26 @@ class TypedIntegerList : public IntegerList {
             while (!feof(fp)) {
                 T i;
                 if (fread(&i, sizeof(T), 1, fp) == 1) {
-                    v->push_back(i);
+                    if (i != DELETE_MARK) {
+                        v->push_back(i);
+                    }
                 }
             }
             fclose(fp);
             return 0;
         }
-        bool use64bits() { return sizeof(T) == sizeof(uint64_t); }
+        bool use64bits() {
+            return sizeof(T) == sizeof(uint64_t);
+        }
+        int indexFor(int index) {
+            for (typename std::vector<int>::iterator it=deletes->begin(); it < deletes->end(); it++) {
+                if (*it > index) {
+                    break;
+                }
+                index++;
+            }
+            return index;
+        }
 };
 
 
@@ -131,8 +170,8 @@ void IntegerList_delete(IntegerList* iList) {
     delete iList;
 }
 
-void IntegerList_append(IntegerList* iList, uint64_t element) {
-    iList->append(element);
+int IntegerList_append(IntegerList* iList, uint64_t element) {
+    return iList->append(element);
 }
 
 int IntegerList_size(IntegerList *iList) {
@@ -143,8 +182,8 @@ uint64_t IntegerList_get(IntegerList *iList, int index) {
     return iList->get(index);
 }
 
-void IntegerList_set(IntegerList *iList, int index, uint64_t value) {
-    iList->set(index, value);
+int IntegerList_set(IntegerList *iList, int index, uint64_t value) {
+    return iList->set(index, value);
 }
 
 IntegerList* IntegerList_slice(IntegerList *iList, int start, int stop) {
@@ -153,10 +192,6 @@ IntegerList* IntegerList_slice(IntegerList *iList, int start, int stop) {
 
 void IntegerList_delitems(IntegerList* iList, int start, int stop) {
     iList->delitems(start, stop);
-}
-
-int IntegerList_mergeFromOffset(IntegerList *iList, int offset) {
-    return iList->mergeFromOffset(offset);
 }
 
 int IntegerList_save(IntegerList* iList, char* filename, int offset, bool append) {

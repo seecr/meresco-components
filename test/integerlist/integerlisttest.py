@@ -116,17 +116,19 @@ class IntegerListTest(SeecrTestCase):
                 self.fail()
             except IndexError, e:
                 self.assertEquals("list assignment index out of range", str(e))
-            l.extend([1,2])
-            del l[0]
-            self.assertEquals(1, len(l))
-            self.assertEquals([2], list(l))
+            l.extend([-1,1,2,3,4])
+            del l[1]
+            self.assertEquals(4, len(l))
+            self.assertEquals([-1,2,3,4], list(l))
             try:
-                del l[1]
+                del l[4]
                 self.fail()
             except IndexError, e:
                 self.assertEquals("list assignment index out of range", str(e))
             del l[-1]
-            self.assertEquals([], list(l))
+            self.assertEquals([-1,2,3], list(l))
+            del l[1]
+            self.assertEquals([-1,3], list(l))
 
     def testDelSlice(self):
         for use64bits in [False, True]:
@@ -137,6 +139,17 @@ class IntegerListTest(SeecrTestCase):
             self.assertEquals([0,1,2,3,4], list(l))
             del l[6:]
             self.assertEquals([0,1,2,3,4], list(l))
+            del l[3:]
+            self.assertEquals([0,1,2], list(l))
+
+    def testRandomDel(self):
+        for use64bits in [False, True]:
+            l = IntegerList(use64bits=use64bits)
+            l.extend(range(10))
+            del l[2]
+            del l[6]
+            del l[4]
+            self.assertEquals([0,1,3,4,6,8,9], list(l))
 
     def testEquality(self):
         l1 = IntegerList(10)
@@ -162,34 +175,15 @@ class IntegerListTest(SeecrTestCase):
             l[2] = -1
             self.assertEquals([10,1,-1,3,4], list(l))
 
-    def testDitchHolesStartingAt(self):
+    def testSetItemAfterDelete(self):
         for use64bits in [False, True]:
-            l = IntegerList(5, use64bits=use64bits)
-            l.mergeFromOffset(0)
+            l = IntegerList(use64bits=use64bits)
+            l.extend(range(5))
             self.assertEquals([0,1,2,3,4], list(l))
-
-            l = IntegerList(5, use64bits=use64bits)
-            l[2] = -3
-            l[4] = -5
-            l.mergeFromOffset(0)
-            self.assertEquals([0,1,3], list(l))
-
-            l = IntegerList(5, use64bits=use64bits)
-            l[2] = -3
-            l[4] = -5
-            l.mergeFromOffset(3)
-            self.assertEquals([0,1,-3,3], list(l))
-
-            l = IntegerList(5, use64bits=use64bits)
-            for i in range(5):
-                l[i] = i ^ -1
-            l.mergeFromOffset(0)
-            self.assertEquals([], list(l))
-
-            l = IntegerList(5, use64bits=use64bits)
-            l[2] = -3
-            l.mergeFromOffset(2)
-            self.assertEquals([0, 1, 3, 4], list(l))
+            del l[2]
+            self.assertEquals([0,1,3,4], list(l))
+            l[2] = 2
+            self.assertEquals([0,1,2,4], list(l))
 
     def testIndexBoundaryCheck(self):
         for use64bits in [False, True]:
@@ -263,6 +257,28 @@ class IntegerListTest(SeecrTestCase):
             except IOError, e:
                 self.assertTrue("[Errno 2] No such file or directory:" in str(e), str(e))
 
+    def testSaveWithDeletes(self):
+        for use64bits in [False, True]:
+            l = IntegerList(use64bits=use64bits)
+            l.extend([-1,1,2,3])
+            del l[1:3]
+            self.assertEquals([-1,3], list(l))
+            l.save(self.tempdir+'/ilist')
+            l = IntegerList(use64bits=use64bits)
+            l.extendFrom(self.tempdir+'/ilist')
+            self.assertEquals([-1,3], list(l))
+
+    def testSaveOffsetWithDeletes(self):
+        for use64bits in [False, True]:
+            l = IntegerList(use64bits=use64bits)
+            l.extend([1,2,3])
+            del l[0]
+            self.assertEquals([2,3], list(l))
+            l.save(self.tempdir+'/ilist', offset=0)
+            l = IntegerList(use64bits=use64bits)
+            l.extendFrom(self.tempdir+'/ilist')
+            self.assertEquals([2,3], list(l))
+
     def testLoadWrongDir(self):
         for use64bits in [False, True]:
             l1 = IntegerList(5, use64bits=use64bits)
@@ -311,6 +327,13 @@ class IntegerListTest(SeecrTestCase):
         l1 = None
         l2 = None
         self.assertNoMemoryLeaks()
+
+    def testDeleteAlls(self):
+        l = IntegerList()
+        l.extend(range(10))
+        for x in range(10):
+            del l[0]
+        self.assertEquals([], list(l))
 
     def testIntegerSizes(self):
         l = IntegerList(0, use64bits=False)
@@ -385,6 +408,15 @@ class IntegerListTest(SeecrTestCase):
         segment = il[:][:10]
         t1 = time()
         self.assertTiming(0.02, t1 - t0, 0.04)
+
+    def testSetMaxInt(self):
+        il = IntegerList(use64bits=True)
+        il.append(2 ** 63 - 2)
+        il.append(2 ** 63 - 1)
+        il.save(join(self.tempdir, 'ilist'))
+        il = IntegerList(use64bits=True)
+        il.extendFrom(join(self.tempdir, 'ilist'))
+        self.assertEquals([2 ** 63 - 2], list(il))
 
     def probeMemory(self):
         self.vmsize = self._getVmSize()
