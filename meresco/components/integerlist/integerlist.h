@@ -37,20 +37,27 @@
 #define __integerlist_h__
 
 class IntegerList {
+    private:
+        std::vector<uint64_t>* v;
+        std::vector<int>* deletes;
+        uint64_t DELETE_MARK;
     public:
-        virtual ~IntegerList() {};
-        virtual int size() = 0;
-        virtual uint64_t get(int index) = 0;
-        virtual int append(uint64_t element) = 0;
-        virtual int set(int index, uint64_t value) = 0;
-        virtual IntegerList* slice(int start, int stop) = 0;
-        virtual void delitems(int start, int stop) = 0;
-        virtual int save(char* filename, int offset, bool append) = 0;
-        virtual int extendFrom(char* filename) = 0;
+        IntegerList(int n);
+        IntegerList(IntegerList* integerList, int start, int stop, int size);
+        virtual ~IntegerList();
+        int size();
+        uint64_t get(int index);
+        int append(uint64_t element);
+        int set(int index, uint64_t value);
+        IntegerList* slice(int start, int stop);
+        void delitems(int start, int stop);
+        int save(char* filename, int offset, bool append);
+        int extendFrom(char* filename);
+        int indexFor(int index);
 };
 
 extern "C" {
-    IntegerList*    IntegerList_create               (int n, bool use64bits);
+    IntegerList*    IntegerList_create               (int n);
     void            IntegerList_delete               (IntegerList*);
     int             IntegerList_append               (IntegerList*, uint64_t);
     int             IntegerList_size                 (IntegerList*);

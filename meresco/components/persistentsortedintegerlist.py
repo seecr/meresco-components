@@ -34,14 +34,13 @@ from integerlist.integerlist import IntegerList
 
 
 class PersistentSortedIntegerList(object):
-    def __init__(self, filepath, use64bits=False, mergeTrigger=100):
+    def __init__(self, filepath, mergeTrigger=1000):
         self._filepath = filepath
         self._deletesFilepath = filepath + '.deleted'
-        self._use64bits = use64bits
         self._mergeTrigger = mergeTrigger
         self._cleanupInCaseOfCrashDuringMerge()
-        self._iList = IntegerList(0, use64bits=use64bits)
-        self._deletesList = IntegerList(0, use64bits=True)
+        self._iList = IntegerList()
+        self._deletesList = IntegerList()
         if isfile(self._filepath):
             self._iList.extendFrom(self._filepath)
         if isfile(self._deletesFilepath):
@@ -92,7 +91,9 @@ class PersistentSortedIntegerList(object):
         self._rename(self._filepath + '.new', self._filepath)
         self._remove(self._filepath + '.current')
         self._remove(self._deletesFilepath + '.current')
-        self._deletesList = IntegerList(0, use64bits=True)
+        self._deletesList = IntegerList()
+        self._iList = IntegerList()
+        self._iList.extendFrom(self._filepath)
 
     def _cleanupInCaseOfCrashDuringMerge(self):
         if isfile(self._filepath + '.new'):

@@ -49,22 +49,22 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.filepath = join(self.tempdir, 'list')
 
     def testAppendAndWrite(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         s.append(1)
         s.append(2)
         self.assertEquals([1,2], list(iter(s)))
         self.assertEquals(16, len(open(self.filepath).read()))
         self.assertEquals([1,2], list(s))
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         self.assertEquals([1,2], list(iter(s)))
         self.assertEquals(len(s), len(list(s)))
 
     def testEmpty(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         self.assertEquals([], list(s))
 
     def testContains(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         for i in range(0,20,2):
             s.append(i)
         self.assertTrue(14 in s)
@@ -72,12 +72,12 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.assertFalse(32 in s)
 
     def testZero(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         s.append(0)
         self.assertEquals([0], list(s))
 
     def testGetItem(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         for i in range(20):
             s.append(i)
         self.assertEquals(2, s[2])
@@ -87,7 +87,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.assertRaises(IndexError, lambda: s[-21])
 
     def testSlicing(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         for i in range(6):
             s.append(i)
         self.assertEquals([], list(s[0:0]))
@@ -101,7 +101,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.assertEquals([1,2], list(s[1:3]))
 
     def testAppendFailsIfValueMakesListUnsorted(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         s.append(10)
         try:
             s.append(5)
@@ -143,7 +143,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         assertListFunctions(t)
 
     def testDelete(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         for i in range(5):
             s.append(i)
         try:
@@ -162,21 +162,21 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.assertEquals(4, len(s))
 
     def testDeleteIsPersistent(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         for i in range(10):
             s.append(i)
         s.remove(2)
         s.remove(6)
         s.remove(4)
         self.assertEquals([0,1,3,5,7,8,9], list(s))
-        t = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        t = PersistentSortedIntegerList(self.filepath)
         self.assertEquals([0,1,3,5,7,8,9], list(t))
         t.remove(7)
-        t = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        t = PersistentSortedIntegerList(self.filepath)
         self.assertEquals([0,1,3,5,8,9], list(t))
 
     def testIndex(self):
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath)
         for i in range(4):
             s.append(i)
         self.assertEquals(0, s.index(0))
@@ -230,7 +230,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             crashSave[0] = False
             if isfile(self.filepath):
                 remove(self.filepath)
-            s = PersistentSortedIntegerList(self.filepath, use64bits=True, mergeTrigger=2)
+            s = PersistentSortedIntegerList(self.filepath, mergeTrigger=2)
             s._rename = crashingRename
             s._remove = crashingRemove
             s._save = crashingSave
@@ -244,10 +244,10 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             except FullStopException, e:
                 pass
             try:
-                s = MockPersistentSortedIntegerList(self.filepath, use64bits=True)
+                s = MockPersistentSortedIntegerList(self.filepath)
             except FullStopException, e:
                 pass
-            s = PersistentSortedIntegerList(self.filepath, use64bits=True)
+            s = PersistentSortedIntegerList(self.filepath)
             return s
 
         for mergeCrashTrigger in xrange(1, 20):
@@ -266,8 +266,8 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         measurements = 1000
 
         t = time()
-        s = PersistentSortedIntegerList(self.filepath, use64bits=True, mergeTrigger=mergeTrigger)
-        s._iList = IntegerList(size, use64bits=True)
+        s = PersistentSortedIntegerList(self.filepath, mergeTrigger=mergeTrigger)
+        s._iList = IntegerList(size)
         s._iList.save(self.filepath, offset=0, append=False)
         tCreate = time() - t
 

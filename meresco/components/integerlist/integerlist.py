@@ -31,14 +31,13 @@
 #
 ## end license ##
 
-from sys import maxint
-from ctypes import c_uint64, c_int64, c_char_p, POINTER, cdll, pointer, py_object, Structure, c_ulong, c_int, c_float, cast
+from ctypes import c_uint64, c_int64, c_char_p, POINTER, c_int
 from libintegerlist import libIntegerList
 
 INTEGERLIST = POINTER(None)
 
 IntegerList_create = libIntegerList.IntegerList_create
-IntegerList_create.argtypes = [c_int, c_int]
+IntegerList_create.argtypes = [c_int]
 IntegerList_create.restype = INTEGERLIST
 
 IntegerList_delete = libIntegerList.IntegerList_delete
@@ -79,11 +78,11 @@ IntegerList_extendFrom.restype = c_int
 
 
 class IntegerList(object):
-    def __init__(self, size=0, cobj=None, use64bits=False):
+    def __init__(self, size=0, cobj=None):
         if cobj:
             self._cobj = cobj
         else:
-            self._cobj = IntegerList_create(size, use64bits)
+            self._cobj = IntegerList_create(size)
         self._as_parameter_ = self._cobj
 
     def __del__(self):
