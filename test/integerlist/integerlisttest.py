@@ -391,6 +391,21 @@ class IntegerListTest(SeecrTestCase):
         il.extendFrom(join(self.tempdir, 'ilist'))
         self.assertEquals([2 ** 63 - 2], list(il))
 
+    def testSaveFromOffsetWithDelete(self):
+        filename = join(self.tempdir, 'list')
+        il = IntegerList()
+        il.append(1)
+        il.append(2)
+        il.save(filename, offset=0)
+        del il[0]
+        il.append(3)
+        il.save(filename, offset=1, append=True)
+        self.assertEquals([2,3], list(il))
+
+        il = IntegerList()
+        il.extendFrom(filename)
+        self.assertEquals([1,2,3], list(il))
+
     def probeMemory(self):
         self.vmsize = self._getVmSize()
 

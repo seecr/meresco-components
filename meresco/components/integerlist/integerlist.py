@@ -78,7 +78,7 @@ IntegerList_extendFrom.restype = c_int
 
 
 class IntegerList(object):
-    def __init__(self, size=0, cobj=None):
+    def __init__(self, size=0, cobj=None, **ookdezekwargszijnmaarzeeeeeeeertijdelijk):
         if cobj:
             self._cobj = cobj
         else:
@@ -118,7 +118,7 @@ class IntegerList(object):
             raise ValueError("%s does not support stepping slices" % self.__class__.__name__)
         start, stop, ignored = slice.indices(length or IntegerList_size(self))
         return start, stop
-        
+
     def __setitem__(self, index, value):
         IntegerList_set(self, index, value)
 

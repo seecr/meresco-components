@@ -106,6 +106,7 @@ int IntegerList::save(char* filename, int offset, bool append) {
     if (offset < 0 || (offset >= size() && size() > 0)) {
         return -1;
     }
+    offset = indexFor(offset);
     FILE* fp = fopen(filename, append ? "ab" : "wb");
     if (!fp) {
         return errno;

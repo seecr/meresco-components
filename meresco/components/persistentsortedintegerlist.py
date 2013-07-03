@@ -27,15 +27,16 @@
 ## end license ##
 
 from os import remove, rename
-from os.path import isfile
+from os.path import isfile, basename
 from bisect import bisect_left
 
 from integerlist.integerlist import IntegerList
 
 
 class PersistentSortedIntegerList(object):
-    def __init__(self, filepath, mergeTrigger=1000):
+    def __init__(self, filepath, mergeTrigger=1000, **nietincheckendezerarekwargs):
         self._filepath = filepath
+        self.__name = basename(filepath)
         self._deletesFilepath = filepath + '.deleted'
         self._mergeTrigger = mergeTrigger
         self._cleanupInCaseOfCrashDuringMerge()

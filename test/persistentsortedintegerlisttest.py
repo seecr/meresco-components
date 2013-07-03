@@ -293,3 +293,12 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.assertTiming(0.0, tAppend / measurements, 0.001)
         self.assertTiming(0.0, tDelete / measurements, 0.003)
 
+    def testSaveFromOffsetWithDelete(self):
+        s = PersistentSortedIntegerList(self.filepath, mergeTrigger=1000)
+        s.append(1)
+        s.append(2)
+        s.remove(1)
+        s.append(3)
+        s = PersistentSortedIntegerList(self.filepath, mergeTrigger=1000)
+        self.assertEquals([2,3], list(s))
+
