@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
@@ -12,23 +12,23 @@
 # Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# 
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from os.path import join
@@ -158,7 +158,7 @@ class SruHandlerTest(SeecrTestCase):
         drilldownData = iter([
             ('field0', iter([('value0_0', 14)])),
             ('field1', iter([('value1_0', 13), ('value1_1', 11)])),
-            ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))]) 
+            ('field2', iter([('value2_0', 3), ('value2_1', 2), ('value2_2', 1)]))])
         response.drilldownData = drilldownData
         def executeQuery(**kwargs):
             raise StopIteration(response)
@@ -171,15 +171,15 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler(drilldownSortBy='somevalue')
         component.addObserver(observer)
 
-        queryArguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema') 
+        queryArguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
         sruArguments = queryArguments
         sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
         self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([
-            dict(fieldname='field0', maxTerms=1, sortBy='somevalue'), 
-            dict(fieldname='fie:ld1', maxTerms=2, sortBy='somevalue'), 
-            dict(fieldname='field2', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue'), 
+            dict(fieldname='field0', maxTerms=1, sortBy='somevalue'),
+            dict(fieldname='fie:ld1', maxTerms=2, sortBy='somevalue'),
+            dict(fieldname='field2', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue'),
             dict(fieldname='fie:ld3', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue')
             ], list(observer.calledMethods[0].kwargs['facets']))
         extraResponseDataMethod = observer.calledMethods[-1]
@@ -206,7 +206,7 @@ class SruHandlerTest(SeecrTestCase):
         executeCqlCallKwargs = observer.calledMethods[0].kwargs
         self.assertEquals(10, executeCqlCallKwargs['start']) # SRU is 1 based
         self.assertEquals(25, executeCqlCallKwargs['stop'])
-    
+
     def testNextRecordPositionNotShownIfAfterLimitBeyond(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         response = Response(total=100, hits=hitsRange(10, 11))
@@ -224,7 +224,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = dict(startRecord=10, maximumRecords=2, query='query', recordPacking='string', recordSchema='schema', limitBeyond=10)
         result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
         self.assertFalse("<srw:nextRecordPosition>" in result, result)
-   
+
     def testSearchRetrieveVersion11(self):
         queryArguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
         sruArguments = {'version':'1.1', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore']}
@@ -427,12 +427,12 @@ class SruHandlerTest(SeecrTestCase):
     <srw:extraResponseData>extraResponseData</srw:extraResponseData>
 </srw:searchRetrieveResponse>
 """, result)
-        
+
         self.assertEquals((), echoedExtraRequestDataMethod.args)
         self.assertEquals(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
         self.assertEquals((), extraResponseDataMethod.args)
         self.assertEquals(sorted(['version', 'recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'queryTime', 'suggestionsQuery', 'sruArguments']), sorted(extraResponseDataMethod.kwargs.keys()))
- 
+
     def testExtraRecordDataOldStyle(self):
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore']}
@@ -503,7 +503,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>recordSchema 'schema' for identifier 'ID' does not exist</details>" in result)
-        
+
     def testExceptionInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         observer.exceptions["yieldRecord"] = Exception("Test Exception")
@@ -540,7 +540,7 @@ class SruHandlerTest(SeecrTestCase):
             self.assertEquals(["info://srw/diagnostics/1/48"], diagnostic[0].xpath("diag:uri/text()", namespaces=namespaces))
             self.assertEquals(["Query Feature Unsupported"], diagnostic[0].xpath("diag:message/text()", namespaces=namespaces))
             self.assertEquals(["Test Exception"], diagnostic[0].xpath("diag:details/text()", namespaces=namespaces))
-        
+
     def testDiagnosticWarning(self):
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, }
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
@@ -578,12 +578,12 @@ class SruHandlerTest(SeecrTestCase):
                 '{%(srw)s}extraResponseData',
             ]], [t.tag for t in xpath(response, '//srw:searchRetrieveResponse/*')])
 
-        diagnostics = [{'uri': xpath(d, 'diag:uri/text()')[0], 
+        diagnostics = [{'uri': xpath(d, 'diag:uri/text()')[0],
             'details': xpath(d, 'diag:details/text()')[0],
-            'message': xpath(d, 'diag:message/text()')[0]} for d in 
+            'message': xpath(d, 'diag:message/text()')[0]} for d in
                 xpath(response, '/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic')]
         self.assertEquals([
-            {'uri': 'info://srw/diagnostics/1/998', 'message': 'Diagnostic 998', 'details': 'The <tag> message'}, 
+            {'uri': 'info://srw/diagnostics/1/998', 'message': 'Diagnostic 998', 'details': 'The <tag> message'},
             {'uri': 'info://srw/diagnostics/1/999', 'message': 'Diagnostic 999', 'details': 'Some message'},
             ], diagnostics)
 
@@ -617,7 +617,7 @@ class SruHandlerTest(SeecrTestCase):
 
         self.assertEquals(['executeQuery'], observer.calledMethodNames())
         self.assertEquals([
-                dict(fieldname='field0', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT), 
+                dict(fieldname='field0', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT),
                 dict(fieldname='fielddefault', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT)
             ], observer.calledMethods[0].kwargs['facets'])
 
@@ -695,7 +695,7 @@ class SruHandlerTest(SeecrTestCase):
         header, body = result.split('\r\n'*2)
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
         self.assertTrue('<bike/>' in body, body)
-        
+
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
@@ -723,15 +723,15 @@ class SruHandlerTest(SeecrTestCase):
         sruResponse = parse(StringIO(result))
         extraResponseData = sruResponse.xpath('/srw:searchRetrieveResponse/srw:extraResponseData', namespaces={'srw':"http://www.loc.gov/zing/srw/"})[0]
         self.assertEqualsWS("""<srw:extraResponseData xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
-        <querytimes xmlns="http://meresco.org/namespace/timing">        
-            <sru>PT1.500S</sru>        
-            <index>PT0.005S</index>    
+        <querytimes xmlns="http://meresco.org/namespace/timing">
+            <sru>PT1.500S</sru>
+            <index>PT0.005S</index>
         </querytimes>
 </srw:extraResponseData>""", lxmltostring(extraResponseData))
         queryTimes = lxmltostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
         assertValid(queryTimes, join(schemasPath, 'timing-20120827.xsd'))
 
-    def testTestXSDequalsPublishedXSD(self):
+    def testTestXsdEqualsPublishedXsd(self):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
         self.assertEqualsWS(xsd, localxsd)
@@ -777,7 +777,7 @@ class SruHandlerTest(SeecrTestCase):
                 )
             )
         )
-   
+
         with stderr_replaced():
             response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
             self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
@@ -803,7 +803,7 @@ def xpath(lxmlNode, path):
 namespaces = {
         'ti': "http://meresco.org/namespace/timing",
         'srw': "http://www.loc.gov/zing/srw/",
-        'diag': "http://www.loc.gov/zing/srw/diagnostic/", 
+        'diag': "http://www.loc.gov/zing/srw/diagnostic/",
     }
 def hitsRange(*args):
     return ['%s' % i for i in range(*args)]
