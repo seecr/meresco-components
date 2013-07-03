@@ -34,7 +34,7 @@ from integerlist.integerlist import IntegerList
 
 
 class PersistentSortedIntegerList(object):
-    def __init__(self, filepath, mergeTrigger=1000, **nietincheckendezerarekwargs):
+    def __init__(self, filepath, mergeTrigger=1000):
         self._filepath = filepath
         self.__name = basename(filepath)
         self._deletesFilepath = filepath + '.deleted'

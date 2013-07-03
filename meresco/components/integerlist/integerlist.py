@@ -78,7 +78,7 @@ IntegerList_extendFrom.restype = c_int
 
 
 class IntegerList(object):
-    def __init__(self, size=0, cobj=None, **ookdezekwargszijnmaarzeeeeeeeertijdelijk):
+    def __init__(self, size=0, cobj=None):
         if cobj:
             self._cobj = cobj
         else:
