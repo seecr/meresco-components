@@ -34,11 +34,12 @@ from integerlist.integerlist import IntegerList
 
 
 class PersistentSortedIntegerList(object):
-    def __init__(self, filepath, mergeTrigger=1000):
+    def __init__(self, filepath, mergeTrigger=10000, autoCommit=True):
         self._filepath = filepath
         self.__name = basename(filepath)
         self._deletesFilepath = filepath + '.deleted'
         self._mergeTrigger = mergeTrigger
+        self._autoCommit = autoCommit
         self._cleanupInCaseOfCrashDuringMerge()
         self._iList = IntegerList()
         self._deletesList = IntegerList()
@@ -49,6 +50,8 @@ class PersistentSortedIntegerList(object):
             for position in self._deletesList:
                 del self._iList[position]
             self._merge()
+        self._unsavedFromOffset = len(self)
+        self._deletesSaved = 0
 
     def __len__(self):
         return self._iList.__len__()
@@ -67,15 +70,19 @@ class PersistentSortedIntegerList(object):
         if size > 0 and element <= self[-1]:
             raise ValueError("list.append(%d): expected value to be greater than %d" % (element, self[-1]))
         self._iList.append(element)
-        self._save(self._iList, self._filepath, offset=size, append=True)
-    
+        if self._autoCommit:
+            self.commit()
+
     def remove(self, element):
         position = self._position(element)
         if position == -1:
             raise ValueError('list.remove(%s): %s not in list' % (element, element))
         del self._iList[position]
+        if position < self._unsavedFromOffset:
+            self._unsavedFromOffset -= 1
         self._deletesList.append(position)
-        self._save(self._deletesList, self._deletesFilepath, offset=len(self._deletesList) - 1, append=True)
+        if self._autoCommit:
+            self.commit()
         if len(self._deletesList) >= self._mergeTrigger:
             self._merge()
 
@@ -85,16 +92,33 @@ class PersistentSortedIntegerList(object):
             raise ValueError('list.index(%s): %s not in list' % (item, item))
         return position
 
+    def commit(self):
+        if self._unsavedFromOffset < len(self):
+            self._save(self._iList, self._filepath, offset=self._unsavedFromOffset, append=True)
+            self._unsavedFromOffset = len(self._iList)
+        if self._deletesSaved < len(self._deletesList):
+            self._save(self._deletesList, self._deletesFilepath, offset=self._deletesSaved, append=True)
+            self._deletesSaved = len(self._deletesList)
+
+    def handleShutdown(self):
+        self.commit()
+
     def _merge(self):
-        self._rename(self._filepath, self._filepath + '.current')
-        self._rename(self._deletesFilepath, self._deletesFilepath + '.current')
+        if isfile(self._filepath):
+            self._rename(self._filepath, self._filepath + '.current')
+        if isfile(self._deletesFilepath):
+            self._rename(self._deletesFilepath, self._deletesFilepath + '.current')
         self._save(self._iList, self._filepath + '.new', offset=0, append=False)
         self._rename(self._filepath + '.new', self._filepath)
-        self._remove(self._filepath + '.current')
-        self._remove(self._deletesFilepath + '.current')
+        if isfile(self._filepath + '.current'):
+            self._remove(self._filepath + '.current')
+        if isfile(self._deletesFilepath + '.current'):
+            self._remove(self._deletesFilepath + '.current')
         self._deletesList = IntegerList()
+        self._deletesSaved = 0
         self._iList = IntegerList()
         self._iList.extendFrom(self._filepath)
+        self._unsavedFromOffset = len(self)
 
     def _cleanupInCaseOfCrashDuringMerge(self):
         if isfile(self._filepath + '.new'):

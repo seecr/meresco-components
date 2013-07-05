@@ -181,7 +181,15 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             s.append(i)
         self.assertEquals(0, s.index(0))
         self.assertEquals(3, s.index(3))
-       
+
+    def testShutdown(self):
+        s = PersistentSortedIntegerList(self.filepath, autoCommit=False)
+        for i in range(4):
+            s.append(i)
+        s.handleShutdown()
+        t = PersistentSortedIntegerList(self.filepath, autoCommit=False)
+        self.assertEquals([0,1,2,3], list(t))
+
     def testRecoverFromCrash(self):
         mergeSteps = [0]
         recoverSteps = [0]
@@ -253,7 +261,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         for mergeCrashTrigger in xrange(1, 20):
             for recoverCrashTrigger in xrange(1, 20):
                 s = mergeCrashRecover()
-                self.assertEquals([2,3], list(s))            
+                self.assertEquals([2,3], list(s))
                 self.assertTrue(isfile(self.filepath))
                 self.assertFalse(isfile(self.filepath + '.deleted'))
                 self.assertFalse(isfile(self.filepath + '.new'))
@@ -302,3 +310,15 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s = PersistentSortedIntegerList(self.filepath, mergeTrigger=1000)
         self.assertEquals([2,3], list(s))
 
+    def testMergeWithoutAutocommit(self):
+        s = PersistentSortedIntegerList(self.filepath, mergeTrigger=2, autoCommit=False)
+        s.append(1)
+        s.append(2)
+        s.append(3)
+        s.remove(1)
+        s.remove(2)
+        s.append(4)
+        self.assertEquals([3, 4], list(s))
+        s.handleShutdown()
+        s = PersistentSortedIntegerList(self.filepath, mergeTrigger=2, autoCommit=False)
+        self.assertEquals([3, 4], list(s))
