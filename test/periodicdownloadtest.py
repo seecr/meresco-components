@@ -26,6 +26,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 import warnings
 from contextlib import contextmanager
 from random import randint
@@ -48,6 +49,7 @@ from meresco.core import Observable
 
 from meresco.components.http.utils import CRLF
 from meresco.components import PeriodicDownload, Schedule
+
 
 def _dunderFile(): pass
 fileDict = {
@@ -415,6 +417,9 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         PeriodicDownload(reactor, autoStart=False)
 
     def testRepr(self):
+        reactor = CallTrace("reactor")
+        downloader = PeriodicDownload(reactor, autoStart=False)
+        self.assertEquals("PeriodicDownload(schedule=Schedule(period=1))", repr(downloader))
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, host='example.com', port=80)
         self.assertEquals("PeriodicDownload(host='example.com', port=80, schedule=Schedule(period=1))", repr(downloader))

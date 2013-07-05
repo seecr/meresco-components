@@ -218,7 +218,7 @@ class PeriodicDownload(Observable):
         kwargsList = [
             '%s=%s' % (name, repr(getattr(self, '_%s' % name)))
             for name in ['host', 'port', 'prio', 'name', 'schedule']
-            if getattr(self, '_%s' % name)
+            if getattr(self, '_%s' % name, None)
         ]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(kwargsList))
 
