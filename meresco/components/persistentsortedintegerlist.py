@@ -80,7 +80,7 @@ class PersistentSortedIntegerList(object):
         del self._iList[position]
         if position < self._unsavedFromOffset:
             self._unsavedFromOffset -= 1
-        self._deletesList.append(position)
+            self._deletesList.append(position)
         if self._autoCommit:
             self.commit()
         if len(self._deletesList) >= self._mergeTrigger:
@@ -99,9 +99,6 @@ class PersistentSortedIntegerList(object):
         if self._deletesSaved < len(self._deletesList):
             self._save(self._deletesList, self._deletesFilepath, offset=self._deletesSaved, append=True)
             self._deletesSaved = len(self._deletesList)
-
-    def handleShutdown(self):
-        self.commit()
 
     def _merge(self):
         if isfile(self._filepath):

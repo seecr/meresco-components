@@ -35,6 +35,7 @@ from os import rename, remove, listdir
 from os.path import join, isfile
 from bisect import bisect_left, bisect_right
 from random import choice
+from seecr.test.io import stdout_replace_decorator
 
 from meresco.components import PersistentSortedIntegerList
 from meresco.components.integerlist import IntegerList
@@ -114,7 +115,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         except ValueError, e:
             self.assertEquals('list.append(10): expected value to be greater than 10', str(e))
         self.assertEquals([10], list(s))
-        
+
     def testWithDeletedItems(self):
         def assertListFunctions(aList):
             self.assertEquals(0, aList[0])
@@ -122,7 +123,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             self.assertEquals(8, aList[4])
             self.assertEquals(8, aList[-2])
             self.assertEquals(10, aList[-1])
-            
+
             self.assertEquals([0,2,4,6,8,10], list(aList))
             self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
             self.assertEquals([2,4,6], list(aList[1:4]))
@@ -130,7 +131,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             self.assertFalse(1 in aList)
             self.assertRaises(IndexError, lambda: aList[20])
             self.assertRaises(IndexError, lambda: aList[-34567])
-            
+
         s = PersistentSortedIntegerList(join(self.tempdir, 'list1'))
         for i in [0,2,4,6,8,10]:
             s.append(i)
@@ -182,11 +183,27 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         self.assertEquals(0, s.index(0))
         self.assertEquals(3, s.index(3))
 
+    def testSaveNoDeleteForUnsavedAdd(self):
+        s = PersistentSortedIntegerList(self.filepath, autoCommit=False)
+        for i in range(10):
+            s.append(i)
+        s.remove(2)
+        s.remove(6)
+        s.remove(4)
+        self.assertEquals([0,1,3,5,7,8,9], list(s))
+        s.commit()
+        t = PersistentSortedIntegerList(self.filepath, autoCommit=False)
+        self.assertEquals([0,1,3,5,7,8,9], list(t))
+        t.remove(7)
+        t.commit()
+        u = PersistentSortedIntegerList(self.filepath, autoCommit=False)
+        self.assertEquals([0,1,3,5,8,9], list(u))
+
     def testShutdown(self):
         s = PersistentSortedIntegerList(self.filepath, autoCommit=False)
         for i in range(4):
             s.append(i)
-        s.handleShutdown()
+        s.commit()
         t = PersistentSortedIntegerList(self.filepath, autoCommit=False)
         self.assertEquals([0,1,2,3], list(t))
 
@@ -319,6 +336,6 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s.remove(2)
         s.append(4)
         self.assertEquals([3, 4], list(s))
-        s.handleShutdown()
+        s.commit()
         s = PersistentSortedIntegerList(self.filepath, mergeTrigger=2, autoCommit=False)
         self.assertEquals([3, 4], list(s))
