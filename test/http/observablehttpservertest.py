@@ -122,7 +122,6 @@ class ObservableHttpServerTest(SeecrTestCase):
         self.assertEquals(False, httpserver._compressResponse)
 
     def testServerWithPrio(self):
-        import gc, weakref
         prios = []
         class MyServer(object):
             def handleRequest(self, *args, **kwargs):
@@ -138,6 +137,7 @@ class ObservableHttpServerTest(SeecrTestCase):
         s = ObservableHttpServer(reactor, 2000, prio=3)
         s.addObserver(MyServer())
         s.observer_init()
+
         sok = socket()
         sok.connect(('localhost', 2000))
         sok.send('GET / HTTP/1.0\r\n\r\n')
@@ -151,10 +151,6 @@ class ObservableHttpServerTest(SeecrTestCase):
         self.assertEquals([('read', 3), ('read', 3), ('write', 3)], prios)
         # one more step to let the connection finalize and all objects reclaimed and avoid garbage
         reactor.step()
-        gc.collect()
-        garbage = [weakref.ref(o) for o in gc.get_objects() if 'AllMess' in str(type(o))]
-        self.assertEquals([], garbage)
-
 
     def testServerBindAddress(self):
         reactor = CallTrace()
