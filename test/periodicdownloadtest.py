@@ -31,11 +31,10 @@ import warnings
 from contextlib import contextmanager
 from random import randint
 from threading import Event, Thread
-from time import sleep
 from socket import socket
 from StringIO import StringIO
 from urllib2 import urlopen
-from time import time
+from time import time, sleep
 from itertools import count
 
 from seecr.test import SeecrTestCase, CallTrace
@@ -60,7 +59,8 @@ fileDict = {
 DROP_CONNECTION = object()
 
 @contextmanager
-def server(responses, bufsize=4096):
+def server(responses, bufsize=4096, sleepWhile=None):
+    sleepWhile = sleepWhile or (lambda: False)
     port = randint(10000,60000)
     start = Event()
     messages = []
@@ -75,9 +75,16 @@ def server(responses, bufsize=4096):
                 msg = connection.recv(bufsize)
                 messages.append(msg)
                 if not response is DROP_CONNECTION:
-                    connection.send(response)
-                    connection.close()
+                    def respond(connection=connection, response=response):
+                        while sleepWhile():
+                            sleep(0.05)
+                        connection.send(response)
+                        connection.close()
+                    t = Thread(None, respond)
+                    t.daemon = True
+                    t.start()
             except:
+                from traceback import print_exc; print_exc()
                 pass
     thread = Thread(None, serverThread)
     thread.daemon = True
@@ -425,6 +432,39 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         self.assertEquals("PeriodicDownload(host='example.com', port=80, schedule=Schedule(period=1))", repr(downloader))
         downloader = PeriodicDownload(reactor, name="theName", autoStart=False)
         self.assertEquals("PeriodicDownload(name='theName', schedule=Schedule(period=1))", repr(downloader))
+
+    def testResumeDuringSuspend(self):
+        reactor = Reactor()
+        stepping = [True]
+        def uit():
+            stepping[0] = False
+        reactor.addTimer(0.5, uit)
+        suspended = [True]
+
+        def handle(data):
+            for i in range(5):
+                yield 'ignore'
+
+        err = StringIO()
+        with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*2, sleepWhile=lambda: suspended[0]) as (port, msgs):
+            download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.01), err=err)
+            observer = CallTrace(methods={'handle': handle}, returnValues={'buildRequest': 'request'}, emptyGeneratorMethods=['handle'])
+            dna = be(
+            (Observable(),
+                (download,
+                    (observer,),
+                )
+            ))
+            list(compose(dna.once.observer_init()))
+
+            reactor.addTimer(0.1, lambda: download.pause())
+            reactor.addTimer(0.2, lambda: download.resume())
+            def unsuspend():
+                suspended[0] = False
+            reactor.addTimer(0.3, unsuspend)
+            while stepping[0]:
+                reactor.step()
+        self.assertFalse('Process is already in processes' in err.getvalue())
 
     def testPauseResume(self):
         reactor = Reactor()

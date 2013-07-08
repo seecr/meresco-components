@@ -59,6 +59,8 @@ class PeriodicDownload(Observable):
         self._err = err or stderr
         self._paused = not autoStart
         self._currentTimer = None
+        self._processOne = None
+        self._sok = None
         if autoStart and (not self._host or not self._port):
             raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
@@ -88,6 +90,11 @@ class PeriodicDownload(Observable):
 
     def pause(self):
         if not self._paused:
+            if self._sok:
+                self._reactor.removeReader(self._sok)
+                self._processOne = None
+                # Note: generator will receive GeneratorExit from garbage collector, triggering
+                # 'finally' block after self._sok.recv(...) where sok will be closed.
             self._paused = True
             self._logInfo("paused")
 
@@ -96,7 +103,8 @@ class PeriodicDownload(Observable):
             return
         self._paused = False
         self._logInfo("resumed")
-        self.startTimer()
+        if not self._processOne:
+            self.startTimer()
 
     def startProcess(self):
         self._currentTimer = None
@@ -107,23 +115,27 @@ class PeriodicDownload(Observable):
         return PeriodicDownloadStateView(self)
 
     def processOne(self):
-        sok = yield self._tryConnect()
+        self._sok = yield self._tryConnect()
         requestString = self.call.buildRequest()
-        sok.send(requestString)
-        sok.shutdown(SHUT_WR)
-        self._reactor.addReader(sok, self._processOne.next, prio=self._prio)
+        self._sok.send(requestString)
+        self._sok.shutdown(SHUT_WR)
+        self._reactor.addReader(self._sok, self._processOne.next, prio=self._prio)
         responses = []
         try:
             try:
                 while True:
                     yield
-                    response = sok.recv(4096)
+                    response = self._sok.recv(4096)
                     if response == '':
                          break
                     responses.append(response)
             finally:
-                self._reactor.removeReader(sok)
-                sok.close()
+                try:
+                    self._reactor.removeReader(self._sok)
+                except KeyError:
+                    pass
+                self._sok.close()
+                self._sok = None
         except SocketError, (errno, msg):
             yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString)
             return
@@ -155,6 +167,7 @@ class PeriodicDownload(Observable):
             message = format_exc()
             message += 'Error while processing response: ' + shorten(response)
             self._logError(message, request=requestString)
+        self._processOne = None
         self.startTimer()
         yield
 
