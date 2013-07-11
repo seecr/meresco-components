@@ -1,0 +1,322 @@
+Changeset created on Thu Jul 11 08:20:14 UTC 2013 by Seecr (Seek You Too B.V.)
+
+Description: SortKeys implemented according to SRU Specs
+
+    SortKeys implemented according to SRU Specs with a backwards compatible flag (off by default)
+
+Baseline version: 4.6.1
+
+From b81c93eeb45dc3c012758c39f223d30283074b47 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 11 Jul 2013 09:33:56 +0200
+Subject: [PATCH 1/4] JJ: fixed sru sortkeys, now according to spec
+
+---
+ meresco/components/sru/sruparser.py |    2 +-
+ test/sru/sruparsertest.py           |   18 ++++++++++++++++--
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+index 315ca7b..a1141bc 100644
+--- a/meresco/components/sru/sruparser.py
++++ b/meresco/components/sru/sruparser.py
+@@ -153,7 +153,7 @@ class SruParser(Observable):
+         if 'sortKeys' in arguments :
+             try:
+                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
+-                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
++                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': not bool(int(sortDirection))}]
+                 sruArgs['sortKeys'] = arguments['sortKeys']
+             except ValueError:
+                 pass
+diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+index d3c9035..d8a0854 100644
+--- a/test/sru/sruparsertest.py
++++ b/test/sru/sruparsertest.py
+@@ -194,14 +194,28 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         self.assertEquals('searchRetrieve', kwargs['operation'])
+         self.assertEquals(11, kwargs['startRecord'])
+         self.assertEquals(15, kwargs['maximumRecords'])
+-        self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
+         self.assertEquals('aQuery', kwargs['sruArguments']['query'])
+         self.assertEquals(['aField,,1'], kwargs['sruArguments']['sortKeys'])
+ 
+         self.assertTrue("HTTP/1.0 200 OK" in response)
+         self.assertTrue(XML_HEADER in response)
+ 
+-
++    def testSortKeysAccordingToSpec(self):
++        def assertSortKeys(expectedSortedDescending, sortKeys):
++            component = SruParser()
++            sruHandler = CallTrace('SRUHandler', emptyGeneratorMethods=['searchRetrieve'])
++            component.addObserver(sruHandler)
++            response = "".join(compose(component.handleRequest(arguments=dict(
++                version=['1.1'], 
++                query= ['aQuery'], 
++                operation=['searchRetrieve'], 
++                sortKeys=[sortKeys]))))
++            kwargs = sruHandler.calledMethods[0].kwargs
++            self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
++
++        assertSortKeys(True, 'aField,,0')
++        assertSortKeys(False, 'aField,,1')
++        
+     def testSearchRetrieveWithXParameter(self):
+         component = SruParser()
+         sruHandler = CallTrace('SRUHandler')
+-- 
+1.7.2.5
+
+
+From 202b782bfc76bf2a01e0b7672e7dfa14e586e286 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 11 Jul 2013 09:38:53 +0200
+Subject: [PATCH 2/4] "Created changeset sortKeys"
+
+---
+ applied/201307110737.sortKeys.changeset |   69 +++++++++++++++++++++++++++++++
+ 1 files changed, 69 insertions(+), 0 deletions(-)
+ create mode 100644 applied/201307110737.sortKeys.changeset
+
+diff --git a/applied/201307110737.sortKeys.changeset b/applied/201307110737.sortKeys.changeset
+new file mode 100644
+index 0000000..da2f072
+--- /dev/null
++++ b/applied/201307110737.sortKeys.changeset
+@@ -0,0 +1,69 @@
++Changeset created on Thu Jul 11 07:37:31 UTC 2013 by Seecr (Seek You Too B.V.)
++
++Description: sortKeys according to SRU Specs
++
++    SortKeys now work according to the SRU Spec. 1=Asc, 0=Desc
++
++Baseline version: 4.6.1
++
++From b81c93eeb45dc3c012758c39f223d30283074b47 Mon Sep 17 00:00:00 2001
++From: Seecr Development Team <development@seecr.nl>
++Date: Thu, 11 Jul 2013 09:33:56 +0200
++Subject: [PATCH] JJ: fixed sru sortkeys, now according to spec
++
++---
++ meresco/components/sru/sruparser.py |    2 +-
++ test/sru/sruparsertest.py           |   18 ++++++++++++++++--
++ 2 files changed, 17 insertions(+), 3 deletions(-)
++
++diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
++index 315ca7b..a1141bc 100644
++--- a/meresco/components/sru/sruparser.py
+++++ b/meresco/components/sru/sruparser.py
++@@ -153,7 +153,7 @@ class SruParser(Observable):
++         if 'sortKeys' in arguments :
++             try:
++                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
++-                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
+++                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': not bool(int(sortDirection))}]
++                 sruArgs['sortKeys'] = arguments['sortKeys']
++             except ValueError:
++                 pass
++diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
++index d3c9035..d8a0854 100644
++--- a/test/sru/sruparsertest.py
+++++ b/test/sru/sruparsertest.py
++@@ -194,14 +194,28 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
++         self.assertEquals('searchRetrieve', kwargs['operation'])
++         self.assertEquals(11, kwargs['startRecord'])
++         self.assertEquals(15, kwargs['maximumRecords'])
++-        self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
++         self.assertEquals('aQuery', kwargs['sruArguments']['query'])
++         self.assertEquals(['aField,,1'], kwargs['sruArguments']['sortKeys'])
++ 
++         self.assertTrue("HTTP/1.0 200 OK" in response)
++         self.assertTrue(XML_HEADER in response)
++ 
++-
+++    def testSortKeysAccordingToSpec(self):
+++        def assertSortKeys(expectedSortedDescending, sortKeys):
+++            component = SruParser()
+++            sruHandler = CallTrace('SRUHandler', emptyGeneratorMethods=['searchRetrieve'])
+++            component.addObserver(sruHandler)
+++            response = "".join(compose(component.handleRequest(arguments=dict(
+++                version=['1.1'], 
+++                query= ['aQuery'], 
+++                operation=['searchRetrieve'], 
+++                sortKeys=[sortKeys]))))
+++            kwargs = sruHandler.calledMethods[0].kwargs
+++            self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
+++
+++        assertSortKeys(True, 'aField,,0')
+++        assertSortKeys(False, 'aField,,1')
+++        
++     def testSearchRetrieveWithXParameter(self):
++         component = SruParser()
++         sruHandler = CallTrace('SRUHandler')
++-- 
++1.7.2.5
++
+-- 
+1.7.2.5
+
+
+From a7517d298095ae67e6913f6dcdf97b2b39e50ef4 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 11 Jul 2013 10:16:49 +0200
+Subject: [PATCH 3/4] JJ: flag to go back to old behaviour
+
+---
+ meresco/components/sru/sruparser.py |    8 ++++++--
+ test/sru/sruparsertest.py           |   10 ++++++----
+ 2 files changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+index a1141bc..1af717f 100644
+--- a/meresco/components/sru/sruparser.py
++++ b/meresco/components/sru/sruparser.py
+@@ -83,7 +83,7 @@ class SruMandatoryParameterNotSuppliedException(SruException):
+ 
+ class SruParser(Observable):
+ 
+-    def __init__(self, host=None, port=None, description='Meresco SRU', modifiedDate=None, database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None, wsdl=None):
++    def __init__(self, host=None, port=None, description='Meresco SRU', modifiedDate=None, database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None, wsdl=None, oldAndWrongStyleSortKeys=False):
+         Observable.__init__(self)
+         self._host = host
+         self._port = port
+@@ -94,6 +94,7 @@ class SruParser(Observable):
+         self._defaultRecordPacking = defaultRecordPacking
+         self._maximumMaximumRecords = maximumMaximumRecords
+         self._wsdl = wsdl
++        self._oldAndWrongStyleSortKeys = oldAndWrongStyleSortKeys
+ 
+     def handleRequest(self, arguments, **kwargs):
+         yield httputils.okXml
+@@ -153,7 +154,10 @@ class SruParser(Observable):
+         if 'sortKeys' in arguments :
+             try:
+                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
+-                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': not bool(int(sortDirection))}]
++                sortDescending = not bool(int(sortDirection))
++                if self._oldAndWrongStyleSortKeys:
++                    sortDescending = not sortDescending
++                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': sortDescending}]
+                 sruArgs['sortKeys'] = arguments['sortKeys']
+             except ValueError:
+                 pass
+diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+index d8a0854..b4186af 100644
+--- a/test/sru/sruparsertest.py
++++ b/test/sru/sruparsertest.py
+@@ -201,8 +201,8 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+         self.assertTrue(XML_HEADER in response)
+ 
+     def testSortKeysAccordingToSpec(self):
+-        def assertSortKeys(expectedSortedDescending, sortKeys):
+-            component = SruParser()
++        def assertSortKeys(expectedSortedDescending, sortKeys, oldAndWrongStyleSortKeys):
++            component = SruParser(oldAndWrongStyleSortKeys=oldAndWrongStyleSortKeys)
+             sruHandler = CallTrace('SRUHandler', emptyGeneratorMethods=['searchRetrieve'])
+             component.addObserver(sruHandler)
+             response = "".join(compose(component.handleRequest(arguments=dict(
+@@ -213,8 +213,10 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+             kwargs = sruHandler.calledMethods[0].kwargs
+             self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
+ 
+-        assertSortKeys(True, 'aField,,0')
+-        assertSortKeys(False, 'aField,,1')
++        assertSortKeys(True, 'aField,,0', False)
++        assertSortKeys(False, 'aField,,1', False)
++        assertSortKeys(False, 'aField,,0', True)
++        assertSortKeys(True, 'aField,,1', True)
+         
+     def testSearchRetrieveWithXParameter(self):
+         component = SruParser()
+-- 
+1.7.2.5
+
+
+From d97bac6ae6f02fe8f4ffa1fd880148b0f28fab35 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 11 Jul 2013 10:19:52 +0200
+Subject: [PATCH 4/4] JJ: removed, going to make a new set
+
+---
+ applied/201307110737.sortKeys.changeset |   69 -------------------------------
+ 1 files changed, 0 insertions(+), 69 deletions(-)
+ delete mode 100644 applied/201307110737.sortKeys.changeset
+
+diff --git a/applied/201307110737.sortKeys.changeset b/applied/201307110737.sortKeys.changeset
+deleted file mode 100644
+index da2f072..0000000
+--- a/applied/201307110737.sortKeys.changeset
++++ /dev/null
+@@ -1,69 +0,0 @@
+-Changeset created on Thu Jul 11 07:37:31 UTC 2013 by Seecr (Seek You Too B.V.)
+-
+-Description: sortKeys according to SRU Specs
+-
+-    SortKeys now work according to the SRU Spec. 1=Asc, 0=Desc
+-
+-Baseline version: 4.6.1
+-
+-From b81c93eeb45dc3c012758c39f223d30283074b47 Mon Sep 17 00:00:00 2001
+-From: Seecr Development Team <development@seecr.nl>
+-Date: Thu, 11 Jul 2013 09:33:56 +0200
+-Subject: [PATCH] JJ: fixed sru sortkeys, now according to spec
+-
+----
+- meresco/components/sru/sruparser.py |    2 +-
+- test/sru/sruparsertest.py           |   18 ++++++++++++++++--
+- 2 files changed, 17 insertions(+), 3 deletions(-)
+-
+-diff --git a/meresco/components/sru/sruparser.py b/meresco/components/sru/sruparser.py
+-index 315ca7b..a1141bc 100644
+---- a/meresco/components/sru/sruparser.py
+-+++ b/meresco/components/sru/sruparser.py
+-@@ -153,7 +153,7 @@ class SruParser(Observable):
+-         if 'sortKeys' in arguments :
+-             try:
+-                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
+--                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': bool(int(sortDirection))}]
+-+                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': not bool(int(sortDirection))}]
+-                 sruArgs['sortKeys'] = arguments['sortKeys']
+-             except ValueError:
+-                 pass
+-diff --git a/test/sru/sruparsertest.py b/test/sru/sruparsertest.py
+-index d3c9035..d8a0854 100644
+---- a/test/sru/sruparsertest.py
+-+++ b/test/sru/sruparsertest.py
+-@@ -194,14 +194,28 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+-         self.assertEquals('searchRetrieve', kwargs['operation'])
+-         self.assertEquals(11, kwargs['startRecord'])
+-         self.assertEquals(15, kwargs['maximumRecords'])
+--        self.assertEquals([{'sortBy': 'aField', 'sortDescending': True}], kwargs['sortKeys'])
+-         self.assertEquals('aQuery', kwargs['sruArguments']['query'])
+-         self.assertEquals(['aField,,1'], kwargs['sruArguments']['sortKeys'])
+- 
+-         self.assertTrue("HTTP/1.0 200 OK" in response)
+-         self.assertTrue(XML_HEADER in response)
+- 
+--
+-+    def testSortKeysAccordingToSpec(self):
+-+        def assertSortKeys(expectedSortedDescending, sortKeys):
+-+            component = SruParser()
+-+            sruHandler = CallTrace('SRUHandler', emptyGeneratorMethods=['searchRetrieve'])
+-+            component.addObserver(sruHandler)
+-+            response = "".join(compose(component.handleRequest(arguments=dict(
+-+                version=['1.1'], 
+-+                query= ['aQuery'], 
+-+                operation=['searchRetrieve'], 
+-+                sortKeys=[sortKeys]))))
+-+            kwargs = sruHandler.calledMethods[0].kwargs
+-+            self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
+-+
+-+        assertSortKeys(True, 'aField,,0')
+-+        assertSortKeys(False, 'aField,,1')
+-+        
+-     def testSearchRetrieveWithXParameter(self):
+-         component = SruParser()
+-         sruHandler = CallTrace('SRUHandler')
+--- 
+-1.7.2.5
+-
+-- 
+1.7.2.5
+
