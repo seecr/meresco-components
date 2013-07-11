@@ -201,8 +201,8 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         self.assertTrue(XML_HEADER in response)
 
     def testSortKeysAccordingToSpec(self):
-        def assertSortKeys(expectedSortedDescending, sortKeys):
-            component = SruParser()
+        def assertSortKeys(expectedSortedDescending, sortKeys, oldAndWrongStyleSortKeys):
+            component = SruParser(oldAndWrongStyleSortKeys=oldAndWrongStyleSortKeys)
             sruHandler = CallTrace('SRUHandler', emptyGeneratorMethods=['searchRetrieve'])
             component.addObserver(sruHandler)
             response = "".join(compose(component.handleRequest(arguments=dict(
@@ -213,8 +213,10 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
             kwargs = sruHandler.calledMethods[0].kwargs
             self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
 
-        assertSortKeys(True, 'aField,,0')
-        assertSortKeys(False, 'aField,,1')
+        assertSortKeys(True, 'aField,,0', False)
+        assertSortKeys(False, 'aField,,1', False)
+        assertSortKeys(False, 'aField,,0', True)
+        assertSortKeys(True, 'aField,,1', True)
         
     def testSearchRetrieveWithXParameter(self):
         component = SruParser()

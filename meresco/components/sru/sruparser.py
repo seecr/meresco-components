@@ -83,7 +83,7 @@ class SruMandatoryParameterNotSuppliedException(SruException):
 
 class SruParser(Observable):
 
-    def __init__(self, host=None, port=None, description='Meresco SRU', modifiedDate=None, database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None, wsdl=None):
+    def __init__(self, host=None, port=None, description='Meresco SRU', modifiedDate=None, database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None, wsdl=None, oldAndWrongStyleSortKeys=False):
         Observable.__init__(self)
         self._host = host
         self._port = port
@@ -94,6 +94,7 @@ class SruParser(Observable):
         self._defaultRecordPacking = defaultRecordPacking
         self._maximumMaximumRecords = maximumMaximumRecords
         self._wsdl = wsdl
+        self._oldAndWrongStyleSortKeys = oldAndWrongStyleSortKeys
 
     def handleRequest(self, arguments, **kwargs):
         yield httputils.okXml
@@ -153,7 +154,10 @@ class SruParser(Observable):
         if 'sortKeys' in arguments :
             try:
                 sortBy, ignored, sortDirection = arguments.get('sortKeys')[0].split(',')
-                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': not bool(int(sortDirection))}]
+                sortDescending = not bool(int(sortDirection))
+                if self._oldAndWrongStyleSortKeys:
+                    sortDescending = not sortDescending
+                queryArgs['sortKeys'] = [{'sortBy': sortBy.strip(), 'sortDescending': sortDescending}]
                 sruArgs['sortKeys'] = arguments['sortKeys']
             except ValueError:
                 pass
