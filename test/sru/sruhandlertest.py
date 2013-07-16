@@ -192,7 +192,7 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['yieldRecord'] = lambda *a, **kw: (x for x in "record")
+        observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in "record")
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 
@@ -214,7 +214,7 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['yieldRecord'] = lambda *a, **kw: (x for x in "record")
+        observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in "record")
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
 

@@ -300,7 +300,9 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
     def testAssertionErrorReraised(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
-            observer.methods['handle'] = lambda *args, **kwargs: None  # will cause AssertionError in Observable
+            def raiseAssertionError(*args, **kwargs):
+                assert True == False, "Somewhat but not quite unexpected: True not equal to False"
+            observer.methods['handle'] = raiseAssertionError
 
             self.assertEquals(1, downloader.getState().schedule.secondsFromNow())
             callback = self.doConnect() # _processOne.next
@@ -314,7 +316,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 self.assertEquals('', self._downloader._err.getvalue())
                 self.fail('should not get here')
             except AssertionError, e:
-                self.assertEquals('<bound method handle of <CallTrace: observer>> should have resulted in a generator.', str(e))
+                self.assertEquals('Somewhat but not quite unexpected: True not equal to False', str(e))
 
     def testSuccessHttp1dot1Server(self):
         with server([STATUSLINE_ALTERNATIVE + ONE_RECORD]) as (port, msgs):

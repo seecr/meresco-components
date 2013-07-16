@@ -133,25 +133,24 @@ Content-Type: text/xml; charset=utf-8
     </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
 
     def testContentType(self):
-        @asyncnoreturnvalue
-        def methodAsGenerator(**kwargs):
-            pass
         def executeQuery(**kwargs):
             raise StopIteration(SolrResponse(total=1, hits=[0]))
             yield
         observer = CallTrace(
             methods={
                 'executeQuery': executeQuery,
-                'extraResponseData': methodAsGenerator,
-                'echoedExtraRequestData': methodAsGenerator,
             },
             emptyGeneratorMethods=[
+                'extraResponseData',
+                'echoedExtraRequestData',
                 'additionalDiagnosticDetails',
+                'yieldRecord'
             ])
         self.sruHandler.addObserver(observer)
 
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
-        response = "".join(compose(self.srw.handleRequest(Body=request)))
+        result = list(compose(self.srw.handleRequest(Body=request)))
+        response = "".join(result)
         self.assertTrue('text/xml; charset=utf-8' in response, response)
 
     def testNormalOperation(self):
