@@ -1,34 +1,47 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# 
+# and archives, based on "Meresco Core".
+#
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
+from meresco.core import Observable
 from xml.sax.saxutils import escape as xmlEscape
 
-class AddSuggestionsResponseData(object):
+class Suggestion(Observable):
 
-    def extraResponseData(self, response, suggestionsQuery, **kwargs):
+    def __init__(self, count, field):
+        Observable.__init__(self)
+        self._count = count
+        self._field = field
+
+    def executeQuery(self, extraArguments, **kwargs):
+        suggestionRequest = None
+        if 'x-suggestionsQuery' in extraArguments:
+            suggestionRequest = dict(count=self._count, field=self._field, query=extraArguments['x-suggestionsQuery'][0])
+        response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, extraArguments=extraArguments, **kwargs)
+        raise StopIteration(response)
+
+    def extraResponseData(self, response, sruArguments, **kwargs):
         if not hasattr(response, 'suggestions'):
             return
 
@@ -41,7 +54,7 @@ class AddSuggestionsResponseData(object):
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
         shortest = min([len(suggestions) for suggestions in allSuggestions])
         for i in range(shortest):
-            newSuggestionsQuery = suggestionsQuery
+            newSuggestionsQuery = sruArguments['x-suggestionsQuery'][0]
             for word, (start, stop, suggestions) in reversed(sortedSuggestions):
                 replaceWord = suggestions[i]
                 leftPart = newSuggestionsQuery[:start]
@@ -51,3 +64,11 @@ class AddSuggestionsResponseData(object):
             yield "<suggestion>%s</suggestion>\n" % xmlEscape(newSuggestionsQuery)
         yield '</suggestions>\n'
 
+    def echoedExtraRequestData(self, sruArguments, **kwargs):
+        if 'x-suggestionsQuery' not in sruArguments:
+            return
+        yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
+        yield '<query>%s</query>' % sruArguments['x-suggestionsQuery'][0]
+        yield '<count>%s</count>' % self._count
+        yield '<field>%s</field>' % self._field
+        yield '</suggestions>'

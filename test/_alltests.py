@@ -11,7 +11,7 @@
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2010-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -123,7 +123,8 @@ from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest
 from sru.srurecordupdatetest import SruRecordUpdateTest
 from sru.srwtest import SrwTest
-from sru.addsuggestionsresponsedatatest import AddSuggestionsResponseDataTest
+
+from suggestion.suggestiontest import SuggestionTest
 
 from xml_generic.validatetest import ValidateTest
 

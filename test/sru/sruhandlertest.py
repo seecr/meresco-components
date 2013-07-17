@@ -11,7 +11,7 @@
 # Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -736,27 +736,6 @@ class SruHandlerTest(SeecrTestCase):
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
         self.assertEqualsWS(xsd, localxsd)
 
-    def testSearchRetrieveWithSuggestions(self):
-        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value'}
-        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'x-suggestionsQuery': ["value"]}
-
-        observer = CallTrace(emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'])
-        response = Response(total=0, hits=[])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-
-        handler = SruHandler(querySuggestionsCount=5)
-        handler.addObserver(observer)
-
-        result = "".join(compose(handler.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
-        self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        executeQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
-        self.assertEquals('executeQuery', executeQueryMethod.name)
-        methodKwargs = executeQueryMethod.kwargs
-        self.assertEquals(5, methodKwargs['suggestionsCount'])
-        self.assertEquals("value", methodKwargs['suggestionsQuery'])
 
     def testDiagnosticGetHandledByObserver(self):
         def mockAdditionalDiagnosticDetails(**kwargs):

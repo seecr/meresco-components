@@ -4,7 +4,7 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -24,15 +24,16 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase
-from meresco.components.sru.addsuggestionsresponsedata import AddSuggestionsResponseData
+from seecr.test import SeecrTestCase, CallTrace
+from seecr.utils.generatorutils import returnValueFromGenerator
+from meresco.components.suggestion import Suggestion
 from testhelpers import Response
 from weightless.core import compose
 
-class AddSuggestionsResponseDataTest(SeecrTestCase):
+class SuggestionTest(SeecrTestCase):
 
     def testCreateExtraResponseDataWithSingleSuggestions(self):
-        suggestions = AddSuggestionsResponseData()
+        suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
         response.suggestions={'query': (0, 5, ['que', 'emery', 'queen', 'qu<een'])}
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
@@ -45,7 +46,7 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
 """, responseData)
 
     def testCreateExtraResponseDataWithMultipleSuggestions(self):
-        suggestions = AddSuggestionsResponseData()
+        suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
         response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (10, 15, ['valu', 'ot']) }
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query AND value")))
@@ -56,13 +57,13 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
 """, responseData)
 
     def testDoNothingIfNoSuggestionsInResponse(self):
-        suggestions = AddSuggestionsResponseData()
+        suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
         responseData = list(compose(suggestions.extraResponseData(response=response, suggestionsQuery="query")))
         self.assertEquals([], responseData)
 
     def testHarriePoter(self):
-        suggestions = AddSuggestionsResponseData()
+        suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
         response.suggestions={'harrie': (0, 6, ['harry', 'marie']), 'poter': (11, 16, ['potter', 'peter']) }
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, suggestionsQuery="harrie AND poter")))
@@ -71,5 +72,36 @@ class AddSuggestionsResponseDataTest(SeecrTestCase):
     <suggestion>marie AND peter</suggestion>
 </suggestions>
 """, responseData)
+
+    def testEchoedExtraRequestData(self):
+        suggestion = Suggestion(count=1, field='afield')
+
+        result = "".join(list(suggestion.echoedExtraRequestData(sruArguments={'x-suggestionsQuery': ['query']})))
+
+        self.assertEqualsWS("""
+            <suggestions xmlns="http://meresco.org/namespace/suggestions">
+                <query>query</query>
+                <count>1</count>
+                <field>afield</field>
+            </suggestions>""", result)
+
+    def testXSuggestionQueryToSuggestionRequest(self):
+        extraArguments = {'x-suggestionsQuery': ['query']}
+
+        observer = CallTrace('observer')
+        response = Response(total=0, hits=[])
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        suggestion = Suggestion(count=10, field='dcterms:title')
+        suggestion.addObserver(observer)
+
+        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        self.assertTrue(result == response)
+        self.assertEquals(['executeQuery'], observer.calledMethodNames())
+        methodKwargs = observer.calledMethods[0].kwargs
+        self.assertEquals(dict(count=10, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
 
 
