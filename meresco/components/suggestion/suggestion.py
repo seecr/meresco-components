@@ -29,15 +29,17 @@ from xml.sax.saxutils import escape as xmlEscape
 
 class Suggestion(Observable):
 
-    def __init__(self, count, field):
+    def __init__(self, count, field, allowOverrideField=False, maximumCount=None):
         Observable.__init__(self)
         self._count = count
         self._field = field
+        self._allowOverrideField = allowOverrideField
+        self._maximumCount = maximumCount
 
     def executeQuery(self, extraArguments, **kwargs):
         suggestionRequest = None
         if 'x-suggestionsQuery' in extraArguments:
-            suggestionRequest = dict(count=self._count, field=self._field, query=extraArguments['x-suggestionsQuery'][0])
+            suggestionRequest = dict(count=self._getCount(extraArguments), field=self._getField(extraArguments), query=extraArguments['x-suggestionsQuery'][0])
         response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, extraArguments=extraArguments, **kwargs)
         raise StopIteration(response)
 
@@ -69,6 +71,17 @@ class Suggestion(Observable):
             return
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
         yield '<query>%s</query>' % sruArguments['x-suggestionsQuery'][0]
-        yield '<count>%s</count>' % self._count
-        yield '<field>%s</field>' % self._field
+        yield '<count>%s</count>' % self._getCount(sruArguments)
+        yield '<field>%s</field>' % self._getField(sruArguments)
         yield '</suggestions>'
+
+    def _getField(self, arguments):
+        if not self._allowOverrideField:
+            return self._field
+        return arguments.get('x-suggestionsField',[self._field])[0]
+
+    def _getCount(self, arguments):
+        count = max(1, int(arguments.get('x-suggestionsCount',[self._count])[0]))
+        if self._maximumCount:
+            count = min(count, self._maximumCount)
+        return count
