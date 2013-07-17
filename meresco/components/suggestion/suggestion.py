@@ -38,7 +38,7 @@ class Suggestion(Observable):
 
     def executeQuery(self, extraArguments, **kwargs):
         suggestionRequest = None
-        if 'x-suggestionsQuery' in extraArguments:
+        if 'x-suggestionsQuery' in extraArguments and extraArguments['x-suggestionsQuery'][0]:
             suggestionRequest = dict(count=self._getCount(extraArguments), field=self._getField(extraArguments), query=extraArguments['x-suggestionsQuery'][0])
         response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, extraArguments=extraArguments, **kwargs)
         raise StopIteration(response)

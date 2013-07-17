@@ -31,6 +31,16 @@ from testhelpers import Response
 from weightless.core import compose
 
 class SuggestionTest(SeecrTestCase):
+    def setUp(self):
+        SeecrTestCase.setUp(self)
+        self.observer = CallTrace('observer')
+        self.response = Response(total=0, hits=[])
+        def executeQuery(**kwargs):
+            raise StopIteration(self.response)
+            yield
+        self.observer.methods['executeQuery'] = executeQuery
+
+
 
     def testCreateExtraResponseDataWithSingleSuggestions(self):
         suggestions = Suggestion(count=1, field='afield')
@@ -99,76 +109,50 @@ class SuggestionTest(SeecrTestCase):
 
     def testXSuggestionQueryToSuggestionRequest(self):
         extraArguments = {'x-suggestionsQuery': ['query']}
-
-        observer = CallTrace('observer')
-        response = Response(total=0, hits=[])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-
         suggestion = Suggestion(count=10, field='dcterms:title')
-        suggestion.addObserver(observer)
-
+        suggestion.addObserver(self.observer)
         result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
-        self.assertTrue(result == response)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        methodKwargs = observer.calledMethods[0].kwargs
+        self.assertTrue(result == self.response)
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        methodKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals(dict(count=10, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
 
     def testXSuggestionQueryCountAndFieldToSuggestionRequest(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
-
-        observer = CallTrace('observer')
-        response = Response(total=0, hits=[])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=True)
-        suggestion.addObserver(observer)
-
+        suggestion.addObserver(self.observer)
         result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
-        self.assertTrue(result == response)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        methodKwargs = observer.calledMethods[0].kwargs
+        self.assertTrue(result == self.response)
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        methodKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals(dict(count=5, field='fieldname', query='query'), methodKwargs['suggestionRequest'])
 
     def testXSuggestionCountMaximized(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsCount': ['50']}
-
-        observer = CallTrace('observer')
-        response = Response(total=0, hits=[])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-
         suggestion = Suggestion(count=10, field='dcterms:title', maximumCount=20)
-        suggestion.addObserver(observer)
-
+        suggestion.addObserver(self.observer)
         result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
-        self.assertTrue(result == response)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        methodKwargs = observer.calledMethods[0].kwargs
+        self.assertTrue(result == self.response)
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        methodKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals(dict(count=20, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
 
     def testXSuggestionFieldDisabled(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
-
-        observer = CallTrace('observer')
-        response = Response(total=0, hits=[])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer.methods['executeQuery'] = executeQuery
-
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=False)
-        suggestion.addObserver(observer)
-
+        suggestion.addObserver(self.observer)
         result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
-        self.assertTrue(result == response)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        methodKwargs = observer.calledMethods[0].kwargs
+        self.assertTrue(result == self.response)
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        methodKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals(dict(count=5, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+
+    def testNoSuggestionQuery(self):
+        extraArguments = {'x-suggestionsQuery': [''], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
+        suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=False)
+        suggestion.addObserver(self.observer)
+        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        methodKwargs = self.observer.calledMethods[0].kwargs
+        self.assertEquals(None, methodKwargs['suggestionRequest'])
+
