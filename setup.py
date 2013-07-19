@@ -33,25 +33,19 @@
 
 from distutils.core import setup
 from distutils.extension import Extension
+from os import walk
+from os.path import join
+
+packages = []
+for path, dirs, files in walk('meresco'):
+    if '__init__.py' in files and path != 'meresco':
+        packages.append(path.replace('/', '.'))
 
 setup(
     name = 'meresco-components',
     packages = [
         'meresco',                          #DO_NOT_DISTRIBUTE
-        'meresco.components',
-        'meresco.components.autocomplete',
-        'meresco.components.cql',
-        'meresco.components.drilldown',
-        'meresco.components.integerlist',
-        'meresco.components.http',
-        'meresco.components.log',
-        'meresco.components.msgbox',
-        'meresco.components.ngram',
-        'meresco.components.numeric',
-        'meresco.components.sru',
-        'meresco.components.web',
-        'meresco.components.xml_generic',
-    ],
+    ] + packages,
     package_data={
         'meresco.components': ['rules/*.rules'],
         'meresco.components.autocomplete': ['files/*.js', 'files/*.css'],
