@@ -70,9 +70,9 @@ class Suggestion(Observable):
         if 'x-suggestionsQuery' not in sruArguments:
             return
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
-        yield '<query>%s</query>' % sruArguments['x-suggestionsQuery'][0]
+        yield '<query>%s</query>' % xmlEscape(sruArguments['x-suggestionsQuery'][0])
         yield '<count>%s</count>' % self._getCount(sruArguments)
-        yield '<field>%s</field>' % self._getField(sruArguments)
+        yield '<field>%s</field>' % xmlEscape(self._getField(sruArguments))
         yield '</suggestions>'
 
     def _getField(self, arguments):

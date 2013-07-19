@@ -40,8 +40,6 @@ class SuggestionTest(SeecrTestCase):
             yield
         self.observer.methods['executeQuery'] = executeQuery
 
-
-
     def testCreateExtraResponseDataWithSingleSuggestions(self):
         suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
@@ -84,15 +82,15 @@ class SuggestionTest(SeecrTestCase):
 """, responseData)
 
     def testEchoedExtraRequestData(self):
-        suggestion = Suggestion(count=1, field='afield')
+        suggestion = Suggestion(count=1, field='afi>eld')
 
-        result = "".join(list(suggestion.echoedExtraRequestData(sruArguments={'x-suggestionsQuery': ['query']})))
+        result = "".join(list(suggestion.echoedExtraRequestData(sruArguments={'x-suggestionsQuery': ['que<ry']})))
 
         self.assertEqualsWS("""
             <suggestions xmlns="http://meresco.org/namespace/suggestions">
-                <query>query</query>
+                <query>que&lt;ry</query>
                 <count>1</count>
-                <field>afield</field>
+                <field>afi&gt;eld</field>
             </suggestions>""", result)
 
     def testEchoedExtraRequestDataOtherCountField(self):
