@@ -117,11 +117,11 @@ class PeriodicDownload(Observable):
     def processOne(self):
         self._sok = yield self._tryConnect()
         requestString = self.call.buildRequest()
-        self._sok.send(requestString)
-        self._sok.shutdown(SHUT_WR)
-        self._reactor.addReader(self._sok, self._processOne.next, prio=self._prio)
-        responses = []
         try:
+            self._sok.send(requestString)
+            self._sok.shutdown(SHUT_WR)
+            self._reactor.addReader(self._sok, self._processOne.next, prio=self._prio)
+            responses = []
             try:
                 while True:
                     yield

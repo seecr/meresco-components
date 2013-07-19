@@ -40,6 +40,7 @@ from itertools import count
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
 from seecr.test.utils import ignoreLineNumbers
+from seecr.utils.generatorutils import generatorReturn
 
 from weightless.core import be, compose
 from weightless.io import Reactor, Suspend
@@ -656,6 +657,20 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertReactorStateClean(reactor)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(42, reactor.calledMethods[-1].args[0])
+
+    def testSendOnClosedSocketRetries(self):
+        sok = socket()
+        sok.close()
+        reactor = CallTrace('reactor')
+        observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        downloader.addObserver(observer)
+        def mockTryConnect():
+            generatorReturn(sok)
+            yield
+        downloader._tryConnect = mockTryConnect
+        list(compose(downloader.processOne()))
+        self.assertEquals(['addTimer'], reactor.calledMethodNames())
 
     def _prepareDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')
