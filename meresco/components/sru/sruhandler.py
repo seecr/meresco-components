@@ -96,7 +96,9 @@ class SruHandler(Observable):
             drilldownData = getattr(response, "drilldownData", None)
         except Exception, e:
             print_exc()
-            yield self._createDiagnostic(uri=QUERY_FEATURE_UNSUPPORTED[0], message=QUERY_FEATURE_UNSUPPORTED[1], details=xmlEscape(str(e)))
+            yield RESPONSE_HEADER
+            yield self._writeDiagnostics([(QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], str(e))])
+            yield RESPONSE_FOOTER
             return
 
         queryTime = str(self._timeNow() - t0)

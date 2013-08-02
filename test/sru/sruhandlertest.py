@@ -534,8 +534,7 @@ class SruHandlerTest(SeecrTestCase):
             component.addObserver(RaisesException())
             arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
             result = parse(StringIO("".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))))
-            namespaces = {'diag': 'http://www.loc.gov/zing/srw/diagnostic/'}
-            diagnostic = result.xpath("//diag:diagnostic", namespaces=namespaces)
+            diagnostic = result.xpath("/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic", namespaces=namespaces)
             self.assertEquals(1, len(diagnostic))
             self.assertEquals(["info://srw/diagnostics/1/48"], diagnostic[0].xpath("diag:uri/text()", namespaces=namespaces))
             self.assertEquals(["Query Feature Unsupported"], diagnostic[0].xpath("diag:message/text()", namespaces=namespaces))
