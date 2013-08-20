@@ -40,7 +40,7 @@ from meresco.components.xml_generic import ValidateException
 
 from xml.sax.saxutils import escape as escapeXml
 from traceback import format_exc, print_exc
-from lxml.etree import parse, XMLSyntaxError
+from lxml.etree import parse, XMLSyntaxError, ElementTree
 from StringIO import StringIO
 from meresco.xml.namespaces import xpath, namespaces, xpathFirst
 
@@ -83,7 +83,7 @@ class SruRecordUpdate(Observable):
                 yield self.all.add(
                         identifier=recordId,
                         partname=recordSchema,
-                        lxmlNode=lxmlNode,
+                        lxmlNode=ElementTree(lxmlNode),
                     )
             elif action == 'delete':
                 yield self.all.delete(identifier=recordId)

@@ -31,7 +31,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.sru.srurecordupdate import SruRecordUpdate
-from lxml.etree import parse
+from lxml.etree import parse, XML
 from meresco.xml.namespaces import xpathFirst
 from StringIO import StringIO
 from weightless.core import compose
@@ -40,7 +40,7 @@ from meresco.core import asyncnoreturnvalue
 from meresco.components import lxmltostring
 
 
-XML = """<?xml version="1.0" encoding="UTF-8"?>
+UPDATE_REQUEST = """<?xml version="1.0" encoding="UTF-8"?>
 <srw:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
     <srw:version>1.0</srw:version>
     <ucp:action>info:srw/action/1/%(action)s</ucp:action>
@@ -76,7 +76,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.sruRecordUpdate.addObserver(self.observer)
 
     def createRequestBody(self, action=CREATE, recordIdentifier="123", recordData="<dc>empty</dc>"):
-        return XML % {
+        return UPDATE_REQUEST% {
             "action": action,
             "recordIdentifier": recordIdentifier,
             "recordPacking": "text/xml",
@@ -89,7 +89,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         return result.split('\r\n\r\n')
 
     def testAddXML(self):
-        requestBody = self.createRequestBody()
+        requestBody = self.createRequestBody(recordData='<my:data xmlns:my="mine">data</my:data>')
         headers, result = self.performRequest(requestBody)
         self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
 <srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
@@ -104,7 +104,9 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.assertEquals("123", method.kwargs['identifier'])
         self.assertEquals(str, type(method.kwargs['identifier']))
         self.assertEquals("irrelevantXML", method.kwargs['partname'])
-        self.assertEquals('<dc xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">empty</dc>', lxmltostring(method.kwargs['lxmlNode']))
+        resultNode = method.kwargs['lxmlNode']
+        self.assertEqualsLxml(XML('<my:data xmlns:my="mine">data</my:data>'), resultNode)
+        self.assertEquals(['data'], resultNode.xpath('/my:data/text()', namespaces={'my':'mine'}))
 
     def testDelete(self):
         requestBody = self.createRequestBody(action=DELETE)
