@@ -31,7 +31,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.sru.srurecordupdate import SruRecordUpdate
-from lxml.etree import parse, XML
+from lxml.etree import parse, XML, _ElementTree as ElementTreeType
 from meresco.xml.namespaces import xpathFirst
 from StringIO import StringIO
 from weightless.core import compose
@@ -107,6 +107,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         resultNode = method.kwargs['lxmlNode']
         self.assertEqualsLxml(XML('<my:data xmlns:my="mine">data</my:data>'), resultNode)
         self.assertEquals(['data'], resultNode.xpath('/my:data/text()', namespaces={'my':'mine'}))
+        self.assertEquals(ElementTreeType, type(resultNode))
 
     def testDelete(self):
         requestBody = self.createRequestBody(action=DELETE)
