@@ -37,6 +37,7 @@ from sys import stderr
 
 from meresco.core import Observable
 from meresco.components.xml_generic import ValidateException
+from meresco.components.xmlxpath import lxmlElementUntail
 
 from xml.sax.saxutils import escape as escapeXml
 from traceback import format_exc, print_exc
@@ -83,7 +84,7 @@ class SruRecordUpdate(Observable):
                 yield self.all.add(
                         identifier=recordId,
                         partname=recordSchema,
-                        lxmlNode=ElementTree(lxmlNode),
+                        lxmlNode=ElementTree(lxmlElementUntail(lxmlNode)),
                     )
             elif action == 'delete':
                 yield self.all.delete(identifier=recordId)

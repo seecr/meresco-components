@@ -89,7 +89,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         return result.split('\r\n\r\n')
 
     def testAddXML(self):
-        requestBody = self.createRequestBody(recordData='<my:data xmlns:my="mine">data</my:data>')
+        requestBody = self.createRequestBody(recordData='<my:data xmlns:my="mine">data</my:data>      ')
         headers, result = self.performRequest(requestBody)
         self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
 <srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
@@ -108,6 +108,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.assertEqualsLxml(XML('<my:data xmlns:my="mine">data</my:data>'), resultNode)
         self.assertEquals(['data'], resultNode.xpath('/my:data/text()', namespaces={'my':'mine'}))
         self.assertEquals(ElementTreeType, type(resultNode))
+        self.assertEquals(None, resultNode.getroot().tail)
 
     def testDelete(self):
         requestBody = self.createRequestBody(action=DELETE)
