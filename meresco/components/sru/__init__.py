@@ -33,3 +33,4 @@ from sruparser import SruParser, SruException
 from srurecordupdate import SruRecordUpdate, SRURecordUpdate
 from sruupdateclient import SruUpdateClient, SruUpdateException
 from srw import Srw
+from srulimitstartrecord import SruLimitStartRecord
