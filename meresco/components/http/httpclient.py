@@ -54,5 +54,4 @@ class HttpClient(object):
 def _doRequest(method, parse, **kwargs):
     response = yield method(**kwargs)
     headers, body = response.split(CRLF*2)
-    print '>>>>'+headers+body+'<<<<'
     raise StopIteration((headers, lxmlParse(StringIO(body)) if parse else body))
