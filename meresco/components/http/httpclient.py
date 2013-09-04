@@ -23,7 +23,7 @@
 #
 ## end license ##
 
-from weightless.http import httpget, httppost#, httpspost, httpsget
+from weightless.http import httpget, httppost, httpspost, httpsget
 from meresco.components.http.utils import CRLF
 from lxml.etree import parse as lxmlParse
 from StringIO import StringIO
@@ -43,12 +43,12 @@ class HttpClient(object):
 
     def httpPost(self, hostname, port, path, data, parse=True, **kwargs):
         raise StopIteration((
-            yield _doRequest(httppost, parse=parse, host=hostname, port=port, path=path, body=data)
+            yield _doRequest(httppost, parse=parse, host=hostname, port=port, request=path, body=data)
         ))
 
     def httpsPost(self, hostname, port, path, data, parse=True, **kwargs):
         raise StopIteration((
-            yield _doRequest(httpspost, parse=parse, host=hostname, port=port, path=path, body=data)
+            yield _doRequest(httpspost, parse=parse, host=hostname, port=port, request=path, body=data)
         ))
 
 def _doRequest(method, parse, **kwargs):
