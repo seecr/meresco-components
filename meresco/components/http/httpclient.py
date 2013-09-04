@@ -33,25 +33,26 @@ class HttpClient(object):
 
     def httpGet(self, hostname, port, path, arguments, parse=True, **kwargs):
         raise StopIteration((
-            yield _doRequest(httpget, parse=parse, host=hostname, port=port, request='%s?%s' % (path, urlencode(arguments)))
+            yield _doRequest(httpget, parse=parse, host=hostname, port=port, request='%s?%s' % (path, urlencode(arguments)), **kwargs)
         ))
 
     def httpsGet(self, hostname, port, path, arguments, parse=True, **kwargs):
         raise StopIteration((
-            yield _doRequest(httpsget, parse=parse, host=hostname, port=port, request='%s?%s' % (path, urlencode(arguments)))
+            yield _doRequest(httpsget, parse=parse, host=hostname, port=port, request='%s?%s' % (path, urlencode(arguments)), **kwargs)
         ))
 
     def httpPost(self, hostname, port, path, data, parse=True, **kwargs):
         raise StopIteration((
-            yield _doRequest(httppost, parse=parse, host=hostname, port=port, request=path, body=data)
+            yield _doRequest(httppost, parse=parse, host=hostname, port=port, request=path, body=data, **kwargs)
         ))
 
     def httpsPost(self, hostname, port, path, data, parse=True, **kwargs):
         raise StopIteration((
-            yield _doRequest(httpspost, parse=parse, host=hostname, port=port, request=path, body=data)
+            yield _doRequest(httpspost, parse=parse, host=hostname, port=port, request=path, body=data, **kwargs)
         ))
 
 def _doRequest(method, parse, **kwargs):
     response = yield method(**kwargs)
     headers, body = response.split(CRLF*2)
+    print '>>>>'+headers+body+'<<<<'
     raise StopIteration((headers, lxmlParse(StringIO(body)) if parse else body))
