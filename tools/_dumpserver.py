@@ -62,7 +62,7 @@ class Dump(object):
         self._maxCount = maxCount
 
     def handleRequest(self, Body='', **kwargs):
-        yield '\r\n'.join(['HTTP/1.0 200 Ok', 'Content-Type: text/xml; charset=utf-8\r\n', ''])
+        yield '\r\n'.join(['HTTP/1.0 200 OK', 'Content-Type: text/xml; charset=utf-8\r\n', ''])
         try:
             updateRequest = xpathFirst(XML(Body), '/ucp:updateRequest')
             recordId = xpathFirst(updateRequest, 'ucp:recordIdentifier/text()')

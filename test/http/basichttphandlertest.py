@@ -46,14 +46,14 @@ class BasicHttpHandlerTest(SeecrTestCase):
     def testOk(self):
         handler = BasicHttpHandler()
         observer = CallTrace('HttpComponent')
-        observer.returnValues['handleRequest'] = (f for f in ['HTTP/1.0 200 Ok\r\n\r\n', 'Body'])
+        observer.returnValues['handleRequest'] = (f for f in ['HTTP/1.0 200 OK\r\n\r\n', 'Body'])
         observable = Observable()
         observable.addObserver(handler)
         handler.addObserver(observer)
 
         response = ''.join(compose(observable.all.handleRequest(RequestURI="/")))
 
-        self.assertEquals('HTTP/1.0 200 Ok\r\n\r\nBody', response)
+        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
 
     def testAlternativeMethod(self):

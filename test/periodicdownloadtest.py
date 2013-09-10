@@ -449,7 +449,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 yield 'ignore'
 
         err = StringIO()
-        with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*2, sleepWhile=lambda: suspended[0]) as (port, msgs):
+        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*2, sleepWhile=lambda: suspended[0]) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.01), err=err)
             observer = CallTrace(methods={'handle': handle}, returnValues={'buildRequest': 'request'}, emptyGeneratorMethods=['handle'])
             dna = be(
@@ -492,7 +492,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return
                 yield
 
-        with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*5) as (port, msgs):
+        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*5) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.1), err=StringIO())
             dna = be(
             (Observable(),
@@ -541,7 +541,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return
                 yield
 
-        with server(["HTTP/1.0 200 Ok\r\n\r\nmessage"]*4) as (port, msgs):
+        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*4) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.1), err=StringIO())
             dna = be(
             (Observable(),

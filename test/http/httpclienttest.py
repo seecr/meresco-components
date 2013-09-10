@@ -48,40 +48,40 @@ class HttpClientTest(SeecrTestCase):
 
     def testPlainText(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 Ok\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
+        self.response = """HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
 
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={}, parse=False)
         headers, body = returnValueFromGenerator(gen)
 
         self.assertEquals('<xml/>', body)
-        self.assertEquals(['HTTP/1.0 200 Ok', 'Content-Type: text/xml'], headers.split(CRLF))
+        self.assertEquals(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
 
     def testPlainXml(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 Ok\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
+        self.response = """HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
 
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = returnValueFromGenerator(gen)
 
         self.assertEquals('<xml/>', lxmltostring(body))
-        self.assertEquals(['HTTP/1.0 200 Ok', 'Content-Type: text/xml'], headers.split(CRLF))
+        self.assertEquals(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
 
     def testHttpPost(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 Ok\r\n\r\nother-data"""
+        self.response = """HTTP/1.0 200 OK\r\n\r\nother-data"""
 
         gen = client.httpPost(hostname='localhost', port=80, path='/', data='data', parse=False)
         headers, body = returnValueFromGenerator(gen)
 
         self.assertEquals('other-data', body)
-        self.assertEquals(['HTTP/1.0 200 Ok'], headers.split(CRLF))
+        self.assertEquals(['HTTP/1.0 200 OK'], headers.split(CRLF))
 
     def testHttpsGet(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 Ok\r\n\r\nother-data"""
+        self.response = """HTTP/1.0 200 OK\r\n\r\nother-data"""
 
         gen = client.httpsGet(hostname='localhost', port=443, path='/', arguments={}, parse=False)
         headers, body = returnValueFromGenerator(gen)
 
         self.assertEquals('other-data', body)
-        self.assertEquals(['HTTP/1.0 200 Ok'], headers.split(CRLF))
+        self.assertEquals(['HTTP/1.0 200 OK'], headers.split(CRLF))

@@ -44,6 +44,7 @@ from traceback import format_exc, print_exc
 from lxml.etree import parse, XMLSyntaxError, ElementTree
 from StringIO import StringIO
 from meresco.xml.namespaces import xpath, namespaces, xpathFirst
+from meresco.components.http.utils import okXml
 
 class SruRecordUpdate(Observable):
     def __init__(self, name=None, stderr=stderr, sendRecordData=True):
@@ -52,7 +53,7 @@ class SruRecordUpdate(Observable):
         self._sendRecordData = sendRecordData
 
     def handleRequest(self, Body="", **kwargs):
-        yield '\r\n'.join(['HTTP/1.0 200 Ok', 'Content-Type: text/xml; charset=utf-8\r\n', ''])
+        yield okXml
         if not Body:
             yield self._respond(
                 diagnosticUri='info:srw/diagnostic/12/9',
