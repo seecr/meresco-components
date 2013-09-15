@@ -35,7 +35,7 @@ from StringIO import StringIO
 from simplejson import loads
 from os.path import join, dirname, basename
 
-from seecr.test.io import stderr_replace_decorator
+from seecr.test.io import stderr_replaced
 
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 from meresco.components.drilldown.drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2013
@@ -192,7 +192,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
         self.assertEquals(drilldownData, loads(xpathFirst(response, '//drilldown:term-drilldown/drilldown:json/text()')))
 
-    @stderr_replace_decorator
+    @stderr_replaced
     def testWrongFormat(self):
         sruTermDrilldown = SRUTermDrilldown()
         drilldownData = [

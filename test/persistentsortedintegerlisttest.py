@@ -35,7 +35,6 @@ from os import rename, remove, listdir
 from os.path import join, isfile
 from bisect import bisect_left, bisect_right
 from random import choice
-from seecr.test.io import stdout_replace_decorator
 
 from meresco.components import PersistentSortedIntegerList
 from meresco.components.integerlist import IntegerList
