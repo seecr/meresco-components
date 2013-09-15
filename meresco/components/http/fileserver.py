@@ -1,31 +1,31 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# 
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from os.path import isfile, join, normpath, commonprefix, abspath
@@ -36,6 +36,7 @@ from os import stat
 
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF
+from urllib import unquote, unquote_plus
 
 import magic
 magicCookie = magic.open(magic.MAGIC_MIME)
@@ -109,12 +110,22 @@ class FileServer(object):
         yield file.stream()
 
     def _findFile(self, filename):
-        filename = '/'.join(part for part in filename.split('/') if part)
-        for documentRoot in self._documentRoots:
-            path = normpath(join(documentRoot, filename))
-            if isfile(path) and commonprefix([documentRoot, path]) == documentRoot:
-                return File(path)
+        possibleFilenames = unquoteFilename(filename)
+        for filename in possibleFilenames:
+            filename = '/'.join(part for part in filename.split('/') if part)
+            for documentRoot in self._documentRoots:
+                path = normpath(join(documentRoot, filename))
+                if commonprefix([documentRoot, path]) == documentRoot and isfile(path):
+                    return File(path)
 
+
+def unquoteFilename(filename):
+    result = [filename]
+    for m in [unquote, unquote_plus]:
+        unquoted = m(filename)
+        if unquoted not in result:
+            result.append(unquoted)
+    return result
 
 class StringServer(object):
     def __init__(self, aString, contentType):
