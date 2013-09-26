@@ -11,7 +11,7 @@
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2010-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -49,28 +49,29 @@ simplefilter('default')
 
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
 from clausecollectortest import ClauseCollectorTest
+from combinepartstest import CombinePartsTest
 from contextsettest import ContextSetTest
 from convertertest import ConverterTest
 from cqlconversiontest import CQLConversionTest
-from combinepartstest import CombinePartsTest
 from crosswalktest import CrosswalkTest
 from datapumptest import DataPumpTest
 from directorywatchertest import DirectoryWatcherTest
 from fieldletstest import FieldletsTest
-from fields2xmltest import Fields2XmlTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
+from fields2xmltest import Fields2XmlTest
 from filtermessagestest import FilterMessagesTest
 from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
-from parsecqltest import ParseCQLTest
 from parseargumentstest import ParseArgumentsTest
+from parsecqltest import ParseCQLTest
+from periodiccalltest import PeriodicCallTest
 from periodicdownloadtest import PeriodicDownloadTest
 from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
-from renamefieldforexacttest import RenameFieldForExactTest
 from renamecqlindextest import RenameCqlIndexTest
+from renamefieldforexacttest import RenameFieldForExactTest
 from requestscopetest import RequestScopeTest
 from rewritepartnametest import RewritePartnameTest
 from rssitemtest import RssItemTest
