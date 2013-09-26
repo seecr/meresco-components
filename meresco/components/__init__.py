@@ -32,8 +32,8 @@
 from converter import Converter
 from timeddictionary import TimedDictionary
 from xmlcompose import XmlCompose
-
 from xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
+
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from clausecollector import ClauseCollector
 from combineparts import CombineParts
@@ -43,15 +43,15 @@ from cqlconversion import CQLConversion, CqlSearchClauseConversion, CqlMultiSear
 from crosswalk import Crosswalk
 from directorywatcher import DirectoryWatcher, DirectoryWatcherException
 from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
-from fields2xmlfields import Fields2XmlFields
 from fields2xml import Fields2Xml
+from fields2xmlfields import Fields2XmlFields
 from filtermessages import FilterMessages
 from filterpartbyname import FilterPartByName
 from inbox import Inbox
 from iteratorasstream import IteratorAsStream
 from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
-from parsecql import ParseCQL
 from parsearguments import ParseArguments
+from parsecql import ParseCQL
 from periodicdownload import PeriodicDownload
 from persistentsortedintegerlist import PersistentSortedIntegerList
 from reindex import Reindex
