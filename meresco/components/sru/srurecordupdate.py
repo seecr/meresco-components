@@ -47,9 +47,10 @@ from meresco.xml.namespaces import xpath, namespaces, xpathFirst
 from meresco.components.http.utils import okXml
 
 class SruRecordUpdate(Observable):
-    def __init__(self, name=None, stderr=stderr, sendRecordData=True):
+    def __init__(self, name=None, stderr=stderr, sendRecordData=True, logErrors=False):
         Observable.__init__(self, name=name)
-        self._stderr=stderr
+        self._stderr = stderr
+        self._logErrors = logErrors
         self._sendRecordData = sendRecordData
 
     def handleRequest(self, Body="", **kwargs):
@@ -65,9 +66,7 @@ class SruRecordUpdate(Observable):
             try:
                 lxmlNode = parse(StringIO(Body))
             except XMLSyntaxError:
-                print_exc(file=self._stderr)
-                print >> self._stderr, Body
-                self._stderr.flush()
+                self._log(Body)
                 raise
             updateRequest = xpathFirst(lxmlNode, '/*[local-name()="updateRequest"]')
             recordId = xpathFirst(updateRequest, 'ucp:recordIdentifier/text()')
@@ -93,11 +92,13 @@ class SruRecordUpdate(Observable):
                 raise ValueError("action value should refer to either 'create', 'replace' or 'delete'.")
             yield self._respond()
         except ValidateException, e:
+            self._log(Body)
             yield self._respond(
                 diagnosticUri='info:srw/diagnostic/12/12',
                 details=escapeXml(str(e)),
                 message='Invalid data:  record rejected')
         except Exception, e:
+            self._log(Body)
             yield self._respond(
                 diagnosticUri='info:srw/diagnostic/12/1',
                 details=escapeXml(format_exc()),
@@ -111,6 +112,13 @@ class SruRecordUpdate(Observable):
             uri = diagnosticUri
             diagnostics = DIAGNOSTIC_XML % locals()
         yield RESPONSE_XML % locals()
+
+    def _log(self, data):
+        if not self._logErrors:
+            return
+        print_exc(file=self._stderr)
+        print >> self._stderr, data
+        self._stderr.flush()
 
 
 RESPONSE_XML = """<?xml version="1.0" encoding="UTF-8"?>

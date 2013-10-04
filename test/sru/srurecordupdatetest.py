@@ -68,7 +68,7 @@ class SruRecordUpdateTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.stderr = StringIO()
-        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr)
+        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr, logErrors=True)
         @asyncnoreturnvalue
         def addOrDelete(*args, **kwargs):
             pass
