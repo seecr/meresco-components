@@ -47,7 +47,7 @@ from meresco.xml.namespaces import xpath, namespaces, xpathFirst
 from meresco.components.http.utils import okXml
 
 class SruRecordUpdate(Observable):
-    def __init__(self, name=None, stderr=stderr, sendRecordData=True, logErrors=False):
+    def __init__(self, name=None, stderr=stderr, sendRecordData=True, logErrors=True):
         Observable.__init__(self, name=name)
         self._stderr = stderr
         self._logErrors = logErrors
