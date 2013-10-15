@@ -32,33 +32,35 @@ class Schedule(object):
         if (period and (timeOfDay or dayOfWeek)) or \
                 (dayOfWeek and not timeOfDay):
             raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek'")
-        self._period = period
-        self._timeOfDay = timeOfDay
-        self._dayOfWeek = dayOfWeek
+        self._data = {
+            'period': period,
+            'timeOfDay': timeOfDay,
+            'dayOfWeek': dayOfWeek,
+        }
 
     @property
     def period(self):
-        return self._period
+        return self._data['period']
 
     @property
     def timeOfDay(self):
-        return self._timeOfDay
+        return self._data['timeOfDay']
 
     @property
     def dayOfWeek(self):
-        return self._dayOfWeek
+        return self._data['dayOfWeek']
 
     def secondsFromNow(self):
-        if self._period:
-            return self._period
+        if self.period:
+            return self.period
 
-        targetTime = datetime.strptime(self._timeOfDay, "%H:%M")
+        targetTime = datetime.strptime(self.timeOfDay, "%H:%M")
         time = self._time()
         currentTime = datetime.strptime("%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S")
         timeDelta = targetTime - currentTime
         daysDelta = 0
-        if self._dayOfWeek:
-            daysDelta = self._dayOfWeek - time.isoweekday() + timeDelta.days
+        if self.dayOfWeek:
+            daysDelta = self.dayOfWeek - time.isoweekday() + timeDelta.days
             if daysDelta < 0:
                 daysDelta += 7
         return daysDelta * 24 * 60 * 60 + timeDelta.seconds
@@ -67,10 +69,18 @@ class Schedule(object):
         return datetime.utcnow()
 
     def __repr__(self):
-        return "Schedule(%s)" % ', '.join('%s=%s' % (k, repr(getattr(self, '_%s' % k))) for k in ['period', 'timeOfDay', 'dayOfWeek'] if getattr(self, '_%s' % k))
+        return "Schedule(%s)" % ', '.join('%s=%s' % (
+            k,repr(v))
+            for (k,v) in sorted(self._data.items())
+            if v)
 
-    def __cmp__(self, other):
-        return cmp(type(self), type(other)) or cmp(repr(self), repr(other))
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __hash__(self):
-        return hash(repr(self))
+        return hash(tuple(sorted(self._data.items())))
