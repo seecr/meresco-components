@@ -24,27 +24,57 @@
 #
 ## end license ##
 
+import sys
+
 from traceback import print_exc
 
 from weightless.core import compose, identify, Yield
 
 from meresco.core import Observable
 
+from schedule import Schedule
+
 
 class PeriodicCall(Observable):
-    def __init__(self, reactor, interval=3600, errorInterval=15, name=None):
+    def __init__(self, reactor, schedule=None, errorSchedule=Schedule(period=15), autoStart=True, prio=None, name=None):
         Observable.__init__(self, name=name)
         self._reactor = reactor
-        self._interval = interval
-        self._errorInterval = errorInterval
+        self._schedule = schedule
+        self._errorSchedule = errorSchedule
+        # Pause as soon as possible, please.
+        self._pause = not autoStart
+        self._prio = prio
+
+        self._busy = False
+        self._currentTimer = None
+
+        if not (self._pause or self._schedule):
+            raise ValueError('When autoStart is enabled, a schedule is required.')
 
     def observer_init(self):
-        self._reactor.addTimer(0, self._periodicCall)
+        if self._pause:
+            return
+        self._addTimer()
+
+    def pause(self):
+        self._pause = True
+        if self._currentTimer:
+            self._removeTimer()
+
+    def resume(self):
+        if not self._pause:
+            return
+
+        self._pause = False
+        if not self._busy:
+            self._addTimer()
 
     @identify
     def _periodicCall(self):
         this = yield  # this generator, from @identify
-        self._reactor.addProcess(this.next)
+        self._busy = True
+        self._currentTimer = None
+        self._reactor.addProcess(this.next, prio=self._prio)
         try:
             yield
             for _response in compose(self.all.handle()):
@@ -57,11 +87,30 @@ class PeriodicCall(Observable):
             raise
         except Exception:
             print_exc()
-            interval = self._errorInterval
+            sys.stderr.flush()
+            interval = self._errorSchedule.secondsFromNow()
         else:
-            interval = self._interval
+            interval = None  # default
         finally:
             self._reactor.removeProcess()
-            self._reactor.addTimer(interval, self._periodicCall)
+            if not self._pause:
+                self._addTimer(interval)
+            self._busy = False
             yield  # Done, wait for GC
+
+    def _addTimer(self, interval=None):
+        interval = interval if interval is not None else self._schedule.secondsFromNow()
+        self._currentTimer = self._reactor.addTimer(interval, self._periodicCall)
+
+    def _removeTimer(self):
+        self._reactor.removeTimer(self._currentTimer)
+
+
+MAX_LENGTH=1500
+def shorten(response):
+    if len(response) < MAX_LENGTH:
+        return response
+    headLength = 2*MAX_LENGTH/3
+    tailLength = MAX_LENGTH - headLength
+    return "%s ... %s" % (response[:headLength], response[-tailLength:])
 
