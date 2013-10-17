@@ -35,6 +35,10 @@ class ScheduleTest(SeecrTestCase):
         self.assertEquals(42, s.secondsFromNow())
         self.assertEquals(42, s.period)
 
+        s = Schedule(period=0)
+        self.assertEquals(0, s.secondsFromNow())
+        self.assertEquals(0, s.period)
+
     def testTimeOfDay(self):
         s = Schedule(timeOfDay='20:00')
         self.assertEquals('20:00', s.timeOfDay)
@@ -72,6 +76,7 @@ class ScheduleTest(SeecrTestCase):
         self.assertFalse(Schedule(timeOfDay='20:00') == Schedule(timeOfDay='20:00', dayOfWeek=3))
 
     def testRepr(self):
+        self.assertEquals('Schedule(period=0)', repr(Schedule(period=0)))
         self.assertEquals('Schedule(period=1)', repr(Schedule(period=1)))
         self.assertEquals("Schedule(timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00')))
         self.assertEquals("Schedule(dayOfWeek=1, timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00', dayOfWeek=1)))

@@ -29,7 +29,7 @@ from datetime import datetime
 
 class Schedule(object):
     def __init__(self, period=None, timeOfDay=None, dayOfWeek=None):
-        if (period and (timeOfDay or dayOfWeek)) or \
+        if ((period is not None) and (timeOfDay or dayOfWeek)) or \
                 (dayOfWeek and not timeOfDay):
             raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek'")
         self._data = {
@@ -51,7 +51,7 @@ class Schedule(object):
         return self._data['dayOfWeek']
 
     def secondsFromNow(self):
-        if self.period:
+        if self.period is not None:
             return self.period
 
         targetTime = datetime.strptime(self.timeOfDay, "%H:%M")
@@ -72,7 +72,7 @@ class Schedule(object):
         return "Schedule(%s)" % ', '.join('%s=%s' % (
             k,repr(v))
             for (k,v) in sorted(self._data.items())
-            if v)
+            if v is not None)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
