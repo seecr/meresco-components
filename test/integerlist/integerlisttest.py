@@ -141,6 +141,27 @@ class IntegerListTest(SeecrTestCase):
         del l[4]
         self.assertEquals([0,1,3,4,6,8,9], list(l))
 
+        l = IntegerList()
+        l.extend(range(10))
+        del l[2:4]
+        self.assertEquals([0,1,4,5,6,7,8,9], list(l))
+        del l[3:5]
+        self.assertEquals([0,1,4,7,8,9], list(l))
+        del l[2:4]
+        self.assertEquals([0,1,8,9], list(l))
+
+        l.save(self.tempdir+'/list.bin', offset=0)
+        l2 = IntegerList()
+        l2.extendFrom(self.tempdir+'/list.bin')
+        self.assertEquals([0,1,8,9], l2)
+
+        del l[1:3]
+        self.assertEquals([0, 9], list(l))
+        l.save(self.tempdir+'/list.bin', offset=0)
+        l2 = IntegerList()
+        l2.extendFrom(self.tempdir+'/list.bin')
+        self.assertEquals([0, 9], l2)
+
     def testEquality(self):
         l1 = IntegerList(10)
         l2 = IntegerList(10)
