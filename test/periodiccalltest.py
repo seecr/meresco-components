@@ -114,7 +114,55 @@ class PeriodicCallTest(SeecrTestCase):
         try: PeriodicCall(reactor=reactor, schedule=Schedule(period=1), autoStart=True)
         except: self.fail('Unexpected exception')
 
-    def testErrorInterval(self):
+    def testInitialSchedule(self):
+        self.newDNA(initialSchedule=Schedule(period=0), schedule=Schedule(period=12))
+        list(compose(self.dna.once.observer_init()))
+        self.assertEquals(['addTimer'], self.reactor.calledMethodNames())
+        addTimer, = self.reactor.calledMethods
+
+        self.reactor.calledMethods.reset()
+        self.assertEquals(0, addTimer.args[0])
+        addTimer.args[1]()
+
+        addProcess, = self.reactor.calledMethods
+        self.reactor.calledMethods.reset()
+        addProcess.args[0]()
+
+        self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
+        removeProcess, addTimer = self.reactor.calledMethods
+        self.assertEquals(12, addTimer.args[0])
+
+    def testSetSchedule(self):
+        addTimer, = self.reactor.calledMethods
+        self.reactor.calledMethods.reset()
+        addTimer.args[1]()
+
+        self.pc.setSchedule(schedule=Schedule(period=1))
+
+        addProcess, = self.reactor.calledMethods
+        self.reactor.calledMethods.reset()
+        addProcess.args[0]()
+
+        self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
+        removeProcess, addTimer = self.reactor.calledMethods
+        self.assertEquals(1, addTimer.args[0])
+
+    def testSetScheduleWithIdenticalScheduleDoesNothing(self):
+        addTimer, = self.reactor.calledMethods
+        self.reactor.calledMethods.reset()
+        self.assertEquals(3600, addTimer.args[0])
+        self.pc.setSchedule(schedule=Schedule(period=3600))
+        self.assertEquals([], self.reactor.calledMethodNames())
+
+    def testSetScheduleAddsANewTimer(self):
+        self.reactor.calledMethods.reset()
+        self.pc.setSchedule(schedule=Schedule(period=123))
+        self.assertEquals(['removeTimer', 'addTimer'], self.reactor.calledMethodNames())
+        removeTimer, addTimer = self.reactor.calledMethods
+        self.assertEquals('TOKEN', removeTimer.args[0])
+        self.assertEquals(123, addTimer.args[0])
+
+    def testErrorIntervalAndLoggedMessage(self):
         def raiser():
             raise Exception('al')
             yield
@@ -129,6 +177,7 @@ class PeriodicCallTest(SeecrTestCase):
         with stderr_replaced() as err:
             addProcess.args[0]()
             errValue = err.getvalue()
+            self.assertTrue(errValue.startswith(repr(self.pc)))
             self.assertTrue('Traceback' in errValue, errValue)
             self.assertTrue('Exception: al' in errValue, errValue)
 
@@ -137,6 +186,31 @@ class PeriodicCallTest(SeecrTestCase):
 
         _, addTimer = self.reactor.calledMethods
         self.assertEquals(((15, self.pc._periodicCall), {}), (addTimer.args, addTimer.kwargs))
+
+    def testFatalErrorReRaised(self):
+        for exception in [KeyboardInterrupt, SystemExit, AssertionError]:
+            self.newDNA(schedule=Schedule(period=987))
+            def raiser():
+                raise exception('msg')
+                yield
+            self.observer.methods['handle'] = raiser
+            list(compose(self.dna.once.observer_init()))
+
+            addTimer, = self.reactor.calledMethods
+            self.reactor.calledMethods.reset()
+            addTimer.args[1]()
+            addProcess, = self.reactor.calledMethods
+            self.reactor.calledMethods.reset()
+
+            try:
+                addProcess.args[0]()
+            except exception:
+                pass
+            else:
+                self.fail()
+
+            self.assertEquals(['handle'], self.observer.calledMethodNames())
+            self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
 
     def testHandleWithCallableAndData(self):
         suspend = CallTrace('Suspend', returnValues={'__call__': lambda *a, **kw: None})
@@ -213,6 +287,7 @@ class PeriodicCallTest(SeecrTestCase):
         self.assertEquals(((), {}), (removeProcess.args, removeProcess.kwargs))
         self.assertEquals(((3600, self.pc._periodicCall), {}), (addTimer.args, addTimer.kwargs))
 
+    @stderr_replaced
     def testPausePausesOnStart(self):
         # autoStart
         reactor = CallTrace('reactor')
@@ -226,6 +301,7 @@ class PeriodicCallTest(SeecrTestCase):
         pc.observer_init()
         self.assertEquals([], reactor.calledMethodNames())
 
+    @stderr_replaced
     def testPausePausesWhenRunning(self):
         self.newDNA(schedule=Schedule(period=1), autoStart=True)
         list(compose(self.dna.once.observer_init()))
@@ -249,7 +325,9 @@ class PeriodicCallTest(SeecrTestCase):
         self.assertEquals(['addTimer'], self.reactor.calledMethodNames())
 
         self.reactor.calledMethods.reset()
-        self.pc.pause()
+        with stderr_replaced() as err:
+            self.pc.pause()
+            self.assertEquals('%s: paused\n' % repr(self.pc), err.getvalue())
         self.assertEquals(['removeTimer'], self.reactor.calledMethodNames())
         removeTimer, = self.reactor.calledMethods
         self.assertEquals((('TOKEN',), {}), (removeTimer.args, removeTimer.kwargs))
@@ -268,7 +346,9 @@ class PeriodicCallTest(SeecrTestCase):
         self.reactor.calledMethods.reset()
 
         # pause at pending timer
-        self.pc.pause()
+        with stderr_replaced() as err:
+            self.pc.pause()
+            self.assertEquals('%s: paused\n' % repr(self.pc), err.getvalue())
         self.assertEquals(['removeTimer'], self.reactor.calledMethodNames())
         removeTimer, = self.reactor.calledMethods
         self.assertEquals((('TOKEN',), {}), (removeTimer.args, removeTimer.kwargs))
@@ -278,7 +358,9 @@ class PeriodicCallTest(SeecrTestCase):
         list(compose(self.dna.once.observer_init()))
         self.assertEquals([], self.reactor.calledMethodNames())
 
-        self.pc.resume()
+        with stderr_replaced() as err:
+            self.pc.resume()
+            self.assertEquals('%s: resumed\n' % repr(self.pc), err.getvalue())
         self.assertEquals(['addTimer'], self.reactor.calledMethodNames())
         addTimer, = self.reactor.calledMethods
         self.assertEquals(self.pc._periodicCall, addTimer.args[1])
@@ -293,8 +375,9 @@ class PeriodicCallTest(SeecrTestCase):
         addProcess.args[0]()
         self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
 
+    @stderr_replaced
     def testDoNotResumeNotPaused(self):
-        self.newDNA(Schedule(period=1), autoStart=True)
+        self.newDNA(schedule=Schedule(period=1), autoStart=True)
         self.pc.resume()
         self.assertEquals([], self.reactor.calledMethodNames())
 
@@ -313,6 +396,7 @@ class PeriodicCallTest(SeecrTestCase):
         self.pc.resume()
         self.assertEquals([], self.reactor.calledMethodNames())
 
+    @stderr_replaced
     def testResumeOnlyAddsATimerWhenNotBusy(self):
         # Because at the end of the busy / reactor processing it
         # will add a timer when not paused.
@@ -345,17 +429,41 @@ class PeriodicCallTest(SeecrTestCase):
         addProcess.args[0]()  # <-- done doing and delayed resume (addTimer)
         self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
 
+    @stderr_replaced
+    def testGetState(self):
+        state = self.pc.getState()
+        self.assertEquals('obs_name', state.name)
+        self.assertEquals(False, state.paused)
+        self.assertEquals(Schedule(period=3600), state.schedule)
+        self.assertEquals({'paused': False, 'name': 'obs_name', 'schedule': Schedule(period=3600)}, state.asDict())
+
+        self.pc.observable_setName('dashy')
+        self.assertEquals('dashy', state.name)
+
+        self.pc.setSchedule(schedule=Schedule(period=5))
+        self.assertEquals(Schedule(period=5), state.schedule)
+
+        self.pc.pause()
+        self.assertEquals(True, state.paused)
+
+        self.pc.resume()
+        addTimer = self.reactor.calledMethods[-1]
+        self.reactor.calledMethods.reset()
+        self.assertEquals(False, state.paused)
+
+        addTimer.args[1]()
+        self.pc.pause()
+        self.assertEquals(False, state.paused)
+
+        addProcess = self.reactor.calledMethods[-1]
+        addProcess.args[0]()
+        self.assertEquals(True, state.paused)
+
+    def testRepr(self):
+        self.assertEquals("PeriodicCall(name='obs_name', paused=False, schedule=Schedule(period=3600))", repr(self.pc))
+
     def testTODO(self):
         self.fail()
-        # TODO:
-        #   - setSchedule(scheduleObj)
-        #   - getState()
-        #       * And create PeriodicCallStateView()-object
-        #   - Logging on stderr:
-        #       * paused / resumed
-        #       * exception printing with self-info
-        #       * retry-after-error logging
-        #
         # EXTRACT:
         #   - Socket keepalive options setting
         #   - httpget(...) retrieval (socket/connection) error logging
