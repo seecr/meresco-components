@@ -462,14 +462,6 @@ class PeriodicCallTest(SeecrTestCase):
     def testRepr(self):
         self.assertEquals("PeriodicCall(name='obs_name', paused=False, schedule=Schedule(period=3600))", repr(self.pc))
 
-    def testTODO(self):
-        self.fail()
-        # EXTRACT:
-        #   - Socket keepalive options setting
-        #   - httpget(...) retrieval (socket/connection) error logging
-        #   - httpget(...) response code bad error logging
-        #   - processing response (.handle(data=<data>)) error logging
-
     def testShorten(self):
         message = 'x' * (MAX_LENGTH)
         self.assertEquals(message, message)
