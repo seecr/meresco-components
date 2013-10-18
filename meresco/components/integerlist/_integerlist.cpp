@@ -94,13 +94,13 @@ IntegerList* IntegerList::slice(int start, int stop) {
     return new IntegerList(this, indexFor(start), indexFor(stop), v->size());
 }
 void IntegerList::delitems(int start, int stop) {
-    if (start >= 0 && stop <= int(v->size()) && stop > start) {
-        stop = indexFor(start) + (stop - start);
-        for (int i = indexFor(start); i < stop; i++) {
-            v->at(i) = DELETE_MARK;
-            deletes->insert(lower_bound(deletes->begin(), deletes->end(), i), i);
+    if (start >= 0 && stop <= int(size()) && stop > start) {
+        for (int i = stop-1; i >= start; i--) {
+            int index = indexFor(i);
+            v->at(index) = DELETE_MARK;
+            deletes->insert(lower_bound(deletes->begin(), deletes->end(), index), index);
         }
-    }
+    }    
 }
 int IntegerList::save(char* filename, int offset, bool append) {
     if (offset < 0 || (offset >= size() && size() > 0)) {
