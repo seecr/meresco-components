@@ -10,7 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -82,6 +82,12 @@ forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
 #404
 notFoundHtml = "HTTP/1.0 404 Not Found" + CRLF + \
                ContentTypeHeader + ContentTypeHtml + CRLF + \
+               CRLF
+
+#405
+methodNotAllowedHtml = lambda allowed: "HTTP/1.0 405 Method Not Allowed" + CRLF + \
+               ContentTypeHeader + ContentTypeHtml + CRLF + \
+               "Allow: " + ', '.join(allowed) + CRLF + \
                CRLF
 
 #500
