@@ -87,7 +87,7 @@ class Srw(Observable):
         if envelope is None:
             raise SoapException("SOAP:VersionMismatch", "The processing party found an invalid namespace for the SOAP Envelope element")
 
-        request = xpathFirst(envelope, 'soap:Body/srw:searchRetrieveRequest')
+        request = xpathFirst(envelope, 'soap:Body/*[local-name()="searchRetrieveRequest"]')
         for elem in request.getchildren():
             key = localname(elem.tag)
             arguments.setdefault(key, []).append(str(elem.text))

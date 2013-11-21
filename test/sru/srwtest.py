@@ -34,9 +34,12 @@ from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
 from testhelpers import Response
 from meresco.core import asyncnoreturnvalue
+from lxml.etree import XML
+from meresco.xml import xpath
 from testhelpers import Response as SolrResponse
 
 from weightless.core import compose
+from weightless.core.utils import asString
 
 httpResponse = """HTTP/1.0 200 OK
 Content-Type: text/xml; charset=utf-8
@@ -72,7 +75,21 @@ class SrwTest(SeecrTestCase):
         
         self.srw.addObserver(self.sruParser)
         self.sruParser.addObserver(self.sruHandler)
-
+        self.response = StopIteration(SolrResponse(total=1, hits=['0']))
+        def executeQuery(**kwargs):
+            raise self.response
+            yield
+        self.observer = CallTrace(
+            methods={
+                'executeQuery': executeQuery,
+            },
+            emptyGeneratorMethods=[
+                'extraResponseData',
+                'echoedExtraRequestData',
+                'additionalDiagnosticDetails',
+                'yieldRecord'
+            ])
+        self.sruHandler.addObserver(self.observer)
 
     def testNonSoap(self):
         """Wrong Soap envelope or body"""
@@ -91,6 +108,17 @@ Content-Type: text/xml; charset=utf-8
 
         response = "".join(self.srw.handleRequest(Body=request))
         self.assertTrue('<faultcode>SOAP:Server.userException</faultcode>' in response)
+
+    def testBadSrwRequest(self):
+        request = soapEnvelope % """<srw:searchRetrieveRequest xmlns:srw="http://wrong.example.org/srw">
+        <srw:version>1.2</srw:version>
+        <srw:query>query</srw:query>
+    </srw:searchRetrieveRequest>"""
+        response = asString(self.srw.handleRequest(Body=request))
+        header, body = response.split('\r\n\r\n')
+        self.assertEquals(['1'], xpath(XML(body), '//srw:searchRetrieveResponse/srw:numberOfRecords/text()'))
+
+
 
     def testNonSRUArguments(self):
         """Arguments that are invalid in any SRU implementation"""
@@ -133,43 +161,14 @@ Content-Type: text/xml; charset=utf-8
     </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
 
     def testContentType(self):
-        def executeQuery(**kwargs):
-            raise StopIteration(SolrResponse(total=1, hits=[0]))
-            yield
-        observer = CallTrace(
-            methods={
-                'executeQuery': executeQuery,
-            },
-            emptyGeneratorMethods=[
-                'extraResponseData',
-                'echoedExtraRequestData',
-                'additionalDiagnosticDetails',
-                'yieldRecord'
-            ])
-        self.sruHandler.addObserver(observer)
-
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
-        result = list(compose(self.srw.handleRequest(Body=request)))
-        response = "".join(result)
+        response = asString(self.srw.handleRequest(Body=request))
         self.assertTrue('text/xml; charset=utf-8' in response, response)
 
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
-        @asyncnoreturnvalue
-        def methodAsGenerator(**kwargs):
-            pass
-        response = Response(total=1, hits=['recordId'])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer = CallTrace(
-            methods={
-                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)]),
-                'executeQuery': executeQuery,
-                'extraResponseData': methodAsGenerator,
-                'echoedExtraRequestData': methodAsGenerator,
-            })
-        self.sruHandler.addObserver(observer)
+        self.response = StopIteration(Response(total=1, hits=['recordId']))
+        self.observer.methods['yieldRecord'] = lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
 
         result = "".join(compose(self.srw.handleRequest(Body=request)))
 
@@ -177,17 +176,11 @@ Content-Type: text/xml; charset=utf-8
 
     def testEmptySortKeys(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % "<SRW:sortKeys/>"
-        def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
-            yield
-        observer = CallTrace(
-                emptyGeneratorMethods=['extraResponseData', 'echoedExtraRequestData'],
-                methods={'executeQuery': executeQuery})
-        self.sruHandler.addObserver(observer)
+        self.response = StopIteration(Response(total=0, hits=[]))
 
         result = "".join(compose(self.srw.handleRequest(Body=request)))
 
-        executeQueryKwargs = observer.calledMethods[0].kwargs
+        executeQueryKwargs = self.observer.calledMethods[0].kwargs
         self.assertFalse("sortKeys" in executeQueryKwargs, executeQueryKwargs)
 
     def testArgumentsAreNotUnicodeStrings(self):
@@ -216,21 +209,8 @@ Content-Type: text/xml; charset=utf-8
   </SOAP:Body>
 </SOAP:Envelope>"""
 
-        @asyncnoreturnvalue
-        def methodAsGenerator(**kwargs):
-            pass
-        response = Response(total=1, hits=['recordId'])
-        def executeQuery(**kwargs):
-            raise StopIteration(response)
-            yield
-        observer = CallTrace(
-            methods={
-                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)]),
-                'executeQuery': executeQuery,
-                'extraResponseData': methodAsGenerator,
-                'echoedExtraRequestData': methodAsGenerator,
-            })
-        self.sruHandler.addObserver(observer)
+        self.response = StopIteration(Response(total=1, hits=['recordId']))
+        self.observer.methods['yieldRecord'] = lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
         response = "".join(compose(self.srw.handleRequest(Body=request)))
 
         echoRequest = """<srw:echoedSearchRetrieveRequest>
