@@ -1,5 +1,7 @@
 #squeeze:g++ (>= 4:4.4.5)
 #squeeze:g++ (<< 4:4.5)
+#wheezy:g++ (>= 4:4.7.2)
+#wheezy:g++ (<< 4:4.8)
 #centos5:gcc-c++ (>= 4.1.2)
 #centos5:gcc-c++
 #centos6:gcc-c++ (>= 4.4)
