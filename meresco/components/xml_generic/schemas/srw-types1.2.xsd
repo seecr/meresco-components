@@ -5,7 +5,7 @@
            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
-    <xsd:import namespace="http://www.loc.gov/zing/srw/diagnostic/" schemaLocation="http://www.loc.gov/standards/sru/xml-files/diagnostics.xsd"/>
+    <xsd:import namespace="http://www.loc.gov/zing/srw/diagnostic/" schemaLocation="http://www.loc.gov/standards/sru/diagnostics/diagnostic.xsd"/>
     <xsd:complexType name="requestType">
         <xsd:sequence>
             <xsd:element ref="version"/>
