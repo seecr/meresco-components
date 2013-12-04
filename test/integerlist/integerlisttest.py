@@ -348,7 +348,7 @@ class IntegerListTest(SeecrTestCase):
         for x in il:
             pass
         t1 = time()
-        self.assertTiming(0.30, t1 - t0, 0.55)
+        self.assertTiming(0.28, t1 - t0, 0.55)
 
     def testIterWhileModifyingList(self):
         il = IntegerList()
@@ -401,7 +401,7 @@ class IntegerListTest(SeecrTestCase):
         t0 = time()
         segment = il[:][:10]
         t1 = time()
-        self.assertTiming(0.06, t1 - t0, 0.08)
+        self.assertTiming(0.04, t1 - t0, 0.08)
 
     def testSetMaxInt(self):
         il = IntegerList()
