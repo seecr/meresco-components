@@ -141,7 +141,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEquals("%s: error in sockopt\n" % repr(downloader), downloader._err.getvalue())
         del reactor.exceptions['removeWriter']
         self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-        self.assertEquals(1 + 5*60, reactor.calledMethods[-1].args[0])
+        self.assertEquals(5*60, reactor.calledMethods[-1].args[0])
 
         self.assertReactorStateClean(reactor)
 
@@ -285,7 +285,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             result = downloader._err.getvalue()
             self.assertTrue('Traceback' in result, result)
             expected =  ignoreLineNumbers("""%s: Traceback (most recent call last):
-  File "%%(periodicdownload.py)s", line 104, in processOne
+  File "%%(periodicdownload.py)s", line 104, in _processOne
     for _response  in g:
   File "%%(__file__)s", line 243, in handleGenerator
     raise Exception('xcptn')
@@ -361,7 +361,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback() # _processOne.next -> recv = ''
             # error status
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-            self.assertEquals(2, reactor.calledMethods[-1].args[0])
+            self.assertEquals(30, reactor.calledMethods[-1].args[0])
             self.assertReactorStateClean(reactor)
 
     def testRecoveringAfterDroppedConnection(self):
@@ -409,9 +409,9 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertReactorStateClean(reactor)
 
     def testShortenErrorMessage(self):
-        from meresco.components.periodicdownload import shorten
+        from meresco.components.periodicdownload import _shorten
         longMessage = "a"*100000
-        self.assertTrue(len(shorten(longMessage)) < len(longMessage)/10)
+        self.assertTrue(len(_shorten(longMessage)) < len(longMessage)/10)
 
     def testAutoStartOff(self):
         reactor = CallTrace("reactor")
@@ -669,7 +669,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             generatorReturn(sok)
             yield
         downloader._tryConnect = mockTryConnect
-        list(compose(downloader.processOne()))
+        list(compose(downloader._processOne()))
         self.assertEquals(['addTimer'], reactor.calledMethodNames())
 
     def _prepareDownloader(self, host, port, period=1, handleGenerator=None):

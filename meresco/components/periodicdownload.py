@@ -59,40 +59,36 @@ class PeriodicDownload(Observable):
         self._err = err or stderr
         self._paused = not autoStart
         self._currentTimer = None
-        self._processOne = None
+        self._currentProcess = None
         self._sok = None
         if autoStart and (not self._host or not self._port):
             raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
             warn('Verbose flag is deprecated', DeprecationWarning)
 
+    def getState(self):
+        return PeriodicDownloadStateView(self)
+
     def setDownloadAddress(self, host, port):
         self._host = host
         self._port = port
-
-    def setPeriod(self, period):
-        warn("Please use setSchedule(...)", DeprecationWarning)
-        self.setSchedule(Schedule(period=period))
 
     def setSchedule(self, schedule):
         if self._schedule != schedule:
             self._schedule = schedule
             if self._currentTimer:
                 self._reactor.removeTimer(self._currentTimer)
-                self.startTimer()
+                self._startTimer()
 
-    def observer_init(self):
-        self.startTimer()
-
-    def startTimer(self, additionalTime=0):
-        if not self._paused:
-            self._currentTimer = self._reactor.addTimer(self._schedule.secondsFromNow() + additionalTime, self.startProcess)
+    def setPeriod(self, period):
+        warn("Please use setSchedule(...)", DeprecationWarning)
+        self.setSchedule(Schedule(period=period))
 
     def pause(self):
         if not self._paused:
             if self._sok:
                 self._reactor.removeReader(self._sok)
-                self._processOne = None
+                self._currentProcess = None
                 # Note: generator will receive GeneratorExit from garbage collector, triggering
                 # 'finally' block after self._sok.recv(...) where sok will be closed.
             self._paused = True
@@ -103,24 +99,30 @@ class PeriodicDownload(Observable):
             return
         self._paused = False
         self._logInfo("resumed")
-        if not self._processOne:
-            self.startTimer()
+        if not self._currentProcess:
+            self._startTimer()
 
-    def startProcess(self):
+    def observer_init(self):
+        self._startTimer()
+
+
+    def _startTimer(self, retryAfter=None):
+        if not self._paused:
+            t = self._schedule.secondsFromNow() if retryAfter is None else retryAfter
+            self._currentTimer = self._reactor.addTimer(t, self._startProcess)
+
+    def _startProcess(self):
         self._currentTimer = None
-        self._processOne = compose(self.processOne())
-        self._processOne.next()
+        self._currentProcess = compose(self._processOne())
+        self._currentProcess.next()
 
-    def getState(self):
-        return PeriodicDownloadStateView(self)
-
-    def processOne(self):
+    def _processOne(self):
         self._sok = yield self._tryConnect()
         requestString = self.call.buildRequest()
         try:
             self._sok.send(requestString)
             self._sok.shutdown(SHUT_WR)
-            self._reactor.addReader(self._sok, self._processOne.next, prio=self._prio)
+            self._reactor.addReader(self._sok, self._currentProcess.next, prio=self._prio)
             responses = []
             try:
                 while True:
@@ -137,7 +139,7 @@ class PeriodicDownload(Observable):
                 self._sok.close()
                 self._sok = None
         except SocketError, (errno, msg):
-            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString)
+            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=30)
             return
 
         try:
@@ -145,17 +147,17 @@ class PeriodicDownload(Observable):
             headers, body = response.split(2 * CRLF, 1)
             statusLine = headers.split(CRLF)[0]
             if not statusLine.strip().lower().endswith('200 ok'):
-                yield self._retryAfterError('Unexpected response: ' + response, request=requestString)
+                yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=30)
                 return
 
-            self._reactor.addProcess(self._processOne.next)
+            self._reactor.addProcess(self._currentProcess.next)
             yield
             try:
                 gen = self.all.handle(data=body)
                 g = compose(gen)
                 for _response  in g:
                     if callable(_response) and not _response is Yield:
-                        _response(self._reactor, self._processOne.next)
+                        _response(self._reactor, self._currentProcess.next)
                         yield
                         _response.resumeProcess()
                     yield
@@ -165,10 +167,10 @@ class PeriodicDownload(Observable):
             raise
         except Exception:
             message = format_exc()
-            message += 'Error while processing response: ' + shorten(response)
+            message += 'Error while processing response: ' + _shorten(response)
             self._logError(message, request=requestString)
-        self._processOne = None
-        self.startTimer()
+        self._currentProcess = None
+        self._startTimer()
         yield
 
     def _tryConnect(self):
@@ -186,13 +188,13 @@ class PeriodicDownload(Observable):
                     if errno != EINPROGRESS:
                         yield self._retryAfterError("%s: %s" % (errno, msg))
                         continue
-                self._reactor.addWriter(sok, self._processOne.next)
+                self._reactor.addWriter(sok, self._currentProcess.next)
                 yield
                 self._reactor.removeWriter(sok)
 
                 err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
                 if err == ECONNREFUSED:
-                    yield self._retryAfterError("Connection refused.")
+                    yield self._retryAfterError("Connection refused.", retryAfter=30)
                     continue
                 if err != 0:   # any other error
                     raise IOError(err)
@@ -200,13 +202,13 @@ class PeriodicDownload(Observable):
             except (AssertionError, KeyboardInterrupt, SystemExit), e:
                 raise
             except Exception, e:
-                yield self._retryAfterError(str(e), additionalTime=5*60)
+                yield self._retryAfterError(str(e), retryAfter=5*60)
                 continue
         raise StopIteration(sok)
 
-    def _retryAfterError(self, message, request=None, additionalTime=0):
+    def _retryAfterError(self, message, request=None, retryAfter=0.1):
         self._logError(message, request)
-        self.startTimer(additionalTime=additionalTime)
+        self._startTimer(retryAfter=retryAfter)
         yield
 
     def _logError(self, message, request=None):
@@ -268,7 +270,7 @@ class PeriodicDownloadStateView(object):
 
 
 MAX_LENGTH=1500
-def shorten(response):
+def _shorten(response):
     if len(response) < MAX_LENGTH:
         return response
     headLength = 2*MAX_LENGTH/3
