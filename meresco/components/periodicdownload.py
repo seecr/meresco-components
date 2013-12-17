@@ -76,8 +76,8 @@ class PeriodicDownload(Observable):
     def setSchedule(self, schedule):
         if self._schedule != schedule:
             self._schedule = schedule
-            if self._currentTimer:
-                self._reactor.removeTimer(self._currentTimer)
+            self._stopTimer()
+            if not self._currentProcess:
                 self._startTimer()
 
     def setPeriod(self, period):
@@ -85,31 +85,43 @@ class PeriodicDownload(Observable):
         self.setSchedule(Schedule(period=period))
 
     def pause(self):
-        if not self._paused:
-            if self._sok:
-                self._reactor.removeReader(self._sok)
-                self._currentProcess = None
-                # Note: generator will receive GeneratorExit from garbage collector, triggering
-                # 'finally' block after self._sok.recv(...) where sok will be closed.
-            self._paused = True
-            self._logInfo("paused")
+        if self._paused:
+            return
+        self._stopTimer()
+        if self._sok:
+            self._reactor.removeReader(self._sok)
+            self._currentProcess = None
+            # Note: generator will receive GeneratorExit from garbage collector, triggering
+            # 'finally' block after self._sok.recv(...) where sok will be closed.
+        self._paused = True
+        self._logInfo("paused")
 
     def resume(self):
         if not self._paused:
             return
         self._paused = False
-        self._logInfo("resumed")
         if not self._currentProcess:
             self._startTimer()
+        self._logInfo("resumed")
 
     def observer_init(self):
         self._startTimer()
 
 
     def _startTimer(self, retryAfter=None):
+        self._currentProcess = None
         if not self._paused:
             t = self._schedule.secondsFromNow() if retryAfter is None else retryAfter
             self._currentTimer = self._reactor.addTimer(t, self._startProcess)
+
+    def _stopTimer(self):
+        if not self._currentTimer:
+            return
+        try:
+            self._reactor.removeTimer(self._currentTimer)
+        except KeyError:
+            pass
+        self._currentTimer = None
 
     def _startProcess(self):
         self._currentTimer = None
@@ -136,11 +148,12 @@ class PeriodicDownload(Observable):
                     self._reactor.removeReader(self._sok)
                 except KeyError:
                     pass
-                self._sok.close()
-                self._sok = None
         except SocketError, (errno, msg):
             yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=30)
             return
+        finally:
+            self._sok.close()
+            self._sok = None
 
         try:
             response = ''.join(responses)
@@ -169,7 +182,6 @@ class PeriodicDownload(Observable):
             message = format_exc()
             message += 'Error while processing response: ' + _shorten(response)
             self._logError(message, request=requestString)
-        self._currentProcess = None
         self._startTimer()
         yield
 
@@ -187,7 +199,7 @@ class PeriodicDownload(Observable):
                 except SocketError, (errno, msg):
                     if errno != EINPROGRESS:
                         yield self._retryAfterError("%s: %s" % (errno, msg))
-                        continue
+                        return
                 self._reactor.addWriter(sok, self._currentProcess.next)
                 yield
                 self._reactor.removeWriter(sok)
@@ -195,7 +207,7 @@ class PeriodicDownload(Observable):
                 err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
                 if err == ECONNREFUSED:
                     yield self._retryAfterError("Connection refused.", retryAfter=1)
-                    continue
+                    return
                 if err != 0:   # any other error
                     raise IOError(err)
                 break
@@ -203,7 +215,7 @@ class PeriodicDownload(Observable):
                 raise
             except Exception, e:
                 yield self._retryAfterError(str(e), retryAfter=5*60)
-                continue
+                return
         raise StopIteration(sok)
 
     def _retryAfterError(self, message, request=None, retryAfter=0.1):

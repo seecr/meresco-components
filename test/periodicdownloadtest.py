@@ -51,30 +51,24 @@ from meresco.components.http.utils import CRLF
 from meresco.components import PeriodicDownload, Schedule
 
 
-def _dunderFile(): pass
-fileDict = {
-    '__file__': _dunderFile.func_code.co_filename,
-    'periodicdownload.py': PeriodicDownload.__init__.func_code.co_filename,
-}
-
-DROP_CONNECTION = object()
-
 @contextmanager
 def server(responses, bufsize=4096, sleepWhile=None):
     sleepWhile = sleepWhile or (lambda: False)
     port = randint(10000,60000)
     start = Event()
+    end = Event()
     messages = []
     def serverThread():
         s = socket()
         s.bind(('127.0.0.1', port))
         s.listen(0)
         start.set()
-        for response in responses:
+        while not end.isSet():
             try:
                 connection, address = s.accept()
                 msg = connection.recv(bufsize)
                 messages.append(msg)
+                response = responses.pop(0)
                 if not response is DROP_CONNECTION:
                     def respond(connection=connection, response=response):
                         while sleepWhile():
@@ -92,7 +86,7 @@ def server(responses, bufsize=4096, sleepWhile=None):
     thread.start()
     start.wait()
     yield port, messages
-    thread.join()
+    end.set()
 
 
 class PeriodicDownloadTest(SeecrTestCase):
@@ -449,7 +443,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 yield 'ignore'
 
         err = StringIO()
-        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*2, sleepWhile=lambda: suspended[0]) as (port, msgs):
+        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*20, sleepWhile=lambda: suspended[0]) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.01), err=err)
             observer = CallTrace(methods={'handle': handle}, returnValues={'buildRequest': 'request'}, emptyGeneratorMethods=['handle'])
             dna = be(
@@ -565,6 +559,33 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             'PAUSE',
             ], receivedData)
 
+    def testResumeAfterDroppedConnectionPauseAndRefusedConnection(self):
+        with server([DROP_CONNECTION]) as (port, msgs):
+            downloader, observer, reactor = self._prepareDownloader("localhost", port)
+            callback = self.doConnect()
+            callback() # HTTP GET
+            sleep(0.01)
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # _processOne.next -> sok.recv
+            self.assertEquals("%s: Receive error: 11: Resource temporarily unavailable\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n" % repr(downloader), downloader._err.getvalue())
+
+        self.assertEquals('addTimer', reactor.calledMethods[-1].name)
+        callback = reactor.calledMethods[-1].args[1]
+        downloader.pause()
+        downloader.setDownloadAddress('localhost', 11111)
+        callback() # startProcess
+        self.assertEquals('addWriter', reactor.calledMethods[-1].name)
+        callback = reactor.calledMethods[-1].args[1]
+        downloader._err.truncate(0)        
+        callback()
+        self.assertEquals('removeWriter', reactor.calledMethods[-1].name)
+        self.assertEquals("%s: Connection refused.\n" % repr(downloader), downloader._err.getvalue())
+
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            downloader.setDownloadAddress('localhost', port)
+            downloader.resume()
+            self.assertEquals('addTimer', reactor.calledMethods[-1].name)
+       
     def testGetState(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, 'host', 12345, name='theName')
@@ -703,6 +724,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 HTTP_SEPARATOR = 2 * CRLF
 STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
 STATUSLINE_ALTERNATIVE = """HTTP/1.1 200 ok """ + HTTP_SEPARATOR
+DROP_CONNECTION = object()
 
 EMBEDDED_RECORD = '<record>ignored</record>'
 BODY = """<aap:noot xmlns:aap="mies">%s</aap:noot>"""
@@ -711,4 +733,8 @@ TWO_RECORDS = BODY % (EMBEDDED_RECORD * 2)
 RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD
 RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS
 
-
+def _dunderFile(): pass
+fileDict = {
+    '__file__': _dunderFile.func_code.co_filename,
+    'periodicdownload.py': PeriodicDownload.__init__.func_code.co_filename,
+}
