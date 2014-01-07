@@ -6,8 +6,8 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -157,7 +157,7 @@ class AutocompleteTest(SeecrTestCase):
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>Web Search</ShortName>
     <Description>Use this web search to search something</Description>
-    <Url type="text/xml" method="get" template="http://localhost:8000/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
+    <Url type="text/html" method="get" template="http://localhost:8000/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
     <Url type="application/x-suggestions+json" template="http://localhost:8000/some/path?prefix={searchTerms}"/>
 </OpenSearchDescription>""", body)
 
