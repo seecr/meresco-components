@@ -140,24 +140,8 @@ class SruHandler(Observable):
 
     def _writeExtraResponseData(self, response=None, queryTime=None, startTime=None, **kwargs):
         result = compose(self._extraResponseDataTryExcept(response=response, queryTime=queryTime, **kwargs))
+
         headerWritten = False
-
-        if self._includeQueryTimes:
-            headerWritten = True
-            t_sru_ms = Decimal(str(self._timeNow() - startTime)).quantize(millis)
-            t_queryTime_ms = Decimal(queryTime).quantize(millis)
-            if hasattr(response, "queryTime"):
-                t_index_ms = (Decimal(response.queryTime)/1000).quantize(millis)
-            else:
-                t_index_ms = -1
-
-            yield """<srw:extraResponseData>
-        <querytimes xmlns="http://meresco.org/namespace/timing">
-            <sruHandling>PT%(sru)sS</sruHandling>
-            <sruQueryTime>PT%(queryTime)sS</sruQueryTime>
-            <index>PT%(index)sS</index>
-        </querytimes>
-    """ % {'sru': t_sru_ms, 'queryTime': t_queryTime_ms, 'index': t_index_ms}
 
         for line in result:
             if line is Yield or callable(line):
@@ -167,8 +151,29 @@ class SruHandler(Observable):
                 yield '<srw:extraResponseData>'
                 headerWritten = True
             yield line
+
+        if self._includeQueryTimes:
+            t_sru_ms = Decimal(str(self._timeNow() - startTime)).quantize(millis)
+            t_queryTime_ms = Decimal(queryTime).quantize(millis)
+            if hasattr(response, "queryTime"):
+                t_index_ms = (Decimal(response.queryTime)/1000).quantize(millis)
+            else:
+                t_index_ms = -1
+
+            if not headerWritten:
+                yield '<srw:extraResponseData>'
+                headerWritten = True
+            yield """
+        <querytimes xmlns="http://meresco.org/namespace/timing">
+            <sruHandling>PT%(sru)sS</sruHandling>
+            <sruQueryTime>PT%(queryTime)sS</sruQueryTime>
+            <index>PT%(index)sS</index>
+        </querytimes>
+    """ % {'sru': t_sru_ms, 'queryTime': t_queryTime_ms, 'index': t_index_ms}
+
         if headerWritten:
             yield '</srw:extraResponseData>'
+
 
     def _extraResponseDataTryExcept(self, **kwargs):
         try:
