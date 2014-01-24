@@ -4,12 +4,14 @@
     <xs:element name="querytimes" type="ti:queryTimes"/>
     <xs:complexType name="queryTimes">
         <xs:all minOccurs="1" maxOccurs="1">
-            <xs:element ref="ti:sru" minOccurs="0" maxOccurs="1"></xs:element>
+            <xs:element ref="ti:sruHandling" minOccurs="0" maxOccurs="1"></xs:element>
+            <xs:element ref="ti:sruQueryTime" minOccurs="0" maxOccurs="1"></xs:element>
             <xs:element ref="ti:index" minOccurs="0" maxOccurs="1"></xs:element>
         </xs:all>
     </xs:complexType>
 
-    <xs:element name="sru" type="xs:duration"/>
+    <xs:element name="sruHandling" type="xs:duration"/>
+    <xs:element name="sruQueryTime" type="xs:duration"/>
     <xs:element name="index" type="xs:duration"/>
 </xs:schema>
 

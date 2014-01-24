@@ -8,8 +8,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
@@ -704,7 +704,7 @@ class SruHandlerTest(SeecrTestCase):
         handler = SruHandler(includeQueryTimes=True)
         observer = CallTrace('observer', emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData'])
 
-        times = [1, 2.5]
+        times = [1, 2.5, 3.5]
         def timeNow():
             return times.pop(0)
         handler._timeNow = timeNow
@@ -722,7 +722,8 @@ class SruHandlerTest(SeecrTestCase):
         extraResponseData = sruResponse.xpath('/srw:searchRetrieveResponse/srw:extraResponseData', namespaces={'srw':"http://www.loc.gov/zing/srw/"})[0]
         self.assertEqualsWS("""<srw:extraResponseData xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
         <querytimes xmlns="http://meresco.org/namespace/timing">
-            <sru>PT1.500S</sru>
+            <sruHandling>PT2.500S</sruHandling>
+            <sruQueryTime>PT1.500S</sruQueryTime>
             <index>PT0.005S</index>
         </querytimes>
 </srw:extraResponseData>""", lxmltostring(extraResponseData))

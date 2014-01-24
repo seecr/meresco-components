@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
@@ -115,7 +115,7 @@ class SruHandler(Observable):
 
         yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
         yield self._writeDiagnostics(diagnostics=diagnostics)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, sruArguments=sruArguments, **kwargs)
+        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, **kwargs)
         yield self._endResults()
 
     def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
@@ -138,13 +138,14 @@ class SruHandler(Observable):
             yield self._createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
         yield '</srw:diagnostics>'
 
-    def _writeExtraResponseData(self, response=None, queryTime=None, **kwargs):
+    def _writeExtraResponseData(self, response=None, queryTime=None, startTime=None, **kwargs):
         result = compose(self._extraResponseDataTryExcept(response=response, queryTime=queryTime, **kwargs))
         headerWritten = False
 
-        if self._includeQueryTimes:    
+        if self._includeQueryTimes:
             headerWritten = True
-            t_sru_ms = Decimal(queryTime).quantize(millis)
+            t_sru_ms = Decimal(str(self._timeNow() - startTime)).quantize(millis)
+            t_queryTime_ms = Decimal(queryTime).quantize(millis)
             if hasattr(response, "queryTime"):
                 t_index_ms = (Decimal(response.queryTime)/1000).quantize(millis)
             else:
@@ -152,10 +153,11 @@ class SruHandler(Observable):
 
             yield """<srw:extraResponseData>
         <querytimes xmlns="http://meresco.org/namespace/timing">
-            <sru>PT%(sru)sS</sru>
+            <sruHandling>PT%(sru)sS</sruHandling>
+            <sruQueryTime>PT%(queryTime)sS</sruQueryTime>
             <index>PT%(index)sS</index>
         </querytimes>
-    """ % {'sru': t_sru_ms, 'index': t_index_ms}
+    """ % {'sru': t_sru_ms, 'queryTime': t_queryTime_ms, 'index': t_index_ms}
 
         for line in result:
             if line is Yield or callable(line):
@@ -176,7 +178,7 @@ class SruHandler(Observable):
 
     def _startResults(self, numberOfRecords, version):
         yield RESPONSE_HEADER
-        yield '<srw:version>%s</srw:version>' % version 
+        yield '<srw:version>%s</srw:version>' % version
         yield '<srw:numberOfRecords>%s</srw:numberOfRecords>' % numberOfRecords
 
     def _endResults(self):
@@ -186,7 +188,7 @@ class SruHandler(Observable):
         yield '<srw:record>'
         yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(recordSchema)
         yield '<srw:recordPacking>%s</srw:recordPacking>' % xmlEscape(recordPacking)
-        if version == "1.2": 
+        if version == "1.2":
             yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % xmlEscape(recordId)
         yield self._writeRecordData(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId)
         yield self._writeExtraRecordData(recordPacking=recordPacking, recordId=recordId, **kwargs)
