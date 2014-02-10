@@ -3,7 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -27,3 +28,7 @@ class Response(object):
     def __init__(self, total=0, hits=None):
         self.total = total
         self.hits = hits or []
+
+class Hit(object):
+    def __init__(self, id):
+        self.id = id

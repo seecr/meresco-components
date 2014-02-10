@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -36,7 +36,7 @@ from testhelpers import Response
 from meresco.core import asyncnoreturnvalue
 from lxml.etree import XML
 from meresco.xml import xpath
-from testhelpers import Response as SolrResponse
+from testhelpers import Response, Hit
 
 from weightless.core import compose
 from weightless.core.utils import asString
@@ -72,10 +72,10 @@ class SrwTest(SeecrTestCase):
         self.srw = Srw()
         self.sruParser = SruParser()
         self.sruHandler = SruHandler()
-        
+
         self.srw.addObserver(self.sruParser)
         self.sruParser.addObserver(self.sruHandler)
-        self.response = StopIteration(SolrResponse(total=1, hits=['0']))
+        self.response = StopIteration(Response(total=1, hits=[Hit('0')]))
         def executeQuery(**kwargs):
             raise self.response
             yield
@@ -167,7 +167,7 @@ Content-Type: text/xml; charset=utf-8
 
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
-        self.response = StopIteration(Response(total=1, hits=['recordId']))
+        self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
         self.observer.methods['yieldRecord'] = lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
 
         result = "".join(compose(self.srw.handleRequest(Body=request)))
@@ -209,7 +209,7 @@ Content-Type: text/xml; charset=utf-8
   </SOAP:Body>
 </SOAP:Envelope>"""
 
-        self.response = StopIteration(Response(total=1, hits=['recordId']))
+        self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
         self.observer.methods['yieldRecord'] = lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
         response = "".join(compose(self.srw.handleRequest(Body=request)))
 
@@ -233,7 +233,7 @@ Content-Type: text/xml; charset=utf-8
         sruParser = SruParser()
         srw.addObserver(sruParser)
         sruParser.addObserver(self.sruHandler)
-        response = Response(total=1, hits=[1])
+        response = Response(total=1, hits=[Hit(1)])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield

@@ -30,22 +30,21 @@
 #
 ## end license ##
 
-from xml.sax.saxutils import quoteattr, escape as xmlEscape
+from xml.sax.saxutils import escape as xmlEscape
 
 from meresco.core import Observable, decorate
-from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+from meresco.components.drilldown import DEFAULT_MAXIMUM_TERMS
 from meresco.components.sru.sruparser import SruException
 from weightless.core import compose, Yield
 
 from cqlparser import parseString as parseCQL
-from warnings import warn
 
 from time import time
 from decimal import Decimal
 from traceback import print_exc
 
-from diagnostic import createDiagnostic, DIAGNOSTIC, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
-from sruparser import DIAGNOSTICS, RESPONSE_HEADER, RESPONSE_FOOTER
+from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
+from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
@@ -87,7 +86,7 @@ class SruHandler(Observable):
                     facets=facets,
                     extraArguments=extraArguments,
                     **kwargs)
-            total, recordIds = response.total, response.hits
+            total, hits = response.total, response.hits
             drilldownData = getattr(response, "drilldownData", None)
         except Exception, e:
             print_exc()
@@ -101,10 +100,10 @@ class SruHandler(Observable):
         yield self._startResults(total, version)
 
         recordsWritten = 0
-        for recordId in recordIds:
+        for hit in hits:
             if not recordsWritten:
                 yield '<srw:records>'
-            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId, version=version, sruArguments=sruArguments, **kwargs)
+            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, hit=hit, version=version, sruArguments=sruArguments, **kwargs)
             recordsWritten += 1
 
         if recordsWritten:
@@ -191,14 +190,14 @@ class SruHandler(Observable):
     def _endResults(self):
         yield RESPONSE_FOOTER
 
-    def _writeResult(self, recordSchema=None, recordPacking=None, recordId=None, version=None, **kwargs):
+    def _writeResult(self, recordSchema=None, recordPacking=None, hit=None, version=None, **kwargs):
         yield '<srw:record>'
         yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(recordSchema)
         yield '<srw:recordPacking>%s</srw:recordPacking>' % xmlEscape(recordPacking)
         if version == "1.2":
-            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % xmlEscape(recordId)
-        yield self._writeRecordData(recordSchema=recordSchema, recordPacking=recordPacking, recordId=recordId)
-        yield self._writeExtraRecordData(recordPacking=recordPacking, recordId=recordId, **kwargs)
+            yield '<srw:recordIdentifier>%s</srw:recordIdentifier>' % xmlEscape(hit.id)
+        yield self._writeRecordData(recordSchema=recordSchema, recordPacking=recordPacking, recordId=hit.id)
+        yield self._writeExtraRecordData(recordPacking=recordPacking, hit=hit, **kwargs)
         yield '</srw:record>'
 
     def _writeRecordData(self, recordSchema=None, recordPacking=None, recordId=None):
@@ -219,20 +218,20 @@ class SruHandler(Observable):
         yield self._catchErrors(self._yieldRecordForRecordPacking(recordId, schema, recordPacking), schema, recordId)
         yield '</recordData>'
 
-    def _writeExtraRecordData(self, sruArguments=None, recordPacking=None, recordId=None, **kwargs):
+    def _writeExtraRecordData(self, sruArguments=None, recordPacking=None, hit=None, **kwargs):
         if not 'x-recordSchema' in sruArguments:
             raise StopIteration()
 
         yield '<srw:extraRecordData>'
         for schema in sruArguments['x-recordSchema']:
             if not self._extraRecordDataNewStyle:
-                yield self._writeOldStyleExtraRecordData(schema, recordPacking, recordId)
+                yield self._writeOldStyleExtraRecordData(schema, recordPacking, hit.id)
                 continue
             yield '<srw:record>'
             yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(schema)
             yield '<srw:recordPacking>%s</srw:recordPacking>' % recordPacking
             yield '<srw:recordData>'
-            yield self._catchErrors(self._yieldRecordForRecordPacking(recordId, schema, recordPacking), schema, recordId)
+            yield self._catchErrors(self._yieldRecordForRecordPacking(hit.id, schema, recordPacking), schema, hit.id)
             yield '</srw:recordData>'
             yield '</srw:record>'
         yield '</srw:extraRecordData>'

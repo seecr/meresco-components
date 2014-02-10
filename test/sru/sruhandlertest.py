@@ -50,7 +50,7 @@ from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
-from testhelpers import Response
+from testhelpers import Response, Hit
 from meresco.core import Observable
 
 from seecr.test import SeecrTestCase, CallTrace
@@ -324,7 +324,7 @@ class SruHandlerTest(SeecrTestCase):
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
 
         observer = CallTrace()
-        response = Response(total=100, hits=['<aap&noot>', 'vuur'])
+        response = Response(total=100, hits=[Hit('<aap&noot>'), Hit('vuur')])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -438,7 +438,7 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore']}
 
         observer = CallTrace()
-        response = Response(total=100, hits=['11'])
+        response = Response(total=100, hits=[Hit('11')])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -545,7 +545,7 @@ class SruHandlerTest(SeecrTestCase):
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
 
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
-        response = Response(total=100, hits=['<aap&noot>', 'vuur'])
+        response = Response(total=100, hits=[Hit('<aap&noot>'), Hit('vuur')])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -681,7 +681,7 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(sruHandler)
         observer = CallTrace('observer')
         sruHandler.addObserver(observer)
-        response = Response(total=2, hits=['id0', 'id1'])
+        response = Response(total=2, hits=[Hit('id0'), Hit('id1')])
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
@@ -787,4 +787,4 @@ namespaces = {
         'diag': "http://www.loc.gov/zing/srw/diagnostic/",
     }
 def hitsRange(*args):
-    return ['%s' % i for i in range(*args)]
+    return [Hit('%s' % i) for i in range(*args)]
