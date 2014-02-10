@@ -35,7 +35,7 @@ from meresco.components.sru.srw import Srw
 from testhelpers import Response
 from meresco.core import asyncnoreturnvalue
 from lxml.etree import XML
-from meresco.xml import xpath
+from meresco.xml import xpath, namespaces
 from testhelpers import Response, Hit
 
 from weightless.core import compose
@@ -57,7 +57,7 @@ echoedSearchRetrieveRequest = """<srw:echoedSearchRetrieveRequest>
 <srw:recordSchema>dc</srw:recordSchema>
 </srw:echoedSearchRetrieveRequest>"""
 
-searchRetrieveResponse = """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">\n<srw:version>1.1</srw:version><srw:numberOfRecords>%i</srw:numberOfRecords>%s</srw:searchRetrieveResponse>"""
+searchRetrieveResponse = """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>\n<srw:version>1.1</srw:version><srw:numberOfRecords>%%i</srw:numberOfRecords>%%s</srw:searchRetrieveResponse>""" % namespaces
 
 wrappedMockAnswer = searchRetrieveResponse % (1, '<srw:records><srw:record><srw:recordSchema>dc</srw:recordSchema><srw:recordPacking>xml</srw:recordPacking><srw:recordData><DATA>%s-dc</DATA></srw:recordData></srw:record></srw:records>' + echoedSearchRetrieveRequest)
 
@@ -87,7 +87,8 @@ class SrwTest(SeecrTestCase):
                 'extraResponseData',
                 'echoedExtraRequestData',
                 'additionalDiagnosticDetails',
-                'yieldRecord'
+                'yieldRecord',
+                'extraRecordData'
             ])
         self.sruHandler.addObserver(self.observer)
 
@@ -126,12 +127,12 @@ Content-Type: text/xml; charset=utf-8
 
         response = "".join(self.srw.handleRequest(Body=request))
 
-        self.assertEqualsWS(httpResponse % soapEnvelope % """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+        self.assertEqualsWS(httpResponse % soapEnvelope % """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
 <srw:version>1.1</srw:version><srw:numberOfRecords>0</srw:numberOfRecords><srw:diagnostics><diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
         <uri>info://srw/diagnostics/1/8</uri>
         <details>illegalParameter</details>
         <message>Unsupported Parameter</message>
-    </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
+    </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""" % namespaces, response)
 
     def testNonSRWArguments(self):
         """Arguments that are part of SRU, but not of SRW (operation (done), stylesheet)
@@ -140,12 +141,12 @@ Content-Type: text/xml; charset=utf-8
 
         response = "".join(self.srw.handleRequest(Body=request))
 
-        self.assertEqualsWS(httpResponse % soapEnvelope % """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+        self.assertEqualsWS(httpResponse % soapEnvelope % """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
 <srw:version>1.1</srw:version><srw:numberOfRecords>0</srw:numberOfRecords><srw:diagnostics><diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
         <uri>info://srw/diagnostics/1/8</uri>
         <details>stylesheet</details>
         <message>Unsupported Parameter</message>
-    </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
+    </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""" % namespaces, response)
 
 
     def testOperationIsIllegal(self):
@@ -153,12 +154,12 @@ Content-Type: text/xml; charset=utf-8
 
         response = "".join(self.srw.handleRequest(Body=request))
 
-        self.assertEqualsWS(httpResponse % soapEnvelope % """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+        self.assertEqualsWS(httpResponse % soapEnvelope % """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
 <srw:version>1.1</srw:version><srw:numberOfRecords>0</srw:numberOfRecords><srw:diagnostics><diagnostic xmlns="http://www.loc.gov/zing/srw/diagnostic/">
         <uri>info://srw/diagnostics/1/4</uri>
         <details>explain</details>
         <message>Unsupported Operation</message>
-    </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""", response)
+    </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""" % namespaces, response)
 
     def testContentType(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ''
@@ -249,6 +250,7 @@ Content-Type: text/xml; charset=utf-8
             },
             emptyGeneratorMethods=[
                 'additionalDiagnosticDetails',
+                'extraRecordData',
             ])
 
         self.sruHandler.addObserver(observer)

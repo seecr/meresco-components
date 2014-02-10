@@ -55,6 +55,7 @@ from meresco.core import Observable
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
+from meresco.xml import namespaces
 
 SUCCESS = "SUCCESS"
 
@@ -168,6 +169,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in 'record')
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
 
         component = SruHandler(drilldownSortBy='somevalue')
         component.addObserver(observer)
@@ -176,7 +178,7 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = queryArguments
         sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
-        self.assertEquals(['executeQuery'] + ['yieldRecord'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['executeQuery'] + ['yieldRecord', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([
             dict(fieldname='field0', maxTerms=1, sortBy='somevalue'),
             dict(fieldname='fie:ld1', maxTerms=2, sortBy='somevalue'),
@@ -196,6 +198,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in "record")
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
 
         component = SruHandler()
         component.addObserver(observer)
@@ -218,6 +221,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in "record")
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
 
         component = SruHandler()
         component.addObserver(observer)
@@ -245,6 +249,7 @@ class SruHandlerTest(SeecrTestCase):
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
 
         component = SruHandler()
         component.addObserver(observer)
@@ -252,7 +257,7 @@ class SruHandlerTest(SeecrTestCase):
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
 
         self.assertEqualsWS("""
-<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
     <srw:version>1.1</srw:version>
     <srw:numberOfRecords>100</srw:numberOfRecords>
     <srw:records>
@@ -317,7 +322,7 @@ class SruHandlerTest(SeecrTestCase):
     </srw:echoedSearchRetrieveRequest>
     <srw:extraResponseData>extraResponseData</srw:extraResponseData>
 </srw:searchRetrieveResponse>
-""", result)
+""" % namespaces, result)
 
     def testSearchRetrieveVersion12(self):
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore'], 'x-extra-key': 'extraValue'}
@@ -338,19 +343,22 @@ class SruHandlerTest(SeecrTestCase):
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
 
         component = SruHandler()
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
-        self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        executeQueryMethod, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
+        self.assertEquals(['executeQuery', 'extraRecordData', 'extraRecordData', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        executeQueryMethod, extraRecordData1, extraRecordData2, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
         self.assertEquals('executeQuery', executeQueryMethod.name)
         methodKwargs = executeQueryMethod.kwargs
         self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
         self.assertEquals(0, methodKwargs['start'])
         self.assertEquals(2, methodKwargs['stop'])
         self.assertEquals({'x-recordSchema': ['extra', 'evenmore'], 'x-extra-key': 'extraValue'}, methodKwargs['extraArguments'])
+        self.assertEquals('<aap&noot>', extraRecordData1.kwargs['hit'].id)
+        self.assertEquals('vuur', extraRecordData2.kwargs['hit'].id)
 
         self.assertEquals(6, sum(yieldRecordCalls))
 
@@ -359,7 +367,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(['<aap&noot>', 'vuur'], ids)
 
         self.assertEqualsWS("""
-<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
     <srw:version>1.2</srw:version>
     <srw:numberOfRecords>100</srw:numberOfRecords>
     <srw:records>
@@ -426,7 +434,7 @@ class SruHandlerTest(SeecrTestCase):
     </srw:echoedSearchRetrieveRequest>
     <srw:extraResponseData>extraResponseData</srw:extraResponseData>
 </srw:searchRetrieveResponse>
-""", result)
+""" % namespaces, result)
 
         self.assertEquals((), echoedExtraRequestDataMethod.args)
         self.assertEquals(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
@@ -452,6 +460,8 @@ class SruHandlerTest(SeecrTestCase):
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
+
         component = SruHandler(extraRecordDataNewStyle=False)
         component.addObserver(observer)
 
@@ -472,6 +482,43 @@ class SruHandlerTest(SeecrTestCase):
                 <recordData recordSchema="evenmore">
                     <MOCKED_WRITTEN_DATA>11-evenmore</MOCKED_WRITTEN_DATA>
                 </recordData>
+            </srw:extraRecordData>
+        </srw:record>""", strippedResult)
+
+    def testExtraRecordDataFromObserver(self):
+        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
+        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
+
+        observer = CallTrace()
+        response = Response(total=100, hits=[Hit('11')])
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        yieldRecordCalls = []
+        def yieldRecord(identifier, partname):
+            yieldRecordCalls.append(1)
+            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
+        observer.yieldRecord = yieldRecord
+
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (x for x in "<hit>%s</hit>" % hit.id)
+        component = SruHandler(extraRecordDataNewStyle=False)
+        component.addObserver(observer)
+
+        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+        strippedResult = result[result.index('<srw:record>'):result.index('</srw:records>')]
+        self.assertEqualsWS("""<srw:record>
+            <srw:recordSchema>schema</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordIdentifier>11</srw:recordIdentifier>
+            <srw:recordData>
+                <MOCKED_WRITTEN_DATA>11-schema</MOCKED_WRITTEN_DATA>
+            </srw:recordData>
+            <srw:extraRecordData>
+                <hit>11</hit>
             </srw:extraRecordData>
         </srw:record>""", strippedResult)
 
@@ -559,6 +606,7 @@ class SruHandlerTest(SeecrTestCase):
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
 
         component = SruHandler()
         component.addObserver(observer)
@@ -688,6 +736,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['executeQuery'] = executeQuery
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
         observer.methods['yieldRecord'] = lambda *args, **kwargs: (x for x in '<bike/>')
 
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
@@ -721,13 +770,13 @@ class SruHandlerTest(SeecrTestCase):
         result = "".join(compose(handler.searchRetrieve(sruArguments=arguments, **arguments)))
         sruResponse = parse(StringIO(result))
         extraResponseData = sruResponse.xpath('/srw:searchRetrieveResponse/srw:extraResponseData', namespaces={'srw':"http://www.loc.gov/zing/srw/"})[0]
-        self.assertEqualsWS("""<srw:extraResponseData xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+        self.assertEqualsWS("""<srw:extraResponseData %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
         <querytimes xmlns="http://meresco.org/namespace/timing">
             <sruHandling>PT2.500S</sruHandling>
             <sruQueryTime>PT1.500S</sruQueryTime>
             <index>PT0.005S</index>
         </querytimes>
-</srw:extraResponseData>""", lxmltostring(extraResponseData))
+</srw:extraResponseData>""" % namespaces, lxmltostring(extraResponseData))
         queryTimes = lxmltostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
         assertValid(queryTimes, join(schemasPath, 'timing-20120827.xsd'))
         self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData', 'handleQueryTimes'], observer.calledMethodNames())
@@ -781,10 +830,5 @@ class SruHandlerTest(SeecrTestCase):
 def xpath(lxmlNode, path):
     return lxmlNode.xpath(path, namespaces=namespaces)
 
-namespaces = {
-        'ti': "http://meresco.org/namespace/timing",
-        'srw': "http://www.loc.gov/zing/srw/",
-        'diag': "http://www.loc.gov/zing/srw/diagnostic/",
-    }
 def hitsRange(*args):
     return [Hit('%s' % i) for i in range(*args)]

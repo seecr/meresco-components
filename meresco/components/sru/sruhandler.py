@@ -219,11 +219,19 @@ class SruHandler(Observable):
         yield '</recordData>'
 
     def _writeExtraRecordData(self, sruArguments=None, recordPacking=None, hit=None, **kwargs):
-        if not 'x-recordSchema' in sruArguments:
-            raise StopIteration()
+        generator = compose(self.all.extraRecordData(hit=hit))
 
-        yield '<srw:extraRecordData>'
-        for schema in sruArguments['x-recordSchema']:
+        started = False
+        for data in generator:
+            if not started:
+                yield '<srw:extraRecordData>'
+                started = True
+            yield data
+
+        for schema in sruArguments.get('x-recordSchema', []):
+            if not started:
+                yield '<srw:extraRecordData>'
+                started = True
             if not self._extraRecordDataNewStyle:
                 yield self._writeOldStyleExtraRecordData(schema, recordPacking, hit.id)
                 continue
@@ -234,7 +242,8 @@ class SruHandler(Observable):
             yield self._catchErrors(self._yieldRecordForRecordPacking(hit.id, schema, recordPacking), schema, hit.id)
             yield '</srw:recordData>'
             yield '</srw:record>'
-        yield '</srw:extraRecordData>'
+        if started:
+            yield '</srw:extraRecordData>'
 
     def _yieldRecordForRecordPacking(self, recordId=None, recordSchema=None, recordPacking=None):
         generator = compose(self.all.yieldRecord(identifier=recordId, partname=recordSchema))

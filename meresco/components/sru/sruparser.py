@@ -8,8 +8,8 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Seecr http://seecr.nl
-# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -34,13 +34,14 @@ from xml.sax.saxutils import escape as xmlEscape
 
 from meresco.core import Observable
 from meresco.components.http import utils as httputils
+from meresco.xml import namespaces
 
 from cqlparser import parseString, CQLParseException, CQLTokenizerException
 
 from weightless.core import compose
 
 from diagnostic import DIAGNOSTIC
-from diagnostic import GENERAL_SYSTEM_ERROR, SYSTEM_TEMPORARILY_UNAVAILABLE, UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
+from diagnostic import UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
 
 DEFAULT_VERSION = '1.1'
 SUPPORTED_VERSIONS = ['1.1', '1.2']
@@ -60,8 +61,7 @@ MANDATORY_PARAMETERS = {
 SUPPORTED_OPERATIONS = ['explain', 'searchRetrieve']
 
 
-RESPONSE_HEADER = """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/">
-"""
+RESPONSE_HEADER = """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>""" % namespaces
 
 RESPONSE_FOOTER = """</srw:searchRetrieveResponse>"""
 
@@ -207,7 +207,7 @@ class SruParser(Observable):
             raise SruException(UNSUPPORTED_PARAMETER_VALUE, "Parameters are not properly 'utf-8' encoded.")
 
     def _explain(self, arguments, RequestURI, Headers, **kwargs):
-        version = arguments['version'][0]        
+        version = arguments['version'][0]
         host = self._host or Headers['Host'].split(':')[0]
         port = self._port or Headers['Host'][len(host) + 1:] or '80'
         database = self._database or RequestURI.lstrip('/').split('?')[0]

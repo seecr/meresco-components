@@ -3,12 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
-# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -28,10 +24,10 @@
 #
 ## end license ##
 
-from sruhandler import SruHandler
-from sruparser import SruParser, SruException
-from srurecordupdate import SruRecordUpdate, SRURecordUpdate
-from sruupdateclient import SruUpdateClient, SruUpdateException
-from srw import Srw
-from srulimitstartrecord import SruLimitStartRecord
-from sruduplicatecount import SruDuplicateCount
+class SruDuplicateCount(object):
+
+    def extraRecordData(self, hit):
+        if not hasattr(hit, 'duplicateCount'):
+            return
+        for item in hit.duplicateCount.items():
+            yield "<meresco_srw:duplicateCount fieldname='%s'>%s<meresco_srw:duplicateCount>" % item
