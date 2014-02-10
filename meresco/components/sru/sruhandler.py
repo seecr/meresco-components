@@ -163,13 +163,15 @@ class SruHandler(Observable):
             if not headerWritten:
                 yield '<srw:extraResponseData>'
                 headerWritten = True
+            queryTimeDict = {'sru': t_sru_ms, 'queryTime': t_queryTime_ms, 'index': t_index_ms}
             yield """
         <querytimes xmlns="http://meresco.org/namespace/timing">
             <sruHandling>PT%(sru)sS</sruHandling>
             <sruQueryTime>PT%(queryTime)sS</sruQueryTime>
             <index>PT%(index)sS</index>
         </querytimes>
-    """ % {'sru': t_sru_ms, 'queryTime': t_queryTime_ms, 'index': t_index_ms}
+    """ % queryTimeDict
+            self.do.handleQueryTimes(**queryTimeDict)
 
         if headerWritten:
             yield '</srw:extraResponseData>'

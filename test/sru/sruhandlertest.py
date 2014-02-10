@@ -34,6 +34,7 @@
 from os.path import join
 from StringIO import StringIO
 from urllib2 import urlopen
+from decimal import Decimal
 
 from lxml.etree import parse
 from meresco.components import lxmltostring
@@ -729,6 +730,8 @@ class SruHandlerTest(SeecrTestCase):
 </srw:extraResponseData>""", lxmltostring(extraResponseData))
         queryTimes = lxmltostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
         assertValid(queryTimes, join(schemasPath, 'timing-20120827.xsd'))
+        self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData', 'handleQueryTimes'], observer.calledMethodNames())
+        self.assertEquals({'sru': Decimal("2.500"), 'queryTime': Decimal("1.500"), 'index': Decimal("0.005")}, observer.calledMethods[3].kwargs)
 
     def testTestXsdEqualsPublishedXsd(self):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
