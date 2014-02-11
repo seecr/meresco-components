@@ -30,4 +30,4 @@ class SruDuplicateCount(object):
         if not hasattr(hit, 'duplicateCount'):
             return
         for item in hit.duplicateCount.items():
-            yield "<meresco_srw:duplicateCount fieldname='%s'>%s<meresco_srw:duplicateCount>" % item
+            yield "<meresco_srw:duplicateCount fieldname='%s'>%s</meresco_srw:duplicateCount>" % item

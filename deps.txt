@@ -8,7 +8,7 @@ python-lxml (<<3.0)
 python-magic
 python-meresco-core (>= 4.0.4)
 python-meresco-core (<< 4.1)
-python-meresco-xml (>= 4.1.2)
+python-meresco-xml (>= 4.1.7)
 python-meresco-xml (<< 4.2)
 python-storage (>= 6.0.3)
 python-storage (<< 6.1)
