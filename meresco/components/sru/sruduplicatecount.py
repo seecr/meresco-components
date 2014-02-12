@@ -31,3 +31,8 @@ class SruDuplicateCount(object):
             return
         for item in hit.duplicateCount.items():
             yield "<meresco_srw:duplicateCount fieldname='%s'>%s</meresco_srw:duplicateCount>" % item
+
+    def extraResponseData(self, response, **kwargs):
+        totalWithDuplicates = getattr(response, "totalWithDuplicates", None)
+        if totalWithDuplicates is not None:
+            yield "<meresco_srw:numberOfRecordsWithDuplicates>%s</meresco_srw:numberOfRecordsWithDuplicates>" % totalWithDuplicates
