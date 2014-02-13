@@ -33,7 +33,7 @@ from urllib import urlencode
 from StringIO import StringIO
 from lxml.etree import parse
 
-from testhelpers import Response
+from testhelpers import Response, Hit
 from meresco.components.rss import Rss
 
 from weightless.core import compose
@@ -84,8 +84,9 @@ class RssTest(SeecrTestCase):
                 'getRecord': '<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>',
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
+        
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=1, hits=[1]))
+            raise StopIteration(Response(total=1, hits=[Hit(1)]))
             yield
         observer.methods['executeQuery'] = executeQuery
 
@@ -148,9 +149,9 @@ class RssTest(SeecrTestCase):
         def getRecord(identifier):
             recordIds.append(identifier)
             return '<item/>'
-
+    
         def executeQuery(start, stop, *args, **kwargs):
-            response = Response(total=50, hits=range(start, stop))
+            response = Response(total=50, hits=[Hit(i) for i in range(start, stop)])
             raise StopIteration(response)
             yield
         observer = CallTrace(

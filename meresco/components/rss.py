@@ -111,5 +111,5 @@ class Rss(Observable):
             sortKeys=[{'sortBy': sortBy, 'sortDescending': sortDescending}] if sortBy is not None else None
         )
         total, hits = response.total, response.hits
-        for identifier in hits:
-            yield self.call.getRecord(identifier=identifier)
+        for hit in hits:
+            yield self.call.getRecord(identifier=hit.id)
