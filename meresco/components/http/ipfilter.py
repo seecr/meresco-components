@@ -34,9 +34,9 @@ class IpFilter(HandleRequestFilter):
 
     def __init__(self, name=None, allowedIps=None, allowedIpRanges=None):
         super(IpFilter, self).__init__(name=name, filterMethod=self._filter)
-        self._allowedIps = allowedIps if allowedIps else []
-        self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
-            for start,end in allowedIpRanges] if allowedIpRanges else []
+        self._allowedIps = set(allowedIps) if allowedIps else set()
+        self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
+            for start,end in allowedIpRanges]) if allowedIpRanges else set()
 
     def _filter(self, Client, Headers, **kwargs):
         ipaddress = Client[0] if Client != None else '0.0.0.0'
@@ -57,10 +57,10 @@ class IpFilter(HandleRequestFilter):
 
     def updateIps(self, ipAddresses=None, ipRanges=None):
         if ipAddresses is not None:
-            self._allowedIps = ipAddresses
+            self._allowedIps = set(ipAddresses)
         if ipRanges is not None:
-            self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
-                for start,end in ipRanges]
+            self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
+                for start,end in ipRanges])
 
     @staticmethod
     def convertToNumber(ip):

@@ -137,7 +137,7 @@ class DeproxyTest(TestCase):
         self.assertEquals(False, allowDeproxying('127.0.0.1'))
         self.assertEquals(False, allowDeproxying('10.0.0.1'))
 
-        self.deproxy.updateIps(ipAddresses='192.168.96.96', ipRanges=[('10.0.0.0', '10.0.0.2')])
+        self.deproxy.updateIps(ipAddresses=['192.168.96.96'], ipRanges=[('10.0.0.0', '10.0.0.2')])
         self.assertEquals(True, allowDeproxying('192.168.96.96'))
         self.assertEquals(True, allowDeproxying('10.0.0.1'))
         self.assertEquals(False, allowDeproxying('127.7.7.7'))
