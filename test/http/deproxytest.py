@@ -113,9 +113,6 @@ class DeproxyTest(TestCase):
         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
         self.assertEquals("80", handleRequestCallKwargs['port'])
 
-    def testDeproxyMustHaveIps(self):
-        self.assertRaises(ValueError, Deproxy)
-
     def testDeproxyForIps(self):
         self.createTree(deproxyForIps=['3.3.3.3'])
         consume(self.top.all.handleRequest(

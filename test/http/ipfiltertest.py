@@ -117,6 +117,18 @@ class IpFilterTest(TestCase):
         self.assertInvalidIp('192.168.2.0', ipranges=[('192.168.1.0', '192.168.1.255')])
         self.assertInvalidIp('192.168.0.255', ipranges=[('192.168.1.0', '192.168.1.255')])
 
+    def testFilterIpAddress(self):
+        ipf = IpFilter(allowedIps=['10.0.0.1'])
+        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1'))
+        self.assertEquals(True, ipf.filterIpAddress(ipaddress='10.0.0.1'))
+
+        Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.99.99.99'}
+        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
+        Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.0.0.1'}
+        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.99.99.99', Headers=Headers))
+
+        self.assertEquals(True, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
+
     def testConvertToNumber(self):
         iprange = IpFilter()
 

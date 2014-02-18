@@ -40,11 +40,12 @@ class IpFilter(HandleRequestFilter):
 
     def _filter(self, Client, Headers, **kwargs):
         ipaddress = Client[0] if Client != None else '0.0.0.0'
-        if 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
-            ipaddress = Headers['X-Meresco-Ipfilter-Fake-Ip']
-        return self.filterIpAddress(ipaddress)
+        return self.filterIpAddress(ipaddress, Headers)
 
-    def filterIpAddress(self, ipaddress):
+    def filterIpAddress(self, ipaddress, Headers=None):
+        if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
+            ipaddress = Headers['X-Meresco-Ipfilter-Fake-Ip']
+
         if ipaddress in self._allowedIps:
             return True
 
