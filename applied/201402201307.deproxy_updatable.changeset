@@ -1,0 +1,669 @@
+Changeset created on Thu Feb 20 13:07:55 UTC 2014 by Seecr (Seek You Too B.V.)
+
+Description: Deproxy updatable
+
+    Deproxy component is updatable using the updateIps method; IpFilter's
+    filterIpAddress takes an optional Headers-kwarg to facillitate
+    integration-testing of Deproxy.
+
+Baseline version: 4.9.16.1
+
+From 23f2d9911958b73266783a02782aa62794eaf9dd Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Mon, 17 Feb 2014 10:01:25 +0100
+Subject: [PATCH 1/5] TS: added updateIps to Deproxy component.
+
+Delegates to its IpFilter.
+---
+ meresco/components/http/deproxy.py |   23 ++++--
+ test/http/deproxytest.py           |  147 +++++++++++++++++++-----------------
+ 2 files changed, 91 insertions(+), 79 deletions(-)
+
+diff --git a/meresco/components/http/deproxy.py b/meresco/components/http/deproxy.py
+index 58eed02..46811c8 100644
+--- a/meresco/components/http/deproxy.py
++++ b/meresco/components/http/deproxy.py
+@@ -1,29 +1,30 @@
+ # -*- coding: utf-8 -*-
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from meresco.core import Observable
+@@ -47,6 +48,10 @@ class Deproxy(Observable):
+                 port = host.partition(':')[2] or '80'
+         yield self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, port=port, **kwargs)
+ 
++    def updateIps(self, ipAddresses=None, ipRanges=None):
++        self._ipfilter.updateIps(ipAddresses=ipAddresses, ipRanges=ipRanges)
++
++
+ def _firstFromCommaSeparated(s):
+     return s.split(",", 1)[0].strip()
+ 
+diff --git a/test/http/deproxytest.py b/test/http/deproxytest.py
+index 9578746..0ee2b8d 100644
+--- a/test/http/deproxytest.py
++++ b/test/http/deproxytest.py
+@@ -1,29 +1,30 @@
+ # -*- coding: utf-8 -*-
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from unittest import TestCase
+@@ -32,88 +33,72 @@ from meresco.core import Observable
+ 
+ from seecr.test import CallTrace
+ 
+-from meresco.components.http import Deproxy
++from meresco.core import Observable
+ 
+-from weightless.core import compose
++from meresco.components.http import Deproxy
+ 
++from weightless.core import compose, be, consume
+ 
+-def handleRequest(*args, **kwargs):
+-    return
+-    yield
+ 
+ class DeproxyTest(TestCase):
+-    def testClientInCaseNoXForwardedForHeader(self):
+-        clientfromxforwardedfor = Deproxy(deproxyForIps=['1.1.1.1'])
+-        observer = CallTrace(methods={'handleRequest': handleRequest})
+-        clientfromxforwardedfor.addObserver(observer)
++    def setUp(self):
++        TestCase.setUp(self)
+ 
+-        observable = Observable()
+-        observable.addObserver(clientfromxforwardedfor)
++        self.createTree(deproxyForIps=['1.1.1.1'])
+ 
+-        list(compose(observable.all.handleRequest(Client=("1.1.1.1", 11111), Headers={})))
++    def createTree(self, **kwargs):
++        self.deproxy = Deproxy(**kwargs)
++        self.observer = CallTrace('Observer', emptyGeneratorMethods=['handleRequest'])
++        self.top = be((Observable(),
++            (self.deproxy,
++                (self.observer,),
++            )
++        ))
+ 
+-        self.assertEquals(1, len(observer.calledMethods))
+-        handleRequestCallKwargs = observer.calledMethods[0].kwargs
++    def testClientInCaseNoXForwardedForHeader(self):
++        list(compose(self.top.all.handleRequest(Client=("1.1.1.1", 11111), Headers={})))
++
++        self.assertEquals(1, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+         self.assertEquals("1.1.1.1", handleRequestCallKwargs['Client'][0])
+         self.assertEquals({}, handleRequestCallKwargs['Headers'])
+ 
+-
+     def testDeproxy(self):
+-        clientfromxforwardedfor = Deproxy(deproxyForIps=['1.1.1.1'])
+-        observer = CallTrace(methods={'handleRequest': handleRequest})
+-        clientfromxforwardedfor.addObserver(observer)
+-
+-        observable = Observable()
+-        observable.addObserver(clientfromxforwardedfor)
+-
+-        list(compose(observable.all.handleRequest(
++        list(compose(self.top.all.handleRequest(
+             Client=("1.1.1.1", 11111),
+             Headers={"X-Forwarded-For": "2.2.2.2"})))
+ 
+-        self.assertEquals(1, len(observer.calledMethods))
+-        handleRequestCallKwargs = observer.calledMethods[0].kwargs
++        self.assertEquals(1, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
+         self.assertEquals({"X-Forwarded-For": "2.2.2.2"}, handleRequestCallKwargs['Headers'])
+ 
+     def testClientFromMulitpleXForwardedForEntries(self):
+-        clientfromxforwardedfor = Deproxy(deproxyForIps=['1.1.1.1'])
+-        observer = CallTrace(methods={'handleRequest': handleRequest})
+-        clientfromxforwardedfor.addObserver(observer)
+-
+-        observable = Observable()
+-        observable.addObserver(clientfromxforwardedfor)
+-
+-        list(compose(observable.all.handleRequest(
++        list(compose(self.top.all.handleRequest(
+              Client=("1.1.1.1", 11111),
+              Headers={"X-Forwarded-For": "2.2.2.2,3.3.3.3,4.4.4.4"})))
+ 
+-        self.assertEquals(1, len(observer.calledMethods))
+-        handleRequestCallKwargs = observer.calledMethods[0].kwargs
++        self.assertEquals(1, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
+         self.assertEquals({"X-Forwarded-For": "2.2.2.2,3.3.3.3,4.4.4.4"}, handleRequestCallKwargs['Headers'])
+ 
+-        list(compose(observable.all.handleRequest(
++        list(compose(self.top.all.handleRequest(
+              Client=("1.1.1.1", 11111),
+              Headers={"X-Forwarded-For": " 2.2.2.2 , 3.3.3.3,4.4.4.4"})))
+-        self.assertEquals("2.2.2.2", observer.calledMethods[1].kwargs['Client'][0])
++        self.assertEquals("2.2.2.2", self.observer.calledMethods[1].kwargs['Client'][0])
+ 
+     def testHostFromXForwardedHost(self):
+-        clientfromxforwardedfor = Deproxy(deproxyForIpRanges=[
++        self.createTree(deproxyForIpRanges=[
+             ('9.9.9.0', '9.9.9.255')])
+-        observer = CallTrace(methods={'handleRequest': handleRequest})
+-        clientfromxforwardedfor.addObserver(observer)
+-
+-        observable = Observable()
+-        observable.addObserver(clientfromxforwardedfor)
+-
+         Headers={
+             "Host": "1.1.1.1:11111",
+             "X-Forwarded-Host": "2.2.2.2:22222,3.3.3.3:33333,4.4.4.4:44444"
+         }
+-        list(compose(observable.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers)))
++        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
+ 
+-        self.assertEquals(1, len(observer.calledMethods))
+-        handleRequestCallKwargs = observer.calledMethods[0].kwargs
++        self.assertEquals(1, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+         self.assertEquals("2.2.2.2:22222", handleRequestCallKwargs['Headers']['Host'])
+         self.assertEquals("22222", handleRequestCallKwargs['port'])
+ 
+@@ -121,10 +106,10 @@ class DeproxyTest(TestCase):
+             "Host": "1.1.1.1:11111",
+             "X-Forwarded-Host": "2.2.2.2,3.3.3.3:33333,4.4.4.4:44444"
+         }
+-        list(compose(observable.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers)))
++        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
+ 
+-        self.assertEquals(2, len(observer.calledMethods))
+-        handleRequestCallKwargs = observer.calledMethods[1].kwargs
++        self.assertEquals(2, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[1].kwargs
+         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
+         self.assertEquals("80", handleRequestCallKwargs['port'])
+ 
+@@ -132,19 +117,41 @@ class DeproxyTest(TestCase):
+         self.assertRaises(ValueError, Deproxy)
+ 
+     def testDeproxyForIps(self):
+-        clientfromxforwardedfor = Deproxy(deproxyForIps=['3.3.3.3'])
+-        observer = CallTrace(methods={'handleRequest': handleRequest})
+-        clientfromxforwardedfor.addObserver(observer)
+-
+-        observable = Observable()
+-        observable.addObserver(clientfromxforwardedfor)
+-
+-        list(compose(observable.all.handleRequest(
++        self.createTree(deproxyForIps=['3.3.3.3'])
++        consume(self.top.all.handleRequest(
+             Client=("1.1.1.1", 11111),
+-            Headers={"X-Forwarded-For": "2.2.2.2"})))
++            Headers={"X-Forwarded-For": "2.2.2.2"}))
+ 
+-        self.assertEquals(1, len(observer.calledMethods))
+-        handleRequestCallKwargs = observer.calledMethods[0].kwargs
++        self.assertEquals(1, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+         self.assertEquals("1.1.1.1", handleRequestCallKwargs['Client'][0])
+         self.assertEquals({"X-Forwarded-For": "2.2.2.2"}, handleRequestCallKwargs['Headers'])
+ 
++    def testDeproxyUpdateIps(self):
++        # Expose updateIps from IpFilter
++        self.createTree(deproxyForIps=['127.7.7.7'])
++
++        # White box
++        allowDeproxying = lambda ip: self.deproxy._ipfilter.filterIpAddress(ip)
++        self.assertEquals(True, allowDeproxying('127.7.7.7'))
++        self.assertEquals(False, allowDeproxying('127.0.0.1'))
++        self.assertEquals(False, allowDeproxying('10.0.0.1'))
++
++        self.deproxy.updateIps(ipAddresses='192.168.96.96', ipRanges=[('10.0.0.0', '10.0.0.2')])
++        self.assertEquals(True, allowDeproxying('192.168.96.96'))
++        self.assertEquals(True, allowDeproxying('10.0.0.1'))
++        self.assertEquals(False, allowDeproxying('127.7.7.7'))
++        self.assertEquals(False, allowDeproxying('127.0.0.1'))
++
++        # Black box
++        consume(self.top.all.handleRequest(
++            Client=("192.168.96.96", 12345),
++            Headers={
++                "X-Forwarded-For": "2.2.2.2",
++                "X-Forwarded-Host": "example.org"}))
++
++        self.assertEquals(1, len(self.observer.calledMethods))
++        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
++        self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
++        self.assertEquals({"X-Forwarded-For": "2.2.2.2", "X-Forwarded-Host": "example.org", "Host": "example.org"}, handleRequestCallKwargs['Headers'])
++
+-- 
+1.7.1
+
+
+From 8901c7dd535263b0097a6c6111437dcddd217877 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Mon, 17 Feb 2014 15:49:48 +0100
+Subject: [PATCH 2/5] TS: implement IpFilter with sets of ips and ranges (i.s.o. lists).
+
+Simplifies processing of arguments before handing them over to IpFilter.
+---
+ meresco/components/http/ipfilter.py |   12 ++++++------
+ test/http/deproxytest.py            |    2 +-
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/meresco/components/http/ipfilter.py b/meresco/components/http/ipfilter.py
+index f5c0424..81b4a2b 100644
+--- a/meresco/components/http/ipfilter.py
++++ b/meresco/components/http/ipfilter.py
+@@ -34,9 +34,9 @@ class IpFilter(HandleRequestFilter):
+ 
+     def __init__(self, name=None, allowedIps=None, allowedIpRanges=None):
+         super(IpFilter, self).__init__(name=name, filterMethod=self._filter)
+-        self._allowedIps = allowedIps if allowedIps else []
+-        self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
+-            for start,end in allowedIpRanges] if allowedIpRanges else []
++        self._allowedIps = set(allowedIps) if allowedIps else set()
++        self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
++            for start,end in allowedIpRanges]) if allowedIpRanges else set()
+ 
+     def _filter(self, Client, Headers, **kwargs):
+         ipaddress = Client[0] if Client != None else '0.0.0.0'
+@@ -57,10 +57,10 @@ class IpFilter(HandleRequestFilter):
+ 
+     def updateIps(self, ipAddresses=None, ipRanges=None):
+         if ipAddresses is not None:
+-            self._allowedIps = ipAddresses
++            self._allowedIps = set(ipAddresses)
+         if ipRanges is not None:
+-            self._allowedIpRanges = [(self.convertToNumber(start), self.convertToNumber(end))
+-                for start,end in ipRanges]
++            self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
++                for start,end in ipRanges])
+ 
+     @staticmethod
+     def convertToNumber(ip):
+diff --git a/test/http/deproxytest.py b/test/http/deproxytest.py
+index 0ee2b8d..8d8d4f4 100644
+--- a/test/http/deproxytest.py
++++ b/test/http/deproxytest.py
+@@ -137,7 +137,7 @@ class DeproxyTest(TestCase):
+         self.assertEquals(False, allowDeproxying('127.0.0.1'))
+         self.assertEquals(False, allowDeproxying('10.0.0.1'))
+ 
+-        self.deproxy.updateIps(ipAddresses='192.168.96.96', ipRanges=[('10.0.0.0', '10.0.0.2')])
++        self.deproxy.updateIps(ipAddresses=['192.168.96.96'], ipRanges=[('10.0.0.0', '10.0.0.2')])
+         self.assertEquals(True, allowDeproxying('192.168.96.96'))
+         self.assertEquals(True, allowDeproxying('10.0.0.1'))
+         self.assertEquals(False, allowDeproxying('127.7.7.7'))
+-- 
+1.7.1
+
+
+From 02a9c57874b88c642d2025e99c34e04b5eaf1d4b Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Tue, 18 Feb 2014 12:10:05 +0100
+Subject: [PATCH 3/5] TS: IpFilter and Deproxy refactorings
+
+IpFilter:
+ - filterIpAddress method now tested and accepts optional Headers
+   argument, X-Meresco-Ipfilter-Fake-Ip header now supported here too.
+
+Deproxy:
+ - Allow initializing without deproxyForIps / deproxyForIpRanges.
+   This is useful when configuration is dynamically set using the
+   updateIps method.
+ - X-Meresco-Ipfilter-Fake-Ip header is delegated to Deproxy's internal
+   IpFilter; Deproxy can now be easily integration-tested.
+ - Observable name init pass-through.
+---
+ meresco/components/http/deproxy.py  |    8 +++-----
+ meresco/components/http/ipfilter.py |    7 ++++---
+ test/http/deproxytest.py            |    3 ---
+ test/http/ipfiltertest.py           |   12 ++++++++++++
+ 4 files changed, 19 insertions(+), 11 deletions(-)
+
+diff --git a/meresco/components/http/deproxy.py b/meresco/components/http/deproxy.py
+index 46811c8..d278a5e 100644
+--- a/meresco/components/http/deproxy.py
++++ b/meresco/components/http/deproxy.py
+@@ -32,15 +32,13 @@ from ipfilter import IpFilter
+ 
+ 
+ class Deproxy(Observable):
+-    def __init__(self, deproxyForIps=None, deproxyForIpRanges=None):
+-        Observable.__init__(self)
+-        if not (deproxyForIps or deproxyForIpRanges):
+-            raise ValueError('Expected ipaddresses to deproxy for.')
++    def __init__(self, deproxyForIps=None, deproxyForIpRanges=None, name=None):
++        Observable.__init__(self, name=name)
+         self._ipfilter = IpFilter(allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges)
+ 
+     def handleRequest(self, Client, Headers, port='80', **kwargs):
+         clientHost, clientPort = Client
+-        if self._ipfilter.filterIpAddress(clientHost):
++        if self._ipfilter.filterIpAddress(ipaddress=clientHost, Headers=Headers):
+             clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
+             host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
+             if host != '':
+diff --git a/meresco/components/http/ipfilter.py b/meresco/components/http/ipfilter.py
+index 81b4a2b..ec57ae5 100644
+--- a/meresco/components/http/ipfilter.py
++++ b/meresco/components/http/ipfilter.py
+@@ -40,11 +40,12 @@ class IpFilter(HandleRequestFilter):
+ 
+     def _filter(self, Client, Headers, **kwargs):
+         ipaddress = Client[0] if Client != None else '0.0.0.0'
+-        if 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
++        return self.filterIpAddress(ipaddress, Headers)
++
++    def filterIpAddress(self, ipaddress, Headers=None):
++        if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
+             ipaddress = Headers['X-Meresco-Ipfilter-Fake-Ip']
+-        return self.filterIpAddress(ipaddress)
+ 
+-    def filterIpAddress(self, ipaddress):
+         if ipaddress in self._allowedIps:
+             return True
+ 
+diff --git a/test/http/deproxytest.py b/test/http/deproxytest.py
+index 8d8d4f4..34237e5 100644
+--- a/test/http/deproxytest.py
++++ b/test/http/deproxytest.py
+@@ -113,9 +113,6 @@ class DeproxyTest(TestCase):
+         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
+         self.assertEquals("80", handleRequestCallKwargs['port'])
+ 
+-    def testDeproxyMustHaveIps(self):
+-        self.assertRaises(ValueError, Deproxy)
+-
+     def testDeproxyForIps(self):
+         self.createTree(deproxyForIps=['3.3.3.3'])
+         consume(self.top.all.handleRequest(
+diff --git a/test/http/ipfiltertest.py b/test/http/ipfiltertest.py
+index aa50e69..1f39471 100644
+--- a/test/http/ipfiltertest.py
++++ b/test/http/ipfiltertest.py
+@@ -117,6 +117,18 @@ class IpFilterTest(TestCase):
+         self.assertInvalidIp('192.168.2.0', ipranges=[('192.168.1.0', '192.168.1.255')])
+         self.assertInvalidIp('192.168.0.255', ipranges=[('192.168.1.0', '192.168.1.255')])
+ 
++    def testFilterIpAddress(self):
++        ipf = IpFilter(allowedIps=['10.0.0.1'])
++        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1'))
++        self.assertEquals(True, ipf.filterIpAddress(ipaddress='10.0.0.1'))
++
++        Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.99.99.99'}
++        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
++        Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.0.0.1'}
++        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.99.99.99', Headers=Headers))
++
++        self.assertEquals(True, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
++
+     def testConvertToNumber(self):
+         iprange = IpFilter()
+ 
+-- 
+1.7.1
+
+
+From 71b0bc29c361ab5d22118243f4df55b93104b8b1 Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 20 Feb 2014 09:13:19 +0100
+Subject: [PATCH 4/5] TS: Deproxy, fixed handleRequest's port being an int i.s.o. str.
+
+---
+ meresco/components/http/deproxy.py |    4 ++--
+ test/http/deproxytest.py           |   21 +++++++++++++++++----
+ 2 files changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/meresco/components/http/deproxy.py b/meresco/components/http/deproxy.py
+index d278a5e..7652e97 100644
+--- a/meresco/components/http/deproxy.py
++++ b/meresco/components/http/deproxy.py
+@@ -36,14 +36,14 @@ class Deproxy(Observable):
+         Observable.__init__(self, name=name)
+         self._ipfilter = IpFilter(allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges)
+ 
+-    def handleRequest(self, Client, Headers, port='80', **kwargs):
++    def handleRequest(self, Client, Headers, port=80, **kwargs):
+         clientHost, clientPort = Client
+         if self._ipfilter.filterIpAddress(ipaddress=clientHost, Headers=Headers):
+             clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
+             host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
+             if host != '':
+                 Headers['Host'] = host
+-                port = host.partition(':')[2] or '80'
++                port = int(host.partition(':')[2] or '80')
+         yield self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, port=port, **kwargs)
+ 
+     def updateIps(self, ipAddresses=None, ipRanges=None):
+diff --git a/test/http/deproxytest.py b/test/http/deproxytest.py
+index 34237e5..d13a103 100644
+--- a/test/http/deproxytest.py
++++ b/test/http/deproxytest.py
+@@ -55,6 +55,19 @@ class DeproxyTest(TestCase):
+             )
+         ))
+ 
++    def testShouldPassthroughHandleRequestIfUnconfigured(self):
++        self.createTree()
++        consume(self.top.all.handleRequest(Client=("9.1.8.2", 99), Headers={'H': 'eaders'}, other='item'))
++        self.assertEquals(['handleRequest'], self.observer.calledMethodNames())
++        handleRequest, = self.observer.calledMethods
++        self.assertEquals(tuple(), handleRequest.args)
++        self.assertEquals(dict(
++                Client=("9.1.8.2", 99),
++                Headers={'H': 'eaders'},
++                port=80,
++                other='item',
++            ), handleRequest.kwargs)
++
+     def testClientInCaseNoXForwardedForHeader(self):
+         list(compose(self.top.all.handleRequest(Client=("1.1.1.1", 11111), Headers={})))
+ 
+@@ -95,23 +108,23 @@ class DeproxyTest(TestCase):
+             "Host": "1.1.1.1:11111",
+             "X-Forwarded-Host": "2.2.2.2:22222,3.3.3.3:33333,4.4.4.4:44444"
+         }
+-        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
++        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
+ 
+         self.assertEquals(1, len(self.observer.calledMethods))
+         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+         self.assertEquals("2.2.2.2:22222", handleRequestCallKwargs['Headers']['Host'])
+-        self.assertEquals("22222", handleRequestCallKwargs['port'])
++        self.assertEquals(22222, handleRequestCallKwargs['port'])
+ 
+         Headers={
+             "Host": "1.1.1.1:11111",
+             "X-Forwarded-Host": "2.2.2.2,3.3.3.3:33333,4.4.4.4:44444"
+         }
+-        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
++        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
+ 
+         self.assertEquals(2, len(self.observer.calledMethods))
+         handleRequestCallKwargs = self.observer.calledMethods[1].kwargs
+         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
+-        self.assertEquals("80", handleRequestCallKwargs['port'])
++        self.assertEquals(80, handleRequestCallKwargs['port'])
+ 
+     def testDeproxyForIps(self):
+         self.createTree(deproxyForIps=['3.3.3.3'])
+-- 
+1.7.1
+
+
+From 3271e47fbc5ec5e0df95c02d606042270cc8016b Mon Sep 17 00:00:00 2001
+From: Seecr Development Team <development@seecr.nl>
+Date: Thu, 20 Feb 2014 09:51:25 +0100
+Subject: [PATCH 5/5] TS: license.
+
+---
+ meresco/components/http/ipfilter.py |   19 ++++++++++---------
+ test/http/ipfiltertest.py           |   19 ++++++++++---------
+ 2 files changed, 20 insertions(+), 18 deletions(-)
+
+diff --git a/meresco/components/http/ipfilter.py b/meresco/components/http/ipfilter.py
+index ec57ae5..3da731e 100644
+--- a/meresco/components/http/ipfilter.py
++++ b/meresco/components/http/ipfilter.py
+@@ -1,31 +1,32 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+-# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2011-2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+ # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+-# 
++# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from handlerequestfilter import HandleRequestFilter
+diff --git a/test/http/ipfiltertest.py b/test/http/ipfiltertest.py
+index 1f39471..9492786 100644
+--- a/test/http/ipfiltertest.py
++++ b/test/http/ipfiltertest.py
+@@ -1,31 +1,32 @@
+ ## begin license ##
+-# 
++#
+ # "Meresco Components" are components to build searchengines, repositories
+-# and archives, based on "Meresco Core". 
+-# 
++# and archives, based on "Meresco Core".
++#
+ # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
+ # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
+ # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
+ # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
+ # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+-# 
++# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
++# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
++#
+ # This file is part of "Meresco Components"
+-# 
++#
+ # "Meresco Components" is free software; you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 2 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # "Meresco Components" is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with "Meresco Components"; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-# 
++#
+ ## end license ##
+ 
+ from unittest import TestCase
+-- 
+1.7.1
+
