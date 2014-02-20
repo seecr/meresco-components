@@ -36,14 +36,14 @@ class Deproxy(Observable):
         Observable.__init__(self, name=name)
         self._ipfilter = IpFilter(allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges)
 
-    def handleRequest(self, Client, Headers, port='80', **kwargs):
+    def handleRequest(self, Client, Headers, port=80, **kwargs):
         clientHost, clientPort = Client
         if self._ipfilter.filterIpAddress(ipaddress=clientHost, Headers=Headers):
             clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
             host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
             if host != '':
                 Headers['Host'] = host
-                port = host.partition(':')[2] or '80'
+                port = int(host.partition(':')[2] or '80')
         yield self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, port=port, **kwargs)
 
     def updateIps(self, ipAddresses=None, ipRanges=None):

@@ -55,6 +55,19 @@ class DeproxyTest(TestCase):
             )
         ))
 
+    def testShouldPassthroughHandleRequestIfUnconfigured(self):
+        self.createTree()
+        consume(self.top.all.handleRequest(Client=("9.1.8.2", 99), Headers={'H': 'eaders'}, other='item'))
+        self.assertEquals(['handleRequest'], self.observer.calledMethodNames())
+        handleRequest, = self.observer.calledMethods
+        self.assertEquals(tuple(), handleRequest.args)
+        self.assertEquals(dict(
+                Client=("9.1.8.2", 99),
+                Headers={'H': 'eaders'},
+                port=80,
+                other='item',
+            ), handleRequest.kwargs)
+
     def testClientInCaseNoXForwardedForHeader(self):
         list(compose(self.top.all.handleRequest(Client=("1.1.1.1", 11111), Headers={})))
 
@@ -95,23 +108,23 @@ class DeproxyTest(TestCase):
             "Host": "1.1.1.1:11111",
             "X-Forwarded-Host": "2.2.2.2:22222,3.3.3.3:33333,4.4.4.4:44444"
         }
-        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
+        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
 
         self.assertEquals(1, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals("2.2.2.2:22222", handleRequestCallKwargs['Headers']['Host'])
-        self.assertEquals("22222", handleRequestCallKwargs['port'])
+        self.assertEquals(22222, handleRequestCallKwargs['port'])
 
         Headers={
             "Host": "1.1.1.1:11111",
             "X-Forwarded-Host": "2.2.2.2,3.3.3.3:33333,4.4.4.4:44444"
         }
-        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port='11111', Headers=Headers))
+        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
 
         self.assertEquals(2, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[1].kwargs
         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
-        self.assertEquals("80", handleRequestCallKwargs['port'])
+        self.assertEquals(80, handleRequestCallKwargs['port'])
 
     def testDeproxyForIps(self):
         self.createTree(deproxyForIps=['3.3.3.3'])
