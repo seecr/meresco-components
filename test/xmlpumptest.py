@@ -1,4 +1,4 @@
-# -*- coding=utf-8
+# -*- coding=utf-8 -*-
 ## begin license ##
 #
 # "Meresco Components" are components to build searchengines, repositories
@@ -9,8 +9,8 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -34,7 +34,7 @@ from StringIO import StringIO
 from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
-from lxml.etree import _ElementTree, parse, _ElementStringResult, _ElementUnicodeResult
+from lxml.etree import parse, _ElementStringResult, _ElementUnicodeResult, XML
 from meresco.components import lxmltostring
 
 from meresco.components import XmlPrintLxml, XmlParseLxml, FileParseLxml
@@ -62,11 +62,10 @@ class XmlPumpTest(SeecrTestCase):
         self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
         self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
 
-        xmlNode = self.observer.calledMethods[0].kwargs['amaraNode']
-        self.assertEquals('tag', xmlNode.localName)
-        self.assertEquals('content', xmlNode.content.localName)
+        xmlNode = self.observer.calledMethods[0].kwargs['lxmlNode']
+        self.assertEqualsLxml(XML(xmlString), xmlNode)
 
-    def testInflate(self):
+    def testInflate2(self):
         xmlString = """<tag><content>contents</content></tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
         self.observable.call.add(identifier="id", partname="partName", data=xmlString)
@@ -110,6 +109,17 @@ class XmlPumpTest(SeecrTestCase):
   <b>“c</b>
 </a>
 ''', observer.calledMethods[0].kwargs['data'])
+
+    def testXmlPrintLxmlPrettyPrintFalse(self):
+        observable = Observable()
+        xmlprintlxml = XmlPrintLxml(fromKwarg='lxmlNode', toKwarg="data", pretty_print=False)
+        observer = CallTrace('observer', emptyGeneratorMethods=['someMessage'])
+        xmlprintlxml.addObserver(observer)
+        observable.addObserver(xmlprintlxml)
+        list(compose(observable.all.someMessage(lxmlNode=parse(StringIO('<a><b>“c</b></a>')))))
+        self.assertEquals(['someMessage'], observer.calledMethodNames())
+        self.assertEquals(['data'], observer.calledMethods[0].kwargs.keys())
+        self.assertEquals('''<a><b>“c</b></a>''', observer.calledMethods[0].kwargs['data'])
 
     def testTransparency(self):
         lxml = CallTrace('lxml')
@@ -210,13 +220,13 @@ class XmlPumpTest(SeecrTestCase):
         from meresco.components.xmlpump import _fixLxmltostringRootElement
 
         self.assertEquals('<root><sub ...', _fixLxmltostringRootElement('<root><sub ...'))
-        self.assertEquals('<root attrib="aap&amp;noot"><sub ...', 
+        self.assertEquals('<root attrib="aap&amp;noot"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="aap&amp;noot"><sub ...'))
-        self.assertEquals('<root attrib="aap&euro;noot"><sub ...', 
+        self.assertEquals('<root attrib="aap&euro;noot"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="aap&euro;noot"><sub ...'))
-        self.assertEquals('<root attrib="ĳs"><sub ...', 
+        self.assertEquals('<root attrib="ĳs"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="&#307;s"><sub ...'))
-        self.assertEquals('<root attrib="ĳs"><sub ...', 
+        self.assertEquals('<root attrib="ĳs"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub ...'))
-        self.assertEquals('<root attrib="ĳs"><sub attrib="&#x133;s">...', 
+        self.assertEquals('<root attrib="ĳs"><sub attrib="&#x133;s">...',
                 _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub attrib="&#x133;s">...'))

@@ -9,8 +9,8 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -33,8 +33,6 @@
 from StringIO import StringIO
 from lxml.etree import parse, tostring
 
-from meresco.core import Observable
-
 from converter import Converter
 from re import compile as compileRe
 
@@ -49,11 +47,14 @@ class FileParseLxml(Converter):
 class XmlParseLxml(Converter):
     def _convert(self, anObject):
         return parse(StringIO(anObject.encode('UTF-8')))
-        
-class XmlPrintLxml(Converter):
-    def _convert(self, anObject):
-        return lxmltostring(anObject, pretty_print=True)
 
+class XmlPrintLxml(Converter):
+    def __init__(self, pretty_print=True, **kwargs):
+        Converter.__init__(self, **kwargs)
+        self._pretty_print = pretty_print
+
+    def _convert(self, anObject):
+        return lxmltostring(anObject, pretty_print=self._pretty_print)
 
 _CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):
