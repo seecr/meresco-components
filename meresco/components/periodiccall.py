@@ -36,9 +36,10 @@ from schedule import Schedule
 
 
 class PeriodicCall(Observable):
-    def __init__(self, reactor, initialSchedule=None, schedule=None, errorSchedule=Schedule(period=15), autoStart=True, prio=None, name=None):
+    def __init__(self, reactor, message=None, initialSchedule=None, schedule=None, errorSchedule=Schedule(period=15), autoStart=True, prio=None, name=None):
         Observable.__init__(self, name=name)
         self._reactor = reactor
+        self._message = message or 'handle'
         self._initialSchedule = initialSchedule
         self._schedule = schedule
         self._errorSchedule = errorSchedule
@@ -97,7 +98,7 @@ class PeriodicCall(Observable):
         self._reactor.addProcess(this.next, prio=self._prio)
         try:
             yield
-            for _response in compose(self.all.handle()):
+            for _response in compose(self.all.unknown(message=self._message)):
                 if _response is not Yield and callable(_response):
                     _response(self._reactor, this.next)
                     yield

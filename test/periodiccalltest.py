@@ -43,14 +43,15 @@ class PeriodicCallTest(SeecrTestCase):
         self.newDNA(schedule=Schedule(period=3600), errorSchedule=Schedule(period=15), prio=9, name='obs_name')
         list(compose(self.dna.once.observer_init()))
 
-    def newDNA(self, *args, **kwargs):
+    def newDNA(self, **kwargs):
+        emptyGeneratorMethods = [kwargs.get('message', 'handle')]
         self.reactor = CallTrace('Reactor', returnValues={'addTimer': 'TOKEN'})
-        self.observer = CallTrace('Observer', emptyGeneratorMethods=['handle'], ignoredAttributes=['observer_init'])
-        self.pc = PeriodicCall(self.reactor, *args, **kwargs)
+        self.observer = CallTrace('Observer', emptyGeneratorMethods=emptyGeneratorMethods, ignoredAttributes=['observer_init'])
+        self.pc = PeriodicCall(self.reactor, **kwargs)
         self.dna = be((Observable(),
-        (self.pc,
-            (self.observer,),
-        ),
+            (self.pc,
+                (self.observer,),
+            ),
         ))
 
     def testWithoutData(self):
@@ -473,3 +474,18 @@ class PeriodicCallTest(SeecrTestCase):
         self.assertTrue(shorten(message).startswith('xxxx'), shorten(message))
         self.assertTrue(shorten(message).endswith('xxxz'), shorten(message))
 
+    def testMessageConfigurable(self):
+        self.newDNA(message="aMessage", schedule=Schedule(period=3600), errorSchedule=Schedule(period=15), prio=9, name='obs_name')
+        list(compose(self.dna.once.observer_init()))
+
+        self.assertEquals(['addTimer'], self.reactor.calledMethodNames())
+        addTimer, = self.reactor.calledMethods
+        callback = addTimer.args[1]
+        self.reactor.calledMethods.reset()
+        callback()
+        self.assertEquals(['addProcess'], self.reactor.calledMethodNames())
+        addProcess, = self.reactor.calledMethods
+        callback = addProcess.args[0]
+        self.reactor.calledMethods.reset()
+        callback()
+        self.assertEquals(['aMessage'], self.observer.calledMethodNames())
