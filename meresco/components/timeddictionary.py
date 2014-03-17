@@ -75,6 +75,11 @@ class TimedDictionary(object):
         ignoredTime, value = self._dictionary[key]
         return value
 
+    def peek(self, key):
+        """Provides a way to access values that might expire if accessed normally."""
+        ignoredTime, value = self._dictionary[key]
+        return value        
+
     def __setitem__(self, key, value):
         self.purge()
         if key in self:

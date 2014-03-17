@@ -173,3 +173,12 @@ class TimedDictionaryTest(TestCase):
         self.assertEquals(None, timedDict.get(1))
         self.assertEquals('a default', timedDict.get(1, 'a default'))
         self.assertEquals([], timedDict._list)
+
+    def testPeek(self):
+        timedDict = TimedDictionary(TWO_HOURS)
+        timedDict[1] = "Now you see me, now you don't."
+        timedDict._now = lambda : time() + TWO_HOURS
+
+        self.assertEquals("Now you see me, now you don't.", timedDict.peek(1))
+        self.assertRaises(KeyError, timedDict.__getitem__, 1)
+
