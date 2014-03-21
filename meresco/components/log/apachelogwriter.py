@@ -42,9 +42,10 @@ class ApacheLogWriter(object):
                 Method=getFirst(logItems, 'Method', '-'),
                 pathAndQuery=stripToPathAndQuery(getFirst(logItems, 'RequestURI', '')),
                 status=getFirst(logItems, 'responseHttpStatus', '0'),
-                responseSize=getFirst(logItems, 'responseSize'),
+                responseSize=getFirst(logItems, 'responseSize') or '-',
                 Referer=headers.get('Referer', '-'),
                 UserAgent=headers.get('User-Agent', '-'),
+                HTTPVersion=getFirst(logItems, 'HTTPVersion', '1.0'),
             ))
         self._out.flush()
 
@@ -62,4 +63,4 @@ def stripToPathAndQuery(requestUri):
     return result
 
 
-APACHE_LOGLINE = '{ipaddress} - {user} [{timestamp}] "{Method} {pathAndQuery} HTTP/1.0" {status} {responseSize} "{Referer}" "{UserAgent}"\n'
+APACHE_LOGLINE = '{ipaddress} - {user} [{timestamp}] "{Method} {pathAndQuery} HTTP/{HTTPVersion}" {status} {responseSize} "{Referer}" "{UserAgent}"\n'

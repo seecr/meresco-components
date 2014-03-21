@@ -59,5 +59,27 @@ class HandleRequestLogTest(SeecrTestCase):
         logline = stream.getvalue()
         self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test"\n', logline)
 
+    def testLogHttpError(self):
+        requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
+        stream = StringIO()
+        logWriter = ApacheLogWriter(stream)
+        logWriter._gmtime = lambda: gmtime(1395409143)
+
+        observable = be((Observable(),
+            (LogCollector(),
+                (HandleRequestLog(),
+                    (requestHandler,),
+                ),
+                (logWriter,)
+            )
+        ))
+
+        # called by ObservableHttpServer
+        observable.do.logHttpError(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value')
+
+        logline = stream.getvalue()
+        self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 503 - "-" "-"\n', logline)
+        self.assertEquals(['logHttpError'], requestHandler.calledMethodNames())
+        self.assertEquals(dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value'), requestHandler.calledMethods[0].kwargs)
 
 

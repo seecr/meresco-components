@@ -50,3 +50,13 @@ class HandleRequestLog(Transparent):
         if httpStatus:
             logDict['responseHttpStatus'] = httpStatus
         collectLog(**logDict)
+
+    def logHttpError(self, ResponseCode=None, **kwargs):
+        logDict = dict()
+        for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion']:
+            if key in kwargs:
+                logDict[key] = kwargs[key]
+        if ResponseCode:
+            logDict['responseHttpStatus'] = str(ResponseCode)
+        self.do.logHttpError(ResponseCode=ResponseCode, **kwargs)
+        collectLog(**logDict)
