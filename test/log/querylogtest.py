@@ -6,7 +6,8 @@
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2006-2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -39,8 +40,6 @@ from meresco.core import Observable
 from weightless.core import compose, be
 from meresco.components.sru import SruHandler, SruParser
 
-from weightless.core import compose
-
 class QueryLogTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
@@ -51,7 +50,7 @@ class QueryLogTest(SeecrTestCase):
         directoryLog = DirectoryLog(self.tempdir)
         self.queryLog = QueryLog(log=directoryLog, loggedPaths=['/path/sru', '/path/srw'])
         self.queryLog._time = time
-    
+
     def testLogging(self):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
@@ -83,7 +82,7 @@ class QueryLogTest(SeecrTestCase):
         list(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')))
 
         self.assertEquals(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
-        
+
     def testNewDayNewLogfile(self):
         observer = CallTrace('observer')
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
@@ -111,11 +110,11 @@ class QueryLogTest(SeecrTestCase):
         self.queryLog.addObserver(observer)
         ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru/extended/path', otherArg='value')))
         self.assertEquals(1, len(listdir(self.tempdir)))
-        
+
     def testLogDirCreated(self):
         logDir = join(self.tempdir, 'amihere')
         self.assertFalse(isdir(logDir))
-        
+
         queryLog = QueryLog(log=DirectoryLog(logDir), loggedPaths=None)
         self.assertTrue(isdir(logDir))
 
@@ -149,7 +148,7 @@ class QueryLogTest(SeecrTestCase):
         observer.methods['searchRetrieve'] = searchRetrieve
         list(compose(helper.searchRetrieve(query=['query'], sortKeys=[dict(sortBy='field', sortDescending=False)], sruArguments={'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0', 'query': ['query']})))
         self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
-        
+
     def testQueryLogHelper(self):
         __callstack_var_queryLogValues__ = {'queryArguments':{}}
         helper = QueryLogHelper()
@@ -199,13 +198,13 @@ class QueryLogTest(SeecrTestCase):
     def testRemoveOldLogs(self):
         for filename in ("%03d" % r for r in range(NR_OF_FILES_KEPT)):
             open(join(self.tempdir, filename), 'w').close()
-        
+
         filesBefore = listdir(self.tempdir)
         "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
         filesAfter = listdir(self.tempdir)
         self.assertFalse('000' in filesAfter)
         self.assertEquals(len(filesAfter), len(filesBefore))
-        
+
         filesBefore = listdir(self.tempdir)
         self._timeNow += 3600*24
         "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
@@ -218,5 +217,5 @@ class QueryLogTest(SeecrTestCase):
         self._timeNow += 3600*24
         "".join(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path="/path/sru"))
         self.assertEquals(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
-        
+
 
