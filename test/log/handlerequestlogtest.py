@@ -26,18 +26,19 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from meresco.components.http.utils import okPlainText, CRLF
-from weightless.core import be, asString
+from meresco.components.http.utils import okPlainText
+from weightless.core import be, Yield
 from meresco.core import Observable
 from meresco.components.log import LogCollector, HandleRequestLog, ApacheLogWriter
 from StringIO import StringIO
 from time import gmtime
+from weightless.core.utils import asList
 
 class HandleRequestLogTest(SeecrTestCase):
 
     def testApacheLog(self):
         requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
-        requestHandler.returnValues['handleRequest'] = (f for f in [okPlainText, 'text'])
+        requestHandler.returnValues['handleRequest'] = (f for f in [Yield, okPlainText, 'te', callable, 'xt'])
         stream = StringIO()
         logWriter = ApacheLogWriter(stream)
         logWriter._gmtime = lambda: gmtime(1395409143)
@@ -51,10 +52,12 @@ class HandleRequestLogTest(SeecrTestCase):
             )
         ))
 
-        header, body = asString(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={'Referer': 'http://meresco.org', 'User-Agent': 'Meresco-Components Test'}, otherKwarg='value')).split(CRLF*2,1)
-        self.assertEquals('text', body)
+        result = asList(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={'Referer': 'http://meresco.org', 'User-Agent': 'Meresco-Components Test'}, otherKwarg='value'))
+
+        self.assertEquals([Yield, okPlainText, 'te', callable, 'xt'], result)
         self.assertEquals(['handleRequest'], requestHandler.calledMethodNames())
         logline = stream.getvalue()
         self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test"\n', logline)
+
 
 

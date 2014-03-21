@@ -26,7 +26,7 @@
 ## end license ##
 from meresco.core import Transparent
 from meresco.components.log import collectLog
-from weightless.core import compose
+from weightless.core import compose, Yield
 
 class HandleRequestLog(Transparent):
     def handleRequest(self, **kwargs):
@@ -37,6 +37,9 @@ class HandleRequestLog(Transparent):
         sizeInBytes = 0
         httpStatus = ""
         for response in compose(self.all.handleRequest(**kwargs)):
+            if response is Yield or callable(response):
+                yield response
+                continue
             if hasattr(response, '__len__'):
                 sizeInBytes += len(response)
                 if not httpStatus and response.startswith('HTTP/1'):
