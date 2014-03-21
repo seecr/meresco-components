@@ -31,3 +31,5 @@ from logfileserver import LogFileServer
 from logcollector import LogCollector, collectLog
 from querylog import QueryLog, QueryLogHelperForSru, QueryLogHelper, QueryLogHelperForExecuteCQL
 from directorylog import DirectoryLog
+from apachelogwriter import ApacheLogWriter
+from handlerequestlog import HandleRequestLog
