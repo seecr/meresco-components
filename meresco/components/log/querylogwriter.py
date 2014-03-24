@@ -26,6 +26,7 @@
 ## end license ##
 
 from utils import getFirst
+from urllib import urlencode
 
 class QueryLogWriter(object):
     def __init__(self, log):
@@ -39,6 +40,6 @@ class QueryLogWriter(object):
             size=getFirst(logItems, 'responseSize')/1024.0,
             duration=getFirst(logItems, 'duration'),
 
-            queryArguments="",
-            numberOfRecords=None,
+            queryArguments=str(urlencode(sorted(getFirst(logItems, 'sruArguments', {}).items()), doseq=True)),
+            numberOfRecords=getFirst(logItems, 'sruNumberOfRecords'),
         )

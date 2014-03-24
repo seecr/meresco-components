@@ -31,26 +31,30 @@ from meresco.components.http.utils import okXml
 from meresco.components.log import QueryLogWriter, DirectoryLog, HandleRequestLog, LogCollector
 from meresco.core import Observable
 from os.path import isfile, join
+from meresco.components.sru import SruHandler, SruParser
+from testhelpers import Response
 
 class SruLogTest(SeecrTestCase):
 
-    def testEmptyQuery(self):
-        requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
-        requestHandler.returnValues['handleRequest'] = (f for f in [okXml, '<sru>', '</sru>'])
-        queryLogWriter = QueryLogWriter(DirectoryLog(self.tempdir))
-        handleRequestLog = HandleRequestLog()
+    def setUp(self):
+        SeecrTestCase.setUp(self)
+        self.queryLogWriter = QueryLogWriter(DirectoryLog(self.tempdir))
+        self.handleRequestLog = HandleRequestLog()
         self._timeNow = 1257161136.0 # 2009-11-02 11:30:00
         def time():
             self._timeNow += 1.0
             return self._timeNow
-        handleRequestLog._time = time
+        self.handleRequestLog._time = time
 
+    def testEmptyQuery(self):
+        requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
+        requestHandler.returnValues['handleRequest'] = (f for f in [okXml, '<sru>', '</sru>'])
         observable = be((Observable(),
             (LogCollector(),
-                (handleRequestLog,
+                (self.handleRequestLog,
                     (requestHandler,)
                 ),
-                (queryLogWriter,),
+                (self.queryLogWriter,),
             )
         ))
 
@@ -60,3 +64,37 @@ class SruLogTest(SeecrTestCase):
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
         self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.1K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
+
+    def testQuery(self):
+        def executeQuery(**kwargs):
+            raise StopIteration(Response(total=42))
+            yield
+        index = CallTrace('index',
+            emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData'],
+            methods=dict(executeQuery=executeQuery))
+        observable = be((Observable(),
+            (LogCollector(),
+                (self.handleRequestLog,
+                    (SruParser(),
+                        (SruHandler(enableCollectLog=True),
+                            (index,)
+                        )
+                    )
+                ),
+                (self.queryLogWriter,),
+            )
+        ))
+        result = asString(observable.all.handleRequest(
+            Method='GET',
+            Client=('127.0.0.1', 1234),
+            arguments={
+                'version': ['1.2'],
+                'operation': ['searchRetrieve'],
+                'query': ['query'],
+                'maximumRecords': ['0'],
+            },
+            path='/path/sru',
+            otherKwarg='value'))
+        self.assertTrue('<srw:numberOfRecords>42</srw:numberOfRecords>' in result, result)
+        self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
+        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.7K 1.000s 42hits /path/sru maximumRecords=0&operation=searchRetrieve&query=query&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
