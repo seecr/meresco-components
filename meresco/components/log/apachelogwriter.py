@@ -35,6 +35,8 @@ class ApacheLogWriter(object):
     def writeLog(self, **logItems):
         if self._out is None:
             return
+        if not 'Client' in logItems:
+            return
         headers = getFirst(logItems, 'Headers', {})
         self._out.write(APACHE_LOGLINE.format(
                 ipaddress=getFirst(logItems, 'Client', default=('-', 0))[0],

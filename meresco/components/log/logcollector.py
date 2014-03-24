@@ -31,6 +31,35 @@ from weightless.core import NoneOfTheObserversRespond, DeclineMessage, local
 
 
 class LogCollector(Observable):
+    """
+    Collects logs from different 'loggers'.
+
+    Typical Usage:
+    ...
+    (ObservableHttpServer(...),
+        (LogCollector(),
+            # Some logwriters, will listen to writeLog(**logItems)
+            (ApachLogWriter(...),),
+            (QueryLogWriter(...),),
+
+            # Handling of http requests, with log appenders
+            (...,
+                (HandleRequestLog(),
+                    ...,
+                    (SruParser(...),
+                        ...,
+                        (SruHandler(enableLog=True, ...),
+                            ...
+                        )
+                    )
+                )
+            )
+        )
+    )
+
+    Writers, like ApacheLogWriter, work together with appenders,
+    like HandleRequestLog. Make sure to align correctly.
+    """
 
     def all_unknown(self, message, *args, **kwargs):
         try:
