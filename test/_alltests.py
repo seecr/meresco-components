@@ -116,10 +116,12 @@ from http.timeddictionarytest import TimedDictionaryTest
 from http.utilstest import UtilsTest
 
 from log.apachelogwritertest import ApacheLogWriterTest
+from log.directorylogtest import DirectoryLogTest
 from log.handlerequestlogtest import HandleRequestLogTest
 from log.logcollectortest import LogCollectorTest
 from log.logfileservertest import LogFileServerTest
 from log.querylogtest import QueryLogTest
+from log.querylogwritertest import QueryLogWriterTest
 from log.srulogtest import SruLogTest
 
 from numeric.converttest import ConvertTest

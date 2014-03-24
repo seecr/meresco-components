@@ -27,17 +27,27 @@
 
 from utils import getFirst
 from urllib import urlencode
+from time import time
 
 class QueryLogWriter(object):
-    def __init__(self, log):
+    def __init__(self, log, loggedPaths=None):
         self._log = log
+        self._allowedPath = lambda path: True
+        if loggedPaths is not None:
+            self._allowedPath = lambda path: any(path.startswith(p) for p in loggedPaths)
+
 
     def writeLog(self, **logItems):
+        if not 'Client' in logItems:
+            return
+        path=getFirst(logItems, 'path')
+        if not self._allowedPath(path):
+            return
         self._log.log(
-            timestamp=getFirst(logItems, 'timestamp'),
-            path=getFirst(logItems, 'path'),
+            timestamp=getFirst(logItems, 'timestamp') or time(),
+            path=path,
             ipAddress=getFirst(logItems, 'Client')[0],
-            size=getFirst(logItems, 'responseSize')/1024.0,
+            size=getFirst(logItems, 'responseSize', 0)/1024.0,
             duration=getFirst(logItems, 'duration'),
 
             queryArguments=str(urlencode(sorted(getFirst(logItems, 'sruArguments', {}).items()), doseq=True)),

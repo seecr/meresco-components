@@ -28,11 +28,12 @@
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, asString
 from meresco.components.http.utils import okXml
-from meresco.components.log import QueryLogWriter, DirectoryLog, HandleRequestLog, LogCollector
+from meresco.components.log import QueryLogWriter, DirectoryLog, HandleRequestLog, LogCollector, collectLog
 from meresco.core import Observable
 from os.path import isfile, join
 from meresco.components.sru import SruHandler, SruParser
 from testhelpers import Response
+from os import listdir
 
 class SruLogTest(SeecrTestCase):
 
@@ -98,3 +99,24 @@ class SruLogTest(SeecrTestCase):
         self.assertTrue('<srw:numberOfRecords>42</srw:numberOfRecords>' in result, result)
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
         self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.7K 1.000s 42hits /path/sru maximumRecords=0&operation=searchRetrieve&query=query&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+
+    def testAlmostNoData(self):
+        # No data due to HandleRequestLog is not used.
+        requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
+        def handleRequest(**kwarg):
+            collectLog(key='value')
+            yield okXml
+            yield '<sru></sru>'
+        requestHandler.methods['handleRequest'] = handleRequest
+        observable = be((Observable(),
+            (LogCollector(),
+                (requestHandler,),
+                (self.queryLogWriter,),
+            )
+        ))
+
+        result = asString(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), arguments={}, path='/path/sru', otherKwarg='value'))
+
+        self.assertEquals(okXml+'<sru></sru>', result)
+        self.assertEquals(0, len(listdir(self.tempdir)))
+
