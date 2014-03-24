@@ -27,11 +27,13 @@
 from meresco.core import Transparent
 from meresco.components.log import collectLog
 from weightless.core import compose, Yield
+from time import time
 
 class HandleRequestLog(Transparent):
     def handleRequest(self, **kwargs):
         logDict = dict()
-        for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion']:
+        logDict['timestamp'] = timestamp = self._time()
+        for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion', 'path', 'query', 'arguments']:
             if key in kwargs:
                 logDict[key] = kwargs[key]
         sizeInBytes = 0
@@ -49,10 +51,12 @@ class HandleRequestLog(Transparent):
         logDict['responseSize'] = sizeInBytes
         if httpStatus:
             logDict['responseHttpStatus'] = httpStatus
+        logDict['duration'] = self._time() - timestamp
         collectLog(**logDict)
 
     def logHttpError(self, ResponseCode=None, **kwargs):
         logDict = dict()
+        logDict['timestamp'] = self._time()
         for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion']:
             if key in kwargs:
                 logDict[key] = kwargs[key]
@@ -60,3 +64,6 @@ class HandleRequestLog(Transparent):
             logDict['responseHttpStatus'] = str(ResponseCode)
         self.do.logHttpError(ResponseCode=ResponseCode, **kwargs)
         collectLog(**logDict)
+
+    def _time(self):
+        return time()

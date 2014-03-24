@@ -31,9 +31,7 @@ from weightless.core import NoneOfTheObserversRespond, DeclineMessage, local
 
 
 class LogCollector(Observable):
-    """
-    Log incoming http requests with ip-address, path, size, timestamp, duration
-    """
+
     def all_unknown(self, message, *args, **kwargs):
         try:
             __callstack_var_logCollector__ = self._logCollector()
@@ -80,7 +78,5 @@ class LogCollector(Observable):
 
 def collectLog(**kwargs):
     logCollector = local('__callstack_var_logCollector__')
-    if logCollector is None:
-        return
     for key, value in kwargs.items():
         logCollector[key].append(value)

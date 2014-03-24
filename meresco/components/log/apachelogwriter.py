@@ -26,6 +26,7 @@
 ## end license ##
 from time import gmtime, strftime
 from urlparse import urlsplit
+from utils import getFirst
 
 class ApacheLogWriter(object):
     def __init__(self, outputStream=None):
@@ -38,7 +39,7 @@ class ApacheLogWriter(object):
         self._out.write(APACHE_LOGLINE.format(
                 ipaddress=getFirst(logItems, 'Client', default=('-', 0))[0],
                 user='-',
-                timestamp=strftime('%d/%b/%Y:%H:%M:%S +0000', self._gmtime()),
+                timestamp=strftime('%d/%b/%Y:%H:%M:%S +0000', gmtime(getFirst(logItems, 'timestamp'))),
                 Method=getFirst(logItems, 'Method', '-'),
                 pathAndQuery=stripToPathAndQuery(getFirst(logItems, 'RequestURI', '')),
                 status=getFirst(logItems, 'responseHttpStatus', '0'),
@@ -48,12 +49,6 @@ class ApacheLogWriter(object):
                 HTTPVersion=getFirst(logItems, 'HTTPVersion', '1.0'),
             ))
         self._out.flush()
-
-    def _gmtime(self):
-        return gmtime()
-
-def getFirst(aDict, key, default=None):
-    return aDict.get(key, [default])[0]
 
 def stripToPathAndQuery(requestUri):
     parsed = urlsplit(requestUri)

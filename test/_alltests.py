@@ -115,10 +115,11 @@ from http.sessionhandlertest import SessionHandlerTest
 from http.timeddictionarytest import TimedDictionaryTest
 from http.utilstest import UtilsTest
 
+from log.handlerequestlogtest import HandleRequestLogTest
 from log.logcollectortest import LogCollectorTest
 from log.logfileservertest import LogFileServerTest
 from log.querylogtest import QueryLogTest
-from log.handlerequestlogtest import HandleRequestLogTest
+from log.srulogtest import SruLogTest
 
 from numeric.converttest import ConvertTest
 
