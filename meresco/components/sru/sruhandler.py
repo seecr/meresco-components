@@ -10,7 +10,7 @@
 # Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -45,16 +45,17 @@ from traceback import print_exc
 
 from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
 from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
+from meresco.components.log import collectLog
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
-millis = Decimal('0.001')
+MILLIS = Decimal('0.001')
 
 DRILLDOWN_SORTBY_INDEX = 'index'
 DRILLDOWN_SORTBY_COUNT = 'count'
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False):
         Observable.__init__(self)
         self._drilldownSortBy = drilldownSortBy
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
@@ -63,11 +64,13 @@ class SruHandler(Observable):
         self._includeQueryTimes = includeQueryTimes
         self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
         self._drilldownMaximumTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
+        self._collectLog = collectLog if enableCollectLog else lambda **kwargs: None
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         limitBeyond = kwargs.get('limitBeyond', None)
+        self._collectLog(sruArguments=sruArguments)
 
         t0 = self._timeNow()
         start = startRecord - SRU_IS_ONE_BASED
@@ -151,14 +154,21 @@ class SruHandler(Observable):
                 headerWritten = True
             yield line
 
-        if self._includeQueryTimes:
-            t_sru_ms = Decimal(str(self._timeNow() - startTime)).quantize(millis)
-            t_queryTime_ms = Decimal(queryTime).quantize(millis)
-            if hasattr(response, "queryTime"):
-                t_index_ms = (Decimal(response.queryTime)/1000).quantize(millis)
-            else:
-                t_index_ms = -1
+        t_sru_ms = Decimal(str(self._timeNow() - startTime)).quantize(MILLIS)
+        t_queryTime_ms = Decimal(queryTime).quantize(MILLIS)
+        if hasattr(response, "queryTime"):
+            t_index_ms = (Decimal(response.queryTime)/1000).quantize(MILLIS)
+        else:
+            t_index_ms = -1
 
+        self._collectLog(
+                sruHandlingTime=t_sru_ms,
+                sruQueryTime=t_queryTime_ms,
+                sruIndexTime=t_index_ms,
+                sruNumberOfRecords=response.total,
+            )
+
+        if self._includeQueryTimes:
             if not headerWritten:
                 yield '<srw:extraResponseData>'
                 headerWritten = True

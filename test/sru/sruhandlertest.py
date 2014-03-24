@@ -11,7 +11,7 @@
 # Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -40,7 +40,7 @@ from lxml.etree import parse
 from meresco.components import lxmltostring
 from xml.sax.saxutils import escape as xmlEscape
 
-from weightless.core import compose, be
+from weightless.core import compose, be, consume
 
 from cqlparser import parseString
 
@@ -56,6 +56,7 @@ from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
 from meresco.xml import namespaces
+from collections import defaultdict
 
 SUCCESS = "SUCCESS"
 
@@ -109,7 +110,7 @@ class SruHandlerTest(SeecrTestCase):
 
     def testExtraResponseDataHandlerNoHandler(self):
         component = SruHandler()
-        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
+        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
         self.assertEquals('' , result)
 
     def testExtraResponseDataHandlerNoData(self):
@@ -119,7 +120,7 @@ class SruHandlerTest(SeecrTestCase):
 
         component = SruHandler()
         component.addObserver(TestHandler())
-        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
+        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
         self.assertEquals('' , result)
 
     def testExtraResponseDataHandlerWithData(self):
@@ -133,16 +134,14 @@ class SruHandlerTest(SeecrTestCase):
 
         component = SruHandler()
         component.addObserver(TestHandler())
-        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
+        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
         self.assertEquals('<srw:extraResponseData><someData/></srw:extraResponseData>' , result)
         self.assertEquals([()], argsUsed)
         self.assertEquals(None, kwargsUsed['cqlAbstractSyntaxTree'])
-        self.assertEquals(None, kwargsUsed['queryTime'])
-        self.assertEquals(None, kwargsUsed['response'])
+        self.assertEquals(MOCKDATA['queryTime'], kwargsUsed['queryTime'])
+        self.assertEquals(MOCKDATA['response'], kwargsUsed['response'])
 
     def testExtraResponseDataWithTermDrilldown(self):
-        arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x_term_drilldown':['field0,field1']}
-
         sruHandler = SruHandler()
         sruTermDrilldown = SRUTermDrilldown()
         drilldownData = [
@@ -151,7 +150,7 @@ class SruHandlerTest(SeecrTestCase):
                 {'fieldname': 'field2', 'terms': [{'term': 'value2_0', 'count': 3}, {'term': 'value2_1', 'count': 2}, {'term': 'value2_2', 'count': 1}]}
             ]
         sruHandler.addObserver(sruTermDrilldown)
-        result = "".join(sruHandler._writeExtraResponseData(drilldownData=drilldownData, sruArguments={}, **arguments))
+        result = "".join(sruHandler._writeExtraResponseData(drilldownData=drilldownData, sruArguments={}, **MOCKDATA))
         self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.org/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
 
     def testDrilldownResultInExecuteQuery(self):
@@ -567,7 +566,7 @@ class SruHandlerTest(SeecrTestCase):
                 raise Exception("Test Exception")
         component = SruHandler()
         component.addObserver(RaisesException())
-        result = "".join(compose(component._writeExtraResponseData(cqlAbstractSyntaxTree=None)))
+        result = "".join(compose(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
         self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>Test Exception</details>" in result)
@@ -782,6 +781,68 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData', 'handleQueryTimes'], observer.calledMethodNames())
         self.assertEquals({'sru': Decimal("2.500"), 'queryTime': Decimal("1.500"), 'index': Decimal("0.005")}, observer.calledMethods[3].kwargs)
 
+    def testCollectLog(self):
+        handler = SruHandler(enableCollectLog=True)
+        observer = CallTrace('observer', emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData'])
+        __callstack_var_logCollector__ = defaultdict(list)
+        times = [1, 2.5, 3.5]
+        def timeNow():
+            return times.pop(0)
+        handler._timeNow = timeNow
+
+        def executeQuery(**kwargs):
+            response = Response(total=0, hits=[])
+            response.queryTime=5
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+        handler.addObserver(observer)
+        arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
+        consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
+
+        self.assertEquals({
+                'sruHandlingTime': [Decimal('2.500')],
+                'sruQueryTime': [Decimal('1.500')],
+                'sruIndexTime': [Decimal('0.005')],
+                'sruNumberOfRecords': [0],
+                'sruArguments': [{
+                    'startRecord': 11,
+                    'query': 'query',
+                    'recordPacking': 'string',
+                    'maximumRecords': 15,
+                    'recordSchema': 'schema',
+                }],
+            }, __callstack_var_logCollector__)
+
+    @stderr_replaced
+    def testCollectLogWhenIndexRaisesError(self):
+        handler = SruHandler(enableCollectLog=True)
+        observer = CallTrace('observer', emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData', 'additionalDiagnosticDetails'])
+        __callstack_var_logCollector__ = defaultdict(list)
+        times = [1]
+        def timeNow():
+            return times.pop(0)
+        handler._timeNow = timeNow
+
+        def executeQuery(**kwargs):
+            raise Exception('Sorry')
+            yield
+        observer.methods['executeQuery'] = executeQuery
+        handler.addObserver(observer)
+        arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
+        consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
+
+        self.assertEquals({
+                'sruArguments': [{
+                    'startRecord': 11,
+                    'query': 'query',
+                    'recordPacking': 'string',
+                    'maximumRecords': 15,
+                    'recordSchema': 'schema',
+                }],
+            }, __callstack_var_logCollector__)
+
+
     def testTestXsdEqualsPublishedXsd(self):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
@@ -826,6 +887,8 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}],{'fieldname':'field3', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20/field2,field3']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
 
+
+MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0))
 
 def xpath(lxmlNode, path):
     return lxmlNode.xpath(path, namespaces=namespaces)
