@@ -7,8 +7,9 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2010-2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -37,7 +38,7 @@ from StringIO import StringIO
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
 from meresco.core import asyncnoreturnvalue
-from meresco.components import lxmltostring
+from collections import defaultdict
 
 
 UPDATE_REQUEST = """<?xml version="1.0" encoding="UTF-8"?>
@@ -68,7 +69,7 @@ class SruRecordUpdateTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.stderr = StringIO()
-        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr, logErrors=True)
+        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr, logErrors=True, enableCollectLog=True)
         @asyncnoreturnvalue
         def addOrDelete(*args, **kwargs):
             pass
@@ -85,6 +86,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         }
 
     def performRequest(self, requestBody):
+        __callstack_var_logCollector__ = self.logCollector = defaultdict(list)
         result = ''.join(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         return result.split('\r\n\r\n')
 
@@ -157,6 +159,7 @@ class SruRecordUpdateTest(SeecrTestCase):
             pass
         self.observer.returnValues['add'] = (f for f in [callable])
         requestBody = self.createRequestBody(action=REPLACE)
+        __callstack_var_logCollector__ = defaultdict(list)
         result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         self.assertTrue(callable in result)
         result.remove(callable)
@@ -172,6 +175,7 @@ class SruRecordUpdateTest(SeecrTestCase):
             pass
         self.observer.returnValues['delete'] = (f for f in [callable])
         requestBody = self.createRequestBody(action=DELETE)
+        __callstack_var_logCollector__ = defaultdict(list)
         result = list(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         self.assertTrue(callable in result)
         result.remove(callable)
@@ -231,4 +235,37 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.assertEquals("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
         self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
         self.assertEquals("Invalid component:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
+
+    def testCollectLog(self):
+        requestBody = self.createRequestBody(action=DELETE, recordIdentifier='idDelete')
+        headers, result = self.performRequest(requestBody)
+        self.assertEquals(dict(sruRecordUpdateDelete=['idDelete']), self.logCollector)
+        requestBody = self.createRequestBody(action=CREATE, recordIdentifier='idAdd')
+        headers, result = self.performRequest(requestBody)
+        self.assertEquals(dict(sruRecordUpdateAdd=['idAdd']), self.logCollector)
+
+    def testCollectLogWithErrors(self):
+        self.observer.exceptions['delete'] = Exception('Some <Exception>')
+        requestBody = self.createRequestBody(action=DELETE, recordIdentifier='idDelete')
+        headers, result = self.performRequest(requestBody)
+        self.assertEquals(dict(
+                sruRecordUpdateDelete=['idDelete'],
+                sruRecordUpdateErrorType=['Exception'],
+                sruRecordUpdateErrorMessage=["Some <Exception>"]
+            ), self.logCollector)
+
+        self.observer.exceptions['add'] = ValidateException('Nee')
+        requestBody = self.createRequestBody(action=CREATE, recordIdentifier='idAdd')
+        headers, result = self.performRequest(requestBody)
+        self.assertEquals(dict(
+                sruRecordUpdateAdd=['idAdd'],
+                sruRecordUpdateErrorType=['ValidateException'],
+                sruRecordUpdateErrorMessage=["Nee"]
+            ), self.logCollector)
+
+        headers, result = self.performRequest('<srw:updateRequest>Will raise XMLSyntaxError')
+        self.assertEquals(dict(
+                sruRecordUpdateErrorType=['XMLSyntaxError'],
+                sruRecordUpdateErrorMessage=['Namespace prefix srw on updateRequest is not defined, line 1, column 19']
+            ), self.logCollector)
 

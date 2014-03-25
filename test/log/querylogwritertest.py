@@ -65,7 +65,7 @@ class QueryLogWriterTest(SeecrTestCase):
 
     def testLogForArgumentsInsteadOfSruArguments(self):
         log = CallTrace('log')
-        writer = QueryLogWriter(log=log, treatArgumentsAsSruArguments=True)
+        writer = QueryLogWriter(log=log, convertArgumentsMethod=QueryLogWriter.convertArguments)
         writer.writeLog(**defaultKwargs(arguments=[{'verb':'ListRecords', 'metadataPrefix':'rdf'}]))
         self.assertEquals(['log'], log.calledMethodNames())
         self.assertEquals(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])

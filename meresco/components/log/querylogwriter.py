@@ -30,13 +30,12 @@ from urllib import urlencode
 from time import time
 
 class QueryLogWriter(object):
-    def __init__(self, log, loggedPaths=None, treatArgumentsAsSruArguments=False):
+    def __init__(self, log, loggedPaths=None, convertArgumentsMethod=None):
         self._log = log
         self._allowedPath = lambda path: True
         if loggedPaths is not None:
             self._allowedPath = lambda path: any(path.startswith(p) for p in loggedPaths)
-        self._sruArgumentsKey = 'arguments' if treatArgumentsAsSruArguments else 'sruArguments'
-
+        self._queryArguments = self.convertSruArguments if convertArgumentsMethod is None else convertArgumentsMethod
 
     def writeLog(self, **logItems):
         if not 'Client' in logItems:
@@ -50,7 +49,17 @@ class QueryLogWriter(object):
             ipAddress=getFirst(logItems, 'Client')[0],
             size=getFirst(logItems, 'responseSize', 0)/1024.0,
             duration=getFirst(logItems, 'duration'),
-
-            queryArguments=str(urlencode(sorted(getFirst(logItems, self._sruArgumentsKey, {}).items()), doseq=True)),
             numberOfRecords=getFirst(logItems, 'sruNumberOfRecords'),
+            queryArguments=self._queryArguments(**logItems)
         )
+
+    @staticmethod
+    def convertSruArguments(**logItems):
+        return _queryArguments('sruArguments', **logItems)
+
+    @staticmethod
+    def convertArguments(**logItems):
+        return _queryArguments('arguments', **logItems)
+
+def _queryArguments(argumentsKey, **logItems):
+    return str(urlencode(sorted(getFirst(logItems, argumentsKey, {}).items()), doseq=True))
