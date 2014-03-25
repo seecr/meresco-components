@@ -48,6 +48,28 @@ class QueryLogWriterTest(SeecrTestCase):
         self.assertEquals(['log','log', 'log'], log.calledMethodNames())
         self.assertEquals(['/sru', '/srv', '/srw.php'], [m.kwargs['path'] for m in log.calledMethods])
 
+    def testLog(self):
+        log = CallTrace('log')
+        writer = QueryLogWriter(log=log)
+        writer.writeLog(**defaultKwargs(responseSize=[4096]))
+        self.assertEquals(['log'], log.calledMethodNames())
+        self.assertEquals(dict(
+                timestamp=1257161136.0,
+                path='/sru',
+                ipAddress='11.22.33.44',
+                size=4.0,
+                duration=3.0,
+                queryArguments='version=1.2',
+                numberOfRecords=32,
+            ), log.calledMethods[0].kwargs)
+
+    def testLogForArgumentsInsteadOfSruArguments(self):
+        log = CallTrace('log')
+        writer = QueryLogWriter(log=log, treatArgumentsAsSruArguments=True)
+        writer.writeLog(**defaultKwargs(arguments=[{'verb':'ListRecords', 'metadataPrefix':'rdf'}]))
+        self.assertEquals(['log'], log.calledMethodNames())
+        self.assertEquals(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])
+
 def defaultKwargs(**kwargs):
     result = dict(
         timestamp=[1257161136.0],

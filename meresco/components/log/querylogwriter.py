@@ -30,11 +30,12 @@ from urllib import urlencode
 from time import time
 
 class QueryLogWriter(object):
-    def __init__(self, log, loggedPaths=None):
+    def __init__(self, log, loggedPaths=None, treatArgumentsAsSruArguments=False):
         self._log = log
         self._allowedPath = lambda path: True
         if loggedPaths is not None:
             self._allowedPath = lambda path: any(path.startswith(p) for p in loggedPaths)
+        self._sruArgumentsKey = 'arguments' if treatArgumentsAsSruArguments else 'sruArguments'
 
 
     def writeLog(self, **logItems):
@@ -50,6 +51,6 @@ class QueryLogWriter(object):
             size=getFirst(logItems, 'responseSize', 0)/1024.0,
             duration=getFirst(logItems, 'duration'),
 
-            queryArguments=str(urlencode(sorted(getFirst(logItems, 'sruArguments', {}).items()), doseq=True)),
+            queryArguments=str(urlencode(sorted(getFirst(logItems, self._sruArgumentsKey, {}).items()), doseq=True)),
             numberOfRecords=getFirst(logItems, 'sruNumberOfRecords'),
         )
