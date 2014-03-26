@@ -62,4 +62,7 @@ class QueryLogWriter(object):
         return _queryArguments('arguments', **logItems)
 
 def _queryArguments(argumentsKey, **logItems):
-    return str(urlencode(sorted(getFirst(logItems, argumentsKey, {}).items()), doseq=True))
+    return sortedUrlEncode(**getFirst(logItems, argumentsKey, {}))
+
+def sortedUrlEncode(**kwargs):
+    return str(urlencode(sorted(kwargs.items()), doseq=True))
