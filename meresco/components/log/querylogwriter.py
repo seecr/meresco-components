@@ -30,10 +30,12 @@ from urllib import urlencode
 from time import time
 
 class QueryLogWriter(object):
-    def __init__(self, log, loggedPaths=None, convertArgumentsMethod=None):
+    def __init__(self, log, loggedPaths=None, convertArgumentsMethod=None, allowedPathMethod=None):
         self._log = log
-        self._allowedPath = lambda path: True
+        self._allowedPath = (lambda path: True) if allowedPathMethod is None else allowedPathMethod
         if loggedPaths is not None:
+            if allowedPathMethod is not None:
+                raise ValueError('Use loggedPaths xor allowedPathMethod.')
             self._allowedPath = lambda path: any(path.startswith(p) for p in loggedPaths)
         self._queryArguments = self.convertSruArguments if convertArgumentsMethod is None else convertArgumentsMethod
 
