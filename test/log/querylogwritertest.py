@@ -26,18 +26,44 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from meresco.components.log import QueryLogWriter
+from meresco.components.log import QueryLogWriter, HandleRequestLog, LogCollector
+from weightless.core import be, asString
+from meresco.core import Observable
+from meresco.components.http import PathFilter
+from meresco.components.http.utils import okPlainText
 
 class QueryLogWriterTest(SeecrTestCase):
 
-    def testLoggedPaths(self):
+    def testLoggedPathsNewStyle(self):
         log = CallTrace('log')
-        writer = QueryLogWriter(log=log, loggedPaths=['/sru', '/srw'])
-        writer.writeLog(**defaultKwargs(path=['/sru']))
-        writer.writeLog(**defaultKwargs(path=['/srv']))
-        writer.writeLog(**defaultKwargs(path=['/srw.php']))
-        self.assertEquals(['log','log'], log.calledMethodNames())
-        self.assertEquals(['/sru', '/srw.php'], [m.kwargs['path'] for m in log.calledMethods])
+        def handleRequest(**kwargs):
+            yield okPlainText
+            yield 'result'
+        index = CallTrace('index', methods={'handleRequest':handleRequest})
+
+        observable = be((Observable(),
+            (LogCollector(),
+                (QueryLogWriter(log=log, checkLogEnabled=True),),
+                (HandleRequestLog(),
+                    (PathFilter('/yes'),
+                        (QueryLogWriter.enableLog(),),
+                        (index,),
+                    ),
+                    (PathFilter('/no'),
+                        (index,),
+                    )
+                )
+            )
+        ))
+        result = asString(observable.all.handleRequest(Client=('11.22.33.44', 1234), path='/yes'))
+        self.assertEquals(okPlainText+'result', result)
+        result = asString(observable.all.handleRequest(Client=('22.33.44.55', 2345), path='/no'))
+        self.assertEquals(okPlainText+'result', result)
+        result = asString(observable.all.handleRequest(Client=('33.44.55.66', 3456), path='/yes'))
+        self.assertEquals(okPlainText+'result', result)
+        self.assertEquals(['log', 'log'], log.calledMethodNames())
+        self.assertEquals(['/yes', '/yes'], [m.kwargs['path'] for m in log.calledMethods])
+
 
     def testLogAllPaths(self):
         log = CallTrace('log')

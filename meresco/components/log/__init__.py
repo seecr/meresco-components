@@ -34,3 +34,4 @@ from directorylog import DirectoryLog
 from apachelogwriter import ApacheLogWriter
 from handlerequestlog import HandleRequestLog
 from querylogwriter import QueryLogWriter
+from logkeyvalue import LogKeyValue

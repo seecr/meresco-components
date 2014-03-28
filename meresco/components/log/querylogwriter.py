@@ -28,23 +28,23 @@
 from utils import getFirst
 from urllib import urlencode
 from time import time
+from logkeyvalue import LogKeyValue
 
 class QueryLogWriter(object):
-    def __init__(self, log, loggedPaths=None, convertArgumentsMethod=None, allowedPathMethod=None):
+    ENABLE_LOG_KEY = 'queryLogWriterEnableLog'
+    def __init__(self, log, checkLogEnabled=False, convertArgumentsMethod=None):
         self._log = log
-        self._allowedPath = (lambda path: True) if allowedPathMethod is None else allowedPathMethod
-        if loggedPaths is not None:
-            if allowedPathMethod is not None:
-                raise ValueError('Use loggedPaths xor allowedPathMethod.')
-            self._allowedPath = lambda path: any(path.startswith(p) for p in loggedPaths)
         self._queryArguments = self.convertSruArguments if convertArgumentsMethod is None else convertArgumentsMethod
+        self._checkLogEnabled = checkLogEnabled
 
     def writeLog(self, **logItems):
         if not 'Client' in logItems:
             return
+
+        if self._checkLogEnabled:
+            if not getFirst(logItems, self.ENABLE_LOG_KEY):
+                return
         path=getFirst(logItems, 'path')
-        if not self._allowedPath(path):
-            return
         self._log.log(
             timestamp=getFirst(logItems, 'timestamp') or time(),
             path=path,
@@ -62,6 +62,10 @@ class QueryLogWriter(object):
     @staticmethod
     def convertArguments(**logItems):
         return _queryArguments('arguments', **logItems)
+
+    @classmethod
+    def enableLog(cls):
+        return LogKeyValue({cls.ENABLE_LOG_KEY:True})
 
 def _queryArguments(argumentsKey, **logItems):
     return sortedUrlEncode(**getFirst(logItems, argumentsKey, {}))
