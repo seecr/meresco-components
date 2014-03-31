@@ -104,6 +104,55 @@ class LogCollector(Observable):
         if kwargs:
             self.do.writeLog(**kwargs)
 
+class LogCollectorScope(Observable):
+    def __init__(self, scopeName=None, name=None, **kwargs):
+        if scopeName is None and name is None:
+            raise TypeError("No name set for LogCollectorScope.")
+        elif scopeName is None:
+            scopeName = name
+        if name is None:
+            name = scopeName
+        Observable.__init__(self, name=name, **kwargs)
+        self._scopeName = scopeName
+
+    def all_unknown(self, message, *args, **kwargs):
+        myLogCollector = local('__callstack_var_logCollector__')
+        try:
+            __callstack_var_logCollector__ = LogCollector._logCollector()
+            yield self.all.unknown(message, *args, **kwargs)
+        finally:
+            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+
+    def any_unknown(self, message, *args, **kwargs):
+        myLogCollector = local('__callstack_var_logCollector__')
+        try:
+            __callstack_var_logCollector__ = LogCollector._logCollector()
+            try:
+                response = yield self.any.unknown(message, *args, **kwargs)
+            except NoneOfTheObserversRespond:
+                raise DeclineMessage
+            raise StopIteration(response)
+        finally:
+            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+
+    def do_unknown(self, message, *args, **kwargs):
+        myLogCollector = local('__callstack_var_logCollector__')
+        try:
+            __callstack_var_logCollector__ = LogCollector._logCollector()
+            self.do.unknown(message, *args, **kwargs)
+        finally:
+            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+
+    def call_unknown(self, message, *args, **kwargs):
+        myLogCollector = local('__callstack_var_logCollector__')
+        try:
+            __callstack_var_logCollector__ = LogCollector._logCollector()
+            try:
+                return self.call.unknown(message, *args, **kwargs)
+            except NoneOfTheObserversRespond:
+                raise DeclineMessage
+        finally:
+            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
 
 def collectLog(**kwargs):
     logCollector = local('__callstack_var_logCollector__')

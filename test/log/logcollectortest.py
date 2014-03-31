@@ -26,9 +26,10 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from weightless.core import be, asString, retval
+from weightless.core import be, asString, retval, consume
 from meresco.core import Observable, Transparent
-from meresco.components.log import LogCollector, collectLog
+from meresco.components.log import LogCollector, collectLog, LogKeyValue, LogCollectorScope
+from meresco.components import FilterMessages
 
 class LogCollectorTest(SeecrTestCase):
 
@@ -76,6 +77,48 @@ class LogCollectorTest(SeecrTestCase):
         collectLog(key='value1', key2='value2')
         collectLog(key='value3')
         self.assertEquals(dict(key=['value1', 'value3'], key2=['value2']), __callstack_var_logCollector__)
+
+    def testScope(self):
+        logwriter = CallTrace('logwriter', emptyGeneratorMethods=['someMessage'])
+
+        top = be((Observable(),
+            (LogCollector('default'),
+                (logwriter,),
+                (FilterMessages(allowed=['someMessage']),
+                    (LogKeyValue(dict(name='A')),
+                        (LogKeyValue(dict(name='B')),),
+                        (LogCollectorScope('scope_one'),
+                            (LogKeyValue(dict(name='C')),),
+                        ),
+                        (LogKeyValue(dict(name='D')),),
+                        (LogCollectorScope('scope_two'),
+                            (LogKeyValue(dict(name='E')),
+                                (LogCollectorScope('scope_two_one'),
+                                    (LogKeyValue(dict(name='F')),),
+                                ),
+                            ),
+                            (LogKeyValue(dict(name='G')),),
+                        ),
+                    )
+                )
+            )
+        ))
+
+        consume(top.all.someMessage())
+
+        self.assertEquals(['someMessage', 'writeLog'], logwriter.calledMethodNames())
+        self.assertEquals({
+                'name': ['A', 'B', 'D'],
+                'scope_one': [{
+                    'name': ['C'],
+                }],
+                'scope_two': [{
+                    'name': ['E', 'G'],
+                    'scope_two_one': [{
+                        'name': ['F']
+                    }]
+                }]
+            }, logwriter.calledMethods[-1].kwargs)
 
     def testCollectLogWithoutLogCollectorSet(self):
         # AttributeError is a good thing, calling local(...) without result can be expensive!
