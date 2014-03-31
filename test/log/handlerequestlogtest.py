@@ -90,6 +90,11 @@ class HandleRequestLogTest(SeecrTestCase):
         self.assertAlmostEqual(time(), __callstack_var_logCollector__['timestamp'][0], places=1)
 
 
+    def testPostBody(self):
+        __callstack_var_logCollector__ = defaultdict(list)
+        consume(HandleRequestLog().handleRequest(Method='POST', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value', Body='short'))
+
+        self.assertEquals(5, __callstack_var_logCollector__['requestBodySize'][0])
 
 
 

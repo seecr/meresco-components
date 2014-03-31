@@ -36,6 +36,9 @@ class HandleRequestLog(Transparent):
         for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion', 'path', 'query', 'arguments']:
             if key in kwargs:
                 logDict[key] = kwargs[key]
+        body = kwargs.get('Body')
+        if body:
+            logDict['requestBodySize'] = len(body)
         sizeInBytes = 0
         httpStatus = ""
         for response in compose(self.all.handleRequest(**kwargs)):
