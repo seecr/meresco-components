@@ -46,6 +46,7 @@ from traceback import print_exc
 from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
 from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
 from meresco.components.log import collectLog
+from collections import defaultdict
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
@@ -70,55 +71,59 @@ class SruHandler(Observable):
         SRU_IS_ONE_BASED = 1
 
         limitBeyond = kwargs.get('limitBeyond', None)
-        self._collectLog(sruArguments=sruArguments)
+        localLogCollector = defaultdict(list)
+        localLogCollector['arguments'].append(sruArguments)
 
-        t0 = self._timeNow()
-        start = startRecord - SRU_IS_ONE_BASED
-        cqlAbstractSyntaxTree = parseCQL(query)
-
-        facets = None
-        if 'x-term-drilldown' in sruArguments:
-            facets = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
-
-        extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
         try:
-            response = yield self.any.executeQuery(
-                    cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
-                    start=start,
-                    stop=start + maximumRecords,
-                    facets=facets,
-                    extraArguments=extraArguments,
-                    **kwargs)
-            total, hits = response.total, response.hits
-            drilldownData = getattr(response, "drilldownData", None)
-        except Exception, e:
-            print_exc()
-            yield RESPONSE_HEADER
-            yield self._writeDiagnostics([(QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], str(e))])
-            yield RESPONSE_FOOTER
-            return
+            t0 = self._timeNow()
+            start = startRecord - SRU_IS_ONE_BASED
+            cqlAbstractSyntaxTree = parseCQL(query)
 
-        queryTime = str(self._timeNow() - t0)
+            facets = None
+            if 'x-term-drilldown' in sruArguments:
+                facets = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
 
-        yield self._startResults(total, version)
+            extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
+            try:
+                response = yield self.any.executeQuery(
+                        cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+                        start=start,
+                        stop=start + maximumRecords,
+                        facets=facets,
+                        extraArguments=extraArguments,
+                        **kwargs)
+                total, hits = response.total, response.hits
+                drilldownData = getattr(response, "drilldownData", None)
+            except Exception, e:
+                print_exc()
+                yield RESPONSE_HEADER
+                yield self._writeDiagnostics([(QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], str(e))])
+                yield RESPONSE_FOOTER
+                return
 
-        recordsWritten = 0
-        for hit in hits:
-            if not recordsWritten:
-                yield '<srw:records>'
-            yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, hit=hit, version=version, sruArguments=sruArguments, **kwargs)
-            recordsWritten += 1
+            queryTime = str(self._timeNow() - t0)
 
-        if recordsWritten:
-            yield '</srw:records>'
-            nextRecordPosition = start + recordsWritten
-            if nextRecordPosition < total and (limitBeyond == None or (limitBeyond != None and limitBeyond > nextRecordPosition)):
-                yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
+            yield self._startResults(total, version)
 
-        yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
-        yield self._writeDiagnostics(diagnostics=diagnostics)
-        yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, **kwargs)
-        yield self._endResults()
+            recordsWritten = 0
+            for hit in hits:
+                if not recordsWritten:
+                    yield '<srw:records>'
+                yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, hit=hit, version=version, sruArguments=sruArguments, **kwargs)
+                recordsWritten += 1
+
+            if recordsWritten:
+                yield '</srw:records>'
+                nextRecordPosition = start + recordsWritten
+                if nextRecordPosition < total and (limitBeyond == None or (limitBeyond != None and limitBeyond > nextRecordPosition)):
+                    yield '<srw:nextRecordPosition>%i</srw:nextRecordPosition>' % (nextRecordPosition + SRU_IS_ONE_BASED)
+
+            yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
+            yield self._writeDiagnostics(diagnostics=diagnostics)
+            yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, localLogCollector=localLogCollector, **kwargs)
+            yield self._endResults()
+        finally:
+            self._collectLog(sru=localLogCollector)
 
     def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
         yield '<srw:echoedSearchRetrieveRequest>'
@@ -140,7 +145,7 @@ class SruHandler(Observable):
             yield self._createDiagnostic(uri=code, message=xmlEscape(message), details=xmlEscape(details))
         yield '</srw:diagnostics>'
 
-    def _writeExtraResponseData(self, response=None, queryTime=None, startTime=None, **kwargs):
+    def _writeExtraResponseData(self, response=None, queryTime=None, startTime=None, localLogCollector=None, **kwargs):
         result = compose(self._extraResponseDataTryExcept(response=response, queryTime=queryTime, **kwargs))
 
         headerWritten = False
@@ -161,12 +166,10 @@ class SruHandler(Observable):
         else:
             t_index_ms = -1
 
-        self._collectLog(
-                sruHandlingTime=t_sru_ms,
-                sruQueryTime=t_queryTime_ms,
-                sruIndexTime=t_index_ms,
-                sruNumberOfRecords=response.total,
-            )
+        localLogCollector['handlingTime'].append(t_sru_ms)
+        localLogCollector['queryTime'].append(t_queryTime_ms)
+        localLogCollector['indexTime'].append(t_index_ms)
+        localLogCollector['numberOfRecords'].append(response.total)
 
         if self._includeQueryTimes:
             if not headerWritten:

@@ -801,18 +801,20 @@ class SruHandlerTest(SeecrTestCase):
         consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
 
         self.assertEquals({
-                'sruHandlingTime': [Decimal('2.500')],
-                'sruQueryTime': [Decimal('1.500')],
-                'sruIndexTime': [Decimal('0.005')],
-                'sruNumberOfRecords': [0],
-                'sruArguments': [{
+            'sru': [{
+                'handlingTime': [Decimal('2.500')],
+                'queryTime': [Decimal('1.500')],
+                'indexTime': [Decimal('0.005')],
+                'numberOfRecords': [0],
+                'arguments': [{
                     'startRecord': 11,
                     'query': 'query',
                     'recordPacking': 'string',
                     'maximumRecords': 15,
                     'recordSchema': 'schema',
                 }],
-            }, __callstack_var_logCollector__)
+            }]
+        }, __callstack_var_logCollector__)
 
     @stderr_replaced
     def testCollectLogWhenIndexRaisesError(self):
@@ -833,14 +835,16 @@ class SruHandlerTest(SeecrTestCase):
         consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
 
         self.assertEquals({
-                'sruArguments': [{
+            'sru': [{
+                'arguments': [{
                     'startRecord': 11,
                     'query': 'query',
                     'recordPacking': 'string',
                     'maximumRecords': 15,
                     'recordSchema': 'schema',
                 }],
-            }, __callstack_var_logCollector__)
+            }]
+        }, __callstack_var_logCollector__)
 
 
     def testTestXsdEqualsPublishedXsd(self):
@@ -888,7 +892,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
 
 
-MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0))
+MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0), localLogCollector=defaultdict(list))
 
 def xpath(lxmlNode, path):
     return lxmlNode.xpath(path, namespaces=namespaces)
