@@ -61,11 +61,16 @@ class QueryLogWriter(object):
         )
 
     def _queryArguments(self, collectedLog):
-        return sortedUrlEncode(getFirst(
-                getScoped(collectedLog, self._scope(self._argumentSelectionScope), {}),
+        args = collectedLog
+        if self._argumentSelectionScope is not None:
+            args = getScoped(collectedLog, self._scope(self._argumentSelectionScope), {})
+        if self._argumentSelectionKey is not None:
+            args = getFirst(
+                args,
                 key=self._argumentSelectionKey,
                 default={}
-            ))
+            )
+        return sortedUrlEncode(args)
 
     @classmethod
     def forHttpArguments(cls, log, **kwargs):

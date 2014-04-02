@@ -28,7 +28,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, asString, retval, consume
 from meresco.core import Observable, Transparent
-from meresco.components.log import LogCollector, collectLog, LogKeyValue, LogCollectorScope
+from meresco.components.log import LogCollector, collectLog, LogKeyValue, LogCollectorScope, collectLogForScope
 from meresco.components import FilterMessages
 from meresco.components.log.utils import getScoped
 
@@ -127,6 +127,13 @@ class LogCollectorTest(SeecrTestCase):
         # AttributeError is a good thing, calling local(...) without result can be expensive!
         self.assertRaises(AttributeError, lambda: collectLog(dict(key='value1', key2='value2')))
 
+    def testCollectLogForScope(self):
+        __callstack_var_logCollector__ = dict()
+        collectLogForScope(scope={'key': 'value'})
+        collectLogForScope(scope={'key2': 'value'})
+        self.assertEquals({'scope': {'key': ['value'], 'key2': ['value']}}, __callstack_var_logCollector__)
+        collectLogForScope(scope={'key': 'value2'})
+        self.assertEquals({'scope': {'key': ['value', 'value2'], 'key2': ['value']}}, __callstack_var_logCollector__)
 
     def testGetScoped(self):
         collectedLog = {
