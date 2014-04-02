@@ -104,7 +104,7 @@ class SruLogTest(SeecrTestCase):
         # No data due to HandleRequestLog is not used.
         requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
         def handleRequest(**kwarg):
-            collectLog(key='value')
+            collectLog(dict(key='value'))
             yield okXml
             yield '<sru></sru>'
         requestHandler.methods['handleRequest'] = handleRequest

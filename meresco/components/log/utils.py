@@ -28,3 +28,16 @@
 
 def getFirst(aDict, key, default=None):
     return aDict.get(key, [default])[0]
+
+def getScoped(aDict, keyTuple, default=None):
+    if keyTuple == ():
+        return aDict
+    resultDict = aDict
+    possibleAnswer = default
+    for key in keyTuple[:-1]:
+        possibleAnswer = resultDict.get(keyTuple[-1], possibleAnswer)
+        try:
+            resultDict = resultDict[key]
+        except KeyError:
+            break
+    return resultDict.get(keyTuple[-1], possibleAnswer)

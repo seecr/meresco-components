@@ -34,5 +34,5 @@ class ApacheLogWriterTest(SeecrTestCase):
     def testWriteLogWithoutSensibleData(self):
         stream = StringIO()
         writer = ApacheLogWriter(stream)
-        writer.writeLog(**{'key':['value']})
+        writer.writeLog(collectedLog={'key':['value']})
         self.assertEquals("", stream.getvalue())

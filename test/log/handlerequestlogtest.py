@@ -31,9 +31,8 @@ from weightless.core import be, Yield, consume
 from meresco.core import Observable
 from meresco.components.log import LogCollector, HandleRequestLog, ApacheLogWriter
 from StringIO import StringIO
-from time import gmtime, time
+from time import time
 from weightless.core.utils import asList
-from collections import defaultdict
 
 class HandleRequestLogTest(SeecrTestCase):
 
@@ -84,17 +83,16 @@ class HandleRequestLogTest(SeecrTestCase):
         self.assertEquals(dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value'), requestHandler.calledMethods[0].kwargs)
 
     def testDefaultTimeIsNow(self):
-        __callstack_var_logCollector__ = defaultdict(list)
+        __callstack_var_logCollector__ = dict()
         consume(HandleRequestLog().handleRequest(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value'))
-
-        self.assertAlmostEqual(time(), __callstack_var_logCollector__['timestamp'][0], places=1)
+        self.assertAlmostEqual(time(), __callstack_var_logCollector__['httpRequest']['timestamp'][0], places=1)
 
 
     def testPostBody(self):
-        __callstack_var_logCollector__ = defaultdict(list)
+        __callstack_var_logCollector__ = dict()
         consume(HandleRequestLog().handleRequest(Method='POST', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value', Body='short'))
 
-        self.assertEquals(5, __callstack_var_logCollector__['requestBodySize'][0])
+        self.assertEquals(5, __callstack_var_logCollector__['httpRequest']['bodySize'][0])
 
 
 

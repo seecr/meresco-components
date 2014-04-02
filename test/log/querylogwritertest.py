@@ -26,7 +26,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from meresco.components.log import QueryLogWriter, HandleRequestLog, LogCollector
+from meresco.components.log import QueryLogWriter, HandleRequestLog, LogCollector, LogCollectorScope
 from weightless.core import be, asString
 from meresco.core import Observable
 from meresco.components.http import PathFilter
@@ -43,14 +43,17 @@ class QueryLogWriterTest(SeecrTestCase):
 
         observable = be((Observable(),
             (LogCollector(),
-                (QueryLogWriter(log=log, checkLogEnabled=True),),
-                (HandleRequestLog(),
-                    (PathFilter('/yes'),
-                        (QueryLogWriter.enableLog(),),
-                        (index,),
-                    ),
-                    (PathFilter('/no'),
-                        (index,),
+                (QueryLogWriter(log=log, scopeNames=('global', 'yesPath')),),
+                (LogCollectorScope('global'),
+                    (HandleRequestLog(),
+                        (PathFilter('/yes'),
+                            (LogCollectorScope('yesPath'),
+                                (index,),
+                            )
+                        ),
+                        (PathFilter('/no'),
+                            (index,),
+                        )
                     )
                 )
             )
@@ -64,20 +67,21 @@ class QueryLogWriterTest(SeecrTestCase):
         self.assertEquals(['log', 'log'], log.calledMethodNames())
         self.assertEquals(['/yes', '/yes'], [m.kwargs['path'] for m in log.calledMethods])
 
-
     def testLogAllPaths(self):
         log = CallTrace('log')
         writer = QueryLogWriter(log=log)
-        writer.writeLog(**defaultKwargs(path=['/sru']))
-        writer.writeLog(**defaultKwargs(path=['/srv']))
-        writer.writeLog(**defaultKwargs(path=['/srw.php']))
+        writer.writeLog(defaultCollectedLogWithPath('/sru'))
+        writer.writeLog(defaultCollectedLogWithPath('/srv'))
+        writer.writeLog(defaultCollectedLogWithPath('/srw.php'))
         self.assertEquals(['log','log', 'log'], log.calledMethodNames())
         self.assertEquals(['/sru', '/srv', '/srw.php'], [m.kwargs['path'] for m in log.calledMethods])
 
     def testLog(self):
         log = CallTrace('log')
         writer = QueryLogWriter(log=log)
-        writer.writeLog(**defaultKwargs(responseSize=[4096]))
+        collectedLog = defaultCollectedLog()
+        collectedLog['httpResponse']['size'] = [4096]
+        writer.writeLog(collectedLog)
         self.assertEquals(['log'], log.calledMethodNames())
         self.assertEquals(dict(
                 timestamp=1257161136.0,
@@ -91,20 +95,32 @@ class QueryLogWriterTest(SeecrTestCase):
 
     def testLogForArgumentsInsteadOfSruArguments(self):
         log = CallTrace('log')
-        writer = QueryLogWriter(log=log, convertArgumentsMethod=QueryLogWriter.convertArguments)
-        writer.writeLog(**defaultKwargs(arguments=[{'verb':'ListRecords', 'metadataPrefix':'rdf'}]))
+        writer = QueryLogWriter.forHttpArguments(log=log)
+        collectedLog = defaultCollectedLog()
+        collectedLog['httpRequest']['arguments'] = [{'verb':'ListRecords', 'metadataPrefix':'rdf'}]
+        writer.writeLog(collectedLog)
         self.assertEquals(['log'], log.calledMethodNames())
         self.assertEquals(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])
 
-def defaultKwargs(**kwargs):
+def defaultCollectedLog():
     result = dict(
-        timestamp=[1257161136.0],
-        path=['/sru'],
-        Client=[('11.22.33.44', 1234)],
-        responseSize=[5432],
-        duration=[3.0],
-        sruArguments=[{'version':'1.2'}],
-        sruNumberOfRecords=[32],
+        httpRequest=dict(
+            timestamp=[1257161136.0],
+            path=['/sru'],
+            Client=[('11.22.33.44', 1234)],
+        ),
+        httpResponse=dict(
+            size=[5432],
+            duration=[3.0],
+        ),
+        sru=dict(
+            arguments=[{'version':'1.2'}],
+            numberOfRecords=[32],
+        )
     )
-    result.update(**kwargs)
+    return result
+
+def defaultCollectedLogWithPath(path):
+    result = defaultCollectedLog()
+    result['httpRequest']['path'] = [path]
     return result

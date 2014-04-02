@@ -239,36 +239,36 @@ class SruRecordUpdateTest(SeecrTestCase):
     def testCollectLog(self):
         requestBody = self.createRequestBody(action=DELETE, recordIdentifier='idDelete')
         headers, result = self.performRequest(requestBody)
-        self.assertEquals(dict(sruRecordUpdate=[dict(delete=['idDelete'])]), self.logCollector)
+        self.assertEquals(dict(sruRecordUpdate=dict(delete=['idDelete'])), self.logCollector)
         requestBody = self.createRequestBody(action=CREATE, recordIdentifier='idAdd')
         headers, result = self.performRequest(requestBody)
-        self.assertEquals(dict(sruRecordUpdate=[dict(add=['idAdd'])]), self.logCollector)
+        self.assertEquals(dict(sruRecordUpdate=dict(add=['idAdd'])), self.logCollector)
 
     def testCollectLogWithErrors(self):
         self.observer.exceptions['delete'] = Exception('Some <Exception>')
         requestBody = self.createRequestBody(action=DELETE, recordIdentifier='idDelete')
         headers, result = self.performRequest(requestBody)
         self.assertEquals(dict(
-            sruRecordUpdate=[dict(
+            sruRecordUpdate=dict(
                 delete=['idDelete'],
                 errorType=['Exception'],
                 errorMessage=["Some <Exception>"]
-            )]), self.logCollector)
+            )), self.logCollector)
 
         self.observer.exceptions['add'] = ValidateException('Nee')
         requestBody = self.createRequestBody(action=CREATE, recordIdentifier='idAdd')
         headers, result = self.performRequest(requestBody)
         self.assertEquals(dict(
-            sruRecordUpdate=[dict(
+            sruRecordUpdate=dict(
                 add=['idAdd'],
                 errorType=['ValidateException'],
                 errorMessage=["Nee"]
-            )]), self.logCollector)
+            )), self.logCollector)
 
         headers, result = self.performRequest('<srw:updateRequest>Will raise XMLSyntaxError')
         self.assertEquals(dict(
-            sruRecordUpdate=[dict(
+            sruRecordUpdate=dict(
                 errorType=['XMLSyntaxError'],
                 errorMessage=['Namespace prefix srw on updateRequest is not defined, line 1, column 19']
-            )]), self.logCollector)
+            )), self.logCollector)
 

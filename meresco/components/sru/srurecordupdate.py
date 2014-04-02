@@ -43,8 +43,7 @@ from lxml.etree import parse, XMLSyntaxError, ElementTree
 from StringIO import StringIO
 from meresco.xml.namespaces import xpathFirst
 from meresco.components.http.utils import okXml
-from meresco.components.log import collectLog
-from collections import defaultdict
+from meresco.components.log import collectLogForScope
 
 class SruRecordUpdate(Observable):
     def __init__(self, name=None, stderr=stderr, sendRecordData=True, logErrors=True, enableCollectLog=False):
@@ -54,7 +53,7 @@ class SruRecordUpdate(Observable):
         self._sendRecordData = sendRecordData
         self._collectLog = lambda **kwargs: None
         if enableCollectLog:
-            self._collectLog = collectLog
+            self._collectLogForScope = collectLogForScope
 
     def handleRequest(self, Body="", **kwargs):
         yield okXml
@@ -65,7 +64,7 @@ class SruRecordUpdate(Observable):
                 message='Missing mandatory element:  record rejected')
             return
 
-        localLogCollector = defaultdict(list)
+        localLogCollector = dict()
         try:
             try:
                 lxmlNode = parse(StringIO(Body))
@@ -85,14 +84,14 @@ class SruRecordUpdate(Observable):
                 if self._sendRecordData:
                     lxmlNode = xpathFirst(record, 'srw:recordData/child::*')
                 recordSchema = xpathFirst(record, 'srw:recordSchema/text()')
-                localLogCollector['add'].append(recordId)
+                localLogCollector['add'] = recordId
                 yield self.all.add(
                         identifier=recordId,
                         partname=recordSchema,
                         lxmlNode=ElementTree(lxmlElementUntail(lxmlNode)),
                     )
             elif action == 'delete':
-                localLogCollector['delete'].append(recordId)
+                localLogCollector['delete'] = recordId
                 yield self.all.delete(identifier=recordId)
             else:
                 raise ValueError("action value should refer to either 'create', 'replace' or 'delete'.")
@@ -110,7 +109,7 @@ class SruRecordUpdate(Observable):
                 details=escapeXml(format_exc()),
                 message='Invalid component:  record rejected')
         finally:
-            self._collectLog(sruRecordUpdate=localLogCollector)
+            self._collectLogForScope(sruRecordUpdate=localLogCollector)
 
     def _respond(self, diagnosticUri=None, details='', message=''):
         operationStatus = "success"
@@ -123,8 +122,8 @@ class SruRecordUpdate(Observable):
 
     def _log(self, data, error=None, localLogCollector=None):
         if not error is None:
-            localLogCollector['errorType'].append(type(error).__name__)
-            localLogCollector['errorMessage'].append(str(error))
+            localLogCollector['errorType'] = type(error).__name__
+            localLogCollector['errorMessage'] = str(error)
         if not self._logErrors:
             return
         print_exc(file=self._stderr)

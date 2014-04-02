@@ -57,4 +57,4 @@ class LogKeyValue(Observable):
             raise DeclineMessage
 
     def _log(self):
-        collectLog(**self._keyValues)
+        collectLog(self._keyValues)

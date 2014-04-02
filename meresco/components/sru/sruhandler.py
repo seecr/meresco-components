@@ -45,7 +45,7 @@ from traceback import print_exc
 
 from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
 from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
-from meresco.components.log import collectLog
+from meresco.components.log import collectLogForScope
 from collections import defaultdict
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
@@ -65,14 +65,13 @@ class SruHandler(Observable):
         self._includeQueryTimes = includeQueryTimes
         self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
         self._drilldownMaximumTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
-        self._collectLog = collectLog if enableCollectLog else lambda **kwargs: None
+        self._collectLogForScope = collectLogForScope if enableCollectLog else lambda **kwargs: None
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         limitBeyond = kwargs.get('limitBeyond', None)
-        localLogCollector = defaultdict(list)
-        localLogCollector['arguments'].append(sruArguments)
+        localLogCollector = {'arguments': sruArguments}
 
         try:
             t0 = self._timeNow()
@@ -123,7 +122,7 @@ class SruHandler(Observable):
             yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, localLogCollector=localLogCollector, **kwargs)
             yield self._endResults()
         finally:
-            self._collectLog(sru=localLogCollector)
+            self._collectLogForScope(sru=localLogCollector)
 
     def _writeEchoedSearchRetrieveRequest(self, sruArguments, **kwargs):
         yield '<srw:echoedSearchRetrieveRequest>'
@@ -166,10 +165,10 @@ class SruHandler(Observable):
         else:
             t_index_ms = -1
 
-        localLogCollector['handlingTime'].append(t_sru_ms)
-        localLogCollector['queryTime'].append(t_queryTime_ms)
-        localLogCollector['indexTime'].append(t_index_ms)
-        localLogCollector['numberOfRecords'].append(response.total)
+        localLogCollector['handlingTime'] = t_sru_ms
+        localLogCollector['queryTime'] = t_queryTime_ms
+        localLogCollector['indexTime'] = t_index_ms
+        localLogCollector['numberOfRecords'] = response.total
 
         if self._includeQueryTimes:
             if not headerWritten:

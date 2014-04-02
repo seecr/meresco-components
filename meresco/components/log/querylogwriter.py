@@ -25,50 +25,51 @@
 #
 ## end license ##
 
-from utils import getFirst
+from utils import getFirst, getScoped
 from urllib import urlencode
 from time import time
-from logkeyvalue import LogKeyValue
 
 class QueryLogWriter(object):
-    ENABLE_LOG_KEY = 'queryLogWriterEnableLog'
-    def __init__(self, log, checkLogEnabled=False, convertArgumentsMethod=None):
+    def __init__(self, log, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments')):
         self._log = log
-        self._queryArguments = self.convertSruArguments if convertArgumentsMethod is None else convertArgumentsMethod
-        self._checkLogEnabled = checkLogEnabled
 
-    def writeLog(self, **logItems):
-        if not 'Client' in logItems:
+        self._scopeNames = () if scopeNames is None else scopeNames
+
+        self._scope = lambda name: self._scopeNames + (name,)
+        self._argumentSelectionScope = argumentsSelection['scope']
+        self._argumentSelectionKey = argumentsSelection['key']
+
+    def writeLog(self, collectedLog):
+        scopePresent = getScoped(collectedLog, self._scopeNames)
+        if scopePresent is None:
+            return
+        httpRequest = getScoped(collectedLog, self._scope('httpRequest'), {})
+        httpResponse = getScoped(collectedLog, self._scope('httpResponse'), {})
+        sru = getScoped(collectedLog, self._scope('sru'), {})
+        if not 'Client' in httpRequest:
             return
 
-        if self._checkLogEnabled:
-            if not getFirst(logItems, self.ENABLE_LOG_KEY):
-                return
-        path=getFirst(logItems, 'path')
+        path = getFirst(httpRequest, 'path')
         self._log.log(
-            timestamp=getFirst(logItems, 'timestamp') or time(),
+            timestamp=getFirst(httpRequest, 'timestamp') or time(),
             path=path,
-            ipAddress=getFirst(logItems, 'Client')[0],
-            size=getFirst(logItems, 'responseSize', 0)/1024.0,
-            duration=getFirst(logItems, 'duration'),
-            numberOfRecords=getFirst(logItems, 'sruNumberOfRecords'),
-            queryArguments=self._queryArguments(**logItems)
+            ipAddress=getFirst(httpRequest, 'Client')[0],
+            size=getFirst(httpResponse, 'size', 0)/1024.0,
+            duration=getFirst(httpResponse, 'duration'),
+            numberOfRecords=getFirst(sru, 'numberOfRecords'),
+            queryArguments=self._queryArguments(collectedLog)
         )
 
-    @staticmethod
-    def convertSruArguments(**logItems):
-        return _queryArguments('sruArguments', **logItems)
-
-    @staticmethod
-    def convertArguments(**logItems):
-        return _queryArguments('arguments', **logItems)
+    def _queryArguments(self, collectedLog):
+        return sortedUrlEncode(getFirst(
+                getScoped(collectedLog, self._scope(self._argumentSelectionScope), {}),
+                key=self._argumentSelectionKey,
+                default={}
+            ))
 
     @classmethod
-    def enableLog(cls):
-        return LogKeyValue({cls.ENABLE_LOG_KEY:True})
+    def forHttpArguments(cls, log, **kwargs):
+        return cls(log=log, argumentsSelection=dict(scope='httpRequest', key='arguments'))
 
-def _queryArguments(argumentsKey, **logItems):
-    return sortedUrlEncode(**getFirst(logItems, argumentsKey, {}))
-
-def sortedUrlEncode(**kwargs):
-    return str(urlencode(sorted(kwargs.items()), doseq=True))
+def sortedUrlEncode(aDict):
+    return str(urlencode(sorted(aDict.items()), doseq=True))

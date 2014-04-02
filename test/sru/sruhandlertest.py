@@ -784,7 +784,7 @@ class SruHandlerTest(SeecrTestCase):
     def testCollectLog(self):
         handler = SruHandler(enableCollectLog=True)
         observer = CallTrace('observer', emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData'])
-        __callstack_var_logCollector__ = defaultdict(list)
+        __callstack_var_logCollector__ = dict()
         times = [1, 2.5, 3.5]
         def timeNow():
             return times.pop(0)
@@ -801,7 +801,7 @@ class SruHandlerTest(SeecrTestCase):
         consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
 
         self.assertEquals({
-            'sru': [{
+            'sru': {
                 'handlingTime': [Decimal('2.500')],
                 'queryTime': [Decimal('1.500')],
                 'indexTime': [Decimal('0.005')],
@@ -813,14 +813,14 @@ class SruHandlerTest(SeecrTestCase):
                     'maximumRecords': 15,
                     'recordSchema': 'schema',
                 }],
-            }]
+            }
         }, __callstack_var_logCollector__)
 
     @stderr_replaced
     def testCollectLogWhenIndexRaisesError(self):
         handler = SruHandler(enableCollectLog=True)
         observer = CallTrace('observer', emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData', 'additionalDiagnosticDetails'])
-        __callstack_var_logCollector__ = defaultdict(list)
+        __callstack_var_logCollector__ = dict()
         times = [1]
         def timeNow():
             return times.pop(0)
@@ -835,7 +835,7 @@ class SruHandlerTest(SeecrTestCase):
         consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
 
         self.assertEquals({
-            'sru': [{
+            'sru': {
                 'arguments': [{
                     'startRecord': 11,
                     'query': 'query',
@@ -843,7 +843,7 @@ class SruHandlerTest(SeecrTestCase):
                     'maximumRecords': 15,
                     'recordSchema': 'schema',
                 }],
-            }]
+            }
         }, __callstack_var_logCollector__)
 
 
@@ -892,7 +892,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
 
 
-MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0), localLogCollector=defaultdict(list))
+MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0), localLogCollector=dict())
 
 def xpath(lxmlNode, path):
     return lxmlNode.xpath(path, namespaces=namespaces)

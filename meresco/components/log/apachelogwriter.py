@@ -26,29 +26,31 @@
 ## end license ##
 from time import gmtime, strftime
 from urlparse import urlsplit
-from utils import getFirst
+from utils import getFirst, getScoped
 
 class ApacheLogWriter(object):
     def __init__(self, outputStream=None):
         self._out = outputStream
 
-    def writeLog(self, **logItems):
+    def writeLog(self, collectedLog):
         if self._out is None:
             return
-        if not 'Client' in logItems:
+        httpRequest = getScoped(collectedLog, ('httpRequest',), {})
+        httpResponse = getScoped(collectedLog, ('httpResponse',), {})
+        if not 'Client' in httpRequest:
             return
-        headers = getFirst(logItems, 'Headers', {})
+        headers = getFirst(httpRequest, 'Headers', {})
         self._out.write(APACHE_LOGLINE.format(
-                ipaddress=getFirst(logItems, 'Client', default=('-', 0))[0],
+                ipaddress=getFirst(httpRequest, key='Client', default=('-', 0))[0],
                 user='-',
-                timestamp=strftime('%d/%b/%Y:%H:%M:%S +0000', gmtime(getFirst(logItems, 'timestamp'))),
-                Method=getFirst(logItems, 'Method', '-'),
-                pathAndQuery=stripToPathAndQuery(getFirst(logItems, 'RequestURI', '')),
-                status=getFirst(logItems, 'responseHttpStatus', '0'),
-                responseSize=getFirst(logItems, 'responseSize') or '-',
+                timestamp=strftime('%d/%b/%Y:%H:%M:%S +0000', gmtime(getFirst(httpRequest, 'timestamp'))),
+                Method=getFirst(httpRequest, 'Method', '-'),
+                pathAndQuery=stripToPathAndQuery(getFirst(httpRequest, 'RequestURI', '')),
+                status=getFirst(httpResponse, 'httpStatus', '0'),
+                responseSize=getFirst(httpResponse, 'size') or '-',
                 Referer=headers.get('Referer', '-'),
                 UserAgent=headers.get('User-Agent', '-'),
-                HTTPVersion=getFirst(logItems, 'HTTPVersion', '1.0'),
+                HTTPVersion=getFirst(httpRequest, 'HTTPVersion', '1.0'),
             ))
         self._out.flush()
 

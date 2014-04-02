@@ -30,6 +30,7 @@ from weightless.core import be, asString, retval, consume
 from meresco.core import Observable, Transparent
 from meresco.components.log import LogCollector, collectLog, LogKeyValue, LogCollectorScope
 from meresco.components import FilterMessages
+from meresco.components.log.utils import getScoped
 
 class LogCollectorTest(SeecrTestCase):
 
@@ -55,7 +56,7 @@ class LogCollectorTest(SeecrTestCase):
     def testLog(self):
         class SomeLog(Transparent):
             def logMe(self, argument):
-                collectLog(logArgument=argument)
+                collectLog(dict(logArgument=argument))
                 return self.call.logMe(argument=argument)
         observer = createObserver()
         observer.methods['doNotLogMe'] = observer.methods['logMe'] = observer.methods['callMessage']
@@ -70,12 +71,14 @@ class LogCollectorTest(SeecrTestCase):
         self.assertEquals('callresult', observable.call.doNotLogMe(argument=0))
         self.assertEquals(['logMe', 'writeLog', 'doNotLogMe'], observer.calledMethodNames())
         writeLog = observer.calledMethods[1]
-        self.assertEquals({'logArgument': [0]}, writeLog.kwargs)
+        self.assertEquals((), writeLog.args)
+        self.assertEquals(['collectedLog'], writeLog.kwargs.keys())
+        self.assertEquals({'logArgument': [0]}, writeLog.kwargs['collectedLog'])
 
     def testCollectLog(self):
         __callstack_var_logCollector__ = LogCollector._logCollector()
-        collectLog(key='value1', key2='value2')
-        collectLog(key='value3')
+        collectLog(dict(key='value1', key2='value2'))
+        collectLog(dict(key='value3'))
         self.assertEquals(dict(key=['value1', 'value3'], key2=['value2']), __callstack_var_logCollector__)
 
     def testScope(self):
@@ -109,20 +112,47 @@ class LogCollectorTest(SeecrTestCase):
         self.assertEquals(['someMessage', 'writeLog'], logwriter.calledMethodNames())
         self.assertEquals({
                 'name': ['A', 'B', 'D'],
-                'scope_one': [{
+                'scope_one': {
                     'name': ['C'],
-                }],
-                'scope_two': [{
+                },
+                'scope_two': {
                     'name': ['E', 'G'],
-                    'scope_two_one': [{
+                    'scope_two_one': {
                         'name': ['F']
-                    }]
-                }]
-            }, logwriter.calledMethods[-1].kwargs)
+                    }
+                }
+            }, logwriter.calledMethods[-1].kwargs['collectedLog'])
 
     def testCollectLogWithoutLogCollectorSet(self):
         # AttributeError is a good thing, calling local(...) without result can be expensive!
-        self.assertRaises(AttributeError, lambda: collectLog(key='value1', key2='value2'))
+        self.assertRaises(AttributeError, lambda: collectLog(dict(key='value1', key2='value2')))
+
+
+    def testGetScoped(self):
+        collectedLog = {
+            'scope level 1': {
+                'scope level 2': {
+                    'key': ['value']
+                },
+                'otherkey': ['other value'],
+            }
+        }
+        self.assertEquals(['value'], getScoped(collectedLog, ('scope level 1', 'scope level 2', 'key')))
+        self.assertEquals(['value'], getScoped(collectedLog, ('scope level 1', 'scope level 2', 'scope level 3', 'key')))
+        self.assertEquals(None, getScoped(collectedLog, ('scope level 1', 'scope level not here', 'scope level 2', 'key')))
+        self.assertEquals({'key': ['value']}, getScoped(collectedLog, ('scope level 1', 'scope level 2')))
+        self.assertEquals(collectedLog, getScoped(collectedLog, ()))
+
+    def testGetScopeForHttpRequestExample(self):
+        collectedLog = {
+            'global': {
+                'httpRequest': {
+                    'path': ['/path']
+                },
+                'subscope': {}
+            }
+        }
+        self.assertEquals({'path': ['/path']}, getScoped(collectedLog, ('global', 'subscope', 'httpRequest')))
 
 def createObserver():
     def allMessage(*args, **kwargs):

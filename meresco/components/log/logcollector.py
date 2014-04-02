@@ -26,7 +26,6 @@
 ## end license ##
 
 from meresco.core import Observable
-from collections import defaultdict
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage, local
 
 
@@ -66,7 +65,7 @@ class LogCollector(Observable):
             __callstack_var_logCollector__ = self._logCollector()
             yield self.all.unknown(message, *args, **kwargs)
         finally:
-            self._writeLog(**__callstack_var_logCollector__)
+            self._writeLog(__callstack_var_logCollector__)
 
     def any_unknown(self, message, *args, **kwargs):
         try:
@@ -77,14 +76,14 @@ class LogCollector(Observable):
                 raise DeclineMessage
             raise StopIteration(response)
         finally:
-            self._writeLog(**__callstack_var_logCollector__)
+            self._writeLog(__callstack_var_logCollector__)
 
     def do_unknown(self, message, *args, **kwargs):
         try:
             __callstack_var_logCollector__ = self._logCollector()
             self.do.unknown(message, *args, **kwargs)
         finally:
-            self._writeLog(**__callstack_var_logCollector__)
+            self._writeLog(__callstack_var_logCollector__)
 
     def call_unknown(self, message, *args, **kwargs):
         try:
@@ -94,15 +93,13 @@ class LogCollector(Observable):
             except NoneOfTheObserversRespond:
                 raise DeclineMessage
         finally:
-            self._writeLog(**__callstack_var_logCollector__)
+            self._writeLog(__callstack_var_logCollector__)
 
-    @staticmethod
-    def _logCollector():
-        return defaultdict(list)
+    _logCollector = dict
 
-    def _writeLog(self, **kwargs):
-        if kwargs:
-            self.do.writeLog(**kwargs)
+    def _writeLog(self, collectedLog):
+        if collectedLog:
+            self.do.writeLog(collectedLog=collectedLog)
 
 class LogCollectorScope(Observable):
     def __init__(self, scopeName=None, name=None, **kwargs):
@@ -121,7 +118,7 @@ class LogCollectorScope(Observable):
             __callstack_var_logCollector__ = LogCollector._logCollector()
             yield self.all.unknown(message, *args, **kwargs)
         finally:
-            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+            myLogCollector[self._scopeName] = __callstack_var_logCollector__
 
     def any_unknown(self, message, *args, **kwargs):
         myLogCollector = local('__callstack_var_logCollector__')
@@ -133,7 +130,7 @@ class LogCollectorScope(Observable):
                 raise DeclineMessage
             raise StopIteration(response)
         finally:
-            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+            myLogCollector[self._scopeName] = __callstack_var_logCollector__
 
     def do_unknown(self, message, *args, **kwargs):
         myLogCollector = local('__callstack_var_logCollector__')
@@ -141,7 +138,7 @@ class LogCollectorScope(Observable):
             __callstack_var_logCollector__ = LogCollector._logCollector()
             self.do.unknown(message, *args, **kwargs)
         finally:
-            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+            myLogCollector[self._scopeName] = __callstack_var_logCollector__
 
     def call_unknown(self, message, *args, **kwargs):
         myLogCollector = local('__callstack_var_logCollector__')
@@ -152,9 +149,18 @@ class LogCollectorScope(Observable):
             except NoneOfTheObserversRespond:
                 raise DeclineMessage
         finally:
-            myLogCollector[self._scopeName].append(__callstack_var_logCollector__)
+            myLogCollector[self._scopeName] = __callstack_var_logCollector__
 
-def collectLog(**kwargs):
-    logCollector = local('__callstack_var_logCollector__')
-    for key, value in kwargs.items():
-        logCollector[key].append(value)
+
+
+def collectLog(*logDicts):
+    collector=local('__callstack_var_logCollector__')
+    for aLogDict in logDicts:
+        for key, value in aLogDict.items():
+            collector.setdefault(key, []).append(value)
+
+def collectLogForScope(**scopes):
+    for scope, aLogDict in scopes.items():
+        collector=local('__callstack_var_logCollector__').setdefault(scope, dict())
+        for key, value in aLogDict.items():
+            collector.setdefault(key, []).append(value)

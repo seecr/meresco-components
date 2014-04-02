@@ -25,20 +25,22 @@
 #
 ## end license ##
 from meresco.core import Transparent
-from meresco.components.log import collectLog
+from meresco.components.log import collectLogForScope
 from weightless.core import compose, Yield
 from time import time
 
 class HandleRequestLog(Transparent):
     def handleRequest(self, **kwargs):
-        logDict = dict()
-        logDict['timestamp'] = timestamp = self._time()
+        requestLogDict = dict()
+        responseLogDict = dict()
+        timestamp = self._time()
+        requestLogDict['timestamp'] = timestamp
         for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion', 'path', 'query', 'arguments']:
             if key in kwargs:
-                logDict[key] = kwargs[key]
+                requestLogDict[key] = kwargs[key]
         body = kwargs.get('Body')
         if body:
-            logDict['requestBodySize'] = len(body)
+            requestLogDict['bodySize'] = len(body)
         sizeInBytes = 0
         httpStatus = ""
         for response in compose(self.all.handleRequest(**kwargs)):
@@ -51,22 +53,23 @@ class HandleRequestLog(Transparent):
                     httpStatus = response[len('HTTP/1.0 '):][:3]
             yield response
 
-        logDict['responseSize'] = sizeInBytes
+        responseLogDict['size'] = sizeInBytes
         if httpStatus:
-            logDict['responseHttpStatus'] = httpStatus
-        logDict['duration'] = self._time() - timestamp
-        collectLog(**logDict)
+            responseLogDict['httpStatus'] = httpStatus
+        responseLogDict['duration'] = self._time() - timestamp
+        collectLogForScope(httpRequest=requestLogDict, httpResponse=responseLogDict)
 
     def logHttpError(self, ResponseCode=None, **kwargs):
-        logDict = dict()
-        logDict['timestamp'] = self._time()
+        requestLogDict = dict()
+        responseLogDict = dict()
+        requestLogDict['timestamp'] = self._time()
         for key in ['Client', 'Headers', 'RequestURI', 'Method', 'HTTPVersion']:
             if key in kwargs:
-                logDict[key] = kwargs[key]
+                requestLogDict[key] = kwargs[key]
         if ResponseCode:
-            logDict['responseHttpStatus'] = str(ResponseCode)
+            responseLogDict['httpStatus'] = str(ResponseCode)
         self.do.logHttpError(ResponseCode=ResponseCode, **kwargs)
-        collectLog(**logDict)
+        collectLogForScope(httpRequest=requestLogDict, httpResponse=responseLogDict)
 
     def _time(self):
         return time()

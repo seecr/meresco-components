@@ -28,7 +28,7 @@
 
 from logcomponent import LogComponent
 from logfileserver import LogFileServer
-from logcollector import LogCollector, collectLog, LogCollectorScope
+from logcollector import LogCollector, collectLog, LogCollectorScope, collectLogForScope
 from querylog import QueryLog, QueryLogHelperForSru, QueryLogHelper, QueryLogHelperForExecuteCQL
 from directorylog import DirectoryLog
 from apachelogwriter import ApacheLogWriter
