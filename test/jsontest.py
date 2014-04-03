@@ -58,7 +58,9 @@ class JsonTest(SeecrTestCase):
 
     def testPrettyPrintList(self):
         jd = JsonList(['hello', 'world'])
-        self.assertEquals('[\n     "hello", \n     "world"\n]', jd.pretty_print(indent=5))
+        printedList = jd.pretty_print(indent=5)
+        self.assertTrue('\n     "hello"' in printedList)
+        self.assertTrue('\n     "world"' in printedList)
 
     def testLoadsList(self):
         jd = JsonList(['hello', 'world'])
