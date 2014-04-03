@@ -74,7 +74,8 @@ class QueryLogWriter(object):
 
     @classmethod
     def forHttpArguments(cls, log, **kwargs):
-        return cls(log=log, argumentsSelection=dict(scope='httpRequest', key='arguments'))
+        return cls(log=log, argumentsSelection=dict(scope='httpRequest', key='arguments'), **kwargs)
+
 
 def sortedUrlEncode(aDict):
     return str(urlencode(sorted(aDict.items()), doseq=True))
