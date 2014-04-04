@@ -51,7 +51,7 @@ class SruRecordUpdate(Observable):
         self._stderr = stderr
         self._logErrors = logErrors
         self._sendRecordData = sendRecordData
-        self._collectLog = lambda **kwargs: None
+        self._collectLogForScope = lambda **kwargs: None
         if enableCollectLog:
             self._collectLogForScope = collectLogForScope
 

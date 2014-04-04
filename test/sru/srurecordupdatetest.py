@@ -86,7 +86,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         }
 
     def performRequest(self, requestBody):
-        __callstack_var_logCollector__ = self.logCollector = defaultdict(list)
+        __callstack_var_logCollector__ = self.logCollector = dict()
         result = ''.join(compose(self.sruRecordUpdate.handleRequest(Body=requestBody)))
         return result.split('\r\n\r\n')
 
@@ -111,6 +111,14 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.assertEquals(['data'], resultNode.xpath('/my:data/text()', namespaces={'my':'mine'}))
         self.assertEquals(ElementTreeType, type(resultNode))
         self.assertEquals(None, resultNode.getroot().tail)
+
+    def testWithoutLogging(self):
+        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr, logErrors=True, enableCollectLog=False)
+        self.sruRecordUpdate.addObserver(self.observer)
+        requestBody = self.createRequestBody(recordData='<my:data xmlns:my="mine">data</my:data>      ')
+        headers, result = self.performRequest(requestBody)
+        self.assertTrue('<ucp:operationStatus>success</ucp:operationStatus>' in result)
+        self.assertEquals(dict(), self.logCollector)
 
     def testDelete(self):
         requestBody = self.createRequestBody(action=DELETE)
