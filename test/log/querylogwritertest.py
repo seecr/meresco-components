@@ -31,6 +31,7 @@ from weightless.core import be, asString
 from meresco.core import Observable
 from meresco.components.http import PathFilter
 from meresco.components.http.utils import okPlainText
+from decimal import Decimal
 
 class QueryLogWriterTest(SeecrTestCase):
 
@@ -101,6 +102,61 @@ class QueryLogWriterTest(SeecrTestCase):
         writer.writeLog(collectedLog)
         self.assertEquals(['log'], log.calledMethodNames())
         self.assertEquals(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])
+
+    def testLogLiveExample(self):
+        collectedLog = {
+            'httpRequest': {
+                'timestamp': [1396596372.708574],
+                'Headers': [{}],
+                'Client': [('127.0.0.1', 57075)],
+                'arguments': [{
+                    'query': ['meta.upload.id exact "NICL:oai:mdms.kenict.org:oai:nicl.nl:k163645"'],
+                    'operation': ['searchRetrieve'],
+                    'version': ['1.2'],
+                    'recordPacking': ['xml'],
+                    'recordSchema': ['smbAggregatedData']
+                }],
+                'RequestURI': ['/edurep/sruns?query=meta.upload.id+exact+%22NICL%3Aoai%3Amdms.kenict.org%3Aoai%3Anicl.nl%3Ak163645%22&operation=searchRetrieve&version=1.2&recordPacking=xml&recordSchema=smbAggregatedData'],
+                'query': ['query=meta.upload.id+exact+%22NICL%3Aoai%3Amdms.kenict.org%3Aoai%3Anicl.nl%3Ak163645%22&operation=searchRetrieve&version=1.2&recordPacking=xml&recordSchema=smbAggregatedData'],
+                'path': ['/edurep/sruns'],
+                'Method': ['GET'],
+                'HTTPVersion': ['1.0']
+            },
+            'query-scope': {
+                'sub-scope': {
+                    'cqlClauses': [2],
+                    'sru': {
+                        'indexTime': [Decimal('0.000')],
+                        'handlingTime': [Decimal('0.004')],
+                        'numberOfRecords': [1],
+                        'queryTime': [Decimal('0.003')],
+                        'arguments': [{
+                            'recordSchema': 'smbAggregatedData',
+                            'version': '1.2',
+                            'recordPacking': 'xml',
+                            'maximumRecords': 10,
+                            'startRecord': 1,
+                            'query': 'meta.upload.id exact "NICL:oai:mdms.kenict.org:oai:nicl.nl:k163645"',
+                            'operation': 'searchRetrieve'
+                        }]
+                    }
+                }
+            },
+            'httpResponse': {
+                'duration': [0.004216909408569336],
+                'httpStatus': ['200'],
+                'size': [1889]
+            }
+        }
+        log = CallTrace('log')
+        writer = QueryLogWriter(log=log, scopeNames=('query-scope', 'sub-scope'))
+        log2 = CallTrace('log')
+        writer2 = QueryLogWriter(log=log2, scopeNames=('query-scope', 'other-scope'))
+        writer.writeLog(collectedLog)
+        writer2.writeLog(collectedLog)
+        self.assertEquals(['log'], log.calledMethodNames())
+        self.assertEquals([], log2.calledMethodNames())
+        self.assertEquals(['maximumRecords=10&operation=searchRetrieve&query=meta.upload.id+exact+%22NICL%3Aoai%3Amdms.kenict.org%3Aoai%3Anicl.nl%3Ak163645%22&recordPacking=xml&recordSchema=smbAggregatedData&startRecord=1&version=1.2'], [m.kwargs['queryArguments'] for m in log.calledMethods])
 
 def defaultCollectedLog():
     result = dict(
