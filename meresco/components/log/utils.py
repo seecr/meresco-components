@@ -29,7 +29,10 @@
 def getFirst(aDict, key, default=None):
     return aDict.get(key, [default])[0]
 
-def getScoped(aDict, keyTuple, default=None):
+_default = object()
+
+def getScoped(aDict, keyTuple, default=_default):
+    default = dict() if default is _default else default
     if keyTuple == ():
         return aDict
     resultDict = aDict
@@ -41,3 +44,6 @@ def getScoped(aDict, keyTuple, default=None):
         except KeyError:
             break
     return resultDict.get(keyTuple[-1], possibleAnswer)
+
+def scopePresent(aDict, keyTuple):
+    return getScoped(aDict, keyTuple, None) is not None

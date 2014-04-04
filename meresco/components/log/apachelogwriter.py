@@ -35,8 +35,8 @@ class ApacheLogWriter(object):
     def writeLog(self, collectedLog):
         if self._out is None:
             return
-        httpRequest = getScoped(collectedLog, ('httpRequest',), {})
-        httpResponse = getScoped(collectedLog, ('httpResponse',), {})
+        httpRequest = getScoped(collectedLog, ('httpRequest',))
+        httpResponse = getScoped(collectedLog, ('httpResponse',))
         if not 'Client' in httpRequest:
             return
         headers = getFirst(httpRequest, 'Headers', {})

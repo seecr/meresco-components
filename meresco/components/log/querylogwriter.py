@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from utils import getFirst, getScoped
+from utils import getFirst, getScoped, scopePresent
 from urllib import urlencode
 from time import time
 
@@ -40,12 +40,11 @@ class QueryLogWriter(object):
         self._argumentSelectionKey = argumentsSelection['key']
 
     def writeLog(self, collectedLog):
-        scopePresent = getScoped(collectedLog, self._scopeNames)
-        if scopePresent is None:
+        if not scopePresent(collectedLog, self._scopeNames):
             return
-        httpRequest = getScoped(collectedLog, self._scope('httpRequest'), {})
-        httpResponse = getScoped(collectedLog, self._scope('httpResponse'), {})
-        sru = getScoped(collectedLog, self._scope('sru'), {})
+        httpRequest = getScoped(collectedLog, self._scope('httpRequest'))
+        httpResponse = getScoped(collectedLog, self._scope('httpResponse'))
+        sru = getScoped(collectedLog, self._scope('sru'))
         if not 'Client' in httpRequest:
             return
 
@@ -63,7 +62,7 @@ class QueryLogWriter(object):
     def _queryArguments(self, collectedLog):
         args = collectedLog
         if self._argumentSelectionScope is not None:
-            args = getScoped(collectedLog, self._scope(self._argumentSelectionScope), {})
+            args = getScoped(collectedLog, self._scope(self._argumentSelectionScope))
         if self._argumentSelectionKey is not None:
             args = getFirst(
                 args,

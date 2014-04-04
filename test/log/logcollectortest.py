@@ -146,7 +146,8 @@ class LogCollectorTest(SeecrTestCase):
         }
         self.assertEquals(['value'], getScoped(collectedLog, ('scope level 1', 'scope level 2', 'key')))
         self.assertEquals(['value'], getScoped(collectedLog, ('scope level 1', 'scope level 2', 'scope level 3', 'key')))
-        self.assertEquals(None, getScoped(collectedLog, ('scope level 1', 'scope level not here', 'scope level 2', 'key')))
+        self.assertEquals({}, getScoped(collectedLog, ('scope level 1', 'scope level not here', 'scope level 2', 'key')))
+        self.assertEquals(None, getScoped(collectedLog, ('scope level 1', 'scope level not here', 'scope level 2', 'key'), default=None))
         self.assertEquals({'key': ['value']}, getScoped(collectedLog, ('scope level 1', 'scope level 2')))
         self.assertEquals(collectedLog, getScoped(collectedLog, ()))
 
