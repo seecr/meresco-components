@@ -42,9 +42,9 @@ class QueryLogWriter(object):
     def writeLog(self, collectedLog):
         if not scopePresent(collectedLog, self._scopeNames):
             return
-        httpRequest = getScoped(collectedLog, self._scope('httpRequest'))
-        httpResponse = getScoped(collectedLog, self._scope('httpResponse'))
-        sru = getScoped(collectedLog, self._scope('sru'))
+        httpRequest = getScoped(collectedLog, scopeNames=self._scopeNames, key='httpRequest')
+        httpResponse = getScoped(collectedLog, scopeNames=self._scopeNames, key='httpResponse')
+        sru = getScoped(collectedLog, scopeNames=self._scopeNames, key='sru')
         if not 'Client' in httpRequest:
             return
 
@@ -62,7 +62,7 @@ class QueryLogWriter(object):
     def _queryArguments(self, collectedLog):
         args = collectedLog
         if self._argumentSelectionScope is not None:
-            args = getScoped(collectedLog, self._scope(self._argumentSelectionScope))
+            args = getScoped(collectedLog, scopeNames=self._scopeNames, key=self._argumentSelectionScope)
         if self._argumentSelectionKey is not None:
             args = getFirst(
                 args,

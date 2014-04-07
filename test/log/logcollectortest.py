@@ -30,7 +30,7 @@ from weightless.core import be, asString, retval, consume
 from meresco.core import Observable, Transparent
 from meresco.components.log import LogCollector, collectLog, LogKeyValue, LogCollectorScope, collectLogForScope
 from meresco.components import FilterMessages
-from meresco.components.log.utils import getScoped
+from meresco.components.log.utils import getScoped, scopePresent
 
 class LogCollectorTest(SeecrTestCase):
 
@@ -142,16 +142,37 @@ class LogCollectorTest(SeecrTestCase):
                     'key': ['value']
                 },
                 'otherkey': ['other value'],
-            }
+            },
         }
-        self.assertEquals(['value'], getScoped(collectedLog, ('scope level 1', 'scope level 2', 'key')))
-        self.assertEquals(['value'], getScoped(collectedLog, ('scope level 1', 'scope level 2', 'scope level 3', 'key')))
-        self.assertEquals({}, getScoped(collectedLog, ('scope level 1', 'scope level not here', 'scope level 2', 'key')))
-        self.assertEquals(None, getScoped(collectedLog, ('scope level 1', 'scope level not here', 'scope level 2', 'key'), default=None))
-        self.assertEquals({'key': ['value']}, getScoped(collectedLog, ('scope level 1', 'scope level 2')))
-        self.assertEquals(collectedLog, getScoped(collectedLog, ()))
+        self.assertEquals(['value'], getScoped(collectedLog, scopeNames=('scope level 1', 'scope level 2'), key='key'))
+        self.assertEquals(['value'], getScoped(collectedLog, scopeNames=('scope level 1', 'scope level 2', 'scope level 3'), key='key'))
+        self.assertEquals({}, getScoped(collectedLog, scopeNames=('scope level 1', 'scope level not here', 'scope level 2'), key='key'))
+        self.assertEquals(None, getScoped(collectedLog, scopeNames=('scope level 1', 'scope level not here', 'scope level 2'), key='key', default=None))
+        self.assertEquals({'key': ['value']}, getScoped(collectedLog, scopeNames=('scope level 1',), key='scope level 2'))
+        self.assertEquals({
+                'scope level 2': {
+                    'key': ['value']
+                },
+                'otherkey': ['other value'],
+            }, getScoped(collectedLog, scopeNames=(), key='scope level 1'))
+        self.assertEquals('strange', getScoped(collectedLog, scopeNames=('scope level 1',), key=None, default='strange'))
 
     def testGetScopeForHttpRequestExample(self):
+        collectedLog = {
+            'global': {
+                'httpRequest': {
+                    'path': ['/path']
+                },
+                'subscope': {
+                    'sru': {
+                        'numberOfRecords': [0]
+                    }
+                }
+            }
+        }
+        self.assertEquals({'path': ['/path']}, getScoped(collectedLog, scopeNames=('global', 'subscope'), key='httpRequest'))
+
+    def testScopePresent(self):
         collectedLog = {
             'global': {
                 'httpRequest': {
@@ -160,7 +181,9 @@ class LogCollectorTest(SeecrTestCase):
                 'subscope': {}
             }
         }
-        self.assertEquals({'path': ['/path']}, getScoped(collectedLog, ('global', 'subscope', 'httpRequest')))
+        self.assertTrue(scopePresent(collectedLog, scopeNames=('global',)))
+        self.assertTrue(scopePresent(collectedLog, scopeNames=('global', 'subscope')))
+        self.assertFalse(scopePresent(collectedLog, scopeNames=('global', 'otherscope')))
 
 def createObserver():
     def allMessage(*args, **kwargs):

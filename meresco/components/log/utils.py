@@ -31,19 +31,24 @@ def getFirst(aDict, key, default=None):
 
 _default = object()
 
-def getScoped(aDict, keyTuple, default=_default):
+def getScoped(aDict, scopeNames, key, default=_default):
     default = dict() if default is _default else default
-    if keyTuple == ():
-        return aDict
     resultDict = aDict
     possibleAnswer = default
-    for key in keyTuple[:-1]:
-        possibleAnswer = resultDict.get(keyTuple[-1], possibleAnswer)
+    for scopeName in scopeNames:
+        possibleAnswer = resultDict.get(key, possibleAnswer)
         try:
-            resultDict = resultDict[key]
+            resultDict = resultDict[scopeName]
         except KeyError:
             break
-    return resultDict.get(keyTuple[-1], possibleAnswer)
+    return resultDict.get(key, possibleAnswer)
 
-def scopePresent(aDict, keyTuple):
-    return getScoped(aDict, keyTuple, None) is not None
+def scopePresent(aDict, scopeNames):
+    try:
+        result = aDict
+        for scopeName in scopeNames:
+            result = result[scopeName]
+        return True
+    except KeyError:
+        return False
+

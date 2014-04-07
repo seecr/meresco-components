@@ -46,7 +46,6 @@ from traceback import print_exc
 from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
 from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
 from meresco.components.log import collectLogForScope
-from collections import defaultdict
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
