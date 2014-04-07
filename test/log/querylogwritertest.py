@@ -158,6 +158,22 @@ class QueryLogWriterTest(SeecrTestCase):
         self.assertEquals([], log2.calledMethodNames())
         self.assertEquals(['maximumRecords=10&operation=searchRetrieve&query=meta.upload.id+exact+%22NICL%3Aoai%3Amdms.kenict.org%3Aoai%3Anicl.nl%3Ak163645%22&recordPacking=xml&recordSchema=smbAggregatedData&startRecord=1&version=1.2'], [m.kwargs['queryArguments'] for m in log.calledMethods])
 
+    def testAdditionalArguments(self):
+        log = CallTrace('log')
+        writer = QueryLogWriter(log=log)
+        observer = CallTrace('additional', returnValues={'determineQueryArguments': dict(key='value')})
+        writer.addObserver(observer)
+        writer.writeLog(defaultCollectedLog())
+        self.assertEquals(['log'], log.calledMethodNames())
+        self.assertEquals(['key=value'], [m.kwargs['queryArguments'] for m in log.calledMethods])
+        self.assertEquals(['determineQueryArguments'], observer.calledMethodNames())
+        self.assertEquals(dict(
+                collectedLog=defaultCollectedLog(),
+                scopeNames=(),
+                currentArgs={'version': '1.2'},
+            ), observer.calledMethods[0].kwargs)
+
+
 def defaultCollectedLog():
     result = dict(
         httpRequest=dict(

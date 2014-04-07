@@ -28,9 +28,12 @@
 from utils import getFirst, getScoped, scopePresent
 from urllib import urlencode
 from time import time
+from meresco.core import Observable
+from weightless.core import NoneOfTheObserversRespond
 
-class QueryLogWriter(object):
-    def __init__(self, log, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments')):
+class QueryLogWriter(Observable):
+    def __init__(self, log, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments'), **kwargs):
+        Observable.__init__(self, **kwargs)
         self._log = log
         self._scopeNames = () if scopeNames is None else scopeNames
         self._argumentSelectionScope = argumentsSelection['scope']
@@ -66,6 +69,10 @@ class QueryLogWriter(object):
                 key=self._argumentSelectionKey,
                 default={}
             )
+        try:
+            args = self.call.determineQueryArguments(collectedLog=collectedLog, scopeNames=self._scopeNames, currentArgs=args)
+        except NoneOfTheObserversRespond:
+            pass
         return sortedUrlEncode(args)
 
     @classmethod
