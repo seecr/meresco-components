@@ -32,10 +32,7 @@ from time import time
 class QueryLogWriter(object):
     def __init__(self, log, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments')):
         self._log = log
-
         self._scopeNames = () if scopeNames is None else scopeNames
-
-        self._scope = lambda name: self._scopeNames + (name,)
         self._argumentSelectionScope = argumentsSelection['scope']
         self._argumentSelectionKey = argumentsSelection['key']
 
