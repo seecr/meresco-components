@@ -5,9 +5,9 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011, 2013 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2013-2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -110,6 +110,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # sok.recv
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            self.assertEquals({'Host': 'localhost'}, observer.calledMethods[0].kwargs['additionalHeaders'])
             callback() # addProcess
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEquals(0, len(observer.calledMethods[1].args))
@@ -476,7 +477,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             def __init__(self):
                 Observable.__init__(self)
                 self._t0 = time()
-            def buildRequest(self):
+            def buildRequest(self, additionalHeaders=None):
                 return 'request'
             def handle(self, data):
                 receivedData.append(('%.1fs' % (time() - self._t0), data))
@@ -524,7 +525,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             def __init__(self):
                 Observable.__init__(self)
                 self._t0 = time()
-            def buildRequest(self):
+            def buildRequest(self, additionalHeaders=None):
                 return 'request'
             def handle(self, data):
                 receivedData.append(('%.1fs' % (time() - self._t0), data))
@@ -576,7 +577,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         callback() # startProcess
         self.assertEquals('addWriter', reactor.calledMethods[-1].name)
         callback = reactor.calledMethods[-1].args[1]
-        downloader._err.truncate(0)        
+        downloader._err.truncate(0)
         callback()
         self.assertEquals('removeWriter', reactor.calledMethods[-1].name)
         self.assertEquals("%s: Connection refused.\n" % repr(downloader), downloader._err.getvalue())
@@ -585,7 +586,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             downloader.setDownloadAddress('localhost', port)
             downloader.resume()
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-       
+
     def testGetState(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, 'host', 12345, name='theName')

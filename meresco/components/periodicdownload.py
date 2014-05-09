@@ -131,7 +131,7 @@ class PeriodicDownload(Observable):
 
     def _processOne(self):
         self._sok = yield self._tryConnect()
-        requestString = self.call.buildRequest()
+        requestString = self.call.buildRequest(additionalHeaders={'Host': self._host})
         try:
             self._sok.send(requestString)
             self._sok.shutdown(SHUT_WR)
