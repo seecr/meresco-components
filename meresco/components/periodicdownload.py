@@ -5,9 +5,9 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011, 2013 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2013-2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -61,6 +61,7 @@ class PeriodicDownload(Observable):
         self._currentTimer = None
         self._currentProcess = None
         self._sok = None
+        self._errorState = None
         if autoStart and (not self._host or not self._port):
             raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
@@ -182,6 +183,7 @@ class PeriodicDownload(Observable):
             message = format_exc()
             message += 'Error while processing response: ' + _shorten(response)
             self._logError(message, request=requestString)
+        self._errorState = None
         self._startTimer()
         yield
 
@@ -219,6 +221,7 @@ class PeriodicDownload(Observable):
         raise StopIteration(sok)
 
     def _retryAfterError(self, message, request=None, retryAfter=0.1):
+        self._errorState = message
         self._logError(message, request)
         self._startTimer(retryAfter=retryAfter)
         yield
@@ -280,6 +283,9 @@ class PeriodicDownloadStateView(object):
     def schedule(self):
         return self._periodicDownload._schedule
 
+    @property
+    def errorState(self):
+        return self._periodicDownload._errorState
 
 MAX_LENGTH=1500
 def _shorten(response):
