@@ -269,6 +269,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.assertEquals(dict(
             sruRecordUpdate=dict(
                 add=['idAdd'],
+                invalid=['idAdd'],
                 errorType=['ValidateException'],
                 errorMessage=["Nee"]
             )), self.logCollector)

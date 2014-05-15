@@ -97,6 +97,7 @@ class SruRecordUpdate(Observable):
                 raise ValueError("action value should refer to either 'create', 'replace' or 'delete'.")
             yield self._respond()
         except ValidateException, e:
+            localLogCollector['invalid'] = recordId
             self._log(Body, e, localLogCollector=localLogCollector)
             yield self._respond(
                 diagnosticUri='info:srw/diagnostic/12/12',
