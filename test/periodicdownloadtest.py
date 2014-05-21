@@ -42,7 +42,7 @@ from seecr.test.io import stderr_replaced
 from seecr.test.utils import ignoreLineNumbers
 from seecr.utils.generatorutils import generatorReturn
 
-from weightless.core import be, compose
+from weightless.core import be, compose, consume
 from weightless.io import Reactor, Suspend
 
 from meresco.core import Observable
@@ -692,6 +692,15 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             yield
         downloader._tryConnect = mockTryConnect
         list(compose(downloader._processOne()))
+        self.assertEquals(['addTimer'], reactor.calledMethodNames())
+
+    def testNoBuildRequestSleeps(self):
+        reactor = CallTrace('reactor')
+        observer = CallTrace('observer', returnValues={'buildRequest': None})
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        downloader.addObserver(observer)
+
+        self.assertRaises(StopIteration, downloader._startProcess)
         self.assertEquals(['addTimer'], reactor.calledMethodNames())
 
     def _prepareDownloader(self, host, port, period=1, handleGenerator=None):
