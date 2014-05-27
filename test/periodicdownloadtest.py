@@ -700,7 +700,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
 
-        self.assertRaises(StopIteration, downloader._startProcess)
+        downloader._startProcess()
         self.assertEquals(['addTimer'], reactor.calledMethodNames())
 
     def testUseBuildRequestHostAndPort(self):

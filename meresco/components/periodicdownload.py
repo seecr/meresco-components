@@ -140,6 +140,7 @@ class PeriodicDownload(Observable):
             requestString = request
         if requestString is None:
             self._startTimer(retryAfter=1)
+            yield
             return
         self._sok = yield self._tryConnect(host, port)
         try:
