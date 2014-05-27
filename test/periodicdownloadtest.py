@@ -42,7 +42,7 @@ from seecr.test.io import stderr_replaced
 from seecr.test.utils import ignoreLineNumbers
 from seecr.utils.generatorutils import generatorReturn
 
-from weightless.core import be, compose, consume
+from weightless.core import be, compose
 from weightless.io import Reactor, Suspend
 
 from meresco.core import Observable
@@ -687,7 +687,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
-        def mockTryConnect():
+        def mockTryConnect(host, port):
             generatorReturn(sok)
             yield
         downloader._tryConnect = mockTryConnect
@@ -702,6 +702,23 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 
         self.assertRaises(StopIteration, downloader._startProcess)
         self.assertEquals(['addTimer'], reactor.calledMethodNames())
+
+    def testUseBuildRequestHostAndPort(self):
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            reactor = CallTrace('reactor')
+            observer = CallTrace('observer', returnValues={'buildRequest': ('localhost', port, 'GET /path HTTP/1.0\r\n\r\n')}, emptyGeneratorMethods=['handle'])
+            observer.methods['handle'] = lambda data: (x for x in 'X')
+            downloader = PeriodicDownload(reactor, err=StringIO(), autoStart=False)
+            downloader.addObserver(observer)
+            downloader._startProcess()
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # HTTP GET
+            sleep(0.01)
+            callback = reactor.calledMethods[-1].args[1]
+            callback() # sok.recv
+            callback() # sok.recv
+            callback() # addProcess
+            self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
 
     def _prepareDownloader(self, host, port, period=1, handleGenerator=None):
         handleGenerator = handleGenerator or (x for x in 'X')

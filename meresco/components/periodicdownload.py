@@ -130,11 +130,18 @@ class PeriodicDownload(Observable):
         self._currentProcess.next()
 
     def _processOne(self):
-        requestString = self.call.buildRequest(additionalHeaders={'Host': self._host})
+        additionalHeaders = {'Host': self._host} if self._host else {}
+        request = self.call.buildRequest(additionalHeaders=additionalHeaders)
+        if type(request) is tuple:
+            host, port, requestString = request
+        else:
+            host = self._host
+            port = self._port
+            requestString = request
         if requestString is None:
             self._startTimer(retryAfter=1)
             return
-        self._sok = yield self._tryConnect()
+        self._sok = yield self._tryConnect(host, port)
         try:
             self._sok.send(requestString)
             self._sok.shutdown(SHUT_WR)
@@ -190,7 +197,7 @@ class PeriodicDownload(Observable):
         self._startTimer()
         yield
 
-    def _tryConnect(self):
+    def _tryConnect(self, host, port):
         sok = socket()
         sok.setblocking(0)
         sok.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
@@ -200,7 +207,7 @@ class PeriodicDownload(Observable):
         while True:
             try:
                 try:
-                    sok.connect((self._host, self._port))
+                    sok.connect((host, port))
                 except SocketError, (errno, msg):
                     if errno != EINPROGRESS:
                         yield self._retryAfterError("%s: %s" % (errno, msg))
