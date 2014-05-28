@@ -706,7 +706,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
     def testUseBuildRequestHostAndPort(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             reactor = CallTrace('reactor')
-            observer = CallTrace('observer', returnValues={'buildRequest': ('localhost', port, 'GET /path HTTP/1.0\r\n\r\n')}, emptyGeneratorMethods=['handle'])
+            observer = CallTrace('observer', returnValues={'buildRequest': dict(host='localhost', port=port, request='GET /path HTTP/1.0\r\n\r\n')}, emptyGeneratorMethods=['handle'])
             observer.methods['handle'] = lambda data: (x for x in 'X')
             downloader = PeriodicDownload(reactor, err=StringIO(), autoStart=False)
             downloader.addObserver(observer)

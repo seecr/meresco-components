@@ -132,8 +132,10 @@ class PeriodicDownload(Observable):
     def _processOne(self):
         additionalHeaders = {'Host': self._host} if self._host else {}
         request = self.call.buildRequest(additionalHeaders=additionalHeaders)
-        if type(request) is tuple:
-            host, port, requestString = request
+        if type(request) is dict:
+            host = request['host']
+            port = request['port']
+            requestString = request['request']
         else:
             host = self._host
             port = self._port
