@@ -63,6 +63,7 @@ from filtermessagestest import FilterMessagesTest
 from filterpartbynametest import FilterPartByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
+from jsontest import JsonTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from parseargumentstest import ParseArgumentsTest
 from parsecqltest import ParseCQLTest
