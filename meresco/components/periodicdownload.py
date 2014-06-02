@@ -235,6 +235,8 @@ class PeriodicDownload(Observable):
 
     def _retryAfterError(self, message, request=None, retryAfter=0.1):
         self._errorState = message
+        if request:
+            self._errorState = "{0}; For request: {1}".format(message, request)
         self._logError(message, request)
         self._startTimer(retryAfter=retryAfter)
         yield
