@@ -31,7 +31,8 @@ import warnings
 from contextlib import contextmanager
 from random import randint
 from threading import Event, Thread
-from socket import socket, error as SocketError, SHUT_RDWR
+from socket import socket, socketpair, error as SocketError, AF_UNIX, SHUT_RDWR
+from errno import EAGAIN
 from StringIO import StringIO
 from urllib2 import urlopen
 from time import time, sleep
@@ -732,6 +733,81 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader._currentProcess = processOne
         list(compose(processOne))
         self.assertEquals(['addReader', 'removeReader', 'addTimer'], reactor.calledMethodNames())
+
+    def testShortRequestSendWithoutReactor(self):
+        client, server = socketpair(AF_UNIX)
+        client.setblocking(0)
+        reactor = CallTrace()
+        class BuildRequest(object):
+            def buildRequest(self, additionalHeaders=None):
+                # A.k.a. not fitting into the buffer.
+                return 'small request'
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        def mockTryConnect(host, port):
+            raise StopIteration(client)
+            yield
+        downloader._tryConnect = mockTryConnect
+        downloader._currentProcess = compose(downloader._processOne())
+        downloader.addObserver(BuildRequest())
+
+        downloader._currentProcess.next()
+        self.assertEquals(['addReader'], reactor.calledMethodNames())
+        self.assertEquals('small request', server.recv(4096))
+
+        reactor.calledMethods.reset()
+        list(downloader._currentProcess)
+        self.assertEquals(['removeReader', 'addTimer'], reactor.calledMethodNames())
+
+    def testReallyLargeRequestSendWithReactor(self):
+        def readall():
+            data = None
+            count = 0
+            while data != '':
+                try:
+                    data = server.recv(4096)
+                    count += 1
+                except SocketError, (errno, msg):
+                    self.assertEquals(EAGAIN, errno)
+                    break
+            self.assertTrue(data)
+            return count
+
+        client, server = socketpair(AF_UNIX)
+        server.setblocking(0)
+        client.setblocking(0)
+        reactor = CallTrace()
+        class BuildRequest(object):
+            def buildRequest(self, additionalHeaders=None):
+                # A.k.a. not fitting into the buffer.
+                return ('x' * (256 * 1024))
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        def mockTryConnect(host, port):
+            raise StopIteration(client)
+            yield
+        downloader._tryConnect = mockTryConnect
+        downloader._currentProcess = compose(downloader._processOne())
+        downloader.addObserver(BuildRequest())
+
+        downloader._currentProcess.next()
+        self.assertEquals(['addWriter'], reactor.calledMethodNames())
+        addWriterCB = reactor.calledMethods[0].args[1]
+        self.assertEquals(addWriterCB, downloader._currentProcess.next)
+
+        count = readall()
+
+        reactor.calledMethods.reset()
+        downloader._currentProcess.next()
+        self.assertEquals([], reactor.calledMethodNames())
+
+        count = readall()
+
+        reactor.calledMethods.reset()
+        downloader._currentProcess.next()
+        self.assertEquals(['removeWriter', 'addReader'], reactor.calledMethodNames())
+
+        reactor.calledMethods.reset()
+        list(downloader._currentProcess)
+        self.assertEquals(['removeReader', 'addTimer'], reactor.calledMethodNames())
 
     def testNoBuildRequestSleeps(self):
         reactor = CallTrace('reactor')

@@ -108,7 +108,6 @@ class PeriodicDownload(Observable):
     def observer_init(self):
         self._startTimer()
 
-
     def _startTimer(self, retryAfter=None):
         self._currentProcess = None
         if not self._paused:
