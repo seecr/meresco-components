@@ -146,7 +146,7 @@ class PeriodicDownload(Observable):
             return
         self._sok = yield self._tryConnect(host, port)
         try:
-            self._sok.sendall(requestString)
+            yield self._quickOrAsyncSend(requestString)
             self._reactor.addReader(self._sok, self._currentProcess.next, prio=self._prio)
             responses = []
             try:
@@ -236,6 +236,23 @@ class PeriodicDownload(Observable):
                 yield self._retryAfterError(str(e), retryAfter=5*60)
                 return
         raise StopIteration(sok)
+
+    def _quickOrAsyncSend(self, data):
+        size = self._sok.send(data)
+        data = data[size:]
+        if not data:
+            # Quick: single call consumes all data, no Reactor calls & select overhead.
+            return
+
+        self._reactor.addWriter(self._sok, self._currentProcess.next)
+        yield
+        try:
+            while data != "":
+                size = self._sok.send(data)
+                data = data[size:]
+                yield
+        finally:
+            self._reactor.removeWriter(self._sok)
 
     def _retryAfterError(self, message, request=None, retryAfter=0.1):
         self._errorState = message
