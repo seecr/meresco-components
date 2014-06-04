@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from socket import socket, error as SocketError, SHUT_WR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
+from socket import socket, error as SocketError, SHUT_RDWR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
 from errno import EINPROGRESS, ECONNREFUSED
 from traceback import format_exc
 
@@ -147,7 +147,6 @@ class PeriodicDownload(Observable):
         self._sok = yield self._tryConnect(host, port)
         try:
             self._sok.send(requestString)
-            self._sok.shutdown(SHUT_WR)
             self._reactor.addReader(self._sok, self._currentProcess.next, prio=self._prio)
             responses = []
             try:
@@ -166,6 +165,11 @@ class PeriodicDownload(Observable):
             yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=30)
             return
         finally:
+            try:
+                self._sok.shutdown(SHUT_RDWR)
+            except SocketError, (errno, msg):
+                # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
+                pass
             self._sok.close()
             self._sok = None
 

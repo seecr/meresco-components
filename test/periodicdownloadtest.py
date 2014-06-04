@@ -31,7 +31,7 @@ import warnings
 from contextlib import contextmanager
 from random import randint
 from threading import Event, Thread
-from socket import socket
+from socket import socket, error as SocketError, SHUT_RDWR
 from StringIO import StringIO
 from urllib2 import urlopen
 from time import time, sleep
@@ -693,6 +693,45 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader._tryConnect = mockTryConnect
         list(compose(downloader._processOne()))
         self.assertEquals(['addTimer'], reactor.calledMethodNames())
+
+    def testHalfClosedSocketAfterTryConnectResultsInEmptyData(self):
+        # Kindof odd, but tests try/except around clientSocket.shutdown()
+        # which gives an ENOTCONN / Transport endpoint is not connected.
+        sokClient = socket()
+        sokClient.setblocking(0)
+        sokServer = socket()
+        sokServer.setblocking(0)
+        serverHostPort = ('127.0.0.1', randint(10000,60000))
+        sokServer.bind(serverHostPort)
+        sokServer.listen(0)
+        sleep(0.01)
+        try:
+            sokClient.connect(serverHostPort)
+        except SocketError, (errno, msg):
+            self.assertEquals('Operation now in progress', msg)
+        sleep(0.01)
+        connectionSok, _ = sokServer.accept()
+
+        sleep(0.01)
+        # Half-Close or Close makes no difference here.
+        sokServer.shutdown(SHUT_RDWR)
+        sokServer.close()
+        connectionSok.shutdown(SHUT_RDWR)
+        connectionSok.close()
+        sleep(0.01)
+
+        reactor = CallTrace('reactor')
+        observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        downloader.addObserver(observer)
+        def mockTryConnect(host, port):
+            generatorReturn(sokClient)
+            yield
+        downloader._tryConnect = mockTryConnect
+        processOne = downloader._processOne()
+        downloader._currentProcess = processOne
+        list(compose(processOne))
+        self.assertEquals(['addReader', 'removeReader', 'addTimer'], reactor.calledMethodNames())
 
     def testNoBuildRequestSleeps(self):
         reactor = CallTrace('reactor')
