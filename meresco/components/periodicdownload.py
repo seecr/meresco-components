@@ -146,7 +146,7 @@ class PeriodicDownload(Observable):
             return
         self._sok = yield self._tryConnect(host, port)
         try:
-            self._sok.send(requestString)
+            self._sok.sendall(requestString)
             self._reactor.addReader(self._sok, self._currentProcess.next, prio=self._prio)
             responses = []
             try:
