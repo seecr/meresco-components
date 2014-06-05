@@ -50,6 +50,8 @@ from meresco.core import Observable
 
 from meresco.components.http.utils import CRLF
 from meresco.components import PeriodicDownload, Schedule
+from BaseHTTPServer import BaseHTTPRequestHandler
+from SocketServer import TCPServer
 
 
 @contextmanager
@@ -118,6 +120,41 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
             callback()
+            self.assertReactorStateClean(reactor)
+
+    def testOneWithProxy(self):
+        request = []
+        with server([RESPONSE_ONE_RECORD]) as (port, msgs):
+            proxyServer(port + 1, request)
+            downloader, observer, reactor = self._prepareDownloader("localhost", port, proxyServer="http://localhost:%s" % (port + 1))
+            self.assertEquals('addTimer', reactor.calledMethods[0].name)
+            self.assertEquals(1, reactor.calledMethods[0].args[0])
+            callback = reactor.calledMethods[0].args[1]
+            callback() # connect
+            sleep(0.5)
+            self.assertEquals('addWriter', reactor.calledMethods[1].name)
+            callback = reactor.calledMethods[1].args[1]
+            callback() #proxy connect
+            sleep(0.5)
+            self.assertEquals(['addTimer', 'addWriter', 'removeWriter', 'addReader'], reactor.calledMethodNames())
+            callback = reactor.calledMethods[-1].args[1]
+            callback() #proxy recv
+            sleep(0.01)
+            self.assertEquals("GET", msgs[0][:3])
+            self.assertEquals('addReader', reactor.calledMethods[-1].name)
+            callback = reactor.calledMethods[3].args[1]
+            callback() # sok.recv
+            callback() # sok.recv
+            self.assertEquals("", downloader._err.getvalue())
+            self.assertEquals('buildRequest', observer.calledMethods[0].name)
+            self.assertEquals({'Host': 'localhost'}, observer.calledMethods[0].kwargs['additionalHeaders'])
+            callback() # addProcess
+            self.assertEquals('handle', observer.calledMethods[1].name)
+            self.assertEquals(0, len(observer.calledMethods[1].args))
+            self.assertEquals(['data'], observer.calledMethods[1].kwargs.keys())
+            self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
+            callback()
+            self.assertEquals(1, len(request))
             self.assertReactorStateClean(reactor)
 
     def testNoConnectionPossibleWithNonIntegerPort(self):
@@ -688,7 +725,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
-        def mockTryConnect(host, port):
+        def mockTryConnect(host, port, proxyServer=None):
             generatorReturn(sok)
             yield
         downloader._tryConnect = mockTryConnect
@@ -725,7 +762,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
-        def mockTryConnect(host, port):
+        def mockTryConnect(host, port, proxyServer=None):
             generatorReturn(sokClient)
             yield
         downloader._tryConnect = mockTryConnect
@@ -745,7 +782,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 # A.k.a. not fitting into the buffer.
                 return 'small request'
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
-        def mockTryConnect(host, port):
+        def mockTryConnect(host, port, proxyServer=None):
             raise StopIteration(client)
             yield
         downloader._tryConnect = mockTryConnect
@@ -779,7 +816,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 # A.k.a. not fitting into the buffer.
                 return 'small request'
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
-        def mockTryConnect(host, port):
+        def mockTryConnect(host, port, proxyServer=None):
             raise StopIteration(client)
             yield
         downloader._tryConnect = mockTryConnect
@@ -817,7 +854,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 # A.k.a. not fitting into the buffer.
                 return ('x' * (256 * 1024))
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
-        def mockTryConnect(host, port):
+        def mockTryConnect(host, port, proxyServer=None):
             raise StopIteration(client)
             yield
         downloader._tryConnect = mockTryConnect
@@ -871,14 +908,17 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback() # addProcess
             self.assertEqualsWS(ONE_RECORD, observer.calledMethods[1].kwargs['data'])
 
-    def _prepareDownloader(self, host, port, period=1, handleGenerator=None):
+    def _prepareDownloader(self, host, port, period=1, handleGenerator=None, proxyServer=None):
         handleGenerator = handleGenerator or (x for x in 'X')
         self._reactor = CallTrace("reactor")
         timerCounter = count(0)
         self._reactor.methods['addTimer'] = lambda *args, **kwargs: 'timerObject%s' % timerCounter.next()
         self._downloader = PeriodicDownload(self._reactor, host, port, schedule=Schedule(period=period), prio=0, err=StringIO())
         self._observer = CallTrace("observer", methods={'handle': lambda data: handleGenerator})
-        self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
+        if proxyServer:
+            self._observer.returnValues["buildRequest"] = dict(request="GET /path?argument=value HTTP/1.0\r\n\r\n", host=host, port=port, proxyServer=proxyServer)
+        else:
+            self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._downloader.addObserver(self._observer)
         self._downloader.observer_init()
         self.assertEquals(period, self._reactor.calledMethods[0].args[0])
@@ -916,3 +956,26 @@ fileDict = {
     '__file__': _dunderFile.func_code.co_filename,
     'periodicdownload.py': PeriodicDownload.__init__.func_code.co_filename,
 }
+
+def proxyServer(port, request):
+    def server(httpd):
+        httpd.serve_forever()
+    class Proxy(BaseHTTPRequestHandler):
+        def log_message(*args, **kwargs):
+            pass
+
+        def do_CONNECT(self):
+            request.append({'command': self.command, 'path': self.path, 'headers': self.headers})
+            self.send_response(200, "Connection established")
+            self.end_headers()
+            origRequest = self.connection.recv(4096)
+            path = "http://" + self.path + origRequest.split()[1]
+            self.wfile.write("HTTP/1.0 200 OK\r\n\r\n")
+            self.wfile.write(urlopen(path).read())
+            self.wfile.flush()
+            self.connection.close()
+
+    httpd = TCPServer(("", port), Proxy)
+    thread=Thread(None, lambda: server(httpd))
+    thread.daemon = True
+    thread.start()

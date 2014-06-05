@@ -38,6 +38,7 @@ from weightless.core import compose, Yield
 
 from sys import stderr
 from warnings import warn
+from urlparse import urlsplit
 
 
 class PeriodicDownload(Observable):
@@ -131,10 +132,12 @@ class PeriodicDownload(Observable):
     def _processOne(self):
         additionalHeaders = {'Host': self._host} if self._host else {}
         request = self.call.buildRequest(additionalHeaders=additionalHeaders)
+        proxyServer = None
         if type(request) is dict:
             host = request['host']
             port = request['port']
             requestString = request['request']
+            proxyServer = request.get('proxyServer')
         else:
             host = self._host
             port = self._port
@@ -143,9 +146,9 @@ class PeriodicDownload(Observable):
             self._startTimer(retryAfter=1)
             yield
             return
-        self._sok = yield self._tryConnect(host, port)
+        self._sok = yield self._tryConnect(host, port, proxyServer=proxyServer)
         try:
-            yield self._quickOrAsyncSend(requestString)
+            yield self._quickOrAsyncSend(self._sok, requestString)
             self._reactor.addReader(self._sok, self._currentProcess.next, prio=self._prio)
             responses = []
             try:
@@ -203,7 +206,13 @@ class PeriodicDownload(Observable):
         self._startTimer()
         yield
 
-    def _tryConnect(self, host, port):
+    def _tryConnect(self, host, port, proxyServer):
+        if proxyServer:
+            proxy = urlsplit(proxyServer)
+            origHost = host
+            origPort = port
+            host = proxy.hostname
+            port = proxy.port or 80
         sok = socket()
         sok.setblocking(0)
         sok.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
@@ -228,6 +237,25 @@ class PeriodicDownload(Observable):
                     return
                 if err != 0:   # any other error
                     raise IOError(err)
+
+                if proxyServer:
+                    yield self._quickOrAsyncSend(sok, "CONNECT {0}:{1} HTTP/1.0\r\nHost: {0}:{1}\r\n\r\n".format(origHost, origPort))
+                    self._reactor.addReader(sok, self._currentProcess.next)
+                    try:
+                        response = ''
+                        while True:
+                            yield
+                            fragment = sok.recv(4096)
+                            if fragment == '':
+                                break
+                            response += fragment
+                            if "\r\n\r\n" in response:
+                                break
+                        status = response.split()[:2]
+                        if not "200" in status:
+                            raise ValueError("Failed to connect through proxy")
+                    finally:
+                        self._reactor.removeReader(sok)
                 break
             except (AssertionError, KeyboardInterrupt, SystemExit), e:
                 raise
@@ -236,22 +264,22 @@ class PeriodicDownload(Observable):
                 return
         raise StopIteration(sok)
 
-    def _quickOrAsyncSend(self, data):
-        size = self._sok.send(data)
+    def _quickOrAsyncSend(self, sok, data):
+        size = sok.send(data)
         data = data[size:]
         if not data:
             # Quick: single call consumes all data, no Reactor calls & select overhead.
             return
 
-        self._reactor.addWriter(self._sok, self._currentProcess.next)
+        self._reactor.addWriter(sok, self._currentProcess.next)
         yield
         try:
             while data != "":
-                size = self._sok.send(data)
+                size = sok.send(data)
                 data = data[size:]
                 yield
         finally:
-            self._reactor.removeWriter(self._sok)
+            self._reactor.removeWriter(sok)
 
     def _retryAfterError(self, message, request=None, retryAfter=0.1):
         self._errorState = message
