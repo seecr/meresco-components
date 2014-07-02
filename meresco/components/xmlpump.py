@@ -31,7 +31,7 @@
 ## end license ##
 
 from StringIO import StringIO
-from lxml.etree import parse, tostring
+from lxml.etree import parse, tostring, XMLParser
 
 from converter import Converter
 from re import compile as compileRe
@@ -40,13 +40,25 @@ from re import compile as compileRe
 def lxmltostring(lxmlNode, **kwargs):
     return _fixLxmltostringRootElement(tostring(lxmlNode, encoding="UTF-8", **kwargs))
 
+
 class FileParseLxml(Converter):
     def _convert(self, anObject):
         return parse(anObject)
 
+
 class XmlParseLxml(Converter):
+    def __init__(self, parseOptions=None, **kwargs):
+        """When provided, parserOptions must contain arguments to lxml.etree.XMLParser,
+e.g. parserOptions=dict(huge_tree=True, remove_blank_text=True)"""
+        Converter.__init__(self, **kwargs)
+        self._parseOptions = parseOptions
+
     def _convert(self, anObject):
-        return parse(StringIO(anObject.encode('UTF-8')))
+        parseKwargs = {}
+        if not self._parseOptions is None:
+            parseKwargs = dict(parser=XMLParser(**self._parseOptions))
+        return parse(StringIO(anObject.encode('UTF-8')), **parseKwargs)
+
 
 class XmlPrintLxml(Converter):
     def __init__(self, pretty_print=True, **kwargs):
@@ -55,6 +67,7 @@ class XmlPrintLxml(Converter):
 
     def _convert(self, anObject):
         return lxmltostring(anObject, pretty_print=self._pretty_print)
+
 
 _CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):
@@ -66,5 +79,4 @@ def _fixLxmltostringRootElement(aString):
     firstGt = aString.find('>')
     if aString.find('&#', 0, firstGt) > -1:
         return _CHAR_REF.sub(_replCharRef, aString[:firstGt]) + aString[firstGt:]
-
     return aString

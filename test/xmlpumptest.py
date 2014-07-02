@@ -39,8 +39,8 @@ from meresco.components import lxmltostring
 
 from meresco.components import XmlPrintLxml, XmlParseLxml, FileParseLxml
 
-class XmlPumpTest(SeecrTestCase):
 
+class XmlPumpTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.observer = CallTrace('Observer', ignoredAttributes=['start'])
@@ -52,8 +52,7 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
 
-
-    def testInflate(self):
+    def testParse(self):
         xmlString = """<tag><content>contents</content></tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
@@ -65,7 +64,7 @@ class XmlPumpTest(SeecrTestCase):
         xmlNode = self.observer.calledMethods[0].kwargs['lxmlNode']
         self.assertEqualsLxml(XML(xmlString), xmlNode)
 
-    def testInflate2(self):
+    def testParse2(self):
         xmlString = """<tag><content>contents</content></tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
         self.observable.call.add(identifier="id", partname="partName", data=xmlString)
@@ -74,8 +73,11 @@ class XmlPumpTest(SeecrTestCase):
         list(compose(self.observable.any.add(identifier="id", partname="partName", data=xmlString)))
 
         self.assertEquals(4, len(self.observer.calledMethods))
+        for i in range(4):
+            xmlNode = self.observer.calledMethods[i].kwargs['lxmlNode']
+            self.assertEqualsLxml(XML(xmlString), xmlNode)
 
-    def testInflateWithElementStringResult(self):
+    def testParseWithElementStringResult(self):
         xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
@@ -89,12 +91,29 @@ class XmlPumpTest(SeecrTestCase):
         self.assertEquals('tag', rootTag.tag)
         self.assertEquals(['content'], [c.tag for c in rootTag.getchildren()])
 
-    def testInflateWithElementUnicodeResult(self):
+    def testParseWithElementUnicodeResult(self):
         xmlString = _ElementUnicodeResult(u"""<tag><content>conténts</content></tag>""")
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
         xmlNode = self.observer.calledMethods[0].kwargs['lxmlNode']
         self.assertEquals(['conténts'], xmlNode.xpath('/tag/content/text()'))
+
+    def testParseWithParseOptions(self):
+        xmlString = """<tag xmlns:xyz="uri:xyz">
+                <content xmlns:xyz="uri:xyz">contents</content>
+            </tag>"""
+        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
+        self.assertEquals(xmlString, lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+
+        self.observable = be(
+            (Observable(),
+                (XmlParseLxml(fromKwarg='data', toKwarg='lxmlNode', parseOptions=dict(remove_blank_text=True, ns_clean=True)),
+                    (self.observer,)
+                )
+            )
+        )
+        self.observable.do.add(identifier="id", partname="partName", data=xmlString)
+        self.assertEquals("""<tag xmlns:xyz="uri:xyz"><content>contents</content></tag>""", lxmltostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
 
     def testXmlPrintLxml(self):
         observable = Observable()
