@@ -95,8 +95,8 @@ from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
 
 from autocomplete.autocompletetest import AutocompleteTest
 
-from drilldown.srufielddrilldowntest import SRUFieldDrilldownTest
-from drilldown.srutermdrilldowntest import SRUTermDrilldownTest
+from drilldown.srufielddrilldowntest import SruFieldDrilldownTest
+from drilldown.srutermdrilldowntest import SruTermDrilldownTest
 from drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
 
 from http.apacheloggertest import ApacheLoggerTest

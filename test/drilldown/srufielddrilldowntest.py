@@ -8,8 +8,9 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -31,17 +32,14 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 
-from StringIO import StringIO
-
-from meresco.core import decorateWith
 from testhelpers import Response
-from meresco.components.drilldown import SRUFieldDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+from meresco.components.drilldown import SruFieldDrilldown, DRILLDOWN_HEADER
 
-from weightless.core import compose, be
+from weightless.core import compose
 
 from cqlparser import parseString, cql2string
 
-class SRUFieldDrilldownTest(SeecrTestCase):
+class SruFieldDrilldownTest(SeecrTestCase):
 
     def testSRUParamsAndXMLOutput(self):
         firstCall = []
@@ -52,7 +50,7 @@ class SRUFieldDrilldownTest(SeecrTestCase):
             else:
                 raise StopIteration(Response(total=10, hits=range(10)))
             yield
-        sruFieldDrilldown = SRUFieldDrilldown()
+        sruFieldDrilldown = SruFieldDrilldown()
         observer = CallTrace("observer")
         sruFieldDrilldown.addObserver(observer)
         observer.methods["executeQuery"] = executeQuery
@@ -68,7 +66,7 @@ class SRUFieldDrilldownTest(SeecrTestCase):
         self.assertEquals('(original) AND field1=term', cql2string(observer.calledMethods[1].kwargs['cqlAbstractSyntaxTree']))
 
     def testDrilldown(self):
-        adapter = SRUFieldDrilldown()
+        adapter = SruFieldDrilldown()
         observer = CallTrace("Observer")
         def executeQuery(**kwargs):
             raise StopIteration(Response(total=16, hits=range(16)))
@@ -85,7 +83,7 @@ class SRUFieldDrilldownTest(SeecrTestCase):
         self.assertEquals([("field0", 16), ("field1", 16)], result)
 
     def testEchoedExtraRequestData(self):
-        d = SRUFieldDrilldown()
+        d = SruFieldDrilldown()
         result = "".join(d.echoedExtraRequestData(sruArguments={'x-field-drilldown': ['term'], 'x-field-drilldown-fields': ['field0,field1'], 'otherArgument': ['ignored']}))
         self.assertEquals(DRILLDOWN_HEADER + '<dd:field-drilldown>term</dd:field-drilldown><dd:field-drilldown-fields>field0,field1</dd:field-drilldown-fields></dd:drilldown>', result)
 

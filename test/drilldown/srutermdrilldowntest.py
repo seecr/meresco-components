@@ -1,31 +1,32 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2013 Stichting Kennisnet http://www.kennisnet.nl
-# 
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from seecr.test import SeecrTestCase
@@ -39,15 +40,15 @@ from seecr.test.io import stderr_replaced
 
 from meresco.components.drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 from meresco.components.drilldown.drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2013
-from meresco.components.drilldown import SRUTermDrilldown
+from meresco.components.drilldown import SruTermDrilldown
 from meresco.components.drilldown.srutermdrilldown import FORMAT_JSON, FORMAT_XML
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
 from meresco.xml import xpathFirst, namespaces
 
-class SRUTermDrilldownTest(SeecrTestCase):
-    def testSRUTermDrilldown(self):
-        sruTermDrilldown = SRUTermDrilldown()
+class SruTermDrilldownTest(SeecrTestCase):
+    def testSruTermDrilldown(self):
+        sruTermDrilldown = SruTermDrilldown()
 
         drilldownData = [
                 {'fieldname': 'field0', 'terms': [{'term': 'value0_0', 'count': 14}]},
@@ -73,8 +74,8 @@ class SRUTermDrilldownTest(SeecrTestCase):
         xsdFilename = self._getXsdFilename(response)
         assertValid(response, join(schemasPath, xsdFilename))
 
-    def testSRUTermDrilldownWithPivots(self):
-        sruTermDrilldown = SRUTermDrilldown(defaultFormat=FORMAT_XML)
+    def testSruTermDrilldownWithPivots(self):
+        sruTermDrilldown = SruTermDrilldown(defaultFormat=FORMAT_XML)
 
         drilldownData = [
                 {
@@ -119,8 +120,8 @@ class SRUTermDrilldownTest(SeecrTestCase):
         xsdFilename = self._getXsdFilename(response)
         assertValid(response, join(schemasPath, xsdFilename))
 
-    def testSRUTermDrilldownWithPivotsInJson(self):
-        sruTermDrilldown = SRUTermDrilldown(defaultFormat=FORMAT_JSON)
+    def testSruTermDrilldownWithPivotsInJson(self):
+        sruTermDrilldown = SruTermDrilldown(defaultFormat=FORMAT_JSON)
 
         drilldownData = [
                 {
@@ -158,7 +159,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
         assertValid(response, join(schemasPath, xsdFilename))
 
     def testDrilldownNoResults(self):
-        sruTermDrilldown = SRUTermDrilldown()
+        sruTermDrilldown = SruTermDrilldown()
         drilldownData = [
                 {'fieldname': 'field0', 'terms': []},
             ]
@@ -174,8 +175,8 @@ class SRUTermDrilldownTest(SeecrTestCase):
         self.assertEqualsWS(expected, result)
 
     def testDefaultFormat(self):
-        self.assertRaises(ValueError, lambda: SRUTermDrilldown(defaultFormat='text'))
-        sruTermDrilldown = SRUTermDrilldown(defaultFormat='json')
+        self.assertRaises(ValueError, lambda: SruTermDrilldown(defaultFormat='text'))
+        sruTermDrilldown = SruTermDrilldown(defaultFormat='json')
         drilldownData = [
                 {
                     'fieldname': 'field0',
@@ -194,7 +195,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
     @stderr_replaced
     def testWrongFormat(self):
-        sruTermDrilldown = SRUTermDrilldown()
+        sruTermDrilldown = SruTermDrilldown()
         drilldownData = [
                 {
                     'fieldname': 'field0',
@@ -213,7 +214,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
 
 
     def testEchoedExtraRequestData(self):
-        component = SRUTermDrilldown()
+        component = SruTermDrilldown()
 
         result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0,field1'], 'version': '1.1'}, version='1.1')))
 
@@ -222,7 +223,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
         + DRILLDOWN_FOOTER, result)
 
     def testEchoedExtraRequestDataWithJsonFormat(self):
-        component = SRUTermDrilldown()
+        component = SruTermDrilldown()
 
         result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': ['field0/field1,field2','field3'], 'version': '1.1', 'x-drilldown-format': ['json']}, version='1.1')))
 
@@ -240,7 +241,7 @@ class SRUTermDrilldownTest(SeecrTestCase):
         assertValid(open(join(schemasPath, xsdFilename)).read(), join(schemasPath, 'XMLSchema.xsd'))
 
     def testEchoedExtraRequestDataWithEmptyTermDrilldownFormat(self):
-        component = SRUTermDrilldown(defaultFormat=FORMAT_XML)
+        component = SruTermDrilldown(defaultFormat=FORMAT_XML)
 
         result = "".join(list(component.echoedExtraRequestData(sruArguments={'x-term-drilldown': [''], 'version': '1.1'}, version='1.1')))
 
