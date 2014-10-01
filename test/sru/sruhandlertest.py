@@ -10,7 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 SURF http://www.surf.nl
+# Copyright (C) 2012, 2014 SURF http://www.surf.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -880,7 +880,7 @@ class SruHandlerTest(SeecrTestCase):
 
 
     def testParseDrilldownArguments(self):
-        handler = SruHandler(drilldownSortBy='count', pivotDelimiter='/')
+        handler = SruHandler(drilldownSortBy='count')
         self.assertEquals(None, handler._parseDrilldownArgs([]))
         self.assertEquals([], handler._parseDrilldownArgs(['']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field']))
@@ -890,7 +890,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}]], handler._parseDrilldownArgs(['field:20/field2']))
         self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}],{'fieldname':'field3', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20/field2,field3']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
-        handler = SruHandler(drilldownSortBy='count')
+        handler = SruHandler(drilldownSortBy='count', pivotDelimiter=None)
         self.assertEquals([{'fieldname':'field/field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field/field2']))
 
 
