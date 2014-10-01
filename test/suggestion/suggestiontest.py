@@ -3,8 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -25,10 +25,9 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from seecr.utils.generatorutils import returnValueFromGenerator
 from meresco.components.suggestion import Suggestion
 from testhelpers import Response
-from weightless.core import compose
+from weightless.core import compose, retval
 
 class SuggestionTest(SeecrTestCase):
     def setUp(self):
@@ -109,7 +108,7 @@ class SuggestionTest(SeecrTestCase):
         extraArguments = {'x-suggestionsQuery': ['query']}
         suggestion = Suggestion(count=10, field='dcterms:title')
         suggestion.addObserver(self.observer)
-        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
@@ -119,7 +118,7 @@ class SuggestionTest(SeecrTestCase):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=True)
         suggestion.addObserver(self.observer)
-        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
@@ -129,7 +128,7 @@ class SuggestionTest(SeecrTestCase):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsCount': ['50']}
         suggestion = Suggestion(count=10, field='dcterms:title', maximumCount=20)
         suggestion.addObserver(self.observer)
-        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
@@ -139,7 +138,7 @@ class SuggestionTest(SeecrTestCase):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=False)
         suggestion.addObserver(self.observer)
-        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
@@ -149,7 +148,7 @@ class SuggestionTest(SeecrTestCase):
         extraArguments = {'x-suggestionsQuery': [''], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=False)
         suggestion.addObserver(self.observer)
-        result = returnValueFromGenerator(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
+        result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals(None, methodKwargs['suggestionRequest'])

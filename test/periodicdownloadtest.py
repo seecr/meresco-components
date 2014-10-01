@@ -41,9 +41,8 @@ from itertools import count
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
 from seecr.test.utils import ignoreLineNumbers
-from seecr.utils.generatorutils import generatorReturn
 
-from weightless.core import be, compose
+from weightless.core import be, compose, consume
 from weightless.io import Reactor, Suspend
 
 from meresco.core import Observable
@@ -726,7 +725,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
         def mockTryConnect(host, port, proxyServer=None):
-            generatorReturn(sok)
+            raise StopIteration(sok)
             yield
         downloader._tryConnect = mockTryConnect
         list(compose(downloader._processOne()))
@@ -763,12 +762,12 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
         def mockTryConnect(host, port, proxyServer=None):
-            generatorReturn(sokClient)
+            raise StopIteration(sokClient)
             yield
         downloader._tryConnect = mockTryConnect
         processOne = downloader._processOne()
         downloader._currentProcess = processOne
-        list(compose(processOne))
+        consume(processOne)
         self.assertEquals(['addReader', 'removeReader', 'addTimer'], reactor.calledMethodNames())
 
     def testSocketNotShutdownForWriteAfterWriteDone(self):

@@ -3,8 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -32,14 +32,14 @@ from meresco.components.http.httpclient import HttpClient
 
 from meresco.components import lxmltostring
 
-from seecr.utils.generatorutils import generatorReturn, returnValueFromGenerator
+from weightless.core import retval
 
 class HttpClientTest(SeecrTestCase):
 
     def setUp(self):
         SeecrTestCase.setUp(self)
         def httpRequest(**kwargs):
-            generatorReturn(self.response)
+            raise StopIteration(self.response)
             yield
         httpclient.httpget = httpRequest
         httpclient.httppost = httpRequest
@@ -51,7 +51,7 @@ class HttpClientTest(SeecrTestCase):
         self.response = """HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
 
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={}, parse=False)
-        headers, body = returnValueFromGenerator(gen)
+        headers, body = retval(gen)
 
         self.assertEquals('<xml/>', body)
         self.assertEquals(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
@@ -61,7 +61,7 @@ class HttpClientTest(SeecrTestCase):
         self.response = """HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
 
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
-        headers, body = returnValueFromGenerator(gen)
+        headers, body = retval(gen)
 
         self.assertEquals('<xml/>', lxmltostring(body))
         self.assertEquals(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
@@ -71,7 +71,7 @@ class HttpClientTest(SeecrTestCase):
         self.response = """HTTP/1.0 200 OK\r\n\r\nother-data"""
 
         gen = client.httpPost(hostname='localhost', port=80, path='/', data='data', parse=False)
-        headers, body = returnValueFromGenerator(gen)
+        headers, body = retval(gen)
 
         self.assertEquals('other-data', body)
         self.assertEquals(['HTTP/1.0 200 OK'], headers.split(CRLF))
@@ -81,7 +81,7 @@ class HttpClientTest(SeecrTestCase):
         self.response = """HTTP/1.0 200 OK\r\n\r\nother-data"""
 
         gen = client.httpsGet(hostname='localhost', port=443, path='/', arguments={}, parse=False)
-        headers, body = returnValueFromGenerator(gen)
+        headers, body = retval(gen)
 
         self.assertEquals('other-data', body)
         self.assertEquals(['HTTP/1.0 200 OK'], headers.split(CRLF))
