@@ -880,7 +880,7 @@ class SruHandlerTest(SeecrTestCase):
 
 
     def testParseDrilldownArguments(self):
-        handler = SruHandler(drilldownSortBy='count')
+        handler = SruHandler(drilldownSortBy='count', pivotDelimiter='/')
         self.assertEquals(None, handler._parseDrilldownArgs([]))
         self.assertEquals([], handler._parseDrilldownArgs(['']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field']))
@@ -890,6 +890,8 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}]], handler._parseDrilldownArgs(['field:20/field2']))
         self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}],{'fieldname':'field3', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20/field2,field3']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
+        handler = SruHandler(drilldownSortBy='count')
+        self.assertEquals([{'fieldname':'field/field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field/field2']))
 
 
 MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0), localLogCollector=dict())

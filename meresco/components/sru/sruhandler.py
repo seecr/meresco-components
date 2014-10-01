@@ -55,7 +55,7 @@ DRILLDOWN_SORTBY_INDEX = 'index'
 DRILLDOWN_SORTBY_COUNT = 'count'
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False, pivotDelimiter=None):
         Observable.__init__(self)
         self._drilldownSortBy = drilldownSortBy
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
@@ -65,6 +65,7 @@ class SruHandler(Observable):
         self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
         self._drilldownMaximumTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
         self._collectLogForScope = collectLogForScope if enableCollectLog else lambda **kwargs: None
+        self._pivotDelimiter = pivotDelimiter
 
     def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
@@ -290,8 +291,8 @@ class SruHandler(Observable):
             return result
 
         def parseRequest(request):
-            if '/' in request:
-                return [splitTermAndMaximum(f) for f in request.split('/')]
+            if self._pivotDelimiter and self._pivotDelimiter in request:
+                return [splitTermAndMaximum(f) for f in request.split(self._pivotDelimiter)]
             return splitTermAndMaximum(request)
         return [parseRequest(singleRequest) for request in x_term_drilldown for singleRequest in request.split(",") if singleRequest.strip()]
 
