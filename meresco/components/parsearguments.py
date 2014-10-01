@@ -44,6 +44,8 @@ class ParseArguments(object):
 
     def addOption(self, *args, **kwargs):
         mandatory = kwargs.pop('mandatory', False)
+        if 'help' in kwargs and 'default' in kwargs and '{default}' in kwargs['help']:
+            kwargs['help'] = kwargs['help'].format(default=kwargs['default'])
         option = Option(*args, **kwargs)
         if mandatory:
             self._mandatoryKeys.append(option.dest)

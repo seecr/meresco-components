@@ -27,6 +27,7 @@
 
 from unittest import TestCase
 from meresco.components import ParseArguments
+from seecr.test.io import stdout_replaced
 
 class ParseArgumentsTest(TestCase):
     def testMandatoryKey(self):
@@ -50,4 +51,12 @@ class ParseArgumentsTest(TestCase):
         self.assertEquals('TestServer', options.name)
         self.assertEquals(None, options.port)
         self.assertEquals('default', options.withDefault)
+
+    def testDefaultValueInHelp(self):
+        parser = ParseArguments()
+        parser.addOption('', '--option', help='Option with a default value of {default}', default=42)
+
+        with stdout_replaced() as out:
+            parser.print_help()
+            self.assertTrue("Option with a default value of 42" in out.getvalue(), out.getvalue())
 
