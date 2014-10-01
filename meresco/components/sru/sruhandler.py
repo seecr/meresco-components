@@ -55,7 +55,7 @@ DRILLDOWN_SORTBY_INDEX = 'index'
 DRILLDOWN_SORTBY_COUNT = 'count'
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False, pivotDelimiter=None):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False, pivotDelimiter='/'):
         Observable.__init__(self)
         self._drilldownSortBy = drilldownSortBy
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
