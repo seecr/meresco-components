@@ -7,7 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -33,11 +34,10 @@ from weightless.core import compose
 from utils import insertHeader
 from hashlib import md5
 from time import time
-from random import randint
+from random import randint, choice
 from urllib import urlencode
-from urlparse import urlsplit
-from urlparse import parse_qs
 from UserDict import UserDict
+from string import ascii_letters
 
 class Session(UserDict):
     def __init__(self, sessionId):
@@ -51,9 +51,9 @@ class Session(UserDict):
         return '<a href="?%s">%s</a>' % (urlencode({key: '-' + repr(value)}), caption)
 
 class SessionHandler(Observable):
-    def __init__(self, secretSeed, nameSuffix='', timeout=3600*2):
+    def __init__(self, secretSeed=None, nameSuffix='', timeout=3600*2):
         Observable.__init__(self)
-        self._secretSeed = secretSeed
+        self._secretSeed = secretSeed or createSeed()
         self._nameSuffix = nameSuffix
         self._sessions = TimedDictionary(timeout)
 
@@ -78,6 +78,9 @@ class SessionHandler(Observable):
 
         for response in insertHeader(result, extraHeader) :
             yield response
+
+def createSeed():
+    return ''.join(choice(ascii_letters) for i in xrange(20))
 
 #steps:
 #Generate some kind of unique id. bijv. md5(time() + ip + secret_seed)

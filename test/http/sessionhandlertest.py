@@ -1,40 +1,39 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
+# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 SURF http://www.surf.nl
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from unittest import TestCase
 from meresco.components.http import SessionHandler, utils
-from meresco.components.http.sessionhandler import Session
-from weightless.core import compose
+from weightless.core import asString, consume
 from seecr.test import CallTrace
-from time import time, sleep
 
 #Cookies RFC 2109 http://www.ietf.org/rfc/rfc2109.txt
 class SessionHandlerTest(TestCase):
@@ -52,7 +51,7 @@ class SessionHandlerTest(TestCase):
             yield '<ht'
             yield 'ml/>'
         self.observer.handleRequest = handleRequest
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'})))
+        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
 
         self.assertEquals(1, len(called))
         session = called[0]['kwargs']['session']
@@ -77,7 +76,7 @@ class SessionHandlerTest(TestCase):
             yield  utils.okHtml
             yield '<html/>'
         self.observer.handleRequest = handleRequest
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345))))
+        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345)))
         header, body = result.split(utils.CRLF*2,1)
         self.assertTrue('Set-Cookie' in header, header)
         headerParts = header.split(utils.CRLF)
@@ -91,8 +90,8 @@ class SessionHandlerTest(TestCase):
             sessions.append(session)
             yield  utils.okHtml + '<html/>'
         self.observer.handleRequest = handleRequest
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})))
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % sessions[0]['id']})))
+        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={}))
+        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % sessions[0]['id']}))
         self.assertEquals(sessions[0], sessions[1])
         self.assertEquals(id(sessions[0]),id(sessions[1]))
 
@@ -102,7 +101,7 @@ class SessionHandlerTest(TestCase):
             sessions.append(session)
             yield  utils.okHtml + '<html/>'
         self.observer.handleRequest = handleRequest
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % 'injected_id'})))
+        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % 'injected_id'}))
         self.assertNotEqual('injected_id', sessions[0]['id'])
 
     def testSetSessionVarsWithLink(self):
@@ -112,7 +111,7 @@ class SessionHandlerTest(TestCase):
             yield session.setLink('setvalue', 'key', 'value1')
             yield session.unsetLink('unsetvalue', 'key', 'value2')
         self.observer.handleRequest = handleRequest
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})))
+        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={}))
         self.assertEquals(  '<a href="?key=%2B%27value1%27">setvalue</a>' +
                             '<a href="?key=-%27value2%27">unsetvalue</a>', result)
 
@@ -120,7 +119,7 @@ class SessionHandlerTest(TestCase):
         def handleRequest(session=None, *args, **kwargs):
             yield session.setLink('linktitle', 'key', ('a simple tuple',))
         self.observer.handleRequest = handleRequest
-        result = ''.join(compose(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})))
+        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={}))
         self.assertEquals("""<a href="?key=%2B%28%27a+simple+tuple%27%2C%29">linktitle</a>""", result)
 
     def testCustomSessionTimeout(self):
@@ -136,25 +135,29 @@ class SessionHandlerTest(TestCase):
         observer.handleRequest = handleRequest
         handler.addObserver(observer)
 
-        result = ''.join(compose(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345))))
+        result = asString(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345)))
         firstSessionId = self.assertSessionCookie(result)
         handler._sessions._now = lambda: currentTime + HALF_AN_HOUR - 1
-        result = ''.join(compose(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
+        result = asString(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId}))
         sessionIdHalfAnHourMinusOne = self.assertSessionCookie(result)
 
         self.assertEquals(firstSessionId, sessionIdHalfAnHourMinusOne)
 
         handler._sessions._now = lambda: currentTime + HALF_AN_HOUR + 1
-        result = ''.join(compose(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
+        result = asString(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId}))
         sessionIdHalfAnHourPlusOne = self.assertSessionCookie(result)
 
         self.assertEquals(firstSessionId, sessionIdHalfAnHourPlusOne)
 
         handler._sessions._now = lambda: currentTime + (HALF_AN_HOUR * 2) + 2
-        result = ''.join(compose(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId})))
+        result = asString(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId}))
         sessionIdJustExpired = self.assertSessionCookie(result)
 
         self.assertNotEqual(firstSessionId, sessionIdJustExpired)
+
+    def testSecretSeed(self):
+        self.assertEquals(20, len(SessionHandler()._secretSeed))
+        self.assertNotEqual(SessionHandler()._secretSeed, SessionHandler()._secretSeed)
 
     def testPassThroughOfCallables(self):
         def callableMethod():
