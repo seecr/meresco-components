@@ -31,6 +31,7 @@ from meresco.core import Observable, Transparent
 from meresco.components.log import LogCollector, collectLog, LogKeyValue, LogCollectorScope, collectLogForScope
 from meresco.components import FilterMessages
 from meresco.components.log.utils import getScoped, scopePresent
+from seecr.test.io import stderr_replaced
 
 class LogCollectorTest(SeecrTestCase):
 
@@ -184,6 +185,25 @@ class LogCollectorTest(SeecrTestCase):
         self.assertTrue(scopePresent(collectedLog, scopeNames=('global',)))
         self.assertTrue(scopePresent(collectedLog, scopeNames=('global', 'subscope')))
         self.assertFalse(scopePresent(collectedLog, scopeNames=('global', 'otherscope')))
+
+    def testWriteLogMustNotFail(self):
+        logwriter = CallTrace('logwriter', emptyGeneratorMethods=['someMessage'])
+        logwriter.exceptions['writeLog'] = ValueError
+
+        top = be((Observable(),
+            (LogCollector('default'),
+                (logwriter,),
+                (FilterMessages(allowed=['someMessage']),
+                    (LogKeyValue(dict(name='A')),)
+                )
+            )
+        ))
+        with stderr_replaced() as err:
+            try:
+                consume(top.all.someMessage())
+            except ValueError:
+                self.fail("Should not raise an error; Only print it")
+        self.assertTrue('ValueError' in err.getvalue(), err.getvalue())
 
 def createObserver():
     def allMessage(*args, **kwargs):

@@ -27,6 +27,7 @@
 
 from meresco.core import Observable
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage, local
+from traceback import print_exc
 
 
 class LogCollector(Observable):
@@ -99,7 +100,12 @@ class LogCollector(Observable):
 
     def _writeLog(self, collectedLog):
         if collectedLog:
-            self.do.writeLog(collectedLog=collectedLog)
+            try:
+                self.do.writeLog(collectedLog=collectedLog)
+            except:
+                print_exc()
+
+
 
 class LogCollectorScope(Observable):
     def __init__(self, scopeName=None, name=None, **kwargs):
