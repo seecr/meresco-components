@@ -3,6 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
+# Copyright (C) 2014 SURF http://www.surf.nl
 # Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
@@ -102,7 +103,9 @@ class LogCollector(Observable):
         if collectedLog:
             try:
                 self.do.writeLog(collectedLog=collectedLog)
-            except:
+            except AssertionError:
+                raise
+            except Exception:
                 print_exc()
 
 
