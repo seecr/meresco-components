@@ -44,22 +44,22 @@ class ScheduleTest(SeecrTestCase):
     def testTimeOfDay(self):
         s = Schedule(timeOfDay='20:00')
         self.assertEquals('20:00', s.timeOfDay)
-        s._time = lambda: datetime.strptime("13:30", "%H:%M")
+        s._utcnow = lambda: datetime.strptime("13:30", "%H:%M")
         self.assertEquals(6.5 * 60 * 60, s.secondsFromNow())
 
-        s._time = lambda: datetime.strptime("21:15", "%H:%M")
+        s._utcnow = lambda: datetime.strptime("21:15", "%H:%M")
         self.assertEquals(22.75 * 60 * 60, s.secondsFromNow())
 
     def testDayOfWeekTimeOfDay(self):
         s = Schedule(dayOfWeek=5, timeOfDay='20:00')
         self.assertEquals(5, s.dayOfWeek)
-        s._time = lambda: datetime.strptime("15-11-2012 13:30", "%d-%m-%Y %H:%M") # This is a Thursday
+        s._utcnow = lambda: datetime.strptime("15-11-2012 13:30", "%d-%m-%Y %H:%M") # This is a Thursday
         self.assertEquals(30.5 * 60 * 60, s.secondsFromNow())
 
-        s._time = lambda: datetime.strptime("14-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
+        s._utcnow = lambda: datetime.strptime("14-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
         self.assertEquals(47 * 60 * 60, s.secondsFromNow())
 
-        s._time = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
+        s._utcnow = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
         self.assertEquals((5 * 24 + 23) * 60 * 60, s.secondsFromNow())
 
     def testSecondsSinceEpoch(self):

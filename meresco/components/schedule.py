@@ -27,6 +27,7 @@
 ## end license ##
 
 from datetime import datetime
+from time import time
 
 
 class Schedule(object):
@@ -50,7 +51,7 @@ class Schedule(object):
                 delta = 60 * 60 * 24 * 365  # maximized to a year
             return delta
         targetTime = datetime.strptime(self.timeOfDay, "%H:%M")
-        time = self._time()
+        time = self._utcnow()
         currentTime = datetime.strptime("%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S")
         timeDelta = targetTime - currentTime
         daysDelta = 0
@@ -60,8 +61,11 @@ class Schedule(object):
                 daysDelta += 7
         return daysDelta * 24 * 60 * 60 + timeDelta.seconds
 
-    def _time(self):
+    def _utcnow(self):
         return datetime.utcnow()
+
+    def _time(self):
+        return time()
 
     def __repr__(self):
         return "Schedule(%s)" % ', '.join('%s=%s' % (
