@@ -30,6 +30,7 @@ from datetime import datetime
 from meresco.components import Schedule
 from seecr.test import SeecrTestCase
 
+
 class ScheduleTest(SeecrTestCase):
     def testUsePeriod(self):
         s = Schedule(period=42)
@@ -61,11 +62,20 @@ class ScheduleTest(SeecrTestCase):
         s._time = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
         self.assertEquals((5 * 24 + 23) * 60 * 60, s.secondsFromNow())
 
+    def testSecondsSinceEpoch(self):
+        s = Schedule(secondsSinceEpoch=123) # test with ints, but works with floats as well (much harder to test due to binary representation)
+        self.assertEquals(123, s.secondsSinceEpoch)
+        s._time = lambda: 76
+        self.assertEquals(47, s.secondsFromNow())
+
     def testEqualsAndHash(self):
         self.assertEquals(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00'))
         self.assertEquals(Schedule(period=3), Schedule(period=3))
         self.assertEquals(Schedule(timeOfDay='20:00', dayOfWeek=3), Schedule(timeOfDay='20:00', dayOfWeek=3))
         self.assertNotEqual(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00', dayOfWeek=3))
+        self.assertEquals(Schedule(secondsSinceEpoch=42), Schedule(secondsSinceEpoch=42))
+        self.assertNotEquals(Schedule(secondsSinceEpoch=43), Schedule(secondsSinceEpoch=42))
+
         self.assertEquals(hash(Schedule(timeOfDay='20:00')), hash(Schedule(timeOfDay='20:00')))
         self.assertEquals(hash(Schedule(period=3)), hash(Schedule(period=3)))
         self.assertEquals(hash(Schedule(timeOfDay='20:00', dayOfWeek=3)), hash(Schedule(timeOfDay='20:00', dayOfWeek=3)))
@@ -81,3 +91,4 @@ class ScheduleTest(SeecrTestCase):
         self.assertEquals('Schedule(period=1)', repr(Schedule(period=1)))
         self.assertEquals("Schedule(timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00')))
         self.assertEquals("Schedule(dayOfWeek=1, timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00', dayOfWeek=1)))
+        self.assertEquals("Schedule(secondsSinceEpoch=42)", repr(Schedule(secondsSinceEpoch=42)))

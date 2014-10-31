@@ -28,33 +28,27 @@
 
 from datetime import datetime
 
+
 class Schedule(object):
-    def __init__(self, period=None, timeOfDay=None, dayOfWeek=None):
-        if ((period is not None) and (timeOfDay or dayOfWeek)) or \
-                (dayOfWeek and not timeOfDay):
-            raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek'")
-        self._data = {
-            'period': period,
-            'timeOfDay': timeOfDay,
-            'dayOfWeek': dayOfWeek,
-        }
-
-    @property
-    def period(self):
-        return self._data['period']
-
-    @property
-    def timeOfDay(self):
-        return self._data['timeOfDay']
-
-    @property
-    def dayOfWeek(self):
-        return self._data['dayOfWeek']
+    def __init__(self, period=None, timeOfDay=None, dayOfWeek=None, secondsSinceEpoch=None):
+        if (not period is None and not timeOfDay and not dayOfWeek and not secondsSinceEpoch) or \
+            (period is None and not timeOfDay is None and not secondsSinceEpoch) or \
+            (period is None and not timeOfDay and not dayOfWeek and secondsSinceEpoch):
+            self.period = period
+            self.timeOfDay = timeOfDay
+            self.dayOfWeek = dayOfWeek
+            self.secondsSinceEpoch = secondsSinceEpoch
+        else:
+            raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek' or 'secondsSinceEpoch'")
 
     def secondsFromNow(self):
         if self.period is not None:
             return self.period
-
+        if not self.secondsSinceEpoch is None:
+            delta = self.secondsSinceEpoch - self._time()
+            if delta < 0:
+                delta = 60 * 60 * 24 * 365  # maximized to a year
+            return delta
         targetTime = datetime.strptime(self.timeOfDay, "%H:%M")
         time = self._time()
         currentTime = datetime.strptime("%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S")
@@ -72,16 +66,19 @@ class Schedule(object):
     def __repr__(self):
         return "Schedule(%s)" % ', '.join('%s=%s' % (
             k,repr(v))
-            for (k,v) in sorted(self._data.items())
+            for (k,v) in sorted(self.__dict__.items())
             if v is not None)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return False
-        return hash(self) == hash(other)
+        return self.period == other.period and \
+            self.timeOfDay == other.timeOfDay and \
+            self.dayOfWeek == other.dayOfWeek and \
+            self.secondsSinceEpoch == other.secondsSinceEpoch
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash(tuple(sorted(self._data.items())))
+        return hash(tuple(sorted(self.__dict__.items())))
