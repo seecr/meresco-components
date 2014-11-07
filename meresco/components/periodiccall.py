@@ -3,8 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -49,6 +49,7 @@ class PeriodicCall(Observable):
 
         self._busy = False
         self._currentTimer = None
+        self._errorState = None
 
         if not (self._pause or self._schedule):
             raise ValueError('When autoStart is enabled, a schedule is required.')
@@ -106,7 +107,8 @@ class PeriodicCall(Observable):
                 yield
         except (AssertionError, KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
+        except Exception, e:
+            self._errorState = str(e)
             self._log(format_exc())
             interval = self._errorSchedule.secondsFromNow()
         finally:
@@ -160,6 +162,10 @@ class PeriodicCallStateView(object):
     @property
     def schedule(self):
         return self._periodicCall._schedule
+
+    @property
+    def errorState(self):
+        return self._periodicCall._errorState
 
     def asDict(self):
         return {

@@ -3,8 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -165,7 +165,7 @@ class PeriodicCallTest(SeecrTestCase):
 
     def testErrorIntervalAndLoggedMessage(self):
         def raiser():
-            raise Exception('al')
+            raise Exception('exception')
             yield
         self.observer.methods['handle'] = raiser
 
@@ -180,7 +180,8 @@ class PeriodicCallTest(SeecrTestCase):
             errValue = err.getvalue()
             self.assertTrue(errValue.startswith(repr(self.pc)))
             self.assertTrue('Traceback' in errValue, errValue)
-            self.assertTrue('Exception: al' in errValue, errValue)
+            self.assertTrue('Exception: exception' in errValue, errValue)
+            self.assertEquals('exception', self.pc.getState().errorState)
 
         self.assertEquals(['handle'], self.observer.calledMethodNames())
         self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
@@ -440,6 +441,7 @@ class PeriodicCallTest(SeecrTestCase):
 
         self.pc.observable_setName('dashy')
         self.assertEquals('dashy', state.name)
+        self.assertEquals(None, state.errorState)
 
         self.pc.setSchedule(schedule=Schedule(period=5))
         self.assertEquals(Schedule(period=5), state.schedule)
