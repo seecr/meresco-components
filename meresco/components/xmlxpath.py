@@ -8,7 +8,8 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -41,7 +42,7 @@ from meresco.xml.namespaces import namespaces as _namespaces
 try:
     from lxml.etree import _ElementStringResult, _ElementUnicodeResult
 except ImportError:
-    _ElementStringResult = str 
+    _ElementStringResult = str
     _ElementUnicodeResult = unicode
 
 oftenUsedNamespaces = _namespaces.copyUpdate(dict(
@@ -78,7 +79,7 @@ class XmlXPath(Observable):
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:
             for element in self.xpath(elementTree, xpath):
-                if type(element) in [_ElementStringResult, _ElementUnicodeResult]:
+                if type(element) in [_ElementStringResult, _ElementUnicodeResult, str, unicode]:
                     yield element
                 else:
                     yield ElementTree(lxmlElementUntail(element))
