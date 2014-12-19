@@ -42,7 +42,7 @@ from urlparse import urlsplit
 
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None):
+    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None, retryAfterErrorTime=30):
         super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host
@@ -63,6 +63,7 @@ class PeriodicDownload(Observable):
         self._currentProcess = None
         self._sok = None
         self._errorState = None
+        self._retryAfterErrorTime = retryAfterErrorTime
         if autoStart and (not self._host or not self._port):
             raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
@@ -164,7 +165,7 @@ class PeriodicDownload(Observable):
                 except KeyError:
                     pass
         except SocketError, (errno, msg):
-            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=30)
+            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=self._retryAfterErrorTime)
             return
         finally:
             try:
@@ -180,7 +181,7 @@ class PeriodicDownload(Observable):
             headers, body = response.split(2 * CRLF, 1)
             statusLine = headers.split(CRLF)[0]
             if not statusLine.strip().lower().endswith('200 ok'):
-                yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=30)
+                yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
             self._reactor.addProcess(self._currentProcess.next)
@@ -260,7 +261,7 @@ class PeriodicDownload(Observable):
             except (AssertionError, KeyboardInterrupt, SystemExit), e:
                 raise
             except Exception, e:
-                yield self._retryAfterError(str(e), retryAfter=5*60)
+                yield self._retryAfterError(str(e), retryAfter=self._retryAfterErrorTime)
                 return
         raise StopIteration(sok)
 

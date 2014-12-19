@@ -173,7 +173,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEquals("%s: error in sockopt\n" % repr(downloader), downloader._err.getvalue())
         del reactor.exceptions['removeWriter']
         self.assertEquals('addTimer', reactor.calledMethods[-1].name)
-        self.assertEquals(5*60, reactor.calledMethods[-1].args[0])
+        self.assertEquals(30, reactor.calledMethods[-1].args[0])
 
         self.assertReactorStateClean(reactor)
 
