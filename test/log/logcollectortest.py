@@ -43,16 +43,16 @@ class LogCollectorTest(SeecrTestCase):
             )
         ))
         result = asString(observable.all.allMessage('arg', kwarg='kwarg'))
-        self.assertEquals('allresult', result)
+        self.assertEqual('allresult', result)
         result = retval(observable.any.anyMessage('arg', kwarg='kwarg'))
-        self.assertEquals('anyresult', result)
+        self.assertEqual('anyresult', result)
         observable.do.doMessage('arg', kwarg='kwarg')
         result = observable.call.callMessage('arg', kwarg='kwarg')
-        self.assertEquals('callresult', result)
-        self.assertEquals(['allMessage', 'anyMessage', 'doMessage', 'callMessage'], observer.calledMethodNames())
+        self.assertEqual('callresult', result)
+        self.assertEqual(['allMessage', 'anyMessage', 'doMessage', 'callMessage'], observer.calledMethodNames())
         for m in observer.calledMethods:
-            self.assertEquals(('arg',), m.args)
-            self.assertEquals(dict(kwarg='kwarg'), m.kwargs)
+            self.assertEqual(('arg',), m.args)
+            self.assertEqual(dict(kwarg='kwarg'), m.kwargs)
 
     def testLog(self):
         class SomeLog(Transparent):
@@ -68,19 +68,19 @@ class LogCollectorTest(SeecrTestCase):
                 ),
             )
         ))
-        self.assertEquals('callresult', observable.call.logMe(argument=0))
-        self.assertEquals('callresult', observable.call.doNotLogMe(argument=0))
-        self.assertEquals(['logMe', 'writeLog', 'doNotLogMe'], observer.calledMethodNames())
+        self.assertEqual('callresult', observable.call.logMe(argument=0))
+        self.assertEqual('callresult', observable.call.doNotLogMe(argument=0))
+        self.assertEqual(['logMe', 'writeLog', 'doNotLogMe'], observer.calledMethodNames())
         writeLog = observer.calledMethods[1]
-        self.assertEquals((), writeLog.args)
-        self.assertEquals(['collectedLog'], writeLog.kwargs.keys())
-        self.assertEquals({'logArgument': [0]}, writeLog.kwargs['collectedLog'])
+        self.assertEqual((), writeLog.args)
+        self.assertEqual(['collectedLog'], list(writeLog.kwargs.keys()))
+        self.assertEqual({'logArgument': [0]}, writeLog.kwargs['collectedLog'])
 
     def testCollectLog(self):
         __callstack_var_logCollector__ = LogCollector._logCollector()
         collectLog(dict(key='value1', key2='value2'))
         collectLog(dict(key='value3'))
-        self.assertEquals(dict(key=['value1', 'value3'], key2=['value2']), __callstack_var_logCollector__)
+        self.assertEqual(dict(key=['value1', 'value3'], key2=['value2']), __callstack_var_logCollector__)
 
     def testScope(self):
         logwriter = CallTrace('logwriter', emptyGeneratorMethods=['someMessage'])
@@ -110,8 +110,8 @@ class LogCollectorTest(SeecrTestCase):
 
         consume(top.all.someMessage())
 
-        self.assertEquals(['someMessage', 'writeLog'], logwriter.calledMethodNames())
-        self.assertEquals({
+        self.assertEqual(['someMessage', 'writeLog'], logwriter.calledMethodNames())
+        self.assertEqual({
                 'name': ['A', 'B', 'D'],
                 'scope_one': {
                     'name': ['C'],
@@ -132,9 +132,9 @@ class LogCollectorTest(SeecrTestCase):
         __callstack_var_logCollector__ = dict()
         collectLogForScope(scope={'key': 'value'})
         collectLogForScope(scope={'key2': 'value'})
-        self.assertEquals({'scope': {'key': ['value'], 'key2': ['value']}}, __callstack_var_logCollector__)
+        self.assertEqual({'scope': {'key': ['value'], 'key2': ['value']}}, __callstack_var_logCollector__)
         collectLogForScope(scope={'key': 'value2'})
-        self.assertEquals({'scope': {'key': ['value', 'value2'], 'key2': ['value']}}, __callstack_var_logCollector__)
+        self.assertEqual({'scope': {'key': ['value', 'value2'], 'key2': ['value']}}, __callstack_var_logCollector__)
 
     def testGetScoped(self):
         collectedLog = {
@@ -145,18 +145,18 @@ class LogCollectorTest(SeecrTestCase):
                 'otherkey': ['other value'],
             },
         }
-        self.assertEquals(['value'], getScoped(collectedLog, scopeNames=('scope level 1', 'scope level 2'), key='key'))
-        self.assertEquals(['value'], getScoped(collectedLog, scopeNames=('scope level 1', 'scope level 2', 'scope level 3'), key='key'))
-        self.assertEquals({}, getScoped(collectedLog, scopeNames=('scope level 1', 'scope level not here', 'scope level 2'), key='key'))
-        self.assertEquals(None, getScoped(collectedLog, scopeNames=('scope level 1', 'scope level not here', 'scope level 2'), key='key', default=None))
-        self.assertEquals({'key': ['value']}, getScoped(collectedLog, scopeNames=('scope level 1',), key='scope level 2'))
-        self.assertEquals({
+        self.assertEqual(['value'], getScoped(collectedLog, scopeNames=('scope level 1', 'scope level 2'), key='key'))
+        self.assertEqual(['value'], getScoped(collectedLog, scopeNames=('scope level 1', 'scope level 2', 'scope level 3'), key='key'))
+        self.assertEqual({}, getScoped(collectedLog, scopeNames=('scope level 1', 'scope level not here', 'scope level 2'), key='key'))
+        self.assertEqual(None, getScoped(collectedLog, scopeNames=('scope level 1', 'scope level not here', 'scope level 2'), key='key', default=None))
+        self.assertEqual({'key': ['value']}, getScoped(collectedLog, scopeNames=('scope level 1',), key='scope level 2'))
+        self.assertEqual({
                 'scope level 2': {
                     'key': ['value']
                 },
                 'otherkey': ['other value'],
             }, getScoped(collectedLog, scopeNames=(), key='scope level 1'))
-        self.assertEquals('strange', getScoped(collectedLog, scopeNames=('scope level 1',), key=None, default='strange'))
+        self.assertEqual('strange', getScoped(collectedLog, scopeNames=('scope level 1',), key=None, default='strange'))
 
     def testGetScopeForHttpRequestExample(self):
         collectedLog = {
@@ -171,7 +171,7 @@ class LogCollectorTest(SeecrTestCase):
                 }
             }
         }
-        self.assertEquals({'path': ['/path']}, getScoped(collectedLog, scopeNames=('global', 'subscope'), key='httpRequest'))
+        self.assertEqual({'path': ['/path']}, getScoped(collectedLog, scopeNames=('global', 'subscope'), key='httpRequest'))
 
     def testScopePresent(self):
         collectedLog = {

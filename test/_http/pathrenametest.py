@@ -42,8 +42,8 @@ class PathRenameTest(TestCase):
 
         list(compose(rename.handleRequest(path='/mypath')))
 
-        self.assertEquals(1, len(interceptor.calledMethods))
-        self.assertEquals("handleRequest(path='/new/mypath')", str(interceptor.calledMethods[0]))
+        self.assertEqual(1, len(interceptor.calledMethods))
+        self.assertEqual("handleRequest(path='/new/mypath')", str(interceptor.calledMethods[0]))
 
     def testTransparency(self):
         observable = Observable()
@@ -54,6 +54,6 @@ class PathRenameTest(TestCase):
 
         observable.do.otherMethod('attribute')
 
-        self.assertEquals(1, len(interceptor.calledMethods))
-        self.assertEquals("otherMethod('attribute')", str(interceptor.calledMethods[0]))
+        self.assertEqual(1, len(interceptor.calledMethods))
+        self.assertEqual("otherMethod('attribute')", str(interceptor.calledMethods[0]))
 

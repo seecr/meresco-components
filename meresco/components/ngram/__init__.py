@@ -26,4 +26,4 @@
 # 
 ## end license ##
 
-from suggester import RatioSuggester, LevenshteinSuggester
+from .suggester import RatioSuggester, LevenshteinSuggester

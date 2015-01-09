@@ -63,11 +63,11 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                     query='query',
                     facets=[dict(fieldname='name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]))
 
-        self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals(dict(query='query', facets=[dict(fieldname='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]), self.observer.calledMethods[0].kwargs)
-        self.assertEquals(self.response.hits, result.hits)
-        self.assertEquals(self.response.total, result.total)
-        self.assertEquals([
+        self.assertEqual(['executeQuery'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual(dict(query='query', facets=[dict(fieldname='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]), self.observer.calledMethods[0].kwargs)
+        self.assertEqual(self.response.hits, result.hits)
+        self.assertEqual(self.response.total, result.total)
+        self.assertEqual([
             {
                 'fieldname': 'name1',
                 'terms': [
@@ -123,17 +123,17 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                 )
             )
 
-        self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals([
+        self.assertEqual(['executeQuery'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual([
                         [
                             dict(fieldname='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
                             dict(fieldname='internal.name2', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)
                         ],
                         dict(fieldname='internal.name3', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)
                     ], self.observer.calledMethods[0].kwargs['facets'])
-        self.assertEquals(self.response.hits, result.hits)
-        self.assertEquals(self.response.total, result.total)
-        self.assertEquals([
+        self.assertEqual(self.response.hits, result.hits)
+        self.assertEqual(self.response.total, result.total)
+        self.assertEqual([
             {
                 'fieldname': 'name1',
                 'terms':[
@@ -204,17 +204,17 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                 )
             )
 
-        self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals([
+        self.assertEqual(['executeQuery'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual([
                         [
                             dict(fieldname='internal.name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
                             dict(fieldname='internal.name2', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)
                         ],
                         dict(fieldname='internal.name3', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)
                     ], self.observer.calledMethods[0].kwargs['facets'])
-        self.assertEquals(self.response.hits, result.hits)
-        self.assertEquals(self.response.total, result.total)
-        self.assertEquals([
+        self.assertEqual(self.response.hits, result.hits)
+        self.assertEqual(self.response.total, result.total)
+        self.assertEqual([
             {
                 'fieldname': 'name1',
                 'terms':[
@@ -244,9 +244,9 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                 translate=lambda name: 'ignored',
                 queryKwargs=dict(query='query'))
 
-        self.assertEquals("[executeQuery(query='query')]", str(self.observer.calledMethods))
-        self.assertEquals(self.response.hits, result.hits)
-        self.assertEquals(self.response.total, result.total)
+        self.assertEqual("[executeQuery(query='query')]", str(self.observer.calledMethods))
+        self.assertEqual(self.response.hits, result.hits)
+        self.assertEqual(self.response.total, result.total)
         self.assertFalse(hasattr(result, 'drilldownData'))
 
     def testFacetsNone(self):
@@ -256,9 +256,9 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                     query='query',
                     facets=None))
 
-        self.assertEquals("[executeQuery(query='query')]", str(self.observer.calledMethods))
-        self.assertEquals(self.response.hits, result.hits)
-        self.assertEquals(self.response.total, result.total)
+        self.assertEqual("[executeQuery(query='query')]", str(self.observer.calledMethods))
+        self.assertEqual(self.response.hits, result.hits)
+        self.assertEqual(self.response.total, result.total)
         self.assertFalse(hasattr(result, 'drilldownData'))
 
 
@@ -271,7 +271,7 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
             )
         )
         try:
-            compose(observable.any.executeQuery(**queryKwargs)).next()
-        except StopIteration, e:
+            next(compose(observable.any.executeQuery(**queryKwargs)))
+        except StopIteration as e:
             return e.args[0]
 

@@ -33,12 +33,12 @@
 from meresco.core import Observable
 
 from weightless.http import HttpsServer
-from urlparse import parse_qs
-from urlparse import urlsplit
-from StringIO import StringIO
+from urllib.parse import parse_qs
+from urllib.parse import urlsplit
+from io import StringIO
 from socket import gethostname
 
-from observablehttpserver import ObservableHttpServer
+from .observablehttpserver import ObservableHttpServer
 
 class ObservableHttpsServer(ObservableHttpServer):
     def __init__(self, *args, **kwargs):

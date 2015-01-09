@@ -36,8 +36,8 @@ class ParseArgumentsTest(TestCase):
         parser.addOption('', '--port', help='Port', type='int', mandatory=True)
         argv = ['script', '--name', 'TestServer', '--port', '1234']
         options, arguments = parser.parse(argv)
-        self.assertEquals(1234, options.port)
-        self.assertEquals('TestServer', options.name)
+        self.assertEqual(1234, options.port)
+        self.assertEqual('TestServer', options.name)
         argv = ['script', '--port', '1234']
         self.assertRaises(ValueError, parser._parse, argv)
 
@@ -48,9 +48,9 @@ class ParseArgumentsTest(TestCase):
         parser.addOption('', '--port', help='Port', type='int')
         parser.addOption('', '--withDefault', help='Default', default="default", type='str')
         options, arguments = parser.parse(argv)
-        self.assertEquals('TestServer', options.name)
-        self.assertEquals(None, options.port)
-        self.assertEquals('default', options.withDefault)
+        self.assertEqual('TestServer', options.name)
+        self.assertEqual(None, options.port)
+        self.assertEqual('default', options.withDefault)
 
     def testDefaultValueInHelp(self):
         parser = ParseArguments()

@@ -69,7 +69,7 @@ class ReindexTest(SeecrTestCase):
         reindex, observer = self.setupDna(CallTrace('Storage'))
         def assertError(message, arguments):
             result = list(compose(reindex.handleRequest(arguments=arguments)))
-            self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', message], result)
+            self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', message], result)
         assertError('!error: session missing', {})
         assertError('!error: session missing', {'session': []})
 
@@ -83,7 +83,7 @@ class ReindexTest(SeecrTestCase):
         self.assertFalse(isdir(directory))
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         self.assertFalse(isdir(directory))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', "!error: no identifiers"], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', "!error: no identifiers"], result)
 
     def testCreateIdentifierFiles(self):
         storage = self.setupStorage([
@@ -96,9 +96,9 @@ class ReindexTest(SeecrTestCase):
         directory = join(self._path('reindex'), 'testcase')
         self.assertTrue(isdir(directory))
         files = listdir(directory)
-        self.assertEquals(1, len(files))
+        self.assertEqual(1, len(files))
         identifiers = sorted(list(identifier for identifier in open(join(directory, files[0])).read().split('\n') if identifier != ''))
-        self.assertEquals(['id:1', 'id:2', 'id:3'], identifiers)
+        self.assertEqual(['id:1', 'id:2', 'id:3'], identifiers)
 
     def testCreateIdentifierFilesInBatches(self):
         storage = self.setupStorage([
@@ -111,7 +111,7 @@ class ReindexTest(SeecrTestCase):
         directory = join(self._path('reindex'), 'testcase')
         self.assertTrue(isdir(directory))
         files = listdir(directory)
-        self.assertEquals(3, len(files))
+        self.assertEqual(3, len(files))
 
     def testCreateIdentifierFilesYieldsOutput(self):
         storage = self.setupStorage([
@@ -122,7 +122,7 @@ class ReindexTest(SeecrTestCase):
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
 
     def testProcessCreatedBatches(self):
         storage = self.setupStorage([
@@ -133,17 +133,17 @@ class ReindexTest(SeecrTestCase):
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
-        self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', result[0])
-        self.assertEquals('=batches left: 0', result[-1])
+        self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', result[0])
+        self.assertEqual('=batches left: 0', result[-1])
         for i in ['+id:1\n', '+id:2\n', '+id:3\n' ]:
             self.assertTrue(i in result)
 
-        self.assertEquals(['add']*3, [m.name for m in observer.calledMethods])
-        self.assertEquals(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
-        self.assertEquals(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
-        self.assertEquals(['<empty/>']*3, [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+        self.assertEqual(['add']*3, [m.name for m in observer.calledMethods])
+        self.assertEqual(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
+        self.assertEqual(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
+        self.assertEqual(['<empty/>']*3, [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 
     def testRemoveFilesAndDirectoryAfterProcess(self):
         storage = self.setupStorage([
@@ -155,20 +155,20 @@ class ReindexTest(SeecrTestCase):
         directory = join(self._path('reindex'), 'testcase')
 
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['1']})))
-        self.assertEquals(3, len(listdir(directory)))
+        self.assertEqual(3, len(listdir(directory)))
         self.assertTrue(isdir(directory))
 
         ids, batchesLeft = [], []
         status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         ids.append(idPart)
         batchesLeft.append(batchesLeftPart)
-        self.assertEquals(2, len(listdir(directory)))
+        self.assertEqual(2, len(listdir(directory)))
         self.assertTrue(isdir(directory))
 
         status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
         ids.append(idPart)
         batchesLeft.append(batchesLeftPart)
-        self.assertEquals(1, len(listdir(directory)))
+        self.assertEqual(1, len(listdir(directory)))
         self.assertTrue(isdir(directory))
 
         status, idPart, batchesLeftPart = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
@@ -176,8 +176,8 @@ class ReindexTest(SeecrTestCase):
         batchesLeft.append(batchesLeftPart)
         self.assertFalse(isdir(directory))
 
-        self.assertEquals(['+id:1\n', '+id:2\n', '+id:3\n'], sorted(ids))
-        self.assertEquals(['=batches left: 0', '=batches left: 1', '=batches left: 2'], sorted(batchesLeft))
+        self.assertEqual(['+id:1\n', '+id:2\n', '+id:3\n'], sorted(ids))
+        self.assertEqual(['=batches left: 0', '=batches left: 1', '=batches left: 2'], sorted(batchesLeft))
 
     def testProcessGivesError(self):
         storage = self.setupStorage([
@@ -187,9 +187,9 @@ class ReindexTest(SeecrTestCase):
         observer.exceptions['add'] = Exception('An Error Occured')
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '\n!error processing "id:1": An Error Occured'], result)
 
     def testNotOffByOneIfNoRemainder(self):
         records = [dict(identifier='id:%d' % i, partname='part', data='data%d' % i) for i in range(80)]
@@ -197,8 +197,8 @@ class ReindexTest(SeecrTestCase):
         reindex, observer = self.setupDna(storage)
         directory = join(self._path('reindex'), 'testcase')
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase'], 'batchsize': ['5']})))
-        self.assertEquals(16, len(listdir(directory)))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '\n=batches: 16'], result)
+        self.assertEqual(16, len(listdir(directory)))
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '\n=batches: 16'], result)
 
     def testProcessingBatchesIsAsynchronous(self):
         storage = self.setupStorage([
@@ -218,12 +218,12 @@ class ReindexTest(SeecrTestCase):
         reindex, observer = self.setupDna(storage)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
 
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '#', '\n=batches: 1'], result)
         result = list(compose(reindex.handleRequest(arguments={'session': ['testcase']})))
-        self.assertEquals(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+%s\n' % escapeFilename(identifier), '=batches left: 0'], result)
+        self.assertEqual(['HTTP/1.0 200 OK\r\nContent-Type: plain/text\r\n\r\n', '+%s\n' % escapeFilename(identifier), '=batches left: 0'], result)
 
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals([identifier], [m.kwargs['identifier'] for m in observer.calledMethods])
-        self.assertEquals(['ignoredName'], [m.kwargs['partname'] for m in observer.calledMethods])
-        self.assertEquals(['<empty/>'], [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+        self.assertEqual(['add'], [m.name for m in observer.calledMethods])
+        self.assertEqual([identifier], [m.kwargs['identifier'] for m in observer.calledMethods])
+        self.assertEqual(['ignoredName'], [m.kwargs['partname'] for m in observer.calledMethods])
+        self.assertEqual(['<empty/>'], [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 

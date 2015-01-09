@@ -34,119 +34,113 @@
 from os import getuid
 assert getuid() != 0, "Do not run tests as 'root'"
 
-from os import system                             #DO_NOT_DISTRIBUTE
-from sys import path as sysPath                   #DO_NOT_DISTRIBUTE
-system('find .. -name "*.pyc" | xargs rm -f')     #DO_NOT_DISTRIBUTE
-                                                  #DO_NOT_DISTRIBUTE
-from glob import glob                             #DO_NOT_DISTRIBUTE
-for path in glob('../deps.d/*'):                  #DO_NOT_DISTRIBUTE
-    sysPath.insert(0, path)                       #DO_NOT_DISTRIBUTE
-sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
+from seecr.deps import includeParentAndDeps         #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__)                      #DO_NOT_DISTRIBUTE
 
 import unittest
 from warnings import simplefilter
 simplefilter('default')
 
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
-from clausecollectortest import ClauseCollectorTest
-from combinepartstest import CombinePartsTest
-from contextsettest import ContextSetTest
-from convertertest import ConverterTest
-from cqlconversiontest import CQLConversionTest
-from crosswalktest import CrosswalkTest
-from datapumptest import DataPumpTest
-from directorywatchertest import DirectoryWatcherTest
-from fieldletstest import FieldletsTest
-from fields2xmlfieldstest import Fields2XmlFieldsTest
-from fields2xmltest import Fields2XmlTest
-from filtermessagestest import FilterMessagesTest
-from filterpartbynametest import FilterPartByNameTest
-from inboxtest import InboxTest
-from iteratorasstreamtest import IteratorAsStreamTest
-from jsontest import JsonTest
-from multileveldrilldowntest import MultiLevelDrilldownTest
-from parseargumentstest import ParseArgumentsTest
-from parsecqltest import ParseCQLTest
-from periodiccalltest import PeriodicCallTest
-from periodicdownloadtest import PeriodicDownloadTest
-from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
-from reindextest import ReindexTest
-from renamecqlindextest import RenameCqlIndexTest
-from renamefieldforexacttest import RenameFieldForExactTest
-from requestscopetest import RequestScopeTest
-from rewritepartnametest import RewritePartnameTest
-from rssitemtest import RssItemTest
-from rsstest import RssTest
-from scheduletest import ScheduleTest
-from sorteditertoolstest import SortedItertoolsTest
-from statisticstest import StatisticsTest
-from statisticsxmltest import StatisticsXmlTest
-from storagecomponenttest import StorageComponentTest
-from tokenizefieldlettest import TokenizeFieldletTest
-from venturitest import VenturiTest
-from xml2fieldstest import Xml2FieldsTest
-from xmlcomposetest import XmlComposeTest
-from xmlpumptest import XmlPumpTest
-from xmlxpathtest import XmlXPathTest
-from xpath2fieldtest import XPath2FieldTest
-from xsltcrosswalktest import XsltCrosswalkTest
+#from .clausecollectortest import ClauseCollectorTest
+#from .combinepartstest import CombinePartsTest
+#from .contextsettest import ContextSetTest
+#from .convertertest import ConverterTest
+#from .cqlconversiontest import CQLConversionTest
+#from .crosswalktest import CrosswalkTest
+#from .datapumptest import DataPumpTest
+#from .directorywatchertest import DirectoryWatcherTest
+#from .fieldletstest import FieldletsTest
+#from .fields2xmlfieldstest import Fields2XmlFieldsTest
+#from .fields2xmltest import Fields2XmlTest
+#from .filtermessagestest import FilterMessagesTest
+#from .filterpartbynametest import FilterPartByNameTest
+#from .inboxtest import InboxTest
+#from .iteratorasstreamtest import IteratorAsStreamTest
+#from .jsontest import JsonTest
+#from .multileveldrilldowntest import MultiLevelDrilldownTest
+#from .parseargumentstest import ParseArgumentsTest
+#from .parsecqltest import ParseCQLTest
+#from .periodiccalltest import PeriodicCallTest
+#from .periodicdownloadtest import PeriodicDownloadTest
+#from .persistentsortedintegerlisttest import PersistentSortedIntegerListTest
+#from .reindextest import ReindexTest
+#from .renamecqlindextest import RenameCqlIndexTest
+#from .renamefieldforexacttest import RenameFieldForExactTest
+#from .requestscopetest import RequestScopeTest
+#from .rewritepartnametest import RewritePartnameTest
+#from .rssitemtest import RssItemTest
+#from .rsstest import RssTest
+#from .scheduletest import ScheduleTest
+#from .sorteditertoolstest import SortedItertoolsTest
+#from .statisticstest import StatisticsTest
+#from .statisticsxmltest import StatisticsXmlTest
+#from .storagecomponenttest import StorageComponentTest
+#from .tokenizefieldlettest import TokenizeFieldletTest
+#from .venturitest import VenturiTest
+#from .xml2fieldstest import Xml2FieldsTest
+#from .xmlcomposetest import XmlComposeTest
+#from .xmlpumptest import XmlPumpTest
+#from .xmlxpathtest import XmlXPathTest
+#from .xpath2fieldtest import XPath2FieldTest
+#from .xsltcrosswalktest import XsltCrosswalkTest
 
-from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
+#from .cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
 
-from autocomplete.autocompletetest import AutocompleteTest
+#from .autocomplete.autocompletetest import AutocompleteTest
 
-from drilldown.srufielddrilldowntest import SruFieldDrilldownTest
-from drilldown.srutermdrilldowntest import SruTermDrilldownTest
-from drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
+#from .drilldown.srufielddrilldowntest import SruFieldDrilldownTest
+#from .drilldown.srutermdrilldowntest import SruTermDrilldownTest
+#from .drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
 
-from http.apacheloggertest import ApacheLoggerTest
-from http.argumentsinsessiontest import ArgumentsInSessionTest
-from http.basicauthenticationtest import BasicAuthenticationTest
-from http.basichttphandlertest import BasicHttpHandlerTest
-from http.deproxytest import DeproxyTest
-from http.fileservertest import FileServerTest
-from http.handlerequestfiltertest import HandleRequestFilterTest
-from http.httpclienttest import HttpClientTest
-from http.ipfiltertest import IpFilterTest
-from http.observablehttpservertest import ObservableHttpServerTest
-from http.observablehttpsservertest import ObservableHttpsServerTest
-from http.pathfiltertest import PathFilterTest
-from http.pathrenametest import PathRenameTest
-from http.sessionhandlertest import SessionHandlerTest
-from http.timeddictionarytest import TimedDictionaryTest
-from http.utilstest import UtilsTest
+#from .http.apacheloggertest import ApacheLoggerTest
+#from .http.argumentsinsessiontest import ArgumentsInSessionTest
+#from .http.basicauthenticationtest import BasicAuthenticationTest
+#from .http.basichttphandlertest import BasicHttpHandlerTest
+#from .http.deproxytest import DeproxyTest
+#from .http.fileservertest import FileServerTest
+#from .http.handlerequestfiltertest import HandleRequestFilterTest
+#from .http.httpclienttest import HttpClientTest
+#from .http.ipfiltertest import IpFilterTest
+#from .http.observablehttpservertest import ObservableHttpServerTest
+#from .http.observablehttpsservertest import ObservableHttpsServerTest
+#from .http.pathfiltertest import PathFilterTest
+#from .http.pathrenametest import PathRenameTest
+#from .http.sessionhandlertest import SessionHandlerTest
+#from .http.timeddictionarytest import TimedDictionaryTest
+#from .http.utilstest import UtilsTest
 
-from log.apachelogwritertest import ApacheLogWriterTest
-from log.directorylogtest import DirectoryLogTest
-from log.handlerequestlogtest import HandleRequestLogTest
-from log.logcollectortest import LogCollectorTest
-from log.logfileservertest import LogFileServerTest
-from log.querylogtest import QueryLogTest
-from log.querylogwritertest import QueryLogWriterTest
-from log.srulogtest import SruLogTest
+#from .log.apachelogwritertest import ApacheLogWriterTest
+#from .log.directorylogtest import DirectoryLogTest
+#from .log.handlerequestlogtest import HandleRequestLogTest
+#from .log.logcollectortest import LogCollectorTest
+#from .log.logfileservertest import LogFileServerTest
+#from .log.querylogtest import QueryLogTest
+#from .log.querylogwritertest import QueryLogWriterTest
+#from .log.srulogtest import SruLogTest
 
-from numeric.converttest import ConvertTest
+#from .numeric.converttest import ConvertTest
 
-from sru.sruhandlertest import SruHandlerTest
-from sru.sruparsertest import SruParserTest
-from sru.srurecordupdatetest import SruRecordUpdateTest
-from sru.sruupdateclienttest import SruUpdateClientTest
-from sru.srulimitstartrecordtest import SruLimitStartRecordTest
-from sru.srwtest import SrwTest
+#from .sru.sruhandlertest import SruHandlerTest
+#from .sru.sruparsertest import SruParserTest
+#from .sru.srurecordupdatetest import SruRecordUpdateTest
+#from .sru.sruupdateclienttest import SruUpdateClientTest
+#from .sru.srulimitstartrecordtest import SruLimitStartRecordTest
+#from .sru.srwtest import SrwTest
 
-from suggestion.suggestiontest import SuggestionTest
+#from .suggestion.suggestiontest import SuggestionTest
 
-from xml_generic.validatetest import ValidateTest
+#from .xml_generic.validatetest import ValidateTest
 
-from integerlist.integerlisttest import IntegerListTest
+#from .integerlist.integerlisttest import IntegerListTest
 
-from ngram.cqlsuggestertest import CqlSuggesterTest
-from ngram.cqltermvisitortest import CqlTermVisitorTest
+#from .ngram.cqlsuggestertest import CqlSuggesterTest
+#from .ngram.cqltermvisitortest import CqlTermVisitorTest
 
-from msgbox.msgboxtest import MsgboxTest
-from msgbox.updateadaptertest import UpdateAdapterTest
+#from .msgbox.msgboxtest import MsgboxTest
+#from .msgbox.updateadaptertest import UpdateAdapterTest
 
-from web.webquerytest import WebQueryTest
+#from .web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':
     unittest.main()

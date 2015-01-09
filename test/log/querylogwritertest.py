@@ -60,13 +60,13 @@ class QueryLogWriterTest(SeecrTestCase):
             )
         ))
         result = asString(observable.all.handleRequest(Client=('11.22.33.44', 1234), path='/yes'))
-        self.assertEquals(okPlainText+'result', result)
+        self.assertEqual(okPlainText+'result', result)
         result = asString(observable.all.handleRequest(Client=('22.33.44.55', 2345), path='/no'))
-        self.assertEquals(okPlainText+'result', result)
+        self.assertEqual(okPlainText+'result', result)
         result = asString(observable.all.handleRequest(Client=('33.44.55.66', 3456), path='/yes'))
-        self.assertEquals(okPlainText+'result', result)
-        self.assertEquals(['log', 'log'], log.calledMethodNames())
-        self.assertEquals(['/yes', '/yes'], [m.kwargs['path'] for m in log.calledMethods])
+        self.assertEqual(okPlainText+'result', result)
+        self.assertEqual(['log', 'log'], log.calledMethodNames())
+        self.assertEqual(['/yes', '/yes'], [m.kwargs['path'] for m in log.calledMethods])
 
     def testLogAllPaths(self):
         log = CallTrace('log')
@@ -74,8 +74,8 @@ class QueryLogWriterTest(SeecrTestCase):
         writer.writeLog(defaultCollectedLogWithPath('/sru'))
         writer.writeLog(defaultCollectedLogWithPath('/srv'))
         writer.writeLog(defaultCollectedLogWithPath('/srw.php'))
-        self.assertEquals(['log','log', 'log'], log.calledMethodNames())
-        self.assertEquals(['/sru', '/srv', '/srw.php'], [m.kwargs['path'] for m in log.calledMethods])
+        self.assertEqual(['log','log', 'log'], log.calledMethodNames())
+        self.assertEqual(['/sru', '/srv', '/srw.php'], [m.kwargs['path'] for m in log.calledMethods])
 
     def testLog(self):
         log = CallTrace('log')
@@ -83,8 +83,8 @@ class QueryLogWriterTest(SeecrTestCase):
         collectedLog = defaultCollectedLog()
         collectedLog['httpResponse']['size'] = [4096]
         writer.writeLog(collectedLog)
-        self.assertEquals(['log'], log.calledMethodNames())
-        self.assertEquals(dict(
+        self.assertEqual(['log'], log.calledMethodNames())
+        self.assertEqual(dict(
                 timestamp=1257161136.0,
                 path='/sru',
                 ipAddress='11.22.33.44',
@@ -100,8 +100,8 @@ class QueryLogWriterTest(SeecrTestCase):
         collectedLog = defaultCollectedLog()
         collectedLog['httpRequest']['arguments'] = [{'verb':'ListRecords', 'metadataPrefix':'rdf'}]
         writer.writeLog(collectedLog)
-        self.assertEquals(['log'], log.calledMethodNames())
-        self.assertEquals(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])
+        self.assertEqual(['log'], log.calledMethodNames())
+        self.assertEqual(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])
 
     def testLogLiveExample(self):
         collectedLog = {
@@ -154,9 +154,9 @@ class QueryLogWriterTest(SeecrTestCase):
         writer2 = QueryLogWriter(log=log2, scopeNames=('query-scope', 'other-scope'))
         writer.writeLog(collectedLog)
         writer2.writeLog(collectedLog)
-        self.assertEquals(['log'], log.calledMethodNames())
-        self.assertEquals([], log2.calledMethodNames())
-        self.assertEquals(['maximumRecords=10&operation=searchRetrieve&query=meta.upload.id+exact+%22NICL%3Aoai%3Amdms.kenict.org%3Aoai%3Anicl.nl%3Ak163645%22&recordPacking=xml&recordSchema=smbAggregatedData&startRecord=1&version=1.2'], [m.kwargs['queryArguments'] for m in log.calledMethods])
+        self.assertEqual(['log'], log.calledMethodNames())
+        self.assertEqual([], log2.calledMethodNames())
+        self.assertEqual(['maximumRecords=10&operation=searchRetrieve&query=meta.upload.id+exact+%22NICL%3Aoai%3Amdms.kenict.org%3Aoai%3Anicl.nl%3Ak163645%22&recordPacking=xml&recordSchema=smbAggregatedData&startRecord=1&version=1.2'], [m.kwargs['queryArguments'] for m in log.calledMethods])
 
     def testAdditionalArguments(self):
         log = CallTrace('log')
@@ -164,10 +164,10 @@ class QueryLogWriterTest(SeecrTestCase):
         observer = CallTrace('additional', returnValues={'determineQueryArguments': dict(key='value')})
         writer.addObserver(observer)
         writer.writeLog(defaultCollectedLog())
-        self.assertEquals(['log'], log.calledMethodNames())
-        self.assertEquals(['key=value'], [m.kwargs['queryArguments'] for m in log.calledMethods])
-        self.assertEquals(['determineQueryArguments'], observer.calledMethodNames())
-        self.assertEquals(dict(
+        self.assertEqual(['log'], log.calledMethodNames())
+        self.assertEqual(['key=value'], [m.kwargs['queryArguments'] for m in log.calledMethods])
+        self.assertEqual(['determineQueryArguments'], observer.calledMethodNames())
+        self.assertEqual(dict(
                 collectedLog=defaultCollectedLog(),
                 scopeNames=(),
                 currentArgs={'version': '1.2'},

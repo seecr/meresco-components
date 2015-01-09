@@ -47,7 +47,7 @@ class LogFileServerTest(SeecrTestCase):
     def testGenerateEmptyHtmlFileLinkListing(self):
         headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF+CRLF)
         
-        self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
+        self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertTrue(body.startswith('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html>'), body)
         self.assertTrue(body.rfind('</body>\n</html>') != -1, body)
         

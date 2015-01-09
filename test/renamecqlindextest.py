@@ -35,4 +35,4 @@ from cqlparser import parseString
 class RenameCqlIndexTest(SeecrTestCase):
     def testConvert(self):
         rename = RenameCqlIndex(lambda name: 'other'+name)
-        self.assertEquals(parseString('otherfield = value'), rename(parseString('field = value')))
+        self.assertEqual(parseString('otherfield = value'), rename(parseString('field = value')))

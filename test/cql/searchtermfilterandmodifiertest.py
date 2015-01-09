@@ -34,14 +34,14 @@ from meresco.components.cql import SearchTermFilterAndModifier
 
 class SearchTermFilterAndModifierTest(TestCase): 
     def testModifyValue(self):
-        self.assertEquals(
+        self.assertEqual(
             'afield exact newvalue', 
             self.convert(
                 cql='afield exact Pvalue', 
                 shouldModifyFieldValue=lambda name, relation, value: name=='afield' and relation=='exact' and value.startswith('P'), 
                 valueModifier=lambda value: 'newvalue'))
 
-        self.assertEquals(
+        self.assertEqual(
             'afield=newvalue', 
             self.convert(
                 cql='afield=Pvalue',
@@ -49,14 +49,14 @@ class SearchTermFilterAndModifierTest(TestCase):
                 valueModifier=lambda value: 'newvalue'))
 
     def testNothingToBeDone(self):
-        self.assertEquals(
+        self.assertEqual(
             'field exact value', 
             self.convert(
                 cql='field exact value',
                 shouldModifyFieldValue=lambda name, relation, value: name=='afield' and value.startswith('P'), 
                 valueModifier=lambda value: 'newvalue'))
 
-        self.assertEquals(
+        self.assertEqual(
             'afield exact value', 
             self.convert(
                 cql='afield exact value',
@@ -64,7 +64,7 @@ class SearchTermFilterAndModifierTest(TestCase):
                 valueModifier=lambda value: 'newvalue',
                 fieldnameModifier=lambda field: 'newfield'))
 
-        self.assertEquals(
+        self.assertEqual(
             'afield=Pvalue', 
             self.convert(
                 cql='afield=Pvalue',
@@ -72,14 +72,14 @@ class SearchTermFilterAndModifierTest(TestCase):
                 valueModifier=lambda value: 'newvalue'))
 
     def testModifyField(self):
-        self.assertEquals(
+        self.assertEqual(
             'newfield exact Pvalue', 
             self.convert(
                 cql='afield exact Pvalue', 
                 shouldModifyFieldValue=lambda name, relation, value: name=='afield' and relation=='exact' and value.startswith('P'), 
                 fieldnameModifier=lambda value: 'newfield'))
 
-        self.assertEquals(
+        self.assertEqual(
             'newfield=newvalue', 
             self.convert(
                 cql='somefield=Pvalue',

@@ -29,7 +29,7 @@ class SruDuplicateCount(object):
     def extraRecordData(self, hit):
         if not hasattr(hit, 'duplicateCount'):
             return
-        for item in hit.duplicateCount.items():
+        for item in list(hit.duplicateCount.items()):
             yield "<meresco_srw:duplicateCount fieldname='%s'>%s</meresco_srw:duplicateCount>" % item
 
     def extraResponseData(self, response, **kwargs):

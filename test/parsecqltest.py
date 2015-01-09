@@ -47,11 +47,11 @@ class ParseCQLTest(TestCase):
 
         composed = compose(observable.any.executeCQLString('term1'))
         try:
-            composed.next()
+            next(composed)
             self.fail('Should not happen')
-        except StopIteration, e:
-            self.assertEquals(('retval',), e.args)
+        except StopIteration as e:
+            self.assertEqual(('retval',), e.args)
 
-        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term1')))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEqual(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEqual("CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term1')))))", str(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
 

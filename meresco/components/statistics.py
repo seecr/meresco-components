@@ -29,7 +29,7 @@
 # 
 ## end license ##
 
-import cPickle as pickle
+import pickle as pickle
 from os import rename, remove
 from os.path import isfile, join
 from inspect import currentframe
@@ -49,7 +49,7 @@ def combinations(head, tail):
                 yield (value,) + trailer
 
 def _log(statisticsLog, **kwargs):
-    for key, value in kwargs.items():
+    for key, value in list(kwargs.items()):
         statisticsLog.setdefault(key, []).append(value)
 
 def log(observable, **kwargs):
@@ -89,13 +89,13 @@ class Top100s(object):
 
     def getTop(self, statisticId):
          return sorted(
-                    self._data.get(statisticId, {}).iteritems(),
+                    iter(list(self._data.get(statisticId, {}).items())),
                     key=operator.itemgetter(1),          # much faster: use Schwartzian Transform
                     reverse=True
                )[:100]
 
     def statisticIds(self):
-        return self._data.keys()
+        return list(self._data.keys())
 
     def __eq__(self, other):
         return other.__class__ == self.__class__ and other._data == self._data
@@ -104,7 +104,8 @@ class Top100sFactory(object):
     def doInit(self):
         return Top100s()
 
-    def doAdd(self, topResults, (statistic, fieldValues)):
+    def doAdd(self, topResults, xxx_todo_changeme):
+        (statistic, fieldValues) = xxx_todo_changeme
         topResults.inc(statistic, fieldValues)
 
 class Statistics(Observable):
@@ -204,7 +205,7 @@ class Statistics(Observable):
         snapshotFile = open(self._snapshotFilename, 'rb')
         try:
             self._data = pickle.load(snapshotFile)
-        except ImportError, e:
+        except ImportError as e:
             if str(e) == 'No module named merescocore.components.statistics':
                 raise ImportError("merescocore.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory")
             else:
@@ -244,7 +245,7 @@ class AggregatorNode(object):
     def _aggregate(self):
         if self._aggregated:
             return
-        for nr, child in self._children.items():
+        for nr, child in list(self._children.items()):
             child._aggregate()
             self._values.extend(child._values)
         self._children = {}
@@ -254,7 +255,7 @@ class AggregatorNode(object):
         if self._aggregated:
             rhsNode._aggregate()
         self._values.extend(rhsNode._values)
-        for rhsTime, rhsChild in rhsNode._children.items():
+        for rhsTime, rhsChild in list(rhsNode._children.items()):
             if rhsTime in self._children:
                 self._children[rhsTime].merge(rhsChild)
             else:
@@ -282,14 +283,14 @@ class AggregatorNode(object):
         if not fromTime and not toTime:
             result.extend(self._values)
             if not self._aggregated:
-                for digit, child in self._children.items():
+                for digit, child in list(self._children.items()):
                     child.get(result, [], [])
             return result
 
         if self._aggregated:
             raise AggregatorException(fromTime, toTime)
 
-        for digit, child in self._children.items():
+        for digit, child in list(self._children.items()):
             left = fromTime
             if fromTime:
                 if digit < fromTime[0]:
@@ -333,7 +334,7 @@ class Aggregator(object):
     def get(self, fromTime=(), toTime=()):
         try:
             return self._root.get(self._xxxFactory.doInit(), fromTime, toTime)
-        except AggregatorException, e:
+        except AggregatorException as e:
             nice = ["everything", "years", "months", "days", "hours", "minutes", "seconds"]
             s = []
             if e.args[0]:

@@ -36,7 +36,7 @@ from cqlparser.cqlparser import parseString as parseCQL
 from meresco.core.observable import Observable
 from meresco.core.generatorutils import decorateWith
 
-from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
+from .drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER
 
 class SruFieldDrilldown(Observable):
     def extraResponseData(self, query=None, sruArguments=None, **kwargs):

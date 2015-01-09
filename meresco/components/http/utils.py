@@ -32,6 +32,7 @@
 ## end license ##
 
 from weightless.core import Yield
+import collections
 
 CRLF = "\r\n"
 ContentTypeXml = "text/xml; charset=utf-8"
@@ -111,7 +112,7 @@ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
 def insertHeader(httpResponse, extraHeader):
     alreadyDone = False
     for response in httpResponse:
-        if response is Yield or callable(response):
+        if response is Yield or isinstance(response, collections.Callable):
             yield response
             continue
 

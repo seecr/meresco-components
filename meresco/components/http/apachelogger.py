@@ -31,7 +31,8 @@
 from meresco.core import Transparent
 from weightless.core import compose, Yield
 from time import strftime, gmtime
-from urlparse import urlsplit
+from urllib.parse import urlsplit
+import collections
 
 class DevNull(object):
     def write(self, *args, **kwargs):
@@ -48,7 +49,7 @@ class ApacheLogger(Transparent):
     def handleRequest(self, *args, **kwargs):
         status = 0
         for line in compose(self.all.handleRequest(*args, **kwargs)):
-            if line is Yield or callable(line):
+            if line is Yield or isinstance(line, collections.Callable):
                 yield line
                 continue
             if not status and line.startswith('HTTP/1.'):

@@ -25,34 +25,34 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from StringIO import StringIO
+from io import StringIO
 
 from meresco.components import IteratorAsStream
 
 class IteratorAsStreamTest(SeecrTestCase):
     def testEmptyIterator(self):
         stream = IteratorAsStream(iter([]))
-        self.assertEquals('', stream.read())
+        self.assertEqual('', stream.read())
 
     def testReadWithSize(self):
         def assertStream1(stream):
-            self.assertEquals("12345", stream.read(5))
-            self.assertEquals("67890", stream.read(42))
-            self.assertEquals('', stream.read())
-            self.assertEquals('', stream.read())
+            self.assertEqual("12345", stream.read(5))
+            self.assertEqual("67890", stream.read(42))
+            self.assertEqual('', stream.read())
+            self.assertEqual('', stream.read())
         def assertStream2(stream):
-            self.assertEquals("12345", stream.read(5))
-            self.assertEquals("", stream.read(0))
-            self.assertEquals("67890", stream.read(-1))
-            self.assertEquals('', stream.read())
+            self.assertEqual("12345", stream.read(5))
+            self.assertEqual("", stream.read(0))
+            self.assertEqual("67890", stream.read(-1))
+            self.assertEqual('', stream.read())
         def assertStream3(stream):
-            self.assertEquals("12345", stream.read(5))
-            self.assertEquals("67890", stream.read())
-            self.assertEquals('', stream.read())
+            self.assertEqual("12345", stream.read(5))
+            self.assertEqual("67890", stream.read())
+            self.assertEqual('', stream.read())
         def assertStream4(stream):
-            self.assertEquals("1234567890", stream.read(-19))
+            self.assertEqual("1234567890", stream.read(-19))
         def assertStream5(stream):
-            self.assertEquals("1234567890", stream.read())
+            self.assertEqual("1234567890", stream.read())
 
         assertStream1(StringIO("1234567890"))
         assertStream2(StringIO("1234567890"))
@@ -82,21 +82,21 @@ class IteratorAsStreamTest(SeecrTestCase):
     def testStreamAsIterator(self):
         stream = IteratorAsStream((f for f in ["123","456","78","90"]))
 
-        self.assertEquals("123", stream.next())
-        self.assertEquals("45", stream.read(2))
-        self.assertEquals("6", stream.next())
-        self.assertEquals("78", stream.next())
-        self.assertEquals("90", stream.next())
-        self.assertRaises(StopIteration, stream.next)
+        self.assertEqual("123", next(stream))
+        self.assertEqual("45", stream.read(2))
+        self.assertEqual("6", next(stream))
+        self.assertEqual("78", next(stream))
+        self.assertEqual("90", next(stream))
+        self.assertRaises(StopIteration, stream.__next__)
 
         stream = IteratorAsStream((f for f in ["123","456","78","90"]))
-        self.assertEquals(["123","456","78","90"], [f for f in stream])
+        self.assertEqual(["123","456","78","90"], [f for f in stream])
         stream = IteratorAsStream((f for f in ["123","456","78","90"]))
-        self.assertEquals("123, 456, 78, 90", ', '.join(stream))
+        self.assertEqual("123, 456, 78, 90", ', '.join(stream))
 
         stream = IteratorAsStream((f for f in ["123","456","78","90"]))
         stream.read()
-        self.assertRaises(StopIteration, stream.next)
+        self.assertRaises(StopIteration, stream.__next__)
 
         stream = IteratorAsStream((f for f in []))
-        self.assertRaises(StopIteration, stream.next)
+        self.assertRaises(StopIteration, stream.__next__)

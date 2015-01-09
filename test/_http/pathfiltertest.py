@@ -41,26 +41,26 @@ class PathFilterTest(SeecrTestCase):
         f = PathFilter('/path')
         f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/path', otherArgument='value')))
-        self.assertEquals(1, len(self.interceptor.calledMethods))
-        self.assertEquals('handleRequest', self.interceptor.calledMethods[0].name)
-        self.assertEquals({'path':'/path', 'otherArgument':'value'}, self.interceptor.calledMethods[0].kwargs)
+        self.assertEqual(1, len(self.interceptor.calledMethods))
+        self.assertEqual('handleRequest', self.interceptor.calledMethods[0].name)
+        self.assertEqual({'path':'/path', 'otherArgument':'value'}, self.interceptor.calledMethods[0].kwargs)
 
     def testOtherPath(self):
         f = PathFilter('/path')
         f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/other/path')))
-        self.assertEquals(0, len(self.interceptor.calledMethods))
+        self.assertEqual(0, len(self.interceptor.calledMethods))
 
     def testPaths(self):
         f = PathFilter(['/path', '/other/path'])
         f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/other/path')))
-        self.assertEquals(1, len(self.interceptor.calledMethods))
+        self.assertEqual(1, len(self.interceptor.calledMethods))
 
     def testExcludingPaths(self):
         f = PathFilter('/path', excluding=['/path/not/this'])
         f.addObserver(self.interceptor)
         list(compose(f.handleRequest(path='/path/not/this/path')))
-        self.assertEquals(0, len(self.interceptor.calledMethods))
+        self.assertEqual(0, len(self.interceptor.calledMethods))
         list(compose(f.handleRequest(path='/path/other')))
-        self.assertEquals(1, len(self.interceptor.calledMethods))
+        self.assertEqual(1, len(self.interceptor.calledMethods))

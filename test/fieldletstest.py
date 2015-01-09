@@ -33,7 +33,7 @@ from weightless.core import be, compose
 from meresco.core import Observable
 from meresco.components import RenameField, TransformFieldValue, FilterField, AddField, Xml2Fields, FilterFieldValue
 from lxml.etree import parse
-from StringIO import StringIO
+from io import StringIO
 
 class FieldletsTest(SeecrTestCase):
     def setUp(self):
@@ -50,9 +50,9 @@ class FieldletsTest(SeecrTestCase):
         )
 
         dna.do.addField(name='fieldname', value="x")
-        self.assertEquals(1, len(self.observert.calledMethods))
+        self.assertEqual(1, len(self.observert.calledMethods))
 
-        self.assertEquals("addField(name='fieldname.fieldname', value='x')", str(self.observert.calledMethods[0]))
+        self.assertEqual("addField(name='fieldname.fieldname', value='x')", str(self.observert.calledMethods[0]))
 
     def testTransformFieldValueWithTransform(self):
         dna = be(
@@ -64,9 +64,9 @@ class FieldletsTest(SeecrTestCase):
         )
 
         dna.do.addField(name='f', value="x")
-        self.assertEquals(1, len(self.observert.calledMethods))
+        self.assertEqual(1, len(self.observert.calledMethods))
 
-        self.assertEquals("addField(name='f', value='transform x')", str(self.observert.calledMethods[0]))
+        self.assertEqual("addField(name='f', value='transform x')", str(self.observert.calledMethods[0]))
 
     def testAddField(self):
         dna = be(
@@ -78,8 +78,8 @@ class FieldletsTest(SeecrTestCase):
         )
 
         list(compose(dna.all.add(identifier='id', partname='part', lxmlNode='data')))
-        self.assertEquals(1, len(self.observert.calledMethods))
-        self.assertEquals("addField(name='name', value='value')", str(self.observert.calledMethods[0]))
+        self.assertEqual(1, len(self.observert.calledMethods))
+        self.assertEqual("addField(name='name', value='value')", str(self.observert.calledMethods[0]))
 
     def testDoNotTransformFieldValueForTransformWithNoneResult(self):
         dna = be(
@@ -91,7 +91,7 @@ class FieldletsTest(SeecrTestCase):
         )
 
         dna.do.addField(name='f', value="x")
-        self.assertEquals(0, len(self.observert.calledMethods))
+        self.assertEqual(0, len(self.observert.calledMethods))
 
     def testIntegration(self):
         dna = be(
@@ -138,9 +138,9 @@ class FieldletsTest(SeecrTestCase):
 </base>"""
         
         result = list(compose(dna.all.add(identifier='id', partname='part', lxmlNode=parse(StringIO(inputXml)))))
-        self.assertEquals([], result)
+        self.assertEqual([], result)
 
-        self.assertEquals([
+        self.assertEqual([
             "addField(name='addfield.name', value='addfield.value')",
             "addField(name='base.name1', value='value1')",
             "addField(name='drilldown.base.name1', value='value1')",

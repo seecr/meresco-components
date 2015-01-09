@@ -29,7 +29,7 @@
 ## end license ##
 
 from meresco.core import Observable
-from cqltermvisitor import getAllTerms
+from .cqltermvisitor import getAllTerms
 
 class CqlSuggester(Observable) :
     def suggestForCql(self, cqlAST) :

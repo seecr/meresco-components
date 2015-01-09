@@ -45,11 +45,11 @@ class ObservableHttpServerTest(SeecrTestCase):
         s.addObserver(observer)
 
         list(compose(s.handleRequest(RequestURI='http://localhost')))
-        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEqual(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
-        self.assertEquals('handleRequest', method.name)
-        self.assertEquals(0, len(method.args))
-        self.assertEquals(7, len(method.kwargs))
+        self.assertEqual('handleRequest', method.name)
+        self.assertEqual(0, len(method.args))
+        self.assertEqual(7, len(method.kwargs))
 
     def testHandleRequest(self):
         observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
@@ -57,17 +57,17 @@ class ObservableHttpServerTest(SeecrTestCase):
         s.addObserver(observer)
 
         list(compose(s.handleRequest(RequestURI='http://localhost/path?key=value&emptykey#fragment')))
-        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEqual(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
-        self.assertEquals('handleRequest', method.name)
-        self.assertEquals(0, len(method.args))
-        self.assertEquals(7, len(method.kwargs))
+        self.assertEqual('handleRequest', method.name)
+        self.assertEqual(0, len(method.args))
+        self.assertEqual(7, len(method.kwargs))
         self.assertTrue('arguments' in method.kwargs, method.kwargs)
         arguments = method.kwargs['arguments']
-        self.assertEquals(2, len(arguments))
-        self.assertEquals(['emptykey', 'key'], sorted(arguments.keys()))
-        self.assertEquals(['value'], arguments['key'])
-        self.assertEquals([''], arguments['emptykey'])
+        self.assertEqual(2, len(arguments))
+        self.assertEqual(['emptykey', 'key'], sorted(arguments.keys()))
+        self.assertEqual(['value'], arguments['key'])
+        self.assertEqual([''], arguments['emptykey'])
 
     def testMaxConnectionsErrorHandling(self):
         observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
@@ -77,9 +77,9 @@ class ObservableHttpServerTest(SeecrTestCase):
         s.addObserver(observer)
         result = ''.join(s._error(ResponseCode=503, something='bicycle'))
 
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals('logHttpError', observer.calledMethods[0].name)
-        self.assertEquals({'ResponseCode': 503, 'something': 'bicycle'}, observer.calledMethods[0].kwargs)
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual('logHttpError', observer.calledMethods[0].name)
+        self.assertEqual({'ResponseCode': 503, 'something': 'bicycle'}, observer.calledMethods[0].kwargs)
         header, body = result.split(CRLF * 2)
         self.assertTrue(header.startswith('HTTP/1.0 503'), header)
         self.assertTrue('Service Unavailable' in body, body)
@@ -102,11 +102,11 @@ class ObservableHttpServerTest(SeecrTestCase):
         s.startServer()
 
         httpserver = s._httpserver
-        self.assertEquals(5, httpserver._maxConnections)
+        self.assertEqual(5, httpserver._maxConnections)
         s.setMaxConnections(6)
         acceptor = s._httpserver
-        self.assertEquals(6, httpserver._maxConnections)
-        self.assertEquals(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
+        self.assertEqual(6, httpserver._maxConnections)
+        self.assertEqual(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
 
     def testCompressResponseFlag(self):
         reactor = CallTrace('Reactor')
@@ -114,12 +114,12 @@ class ObservableHttpServerTest(SeecrTestCase):
         s = ObservableHttpServer(reactor, 0, compressResponse=True)
         s.startServer()
         httpserver = s._httpserver
-        self.assertEquals(True, httpserver._compressResponse)
+        self.assertEqual(True, httpserver._compressResponse)
 
         s = ObservableHttpServer(reactor, 0)
         s.startServer()
         httpserver = s._httpserver
-        self.assertEquals(False, httpserver._compressResponse)
+        self.assertEqual(False, httpserver._compressResponse)
 
     def testServerWithPrio(self):
         prios = []
@@ -143,12 +143,12 @@ class ObservableHttpServerTest(SeecrTestCase):
         sok.send('GET / HTTP/1.0\r\n\r\n')
         reactor.step()
         reactor.step()
-        self.assertEquals([('read', 3)], prios)
+        self.assertEqual([('read', 3)], prios)
         reactor.step().step()
-        self.assertEquals([('read', 3), ('read', 3)], prios)
+        self.assertEqual([('read', 3), ('read', 3)], prios)
         reactor.step()
         reactor.step()
-        self.assertEquals([('read', 3), ('read', 3), ('write', 3)], prios)
+        self.assertEqual([('read', 3), ('read', 3), ('write', 3)], prios)
         # one more step to let the connection finalize and all objects reclaimed and avoid garbage
         reactor.step()
 
@@ -157,5 +157,5 @@ class ObservableHttpServerTest(SeecrTestCase):
         port = randint(2**10, 2**16)
         server = ObservableHttpServer(reactor, port, bindAddress='127.0.0.1')
         server.startServer()
-        self.assertEquals(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
+        self.assertEqual(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
 

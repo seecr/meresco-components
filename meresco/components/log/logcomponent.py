@@ -36,10 +36,10 @@ from meresco.components import lxmltostring
 class LogComponent(Observable):
     def _log(self, method, *args, **kwargs):
         printKwargs = dict(kwargs)
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if type(value) == ElementTreeType:
                 printKwargs[key] = "%s(%s)" % (value.__class__.__name__, lxmltostring(value))
-        print "[%s] %s(*%s, **%s)" % (self.observable_name(), method, args, printKwargs)
+        print(("[%s] %s(*%s, **%s)" % (self.observable_name(), method, args, printKwargs)))
         stdout.flush()
     
     def all_unknown(self, message, *args, **kwargs):

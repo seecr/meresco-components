@@ -46,9 +46,9 @@ class SruFieldDrilldownTest(SeecrTestCase):
         def executeQuery(**kwargs):
             if not firstCall:
                 firstCall.append(True)
-                raise StopIteration(Response(total=5, hits=range(5)))
+                raise StopIteration(Response(total=5, hits=list(range(5))))
             else:
-                raise StopIteration(Response(total=10, hits=range(10)))
+                raise StopIteration(Response(total=10, hits=list(range(10))))
             yield
         sruFieldDrilldown = SruFieldDrilldown()
         observer = CallTrace("observer")
@@ -60,30 +60,30 @@ class SruFieldDrilldownTest(SeecrTestCase):
 <dd:field name="field0">5</dd:field>
 <dd:field name="field1">10</dd:field></dd:field-drilldown></dd:drilldown>""", "".join(result))
 
-        self.assertEquals(['executeQuery', 'executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(['cqlAbstractSyntaxTree', 'cqlAbstractSyntaxTree'], [','.join((m.kwargs.keys())) for m in observer.calledMethods])
-        self.assertEquals('(original) AND field0=term', cql2string(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
-        self.assertEquals('(original) AND field1=term', cql2string(observer.calledMethods[1].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEqual(['executeQuery', 'executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEqual(['cqlAbstractSyntaxTree', 'cqlAbstractSyntaxTree'], [','.join((list(m.kwargs.keys()))) for m in observer.calledMethods])
+        self.assertEqual('(original) AND field0=term', cql2string(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEqual('(original) AND field1=term', cql2string(observer.calledMethods[1].kwargs['cqlAbstractSyntaxTree']))
 
     def testDrilldown(self):
         adapter = SruFieldDrilldown()
         observer = CallTrace("Observer")
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=16, hits=range(16)))
+            raise StopIteration(Response(total=16, hits=list(range(16))))
             yield
         observer.methods['executeQuery'] = executeQuery
         adapter.addObserver(observer)
         def dd():
             result = yield adapter.drilldown('original', 'term', ['field0', 'field1'])
             yield result
-        result = compose(dd()).next()
-        self.assertEquals(2, len(observer.calledMethods))
-        self.assertEquals("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
-        self.assertEquals(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
-        self.assertEquals([("field0", 16), ("field1", 16)], result)
+        result = next(compose(dd()))
+        self.assertEqual(2, len(observer.calledMethods))
+        self.assertEqual("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
+        self.assertEqual(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+        self.assertEqual([("field0", 16), ("field1", 16)], result)
 
     def testEchoedExtraRequestData(self):
         d = SruFieldDrilldown()
         result = "".join(d.echoedExtraRequestData(sruArguments={'x-field-drilldown': ['term'], 'x-field-drilldown-fields': ['field0,field1'], 'otherArgument': ['ignored']}))
-        self.assertEquals(DRILLDOWN_HEADER + '<dd:field-drilldown>term</dd:field-drilldown><dd:field-drilldown-fields>field0,field1</dd:field-drilldown-fields></dd:drilldown>', result)
+        self.assertEqual(DRILLDOWN_HEADER + '<dd:field-drilldown>term</dd:field-drilldown><dd:field-drilldown-fields>field0,field1</dd:field-drilldown-fields></dd:drilldown>', result)
 

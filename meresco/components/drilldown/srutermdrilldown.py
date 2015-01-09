@@ -26,7 +26,7 @@
 ## end license ##
 
 from meresco.core import Observable, decorateWith, decorate
-from drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2007, _DRILLDOWN_XSD_2013, DRILLDOWN_FOOTER
+from .drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2007, _DRILLDOWN_XSD_2013, DRILLDOWN_FOOTER
 from xml.sax.saxutils import escape as xmlEscape, quoteattr
 from traceback import print_exc
 from simplejson import dumps
@@ -54,7 +54,7 @@ class SruTermDrilldown(Observable):
         drilldownHeader = _DRILLDOWN_HEADER % (_DRILLDOWN_XSD_2007 if outputFormat == FORMAT_OLD_XML else _DRILLDOWN_XSD_2013)
         try:
             yield decorate(drilldownHeader, self._termDrilldown(drilldownData, format=outputFormat), DRILLDOWN_FOOTER)
-        except Exception, e:
+        except Exception as e:
             print_exc()
             yield drilldownHeader + "<dd:term-drilldown>"
             yield generalSystemError(xmlEscape(e.args[0]))
@@ -88,7 +88,7 @@ class SruTermDrilldown(Observable):
         except IndexError:
             yield '<dd:navigator name=%s/>' % quoteattr(fieldname)
             return
-        except Exception, e:
+        except Exception as e:
             yield generalSystemError(xmlEscape(str(e)))
             return
 

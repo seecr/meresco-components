@@ -35,7 +35,7 @@ class CombineParts(Transparent):
         self._allowMissingParts = allowMissingParts or []
 
     def yieldRecord(self, identifier, partname):
-        if not partname in self._combinations.keys():
+        if not partname in list(self._combinations.keys()):
             yield self.all.yieldRecord(identifier=identifier, partname=partname)
             return
 
@@ -43,7 +43,7 @@ class CombineParts(Transparent):
         for subpart in self._combinations[partname]:
             subgenerator = compose(self.all.yieldRecord(identifier=identifier, partname=subpart))
             try: 
-                substuff.append((subpart, subgenerator.next(), subgenerator))
+                substuff.append((subpart, next(subgenerator), subgenerator))
             except IOError:
                 if subpart not in self._allowMissingParts:
                     raise

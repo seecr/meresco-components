@@ -29,7 +29,7 @@
 ## end license ##
 
 from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree
-from StringIO import StringIO
+from io import StringIO
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
@@ -43,8 +43,8 @@ class Validate(Observable):
         Observable.__init__(self)
         try:
             self._schema = XMLSchema(parse(open(schemaPath)))
-        except XMLSchemaParseError, e:
-            print e.error_log.last_error
+        except XMLSchemaParseError as e:
+            print((e.error_log.last_error))
             raise
 
 
@@ -72,7 +72,7 @@ class Validate(Observable):
             raise DeclineMessage
 
     def _detectAndValidate(self, *args, **kwargs):
-        allArguments = list(args) + kwargs.values()
+        allArguments = list(args) + list(kwargs.values())
         for arg in allArguments:
             if type(arg) == _ElementTree:
                 self._schema.validate(arg)

@@ -34,51 +34,51 @@ from seecr.test import SeecrTestCase
 class ScheduleTest(SeecrTestCase):
     def testUsePeriod(self):
         s = Schedule(period=42)
-        self.assertEquals(42, s.secondsFromNow())
-        self.assertEquals(42, s.period)
+        self.assertEqual(42, s.secondsFromNow())
+        self.assertEqual(42, s.period)
 
         s = Schedule(period=0)
-        self.assertEquals(0, s.secondsFromNow())
-        self.assertEquals(0, s.period)
+        self.assertEqual(0, s.secondsFromNow())
+        self.assertEqual(0, s.period)
 
     def testTimeOfDay(self):
         s = Schedule(timeOfDay='20:00')
-        self.assertEquals('20:00', s.timeOfDay)
+        self.assertEqual('20:00', s.timeOfDay)
         s._utcnow = lambda: datetime.strptime("13:30", "%H:%M")
-        self.assertEquals(6.5 * 60 * 60, s.secondsFromNow())
+        self.assertEqual(6.5 * 60 * 60, s.secondsFromNow())
 
         s._utcnow = lambda: datetime.strptime("21:15", "%H:%M")
-        self.assertEquals(22.75 * 60 * 60, s.secondsFromNow())
+        self.assertEqual(22.75 * 60 * 60, s.secondsFromNow())
 
     def testDayOfWeekTimeOfDay(self):
         s = Schedule(dayOfWeek=5, timeOfDay='20:00')
-        self.assertEquals(5, s.dayOfWeek)
+        self.assertEqual(5, s.dayOfWeek)
         s._utcnow = lambda: datetime.strptime("15-11-2012 13:30", "%d-%m-%Y %H:%M") # This is a Thursday
-        self.assertEquals(30.5 * 60 * 60, s.secondsFromNow())
+        self.assertEqual(30.5 * 60 * 60, s.secondsFromNow())
 
         s._utcnow = lambda: datetime.strptime("14-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
-        self.assertEquals(47 * 60 * 60, s.secondsFromNow())
+        self.assertEqual(47 * 60 * 60, s.secondsFromNow())
 
         s._utcnow = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
-        self.assertEquals((5 * 24 + 23) * 60 * 60, s.secondsFromNow())
+        self.assertEqual((5 * 24 + 23) * 60 * 60, s.secondsFromNow())
 
     def testSecondsSinceEpoch(self):
         s = Schedule(secondsSinceEpoch=123) # test with ints, but works with floats as well (much harder to test due to binary representation)
-        self.assertEquals(123, s.secondsSinceEpoch)
+        self.assertEqual(123, s.secondsSinceEpoch)
         s._time = lambda: 76
-        self.assertEquals(47, s.secondsFromNow())
+        self.assertEqual(47, s.secondsFromNow())
 
     def testEqualsAndHash(self):
-        self.assertEquals(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00'))
-        self.assertEquals(Schedule(period=3), Schedule(period=3))
-        self.assertEquals(Schedule(timeOfDay='20:00', dayOfWeek=3), Schedule(timeOfDay='20:00', dayOfWeek=3))
+        self.assertEqual(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00'))
+        self.assertEqual(Schedule(period=3), Schedule(period=3))
+        self.assertEqual(Schedule(timeOfDay='20:00', dayOfWeek=3), Schedule(timeOfDay='20:00', dayOfWeek=3))
         self.assertNotEqual(Schedule(timeOfDay='20:00'), Schedule(timeOfDay='20:00', dayOfWeek=3))
-        self.assertEquals(Schedule(secondsSinceEpoch=42), Schedule(secondsSinceEpoch=42))
-        self.assertNotEquals(Schedule(secondsSinceEpoch=43), Schedule(secondsSinceEpoch=42))
+        self.assertEqual(Schedule(secondsSinceEpoch=42), Schedule(secondsSinceEpoch=42))
+        self.assertNotEqual(Schedule(secondsSinceEpoch=43), Schedule(secondsSinceEpoch=42))
 
-        self.assertEquals(hash(Schedule(timeOfDay='20:00')), hash(Schedule(timeOfDay='20:00')))
-        self.assertEquals(hash(Schedule(period=3)), hash(Schedule(period=3)))
-        self.assertEquals(hash(Schedule(timeOfDay='20:00', dayOfWeek=3)), hash(Schedule(timeOfDay='20:00', dayOfWeek=3)))
+        self.assertEqual(hash(Schedule(timeOfDay='20:00')), hash(Schedule(timeOfDay='20:00')))
+        self.assertEqual(hash(Schedule(period=3)), hash(Schedule(period=3)))
+        self.assertEqual(hash(Schedule(timeOfDay='20:00', dayOfWeek=3)), hash(Schedule(timeOfDay='20:00', dayOfWeek=3)))
         self.assertNotEqual(hash(Schedule(timeOfDay='20:00')), hash(Schedule(timeOfDay='20:00', dayOfWeek=3)))
 
         self.assertTrue(Schedule(timeOfDay='20:00') == Schedule(timeOfDay='20:00'))
@@ -87,8 +87,8 @@ class ScheduleTest(SeecrTestCase):
         self.assertFalse(Schedule(timeOfDay='20:00') == Schedule(timeOfDay='20:00', dayOfWeek=3))
 
     def testRepr(self):
-        self.assertEquals('Schedule(period=0)', repr(Schedule(period=0)))
-        self.assertEquals('Schedule(period=1)', repr(Schedule(period=1)))
-        self.assertEquals("Schedule(timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00')))
-        self.assertEquals("Schedule(dayOfWeek=1, timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00', dayOfWeek=1)))
-        self.assertEquals("Schedule(secondsSinceEpoch=42)", repr(Schedule(secondsSinceEpoch=42)))
+        self.assertEqual('Schedule(period=0)', repr(Schedule(period=0)))
+        self.assertEqual('Schedule(period=1)', repr(Schedule(period=1)))
+        self.assertEqual("Schedule(timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00')))
+        self.assertEqual("Schedule(dayOfWeek=1, timeOfDay='21:00')", repr(Schedule(timeOfDay='21:00', dayOfWeek=1)))
+        self.assertEqual("Schedule(secondsSinceEpoch=42)", repr(Schedule(secondsSinceEpoch=42)))

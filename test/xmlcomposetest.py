@@ -31,7 +31,7 @@
 from seecr.test import SeecrTestCase as TestCase
 
 from meresco.core import Observable
-from StringIO import StringIO
+from io import StringIO
 
 from meresco.components import XmlCompose
 

@@ -32,7 +32,8 @@ from weightless.core import compose, identify, Yield
 
 from meresco.core import Observable
 
-from schedule import Schedule
+from .schedule import Schedule
+import collections
 
 
 class PeriodicCall(Observable):
@@ -96,18 +97,18 @@ class PeriodicCall(Observable):
         self._busy = True
         self._currentTimer = None
         interval = None  # default
-        self._reactor.addProcess(this.next, prio=self._prio)
+        self._reactor.addProcess(this.__next__, prio=self._prio)
         try:
             yield
             for _response in compose(self.all.unknown(message=self._message)):
-                if _response is not Yield and callable(_response):
-                    _response(self._reactor, this.next)
+                if _response is not Yield and isinstance(_response, collections.Callable):
+                    _response(self._reactor, this.__next__)
                     yield
                     _response.resumeProcess()
                 yield
         except (AssertionError, KeyboardInterrupt, SystemExit):
             raise
-        except Exception, e:
+        except Exception as e:
             self._errorState = str(e)
             self._log(format_exc())
             interval = self._errorSchedule.secondsFromNow()

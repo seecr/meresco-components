@@ -30,7 +30,7 @@
 ## end license ##
 
 from copy import copy
-from StringIO import StringIO
+from io import StringIO
 from lxml.etree import ElementTree
 
 from meresco.core import Observable
@@ -43,7 +43,7 @@ try:
     from lxml.etree import _ElementStringResult, _ElementUnicodeResult
 except ImportError:
     _ElementStringResult = str
-    _ElementUnicodeResult = unicode
+    _ElementUnicodeResult = str
 
 oftenUsedNamespaces = _namespaces.copyUpdate(dict(
     lom="http://ltsc.ieee.org/xsd/LOM",
@@ -79,7 +79,7 @@ class XmlXPath(Observable):
     def _findNewTree(self, elementTree):
         for xpath in self._xpaths:
             for element in self.xpath(elementTree, xpath):
-                if type(element) in [_ElementStringResult, _ElementUnicodeResult, str, unicode]:
+                if type(element) in [_ElementStringResult, _ElementUnicodeResult, str, str]:
                     yield element
                 else:
                     yield ElementTree(lxmlElementUntail(element))

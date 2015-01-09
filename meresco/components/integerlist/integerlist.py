@@ -32,7 +32,7 @@
 ## end license ##
 
 from ctypes import c_uint64, c_int64, c_char_p, POINTER, c_int
-from libintegerlist import libIntegerList
+from .libintegerlist import libIntegerList
 
 INTEGERLIST = POINTER(None)
 

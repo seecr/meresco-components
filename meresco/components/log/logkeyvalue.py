@@ -26,7 +26,7 @@
 ## end license ##
 from meresco.core import Observable
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
-from logcollector import collectLog
+from .logcollector import collectLog
 
 class LogKeyValue(Observable):
     def __init__(self, keyValues, **kwargs):

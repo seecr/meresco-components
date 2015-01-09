@@ -31,7 +31,7 @@ from weightless.core import compose
 from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse
 from meresco.components import lxmltostring
-from StringIO import StringIO
+from io import StringIO
 from os.path import basename, join
 from os import makedirs
 
@@ -54,7 +54,7 @@ class UpdateAdapterTest(SeecrTestCase):
         
         list(compose(adapter.add(identifier='identifier', partname='partname', data='data')))
         
-        self.assertEquals('data', open(join(self.outdir, 'identifier.add')).read()) 
+        self.assertEqual('data', open(join(self.outdir, 'identifier.add')).read()) 
 
     def testToAdapterAndMsgboxDelete(self):
         adapter = UpdateAdapterToMsgbox()
@@ -62,7 +62,7 @@ class UpdateAdapterTest(SeecrTestCase):
         
         list(compose(adapter.delete(identifier='identifier')))
         
-        self.assertEquals('', open(join(self.outdir, 'identifier.delete')).read()) 
+        self.assertEqual('', open(join(self.outdir, 'identifier.delete')).read()) 
 
     def testWrongExtension(self):
         adapter = UpdateAdapterFromMsgbox()
@@ -84,9 +84,9 @@ class UpdateAdapterTest(SeecrTestCase):
 
         self.msgbox.processFile('identifier.delete')
 
-        self.assertEquals(['delete'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
-        self.assertEquals((), observer.calledMethods[0].args)
+        self.assertEqual(['delete'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'identifier':'identifier'}, observer.calledMethods[0].kwargs)
+        self.assertEqual((), observer.calledMethods[0].args)
 
     def testMsgboxAndFromAdapterAdd(self):
         adapter = UpdateAdapterFromMsgbox()
@@ -106,11 +106,11 @@ class UpdateAdapterTest(SeecrTestCase):
 
         self.msgbox.processFile('identifier.add')
 
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals('identifier', addKwargs['identifier'])
-        self.assertEquals(None, addKwargs['partname'])
-        self.assertEquals('data', addKwargs['filedata'])
-        self.assertEquals(3, len(addKwargs.items()))
+        self.assertEqual(['add'], [m.name for m in observer.calledMethods])
+        self.assertEqual('identifier', addKwargs['identifier'])
+        self.assertEqual(None, addKwargs['partname'])
+        self.assertEqual('data', addKwargs['filedata'])
+        self.assertEqual(3, len(list(addKwargs.items())))
 
     def testToAdapterAndMsgboxAddEmptyIdentifier(self):
         adapter = UpdateAdapterToMsgbox()

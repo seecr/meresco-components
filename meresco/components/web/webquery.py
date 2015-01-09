@@ -41,7 +41,7 @@ SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 from cqlparser import parseString, CQLParseException, cql2string, CqlIdentityVisitor
 from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, SEARCH_TERM, TERM, BOOLEAN, INDEX, RELATION, COMPARITOR
 
-DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = range(3)
+DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = list(range(3))
 
 class WebQuery(object):
 

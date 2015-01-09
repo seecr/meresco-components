@@ -32,7 +32,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.xml import XMLRewrite
 
-from StringIO import StringIO
+from io import StringIO
 from lxml.etree import parse, XMLParser
 from meresco.components import lxmltostring
 from difflib import unified_diff
@@ -62,11 +62,11 @@ class CrosswalkTest(SeecrTestCase):
     def testOne(self):
         self.observer.methods['crosswalk'] = lambda *args, **kwargs: (x for x in [])
         list(compose(self.crosswalk.all_unknown('crosswalk', 'id', 'metadata', theXmlRecord=parse(readRecord('imsmd_v1p2-1.xml')))))
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals(2, len(self.observer.calledMethods[0].args))
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual(2, len(self.observer.calledMethods[0].args))
         arguments = self.observer.calledMethods[0].args
-        self.assertEquals("id", arguments[0])
-        self.assertEquals("metadata", arguments[1])
+        self.assertEqual("id", arguments[0])
+        self.assertEqual("metadata", arguments[1])
 
     def testValidate(self):
         self.observer.methods['methodname'] = lambda *args, **kwargs: (x for x in [])
@@ -74,30 +74,30 @@ class CrosswalkTest(SeecrTestCase):
         try:
             list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('imsmd_v1p2-1.xml')))))
             self.fail('must raise exception')
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://dpc.uba.uva.nl/schema/lom/triplel}lom': No matching global declaration available for the validation root." in str(e), str(e))
 
     def testTripleLExample(self):
         self.observer.methods['methodname'] = lambda *args, **kwargs: (x for x in [])
         try:
             list(compose(self.crosswalk.all_unknown('methodname', 'id', 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
-        except Exception, e:
+        except Exception as e:
             message = readRecord('triple-lrecord.xml').read()
             for n, line in enumerate(message.split('\n')):
-                print n+1, line
+                print(n+1, line)
             raise
 
     def testNormalize(self):
         self.observer.methods['add'] = lambda *args, **kwargs: (x for x in [])
         list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
-        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEqual(1, len(self.observer.calledMethods))
         self.assertFalse('2006-11-28 19:00' in lxmltostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
 
     def testReplacePrefix(self):
         rules = [('classification/taxonPath/taxon/entry', 'imsmd:classification/imsmd:taxonpath/imsmd:taxon/imsmd:entry', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<string language="%s">%s</string>',
         [('\s*\d+\s*(\w+)', '%s', (str,))])]
         newRules = rewriteRules('imsmd', '', rules)
-        self.assertEquals(rules[0][-1], newRules[0][-1])
+        self.assertEqual(rules[0][-1], newRules[0][-1])
 
     def testAddCustomNormalizeMethods(self):
         open(join(self.tempdir, 'my.rules'), 'w').write("""
@@ -118,7 +118,7 @@ rules = [
         c = Crosswalk(rulesDir=self.tempdir, extraGlobals={'myNormalizeMethod': lambda x,y:(x+' '+y,)})
         node = parse(StringIO("""<old xmlns="CrosswalkTest"><one><sub1>first</sub1><sub2>second</sub2></one></old>"""))
         newNode = c.convert(node)
-        self.assertEquals(['first second'], newNode.xpath("/dst:new/dst:two/text()", namespaces={'dst':'CrosswalkTest'}))
+        self.assertEqual(['first second'], newNode.xpath("/dst:new/dst:two/text()", namespaces={'dst':'CrosswalkTest'}))
 
     def testXPathNodeTest(self):
         x = """
@@ -139,8 +139,8 @@ rules = [
         """
         tree = parse(StringIO(x))
         result = tree.xpath('y')
-        self.assertEquals(2, len(result))
+        self.assertEqual(2, len(result))
         result = tree.xpath('y[p/q="selector"]')
-        self.assertEquals(1, len(result))
-        self.assertEquals('y', result[0].tag)
+        self.assertEqual(1, len(result))
+        self.assertEqual('y', result[0].tag)
 

@@ -33,16 +33,16 @@ from meresco.components import CqlMultiSearchClauseConversion, RenameFieldForExa
 
 class RenameFieldForExactTest(TestCase):
     def testNothingToBeDone(self):
-        self.assertEquals('field=value', self.convert('field=value'))
+        self.assertEqual('field=value', self.convert('field=value'))
 
     def testRenameField(self):
-        self.assertEquals('untokenized.field exact value', self.convert('field exact value'))
+        self.assertEqual('untokenized.field exact value', self.convert('field exact value'))
 
     def testDoNotRenameField(self):
-        self.assertEquals('otherfield exact value', self.convert('otherfield exact value'))
+        self.assertEqual('otherfield exact value', self.convert('otherfield exact value'))
 
     def testRenameFieldThatMatchesPrefix(self):
-        self.assertEquals('untokenized.prefix.certainfield exact value', self.convert('prefix.certainfield exact value'))
+        self.assertEqual('untokenized.prefix.certainfield exact value', self.convert('prefix.certainfield exact value'))
 
     def convert(self, cqlString):
         converter = CqlMultiSearchClauseConversion([

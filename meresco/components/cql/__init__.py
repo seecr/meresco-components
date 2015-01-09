@@ -24,4 +24,4 @@
 # 
 ## end license ##
 
-from searchtermfilterandmodifier import SearchTermFilterAndModifier
+from .searchtermfilterandmodifier import SearchTermFilterAndModifier

@@ -50,8 +50,8 @@ class _Suggestion(Observable):
         of samples. These results are inputted into the subclass-specific
         algorithm and the result is limited to a predefined maximum.
         """
-        word = unicode(word)
-        fieldname = unicode(fieldname) if fieldname else None
+        word = str(word)
+        fieldname = str(fieldname) if fieldname else None
         candidates = yield self.any.executeNGramQuery(word, self._samples, fieldname=fieldname)
         results = sorted(candidates, key=lambda term: self.sortKey(term, word, fieldname))
 

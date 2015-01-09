@@ -48,8 +48,8 @@ class RequestScopeTest(SeecrTestCase):
 
         result = list(compose(dna.all.handleRequest("an arg", RequestURI='http://www.example.org/path')))
 
-        self.assertEquals(['result'], result)
-        self.assertEquals([(("an arg",), dict(RequestURI='http://www.example.org/path'))], usedArgsKwargs)
+        self.assertEqual(['result'], result)
+        self.assertEqual([(("an arg",), dict(RequestURI='http://www.example.org/path'))], usedArgsKwargs)
 
     def testRequestScopeIsAvailable(self):
         class MyObserver(Observable):
@@ -74,7 +74,7 @@ class RequestScopeTest(SeecrTestCase):
 
         result = list(compose(dna.all.handleRequest("a request")))
 
-        self.assertEquals(['value'], result)
+        self.assertEqual(['value'], result)
 
     def testRequestScopeIsPerRequest(self):
         class MyObserver(Observable):
@@ -86,7 +86,7 @@ class RequestScopeTest(SeecrTestCase):
                 self.ctx.requestScope[key] = value
         class GetArgObserver(Observable):
             def getArg(self):
-                return ';'.join('%s=%s' % (k,v) for k,v in self.ctx.requestScope.items())
+                return ';'.join('%s=%s' % (k,v) for k,v in list(self.ctx.requestScope.items()))
 
         dna = be((Observable(),
             (RequestScope(),
@@ -100,8 +100,8 @@ class RequestScopeTest(SeecrTestCase):
         result0 = list(compose(dna.all.handleRequest("key0", "value0")))
         result1 = list(compose(dna.all.handleRequest("key1", "value1")))
 
-        self.assertEquals(['key0=value0'], result0)
-        self.assertEquals(['key1=value1'], result1)
+        self.assertEqual(['key0=value0'], result0)
+        self.assertEqual(['key1=value1'], result1)
         
     def testRequestScopeForEveryMethod(self):
         resultByDo = []
@@ -137,14 +137,14 @@ class RequestScopeTest(SeecrTestCase):
         ))
 
         try:
-            compose(dna.any.someAnyMethod(key='anykey', value='anyvalue')).next()
+            next(compose(dna.any.someAnyMethod(key='anykey', value='anyvalue')))
             self.fail()
-        except StopIteration, e:
-            self.assertEquals('anyvalue', e.args[0])
-        self.assertEquals(['allvalue'], list(compose(dna.all.someAllMethod(key='allkey', value='allvalue'))))
+        except StopIteration as e:
+            self.assertEqual('anyvalue', e.args[0])
+        self.assertEqual(['allvalue'], list(compose(dna.all.someAllMethod(key='allkey', value='allvalue'))))
         dna.do.someDoMethod(key='dokey', value='dovalue')
-        self.assertEquals(['dovalue'], resultByDo)
-        self.assertEquals('callvalue', dna.call.someCallMethod(key='callkey', value='callvalue'))
+        self.assertEqual(['dovalue'], resultByDo)
+        self.assertEqual('callvalue', dna.call.someCallMethod(key='callkey', value='callvalue'))
         
 
 

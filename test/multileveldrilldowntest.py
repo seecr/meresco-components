@@ -50,15 +50,15 @@ class MultiLevelDrilldownTest(TestCase):
 
         result = list(compose(observable.call.multiLevelDrilldown(bitMatrixRow, ['date'])))
 
-        self.assertEquals(1, len(drilldown.calledMethods))
+        self.assertEqual(1, len(drilldown.calledMethods))
         drilldownMethod = drilldown.calledMethods[0]
-        self.assertEquals('drilldown', drilldownMethod.name)
-        self.assertEquals((bitMatrixRow, [('datelevel1', 10, False)]), drilldownMethod.args)
-        self.assertEquals(1, len(result))
+        self.assertEqual('drilldown', drilldownMethod.name)
+        self.assertEqual((bitMatrixRow, [('datelevel1', 10, False)]), drilldownMethod.args)
+        self.assertEqual(1, len(result))
         (inputFieldName, realFieldName), termCounts = result[0]
-        self.assertEquals('date', inputFieldName)
-        self.assertEquals('datelevel1', realFieldName)
-        self.assertEquals([('2008',13),('2007',10)], list(termCounts))
+        self.assertEqual('date', inputFieldName)
+        self.assertEqual('datelevel1', realFieldName)
+        self.assertEqual([('2008',13),('2007',10)], list(termCounts))
 
     def testTwoFieldNamesCalled(self):
         multi = MultiLevelDrilldown(
@@ -70,7 +70,7 @@ class MultiLevelDrilldownTest(TestCase):
         doDrilldownArguments = []
         def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
             doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
-            self.assertEquals(1, len(fieldNamesAndMaxResults))
+            self.assertEqual(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             if 'datelevel2' == levelField:
                 raise StopIteration(iter([('datelevel2', iter([('2008',13),('2007',10)][:levelMax]))]))
@@ -82,11 +82,11 @@ class MultiLevelDrilldownTest(TestCase):
 
         result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date', 'genre'])))
 
-        self.assertEquals(2, len(doDrilldownArguments))
-        self.assertEquals(('bitMatrixRow', [('datelevel2', 3, False)]), doDrilldownArguments[0])
-        self.assertEquals(('bitMatrixRow', [('type', 10, False)]), doDrilldownArguments[1])
-        self.assertEquals(2, len(result))
-        self.assertEquals([('date', 'datelevel2'),('genre', 'type')], [(inField, realField) for (inField, realField), termCounts in result])
+        self.assertEqual(2, len(doDrilldownArguments))
+        self.assertEqual(('bitMatrixRow', [('datelevel2', 3, False)]), doDrilldownArguments[0])
+        self.assertEqual(('bitMatrixRow', [('type', 10, False)]), doDrilldownArguments[1])
+        self.assertEqual(2, len(result))
+        self.assertEqual([('date', 'datelevel2'),('genre', 'type')], [(inField, realField) for (inField, realField), termCounts in result])
 
     def testFieldWithMultiLevel(self):
         multi = MultiLevelDrilldown(
@@ -97,7 +97,7 @@ class MultiLevelDrilldownTest(TestCase):
         doDrilldownArguments = []
         def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
             doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
-            self.assertEquals(1, len(fieldNamesAndMaxResults))
+            self.assertEqual(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             if levelField == 'yearAndMonth':
                 raise StopIteration(iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))]))
@@ -109,13 +109,13 @@ class MultiLevelDrilldownTest(TestCase):
 
         result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
 
-        self.assertEquals(2, len(doDrilldownArguments))
-        self.assertEquals(('bitMatrixRow', [('yearAndMonth', 2, False)]), doDrilldownArguments[0])
-        self.assertEquals(('bitMatrixRow', [('year', 2, False)]), doDrilldownArguments[1])
-        self.assertEquals(1, len(result))
+        self.assertEqual(2, len(doDrilldownArguments))
+        self.assertEqual(('bitMatrixRow', [('yearAndMonth', 2, False)]), doDrilldownArguments[0])
+        self.assertEqual(('bitMatrixRow', [('year', 2, False)]), doDrilldownArguments[1])
+        self.assertEqual(1, len(result))
         (inField, realField), termCounts = result[0]
-        self.assertEquals('year', realField)
-        self.assertEquals([('2008',13),('2003',10)], list(termCounts))
+        self.assertEqual('year', realField)
+        self.assertEqual([('2008',13),('2003',10)], list(termCounts))
 
     def testFieldDoesNotExist(self):
         bitMatrixRow = CallTrace('BitMatrixRow')
@@ -129,7 +129,7 @@ class MultiLevelDrilldownTest(TestCase):
         try:
             result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['doesNotExist'])))
             self.fail()
-        except MultiLevelDrilldownException, e:
+        except MultiLevelDrilldownException as e:
             self.assertTrue('doesNotExist' in str(e), e)
 
     def testLastOneDoesnotReturnValue(self):
@@ -141,7 +141,7 @@ class MultiLevelDrilldownTest(TestCase):
         doDrilldownArguments = []
         def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
             doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
-            self.assertEquals(1, len(fieldNamesAndMaxResults))
+            self.assertEqual(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             if levelField == 'yearAndMonth':
                 raise StopIteration(iter([('yearAndMonth', iter([('2008-01',11),('2008-02',2),('2007-12',1)][:levelMax]))]))
@@ -153,13 +153,13 @@ class MultiLevelDrilldownTest(TestCase):
 
         result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
 
-        self.assertEquals(2, len(doDrilldownArguments))
-        self.assertEquals(('bitMatrixRow', [('yearAndMonth', 2, False)]), doDrilldownArguments[0])
-        self.assertEquals(('bitMatrixRow', [('year', 2, False)]), doDrilldownArguments[1])
-        self.assertEquals(1, len(result))
+        self.assertEqual(2, len(doDrilldownArguments))
+        self.assertEqual(('bitMatrixRow', [('yearAndMonth', 2, False)]), doDrilldownArguments[0])
+        self.assertEqual(('bitMatrixRow', [('year', 2, False)]), doDrilldownArguments[1])
+        self.assertEqual(1, len(result))
         (inField, realField), termCounts = result[0]
-        self.assertEquals('yearAndMonth', realField)
-        self.assertEquals([('2008-01',11),('2008-02',2)], list(termCounts))
+        self.assertEqual('yearAndMonth', realField)
+        self.assertEqual([('2008-01',11),('2008-02',2)], list(termCounts))
 
     def testLastZeroReturnValue(self):
         multi = MultiLevelDrilldown(
@@ -170,7 +170,7 @@ class MultiLevelDrilldownTest(TestCase):
         doDrilldownArguments = []
         def doDrilldown(bitMatrixRow, fieldNamesAndMaxResults):
             doDrilldownArguments.append((bitMatrixRow, fieldNamesAndMaxResults))
-            self.assertEquals(1, len(fieldNamesAndMaxResults))
+            self.assertEqual(1, len(fieldNamesAndMaxResults))
             levelField, levelMax, sorted = fieldNamesAndMaxResults[0]
             if levelField == 'yearAndMonth':
                 raise StopIteration(iter([('yearAndMonth', iter([]))]))
@@ -182,9 +182,9 @@ class MultiLevelDrilldownTest(TestCase):
 
         result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
 
-        self.assertEquals(1, len(result))
+        self.assertEqual(1, len(result))
         (inField, realField), termCounts = result[0]
-        self.assertEquals(None, realField)
+        self.assertEqual(None, realField)
 
     def testWithSorting(self):
         mockData = {
@@ -206,13 +206,13 @@ class MultiLevelDrilldownTest(TestCase):
         multi = MultiLevelDrilldown({'date':[('yearAndMonth', 2, False), ('year', 3, True)]})
         multi.addObserver(drilldown)
         result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
-        self.assertEquals([(('date', 'year'), [('2007', 15), ('2008', 13), ('2003', 10)])], result)
+        self.assertEqual([(('date', 'year'), [('2007', 15), ('2008', 13), ('2003', 10)])], result)
 
         multi = MultiLevelDrilldown({'date':[('yearAndMonth', 4, False), ('year', 3, False)]})
         multi.addObserver(drilldown)
 
         result = list(compose(multi.multiLevelDrilldown('bitMatrixRow', ['date'])))
-        self.assertEquals([(('date', 'yearAndMonth'), [('2008-01',1),('2008-02',2),('2007-12',11)])], result)
+        self.assertEqual([(('date', 'yearAndMonth'), [('2008-01',1),('2008-02',2),('2007-12',11)])], result)
 
 
 

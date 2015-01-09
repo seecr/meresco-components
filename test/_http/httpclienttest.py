@@ -53,8 +53,8 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={}, parse=False)
         headers, body = retval(gen)
 
-        self.assertEquals('<xml/>', body)
-        self.assertEquals(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
+        self.assertEqual('<xml/>', body)
+        self.assertEqual(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
 
     def testPlainXml(self):
         client = HttpClient()
@@ -63,8 +63,8 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = retval(gen)
 
-        self.assertEquals('<xml/>', lxmltostring(body))
-        self.assertEquals(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
+        self.assertEqual('<xml/>', lxmltostring(body))
+        self.assertEqual(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
 
     def testHttpPost(self):
         client = HttpClient()
@@ -73,8 +73,8 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpPost(hostname='localhost', port=80, path='/', data='data', parse=False)
         headers, body = retval(gen)
 
-        self.assertEquals('other-data', body)
-        self.assertEquals(['HTTP/1.0 200 OK'], headers.split(CRLF))
+        self.assertEqual('other-data', body)
+        self.assertEqual(['HTTP/1.0 200 OK'], headers.split(CRLF))
 
     def testHttpsGet(self):
         client = HttpClient()
@@ -83,5 +83,5 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpsGet(hostname='localhost', port=443, path='/', arguments={}, parse=False)
         headers, body = retval(gen)
 
-        self.assertEquals('other-data', body)
-        self.assertEquals(['HTTP/1.0 200 OK'], headers.split(CRLF))
+        self.assertEqual('other-data', body)
+        self.assertEqual(['HTTP/1.0 200 OK'], headers.split(CRLF))

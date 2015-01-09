@@ -25,8 +25,8 @@
 #
 ## end license ##
 from time import gmtime, strftime
-from urlparse import urlsplit
-from utils import getFirst, getScoped
+from urllib.parse import urlsplit
+from .utils import getFirst, getScoped
 
 class ApacheLogWriter(object):
     def __init__(self, outputStream=None):

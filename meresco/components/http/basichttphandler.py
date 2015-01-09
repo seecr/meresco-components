@@ -28,10 +28,11 @@
 # 
 ## end license ##
 
-from utils import notFoundHtml, redirectHttp
+from .utils import notFoundHtml, redirectHttp
 
 from meresco.core import Transparent
 from weightless.core import compose, Yield
+import collections
 
 class BasicHttpHandler(Transparent):
     def __init__(self, notFoundMethod=None):
@@ -42,7 +43,7 @@ class BasicHttpHandler(Transparent):
         yielded = False
         stuff = compose(self.all.handleRequest(*args, **kwargs))
         for x in stuff:
-            if x is not Yield and not callable(x):
+            if x is not Yield and not isinstance(x, collections.Callable):
                 yielded = True
             yield x
         if not yielded:

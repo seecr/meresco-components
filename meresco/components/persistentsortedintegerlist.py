@@ -30,7 +30,7 @@ from os import remove, rename
 from os.path import isfile, basename
 from bisect import bisect_left
 
-from integerlist.integerlist import IntegerList
+from .integerlist.integerlist import IntegerList
 
 
 class PersistentSortedIntegerList(object):

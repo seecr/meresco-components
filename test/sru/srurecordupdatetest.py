@@ -34,7 +34,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.sru.srurecordupdate import SruRecordUpdate
 from lxml.etree import parse, XML, _ElementTree as ElementTreeType
 from meresco.xml.namespaces import xpathFirst
-from StringIO import StringIO
+from io import StringIO
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
 from meresco.core import asyncnoreturnvalue
@@ -99,18 +99,18 @@ class SruRecordUpdateTest(SeecrTestCase):
     <ucp:operationStatus>success</ucp:operationStatus>
 </srw:updateResponse>""", result)
 
-        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEqual(1, len(self.observer.calledMethods))
         method = self.observer.calledMethods[0]
-        self.assertEquals(3, len(method.kwargs))
-        self.assertEquals("add", method.name)
-        self.assertEquals("123", method.kwargs['identifier'])
-        self.assertEquals(str, type(method.kwargs['identifier']))
-        self.assertEquals("irrelevantXML", method.kwargs['partname'])
+        self.assertEqual(3, len(method.kwargs))
+        self.assertEqual("add", method.name)
+        self.assertEqual("123", method.kwargs['identifier'])
+        self.assertEqual(str, type(method.kwargs['identifier']))
+        self.assertEqual("irrelevantXML", method.kwargs['partname'])
         resultNode = method.kwargs['lxmlNode']
         self.assertEqualsLxml(XML('<my:data xmlns:my="mine">data</my:data>'), resultNode)
-        self.assertEquals(['data'], resultNode.xpath('/my:data/text()', namespaces={'my':'mine'}))
-        self.assertEquals(ElementTreeType, type(resultNode))
-        self.assertEquals(None, resultNode.getroot().tail)
+        self.assertEqual(['data'], resultNode.xpath('/my:data/text()', namespaces={'my':'mine'}))
+        self.assertEqual(ElementTreeType, type(resultNode))
+        self.assertEqual(None, resultNode.getroot().tail)
 
     def testWithoutLogging(self):
         self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr, logErrors=True, enableCollectLog=False)
@@ -118,7 +118,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         requestBody = self.createRequestBody(recordData='<my:data xmlns:my="mine">data</my:data>      ')
         headers, result = self.performRequest(requestBody)
         self.assertTrue('<ucp:operationStatus>success</ucp:operationStatus>' in result)
-        self.assertEquals(dict(), self.logCollector)
+        self.assertEqual(dict(), self.logCollector)
 
     def testDelete(self):
         requestBody = self.createRequestBody(action=DELETE)
@@ -128,10 +128,10 @@ class SruRecordUpdateTest(SeecrTestCase):
     <srw:version>1.0</srw:version>
     <ucp:operationStatus>success</ucp:operationStatus>
 </srw:updateResponse>""", result)
-        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEqual(1, len(self.observer.calledMethods))
 
         method = self.observer.calledMethods[0]
-        self.assertEquals("delete", method.name)
+        self.assertEqual("delete", method.name)
 
     def testReplaceIsAdd(self):
         requestBody = self.createRequestBody(action=REPLACE)
@@ -141,10 +141,10 @@ class SruRecordUpdateTest(SeecrTestCase):
     <srw:version>1.0</srw:version>
     <ucp:operationStatus>success</ucp:operationStatus>
 </srw:updateResponse>""", result)
-        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEqual(1, len(self.observer.calledMethods))
 
         method = self.observer.calledMethods[0]
-        self.assertEquals("add", method.name)
+        self.assertEqual("add", method.name)
 
     def testAddXMLWithUcpUpdateRequest(self):
         """It is not entirely sure if updateRequest is in the 'srw' or 'ucp' namespace.
@@ -160,7 +160,7 @@ class SruRecordUpdateTest(SeecrTestCase):
     <ucp:operationStatus>success</ucp:operationStatus>
 </srw:updateResponse>""", result)
 
-        self.assertEquals(['add'], self.observer.calledMethodNames())
+        self.assertEqual(['add'], self.observer.calledMethodNames())
 
     def testPassCallableObjectForAdd(self):
         def callable():
@@ -198,7 +198,7 @@ class SruRecordUpdateTest(SeecrTestCase):
     def testNotCorrectXml(self):
         headers, result = self.performRequest("not_xml")
         self.assertTrue('<ucp:operationStatus>fail</ucp:operationStatus>' in result, result)
-        self.assertEquals(0, len(self.observer.calledMethods))
+        self.assertEqual(0, len(self.observer.calledMethods))
         self.assertTrue('XMLSyntaxError' in self.stderr.getvalue(), self.stderr.getvalue())
 
     def testErrorsAreNotPassed(self):
@@ -213,16 +213,16 @@ class SruRecordUpdateTest(SeecrTestCase):
         headers, result = self.performRequest(self.createRequestBody())
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
         diag = parse(StringIO(result))
-        self.assertEquals("info:srw/diagnostic/12/12", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
-        self.assertEquals("Some <Exception>", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'))
-        self.assertEquals("Invalid data:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
+        self.assertEqual("info:srw/diagnostic/12/12", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
+        self.assertEqual("Some <Exception>", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'))
+        self.assertEqual("Invalid data:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
 
     def testEmptyIdentifierNotAccepted(self):
         requestBody = self.createRequestBody(recordIdentifier="")
         headers, result = self.performRequest(requestBody)
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
         diag = parse(StringIO(result))
-        self.assertEquals("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
+        self.assertEqual("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
         self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
         self.assertTrue("Invalid component:  record rejected" in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'), result)
 
@@ -240,23 +240,23 @@ class SruRecordUpdateTest(SeecrTestCase):
         headers, result = self.performRequest(requestBody)
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
         diag = parse(StringIO(result))
-        self.assertEquals("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
+        self.assertEqual("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
         self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
-        self.assertEquals("Invalid component:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
+        self.assertEqual("Invalid component:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
 
     def testCollectLog(self):
         requestBody = self.createRequestBody(action=DELETE, recordIdentifier='idDelete')
         headers, result = self.performRequest(requestBody)
-        self.assertEquals(dict(sruRecordUpdate=dict(delete=['idDelete'])), self.logCollector)
+        self.assertEqual(dict(sruRecordUpdate=dict(delete=['idDelete'])), self.logCollector)
         requestBody = self.createRequestBody(action=CREATE, recordIdentifier='idAdd')
         headers, result = self.performRequest(requestBody)
-        self.assertEquals(dict(sruRecordUpdate=dict(add=['idAdd'])), self.logCollector)
+        self.assertEqual(dict(sruRecordUpdate=dict(add=['idAdd'])), self.logCollector)
 
     def testCollectLogWithErrors(self):
         self.observer.exceptions['delete'] = Exception('Some <Exception>')
         requestBody = self.createRequestBody(action=DELETE, recordIdentifier='idDelete')
         headers, result = self.performRequest(requestBody)
-        self.assertEquals(dict(
+        self.assertEqual(dict(
             sruRecordUpdate=dict(
                 delete=['idDelete'],
                 errorType=['Exception'],
@@ -266,7 +266,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.observer.exceptions['add'] = ValidateException('Nee')
         requestBody = self.createRequestBody(action=CREATE, recordIdentifier='idAdd')
         headers, result = self.performRequest(requestBody)
-        self.assertEquals(dict(
+        self.assertEqual(dict(
             sruRecordUpdate=dict(
                 add=['idAdd'],
                 invalid=['idAdd'],
@@ -275,7 +275,7 @@ class SruRecordUpdateTest(SeecrTestCase):
             )), self.logCollector)
 
         headers, result = self.performRequest('<srw:updateRequest>Will raise XMLSyntaxError')
-        self.assertEquals(dict(
+        self.assertEqual(dict(
             sruRecordUpdate=dict(
                 errorType=['XMLSyntaxError'],
                 errorMessage=['Namespace prefix srw on updateRequest is not defined, line 1, column 19']

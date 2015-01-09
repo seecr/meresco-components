@@ -52,16 +52,16 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s = PersistentSortedIntegerList(self.filepath)
         s.append(1)
         s.append(2)
-        self.assertEquals([1,2], list(iter(s)))
-        self.assertEquals(16, len(open(self.filepath).read()))
-        self.assertEquals([1,2], list(s))
+        self.assertEqual([1,2], list(iter(s)))
+        self.assertEqual(16, len(open(self.filepath).read()))
+        self.assertEqual([1,2], list(s))
         s = PersistentSortedIntegerList(self.filepath)
-        self.assertEquals([1,2], list(iter(s)))
-        self.assertEquals(len(s), len(list(s)))
+        self.assertEqual([1,2], list(iter(s)))
+        self.assertEqual(len(s), len(list(s)))
 
     def testEmpty(self):
         s = PersistentSortedIntegerList(self.filepath)
-        self.assertEquals([], list(s))
+        self.assertEqual([], list(s))
 
     def testContains(self):
         s = PersistentSortedIntegerList(self.filepath)
@@ -74,31 +74,31 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
     def testZero(self):
         s = PersistentSortedIntegerList(self.filepath)
         s.append(0)
-        self.assertEquals([0], list(s))
+        self.assertEqual([0], list(s))
 
     def testGetItem(self):
         s = PersistentSortedIntegerList(self.filepath)
         for i in range(20):
             s.append(i)
-        self.assertEquals(2, s[2])
+        self.assertEqual(2, s[2])
         self.assertRaises(IndexError, lambda: s[1234567])
-        self.assertEquals(19, s[-1])
-        self.assertEquals(0, s[-20])
+        self.assertEqual(19, s[-1])
+        self.assertEqual(0, s[-20])
         self.assertRaises(IndexError, lambda: s[-21])
 
     def testSlicing(self):
         s = PersistentSortedIntegerList(self.filepath)
         for i in range(6):
             s.append(i)
-        self.assertEquals([], list(s[0:0]))
-        self.assertEquals([1,2], list(s[1:3]))
-        self.assertEquals([0,1,2,3], list(s[:-2]))
-        self.assertEquals([4,5], list(s[-2:]))
+        self.assertEqual([], list(s[0:0]))
+        self.assertEqual([1,2], list(s[1:3]))
+        self.assertEqual([0,1,2,3], list(s[:-2]))
+        self.assertEqual([4,5], list(s[-2:]))
         self.assertRaises(ValueError, lambda: s[:4:2])
         self.assertRaises(ValueError, lambda: s[::-1])
-        self.assertEquals([], list(s[4:3]))
-        self.assertEquals([0,1,2,3,4,5], list(s[-12345:234567]))
-        self.assertEquals([1,2], list(s[1:3]))
+        self.assertEqual([], list(s[4:3]))
+        self.assertEqual([0,1,2,3,4,5], list(s[-12345:234567]))
+        self.assertEqual([1,2], list(s[1:3]))
 
     def testAppendFailsIfValueMakesListUnsorted(self):
         s = PersistentSortedIntegerList(self.filepath)
@@ -106,26 +106,26 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         try:
             s.append(5)
             self.fail()
-        except ValueError, e:
-            self.assertEquals('list.append(5): expected value to be greater than 10', str(e))
+        except ValueError as e:
+            self.assertEqual('list.append(5): expected value to be greater than 10', str(e))
         try:
             s.append(10)
             self.fail()
-        except ValueError, e:
-            self.assertEquals('list.append(10): expected value to be greater than 10', str(e))
-        self.assertEquals([10], list(s))
+        except ValueError as e:
+            self.assertEqual('list.append(10): expected value to be greater than 10', str(e))
+        self.assertEqual([10], list(s))
 
     def testWithDeletedItems(self):
         def assertListFunctions(aList):
-            self.assertEquals(0, aList[0])
-            self.assertEquals(2, aList[1])
-            self.assertEquals(8, aList[4])
-            self.assertEquals(8, aList[-2])
-            self.assertEquals(10, aList[-1])
+            self.assertEqual(0, aList[0])
+            self.assertEqual(2, aList[1])
+            self.assertEqual(8, aList[4])
+            self.assertEqual(8, aList[-2])
+            self.assertEqual(10, aList[-1])
 
-            self.assertEquals([0,2,4,6,8,10], list(aList))
-            self.assertEquals([0,2,4,6,8,10], list(aList[-123456:987654]))
-            self.assertEquals([2,4,6], list(aList[1:4]))
+            self.assertEqual([0,2,4,6,8,10], list(aList))
+            self.assertEqual([0,2,4,6,8,10], list(aList[-123456:987654]))
+            self.assertEqual([2,4,6], list(aList[1:4]))
             self.assertTrue(2 in aList)
             self.assertFalse(1 in aList)
             self.assertRaises(IndexError, lambda: aList[20])
@@ -157,9 +157,9 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             self.fail('ValueError expected')
         except ValueError:
             pass
-        self.assertEquals(0, s[0])
-        self.assertEquals(3, s[2])
-        self.assertEquals(4, len(s))
+        self.assertEqual(0, s[0])
+        self.assertEqual(3, s[2])
+        self.assertEqual(4, len(s))
 
     def testDeleteIsPersistent(self):
         s = PersistentSortedIntegerList(self.filepath)
@@ -168,19 +168,19 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s.remove(2)
         s.remove(6)
         s.remove(4)
-        self.assertEquals([0,1,3,5,7,8,9], list(s))
+        self.assertEqual([0,1,3,5,7,8,9], list(s))
         t = PersistentSortedIntegerList(self.filepath)
-        self.assertEquals([0,1,3,5,7,8,9], list(t))
+        self.assertEqual([0,1,3,5,7,8,9], list(t))
         t.remove(7)
         t = PersistentSortedIntegerList(self.filepath)
-        self.assertEquals([0,1,3,5,8,9], list(t))
+        self.assertEqual([0,1,3,5,8,9], list(t))
 
     def testIndex(self):
         s = PersistentSortedIntegerList(self.filepath)
         for i in range(4):
             s.append(i)
-        self.assertEquals(0, s.index(0))
-        self.assertEquals(3, s.index(3))
+        self.assertEqual(0, s.index(0))
+        self.assertEqual(3, s.index(3))
 
     def testSaveNoDeleteForUnsavedAdd(self):
         s = PersistentSortedIntegerList(self.filepath, autoCommit=False)
@@ -189,14 +189,14 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s.remove(2)
         s.remove(6)
         s.remove(4)
-        self.assertEquals([0,1,3,5,7,8,9], list(s))
+        self.assertEqual([0,1,3,5,7,8,9], list(s))
         s.commit()
         t = PersistentSortedIntegerList(self.filepath, autoCommit=False)
-        self.assertEquals([0,1,3,5,7,8,9], list(t))
+        self.assertEqual([0,1,3,5,7,8,9], list(t))
         t.remove(7)
         t.commit()
         u = PersistentSortedIntegerList(self.filepath, autoCommit=False)
-        self.assertEquals([0,1,3,5,8,9], list(u))
+        self.assertEqual([0,1,3,5,8,9], list(u))
 
     def testShutdown(self):
         s = PersistentSortedIntegerList(self.filepath, autoCommit=False)
@@ -204,7 +204,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
             s.append(i)
         s.commit()
         t = PersistentSortedIntegerList(self.filepath, autoCommit=False)
-        self.assertEquals([0,1,2,3], list(t))
+        self.assertEqual([0,1,2,3], list(t))
 
     def testRecoverFromCrash(self):
         mergeSteps = [0]
@@ -265,19 +265,19 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
                     if i == 1:
                         crashSave[0] = lambda filepath: not filepath.endswith('.deleted')
                     s.remove(i)
-            except FullStopException, e:
+            except FullStopException as e:
                 pass
             try:
                 s = MockPersistentSortedIntegerList(self.filepath)
-            except FullStopException, e:
+            except FullStopException as e:
                 pass
             s = PersistentSortedIntegerList(self.filepath)
             return s
 
-        for mergeCrashTrigger in xrange(1, 20):
-            for recoverCrashTrigger in xrange(1, 20):
+        for mergeCrashTrigger in range(1, 20):
+            for recoverCrashTrigger in range(1, 20):
                 s = mergeCrashRecover()
-                self.assertEquals([2,3], list(s))
+                self.assertEqual([2,3], list(s))
                 self.assertTrue(isfile(self.filepath))
                 self.assertFalse(isfile(self.filepath + '.deleted'))
                 self.assertFalse(isfile(self.filepath + '.new'))
@@ -298,7 +298,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         tIn = 0
         tAppend = 0
         tDelete = 0
-        for i in xrange(measurements):
+        for i in range(measurements):
             t = time()
             size in s
             tIn += time() - t
@@ -324,7 +324,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s.remove(1)
         s.append(3)
         s = PersistentSortedIntegerList(self.filepath, mergeTrigger=1000)
-        self.assertEquals([2,3], list(s))
+        self.assertEqual([2,3], list(s))
 
     def testMergeWithoutAutocommit(self):
         s = PersistentSortedIntegerList(self.filepath, mergeTrigger=2, autoCommit=False)
@@ -334,7 +334,7 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s.remove(1)
         s.remove(2)
         s.append(4)
-        self.assertEquals([3, 4], list(s))
+        self.assertEqual([3, 4], list(s))
         s.commit()
         s = PersistentSortedIntegerList(self.filepath, mergeTrigger=2, autoCommit=False)
-        self.assertEquals([3, 4], list(s))
+        self.assertEqual([3, 4], list(s))

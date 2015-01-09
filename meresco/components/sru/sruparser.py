@@ -40,8 +40,8 @@ from cqlparser import parseString, CQLParseException, CQLTokenizerException
 
 from weightless.core import compose
 
-from diagnostic import DIAGNOSTIC
-from diagnostic import UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
+from .diagnostic import DIAGNOSTIC
+from .diagnostic import UNSUPPORTED_OPERATION, UNSUPPORTED_VERSION, UNSUPPORTED_PARAMETER_VALUE, MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, QUERY_FEATURE_UNSUPPORTED
 
 DEFAULT_VERSION = '1.1'
 SUPPORTED_VERSIONS = ['1.1', '1.2']
@@ -70,7 +70,8 @@ DIAGNOSTICS = """%s%s%s<srw:diagnostics>%s</srw:diagnostics>%s""" % (RESPONSE_HE
 
 class SruException(Exception):
 
-    def __init__(self, (code, message), details="No details available"):
+    def __init__(self, xxx_todo_changeme, details="No details available"):
+        (code, message) = xxx_todo_changeme
         Exception.__init__(self, details)
         self.code = code
         self.message = message
@@ -107,12 +108,12 @@ class SruParser(Observable):
             if operation == 'searchRetrieve':
                 operationMethod = self._searchRetrieve
             yield operationMethod(arguments, **kwargs)
-        except SruException, e:
+        except SruException as e:
             additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
             details = ' - '.join([e.details] + list(additionalDiagnosticDetails))
             yield DIAGNOSTICS % (e.code, xmlEscape(details), xmlEscape(e.message))
             raise StopIteration()
-        except Exception, e:
+        except Exception as e:
             from traceback import print_exc
             print_exc()
             yield "Unexpected Exception:\n"
@@ -145,9 +146,9 @@ class SruParser(Observable):
         query = arguments.get('query', [''])[0]
         try:
             parseString(query)
-        except CQLParseException, e:
+        except CQLParseException as e:
             raise SruException(QUERY_FEATURE_UNSUPPORTED, str(e))
-        except CQLTokenizerException, e:
+        except CQLTokenizerException as e:
             raise SruException(QUERY_FEATURE_UNSUPPORTED, str(e))
         sruArgs['query'] = query
         queryArgs = sruArgs.copy()
@@ -199,7 +200,7 @@ class SruParser(Observable):
 
     def _validateCorrectEncoding(self, arguments):
         try:
-            for key, values in arguments.items():
+            for key, values in list(arguments.items()):
                 key.decode('utf-8')
                 for value in values:
                     value.decode('utf-8')

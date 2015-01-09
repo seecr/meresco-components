@@ -28,4 +28,4 @@
 # 
 ## end license ##
 
-from webquery import WebQuery
+from .webquery import WebQuery

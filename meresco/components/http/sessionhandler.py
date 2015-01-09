@@ -31,12 +31,12 @@
 from meresco.core import Observable
 from meresco.components import TimedDictionary
 from weightless.core import compose
-from utils import insertHeader
+from .utils import insertHeader
 from hashlib import md5
 from time import time
 from random import randint, choice
-from urllib import urlencode
-from UserDict import UserDict
+from urllib.parse import urlencode
+from collections import UserDict
 from string import ascii_letters
 
 class Session(UserDict):
@@ -80,7 +80,7 @@ class SessionHandler(Observable):
             yield response
 
 def createSeed():
-    return ''.join(choice(ascii_letters) for i in xrange(20))
+    return ''.join(choice(ascii_letters) for i in range(20))
 
 #steps:
 #Generate some kind of unique id. bijv. md5(time() + ip + secret_seed)

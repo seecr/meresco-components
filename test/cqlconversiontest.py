@@ -45,35 +45,35 @@ class CQLConversionTest(SeecrTestCase):
             )
         ))
         o.do.whatever(cqlAst=parseString('afield = value'))
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals('whatever', observer.calledMethods[0].name)
-        self.assertEquals({'cqlAst': parseString('anotherQuery')}, observer.calledMethods[0].kwargs)
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual('whatever', observer.calledMethods[0].name)
+        self.assertEqual({'cqlAst': parseString('anotherQuery')}, observer.calledMethods[0].kwargs)
 
     def testCQLConvert(self):
         converter = CallTrace('Converter')
         converter.returnValues['convert'] = parseString('ast')
         c = CQLConversion(converter.convert, fromKwarg="cqlAst")
-        self.assertEquals(parseString('ast'), c._convert(parseString('otherfield = value')))
-        self.assertEquals(['convert'], [m.name for m in converter.calledMethods])
+        self.assertEqual(parseString('ast'), c._convert(parseString('otherfield = value')))
+        self.assertEqual(['convert'], [m.name for m in converter.calledMethods])
 
     def testSearchClauseNoModification(self):
         ast = parseString('field=value')
         modifier = CallTrace('SearchClauseModifier')
         conversion = CqlSearchClauseConversion(lambda node: False, modifier.modify, fromKwarg="cqlAst")
         result = conversion._convert(ast)
-        self.assertEquals('field=value', cql2string(result))
-        self.assertEquals(0, len(modifier.calledMethods))
+        self.assertEqual('field=value', cql2string(result))
+        self.assertEqual(0, len(modifier.calledMethods))
 
     def testSearchClauseModifySimpleSearchClause(self):
         ast = parseString('field=value')
         def canModify(node):
-            self.assertEquals(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name for c in node.children])
+            self.assertEqual(['INDEX', 'RELATION', 'SEARCH_TERM'], [c.name for c in node.children])
             return True
         def modify(node):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
         result = conversion._convert(ast)
-        self.assertEquals('newvalue', cql2string(result))
+        self.assertEqual('newvalue', cql2string(result))
 
     def testReplaceSubtree(self):
         ast = parseString('field1=value1 AND (field2=value2 OR (field3=value3))')
@@ -83,7 +83,7 @@ class CQLConversionTest(SeecrTestCase):
             return SEARCH_CLAUSE(SEARCH_TERM(TERM('newvalue')))
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="cqlAst")
         result = conversion._convert(ast)
-        self.assertEquals('field1=value1 AND newvalue', cql2string(result))
+        self.assertEqual('field1=value1 AND newvalue', cql2string(result))
 
     def testReplacementMustBeSearchClause(self):
         ast = parseString('term')
@@ -124,11 +124,11 @@ class CQLConversionTest(SeecrTestCase):
         classic.do.message(cqlAst=ast)
         newStyle.do.message(cqlAst=ast)
 
-        self.assertEquals(['message'], [m.name for m in observerClassic.calledMethods])
+        self.assertEqual(['message'], [m.name for m in observerClassic.calledMethods])
         resultClassic = observerClassic.calledMethods[0].kwargs['cqlAst']
-        self.assertEquals(['message'], [m.name for m in observerNewStyle.calledMethods])
+        self.assertEqual(['message'], [m.name for m in observerNewStyle.calledMethods])
         resultNewStyle = observerNewStyle.calledMethods[0].kwargs['cqlAst']
 
-        self.assertEquals('termOne AND term2 AND termThree', cql2string(resultClassic))
-        self.assertEquals('termOne AND term2 AND termThree', cql2string(resultNewStyle))
+        self.assertEqual('termOne AND term2 AND termThree', cql2string(resultClassic))
+        self.assertEqual('termOne AND term2 AND termThree', cql2string(resultNewStyle))
 

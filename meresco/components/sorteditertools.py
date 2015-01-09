@@ -35,8 +35,8 @@ class WrapIterable(object):
     def __iter__(self):
         return self
 
-    def next(self):
-        return self._iterator.next()
+    def __next__(self):
+        return next(self._iterator)
 
 class PeekIterator(object):
     def __init__(self, iterable):
@@ -48,7 +48,7 @@ class PeekIterator(object):
 
     def peek(self):
         if self._next == None:
-            self._next = self._iterator.next()
+            self._next = next(self._iterator)
         if self._next == None:
             raise StopIteration()
         return self._next
@@ -60,13 +60,13 @@ class PeekIterator(object):
         except StopIteration:
             return False
 
-    def next(self):
+    def __next__(self):
         if self._next != None:
             try:
                 return self._next
             finally:
                 self._next = None
-        return self._iterator.next()
+        return next(self._iterator)
 
 class PairIterator(object):
     def __init__(self, lhs, rhs):
@@ -77,22 +77,22 @@ class PairIterator(object):
         return self
 
 class OrIterator(PairIterator):
-    def next(self):
+    def __next__(self):
         if not self._lhs.hasNext():
-            return self._rhs.next()
+            return next(self._rhs)
         if not self._rhs.hasNext():
-            return self._lhs.next()
+            return next(self._lhs)
         if self._lhs.peek() < self._rhs.peek():
-            return self._lhs.next()
+            return next(self._lhs)
         if self._lhs.peek() == self._rhs.peek():
-            self._lhs.next()
-        return self._rhs.next()
+            next(self._lhs)
+        return next(self._rhs)
 
 class AndIterator(PairIterator):
-    def next(self):
+    def __next__(self):
         while self._lhs.peek() != self._rhs.peek():
             while self._lhs.peek() < self._rhs.peek():
-                self._lhs.next()
+                next(self._lhs)
             while self._rhs.peek() < self._lhs.peek():
-                self._rhs.next()
-        return self._rhs.next()
+                next(self._rhs)
+        return next(self._rhs)

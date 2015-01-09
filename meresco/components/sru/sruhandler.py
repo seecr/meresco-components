@@ -43,9 +43,10 @@ from time import time
 from decimal import Decimal
 from traceback import print_exc
 
-from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
-from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
+from .diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
+from .sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
 from meresco.components.log import collectLogForScope
+import collections
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
@@ -82,7 +83,7 @@ class SruHandler(Observable):
             if 'x-term-drilldown' in sruArguments:
                 facets = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
 
-            extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
+            extraArguments = dict((key, value) for key, value in list(sruArguments.items()) if key.startswith('x-'))
             try:
                 response = yield self.any.executeQuery(
                         cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
@@ -93,7 +94,7 @@ class SruHandler(Observable):
                         **kwargs)
                 total, hits = response.total, response.hits
                 drilldownData = getattr(response, "drilldownData", None)
-            except Exception, e:
+            except Exception as e:
                 print_exc()
                 yield RESPONSE_HEADER
                 yield self._writeDiagnostics([(QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], str(e))])
@@ -150,7 +151,7 @@ class SruHandler(Observable):
         headerWritten = False
 
         for line in result:
-            if line is Yield or callable(line):
+            if line is Yield or isinstance(line, collections.Callable):
                 yield line
                 continue
             if line and not headerWritten:
@@ -191,7 +192,7 @@ class SruHandler(Observable):
     def _extraResponseDataTryExcept(self, **kwargs):
         try:
             yield self.all.extraResponseData(**kwargs)
-        except Exception, e:
+        except Exception as e:
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _startResults(self, numberOfRecords, version):
@@ -220,9 +221,9 @@ class SruHandler(Observable):
     def _catchErrors(self, dataGenerator, recordSchema, recordId):
         try:
             yield dataGenerator
-        except IOError, e:
+        except IOError as e:
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
-        except Exception, e:
+        except Exception as e:
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):
@@ -264,7 +265,7 @@ class SruHandler(Observable):
             return
         if recordPacking == 'string':
             for data in generator:
-                if data is Yield or callable(data):
+                if data is Yield or isinstance(data, collections.Callable):
                     yield data
                 else:
                     yield xmlEscape(data)

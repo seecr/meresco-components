@@ -93,7 +93,7 @@ class XsltCrosswalkTest(SeecrTestCase):
         class Intercept:
             def someMessage(innerself, lxmlNode):
                 self.crosswalkedNode.append(lxmltostring(lxmlNode, pretty_print=True))
-                self.assertEquals(_ElementTree, type(lxmlNode))
+                self.assertEqual(_ElementTree, type(lxmlNode))
         root = be(
             (Observable(),
                 (XsltCrosswalk([self.xsltFilename], fromKwarg="lxmlNode"),
