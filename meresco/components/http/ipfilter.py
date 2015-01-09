@@ -29,7 +29,7 @@
 #
 ## end license ##
 
-from handlerequestfilter import HandleRequestFilter
+from .handlerequestfilter import HandleRequestFilter
 
 class IpFilter(HandleRequestFilter):
 

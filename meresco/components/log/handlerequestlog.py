@@ -28,6 +28,7 @@ from meresco.core import Transparent
 from meresco.components.log import collectLogForScope
 from weightless.core import compose, Yield
 from time import time
+import collections
 
 class HandleRequestLog(Transparent):
     def handleRequest(self, **kwargs):
@@ -44,7 +45,7 @@ class HandleRequestLog(Transparent):
         sizeInBytes = 0
         httpStatus = ""
         for response in compose(self.all.handleRequest(**kwargs)):
-            if response is Yield or callable(response):
+            if response is Yield or isinstance(response, collections.Callable):
                 yield response
                 continue
             if hasattr(response, '__len__'):

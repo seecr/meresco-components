@@ -28,10 +28,10 @@
 #
 ## end license ##
 
-from sruhandler import SruHandler
-from sruparser import SruParser, SruException
-from srurecordupdate import SruRecordUpdate, SRURecordUpdate
-from sruupdateclient import SruUpdateClient, SruUpdateException
-from srw import Srw
-from srulimitstartrecord import SruLimitStartRecord
-from sruduplicatecount import SruDuplicateCount
+from .sruhandler import SruHandler
+from .sruparser import SruParser, SruException
+from .srurecordupdate import SruRecordUpdate, SRURecordUpdate
+from .sruupdateclient import SruUpdateClient, SruUpdateException
+from .srw import Srw
+from .srulimitstartrecord import SruLimitStartRecord
+from .sruduplicatecount import SruDuplicateCount

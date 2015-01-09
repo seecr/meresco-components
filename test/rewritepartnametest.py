@@ -46,9 +46,9 @@ class RewritePartnameTest(TestCase):
 
         result = list(compose(observable.all.add(identifier='identifier', partname='oldPartname', data='data')))
 
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
-        self.assertEquals([], result)
+        self.assertEqual(['add'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
+        self.assertEqual([], result)
 
     def testYieldRecordPartname(self):
         def yieldRecord(**kwargs):
@@ -61,7 +61,7 @@ class RewritePartnameTest(TestCase):
 
         result = ''.join(compose(observable.all.yieldRecord(identifier='identifier', partname='oldPartname')))
 
-        self.assertEquals(['yieldRecord'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname'}, observer.calledMethods[0].kwargs)
-        self.assertEquals('data', result)
+        self.assertEqual(['yieldRecord'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'identifier': 'identifier', 'partname': 'newPartname'}, observer.calledMethods[0].kwargs)
+        self.assertEqual('data', result)
 

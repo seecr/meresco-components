@@ -30,7 +30,7 @@ from meresco.components.http.utils import okPlainText
 from weightless.core import be, Yield, consume
 from meresco.core import Observable
 from meresco.components.log import LogCollector, HandleRequestLog, ApacheLogWriter
-from StringIO import StringIO
+from io import StringIO
 from time import time
 from weightless.core.utils import asList
 
@@ -54,10 +54,10 @@ class HandleRequestLogTest(SeecrTestCase):
 
         result = asList(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={'Referer': 'http://meresco.org', 'User-Agent': 'Meresco-Components Test'}, otherKwarg='value'))
 
-        self.assertEquals([Yield, okPlainText, 'te', callable, 'xt'], result)
-        self.assertEquals(['handleRequest'], requestHandler.calledMethodNames())
+        self.assertEqual([Yield, okPlainText, 'te', callable, 'xt'], result)
+        self.assertEqual(['handleRequest'], requestHandler.calledMethodNames())
         logline = stream.getvalue()
-        self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test"\n', logline)
+        self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test"\n', logline)
 
     def testLogHttpError(self):
         requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
@@ -78,9 +78,9 @@ class HandleRequestLogTest(SeecrTestCase):
         observable.do.logHttpError(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value')
 
         logline = stream.getvalue()
-        self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 503 - "-" "-"\n', logline)
-        self.assertEquals(['logHttpError'], requestHandler.calledMethodNames())
-        self.assertEquals(dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value'), requestHandler.calledMethods[0].kwargs)
+        self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 503 - "-" "-"\n', logline)
+        self.assertEqual(['logHttpError'], requestHandler.calledMethodNames())
+        self.assertEqual(dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value'), requestHandler.calledMethods[0].kwargs)
 
     def testDefaultTimeIsNow(self):
         __callstack_var_logCollector__ = dict()
@@ -92,7 +92,7 @@ class HandleRequestLogTest(SeecrTestCase):
         __callstack_var_logCollector__ = dict()
         consume(HandleRequestLog().handleRequest(Method='POST', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value', Body='short'))
 
-        self.assertEquals(5, __callstack_var_logCollector__['httpRequest']['bodySize'][0])
+        self.assertEqual(5, __callstack_var_logCollector__['httpRequest']['bodySize'][0])
 
 
 

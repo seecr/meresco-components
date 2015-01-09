@@ -33,35 +33,35 @@ from meresco.components.numeric.convert import Convert
 class ConvertTest(TestCase):
     def testConvertOneDecimal(self):
         convert = Convert(1)
-        self.assertEquals(10, convert('1'))
-        self.assertEquals(10, convert('1.0'))
-        self.assertEquals(10, convert('1.0456789'))
-        self.assertEquals(10, convert('0.9999999'))
-        self.assertEquals(9, convert('0.945'))
+        self.assertEqual(10, convert('1'))
+        self.assertEqual(10, convert('1.0'))
+        self.assertEqual(10, convert('1.0456789'))
+        self.assertEqual(10, convert('0.9999999'))
+        self.assertEqual(9, convert('0.945'))
 
     def testConvertNoDecimal(self):
         convert = Convert(0)
-        self.assertEquals(1, convert('1.0'))
-        self.assertEquals(1, convert('1.0456789'))
-        self.assertEquals(1, convert('0.9999999'))
-        self.assertEquals(1, convert('1'))
-        self.assertEquals(1, convert('0.5'))
-        self.assertEquals(1, convert('1.4456789'))
-        self.assertEquals(2, convert('1.945'))
-        self.assertEquals(2, convert('1.5'))
-        self.assertEquals(2, convert('2.4456789'))
+        self.assertEqual(1, convert('1.0'))
+        self.assertEqual(1, convert('1.0456789'))
+        self.assertEqual(1, convert('0.9999999'))
+        self.assertEqual(1, convert('1'))
+        self.assertEqual(1, convert('0.5'))
+        self.assertEqual(1, convert('1.4456789'))
+        self.assertEqual(2, convert('1.945'))
+        self.assertEqual(2, convert('1.5'))
+        self.assertEqual(2, convert('2.4456789'))
 
     def testConvertDecimalMinus1(self):
         convert = Convert(-1)
-        self.assertEquals(0, convert('1.0'))
-        self.assertEquals(1, convert('11.0456789'))
-        self.assertEquals(0, convert('0.9999999'))
-        self.assertEquals(2, convert('19.45'))
+        self.assertEqual(0, convert('1.0'))
+        self.assertEqual(1, convert('11.0456789'))
+        self.assertEqual(0, convert('0.9999999'))
+        self.assertEqual(2, convert('19.45'))
 
     def testStrangeNumbers(self):
         convert = Convert(1)
-        self.assertEquals(50, convert('05.0'))
-        self.assertEquals(70, convert('007'))
-        self.assertEquals(0, convert('-000'))
+        self.assertEqual(50, convert('05.0'))
+        self.assertEqual(70, convert('007'))
+        self.assertEqual(0, convert('-000'))
         
         

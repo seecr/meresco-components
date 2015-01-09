@@ -27,7 +27,7 @@
 # 
 ## end license ##
 
-from StringIO import StringIO
+from io import StringIO
 from lxml.etree import parse, XMLParser, _ElementTree
 from meresco.xml import XMLRewrite
 from glob import glob
@@ -67,7 +67,7 @@ class Crosswalk(Observable):
 
     def readConfig(self, ruleSetName, localsDict):
         self._globs['extend']= lambda name: self.readConfig(name, localsDict)
-        execfile(self.rulesDir + '/' + ruleSetName + EXTENSION, self._globs, localsDict)
+        exec(compile(open(self.rulesDir + '/' + ruleSetName + EXTENSION).read(), self.rulesDir + '/' + ruleSetName + EXTENSION, 'exec'), self._globs, localsDict)
 
     def _detectAndConvert(self, anObject):
         if type(anObject) == _ElementTree:
@@ -76,7 +76,7 @@ class Crosswalk(Observable):
 
     def all_unknown(self, method, *args, **kwargs):
         newArgs = [self._detectAndConvert(arg) for arg in args]
-        newKwargs = dict((key, self._detectAndConvert(value)) for key, value in kwargs.items())
+        newKwargs = dict((key, self._detectAndConvert(value)) for key, value in list(kwargs.items()))
         yield self.all.unknown(method, *newArgs, **newKwargs)
 
     def convert(self, lxmlNode):
@@ -87,7 +87,7 @@ class Crosswalk(Observable):
             prefix = lxmlNode.prefix
             nsmap = lxmlNode.nsmap
         if not prefix in nsmap:
-            raise Exception("Prefix '%s' not found in rules, available namespaces: %s" % (prefix, nsmap.keys()))
+            raise Exception("Prefix '%s' not found in rules, available namespaces: %s" % (prefix, list(nsmap.keys())))
         namespaceURI = nsmap[prefix]
         rewrite = XMLRewrite(lxmlNode, **self.ruleSet[namespaceURI])
         rewrite.applyRules()

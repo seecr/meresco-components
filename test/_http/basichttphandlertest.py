@@ -41,8 +41,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = ''.join(compose(observable.all.handleRequest(RequestURI="/")))
 
-        self.assertEquals('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testOk(self):
         handler = BasicHttpHandler()
@@ -54,8 +54,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = ''.join(compose(observable.all.handleRequest(RequestURI="/")))
 
-        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 200 OK\r\n\r\nBody', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testAlternativeMethod(self):
         handler = BasicHttpHandler(notFoundMethod=lambda : 'HTTP/1.0 404\r\n\r\n')
@@ -66,8 +66,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = ''.join(compose(observable.all.handleRequest(RequestURI="/")))
 
-        self.assertEquals('HTTP/1.0 404\r\n\r\n', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 404\r\n\r\n', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testRedirect(self):
         handler = BasicHttpHandler.createWithRedirect('http://example.org/here')
@@ -78,5 +78,5 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = ''.join(compose(observable.all.handleRequest(RequestURI="/")))
 
-        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: http://example.org/here\r\n\r\n', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 302 Found\r\nLocation: http://example.org/here\r\n\r\n', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())

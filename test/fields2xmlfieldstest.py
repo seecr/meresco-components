@@ -55,10 +55,10 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         self.fxf.begin(name='tsName')
         self.fxf.addField("key.sub", "value")
         list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
-        self.assertEquals(["add"], [m.name for m in self.observer.calledMethods])
+        self.assertEqual(["add"], [m.name for m in self.observer.calledMethods])
         kwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals("identifier", kwargs['identifier'])
-        self.assertEquals("fields-partname", kwargs['partname'])
+        self.assertEqual("identifier", kwargs['identifier'])
+        self.assertEqual("fields-partname", kwargs['partname'])
         self.assertEqualsWS("""<fields xmlns="%s">
                 <field name="key.sub">value</field>
             </fields>""" % NAMESPACE, kwargs['data'])
@@ -67,7 +67,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         self.fxf.begin(name='tsName')
         self.fxf.addField("""<name>"&'""", """<value>"&'""")
         list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
-        self.assertEquals(["add"], [m.name for m in self.observer.calledMethods])
+        self.assertEqual(["add"], [m.name for m in self.observer.calledMethods])
         kwargs = self.observer.calledMethods[0].kwargs
         self.assertEqualsWS("""<fields xmlns="%s">
                 <field name="&lt;name&gt;&quot;&amp;'">&lt;value&gt;&quot;&amp;'</field>
@@ -76,7 +76,7 @@ class Fields2XmlFieldsTest(SeecrTestCase):
     def testNoCommitWhenAddFieldNotCalled(self):
         self.fxf.begin(name='tsName')
         list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
-        self.assertEquals([], self.observer.calledMethods)
+        self.assertEqual([], self.observer.calledMethods)
 
     def testWorksWithRealTransactionScope(self):
         intercept = CallTrace('Intercept', ignoredAttributes=['begin', 'commit', 'rollback'], methods={'add': add})
@@ -106,10 +106,10 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         )
 
         list(compose(root.all.add('some', 'arguments')))
-        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
+        self.assertEqual(['add'], [m.name for m in intercept.calledMethods])
         method = intercept.calledMethods[0]
         expectedXml = '<fields><field name="field.name">MyName</field><field name="field.name">AnotherName</field><field name="field.title">MyDocument</field></fields>'
-        self.assertEquals(((), {'identifier': 'an:identifier', 'partname': 'partname', 'data': expectedXml}), (method.args, method.kwargs))
+        self.assertEqual(((), {'identifier': 'an:identifier', 'partname': 'partname', 'data': expectedXml}), (method.args, method.kwargs))
 
     def testSameAddFieldGeneratedTwoTimes(self):
         self.fxf.begin(name='tsName')
@@ -119,14 +119,14 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         self.fxf.addField("key.sub", "separatedbyvalue")
         list(compose(self.fxf.commit(self.fxf.ctx.tx.getId())))
 
-        self.assertEquals(['add'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual(['add'], [m.name for m in self.observer.calledMethods])
         self.assertEqualsWS("""<fields xmlns="%s">
                <field name="key.sub">value</field>
                <field name="key.sub">othervalue</field>
                <field name="key.sub">value</field>
                <field name="key.sub">separatedbyvalue</field>
             </fields>""" % NAMESPACE, self.observer.calledMethods[0].kwargs['data'])
-        self.assertEquals([('key.sub', 'value'), ('key.sub', 'othervalue'), ('key.sub', 'value'), ('key.sub', 'separatedbyvalue')], self.fxf.ctx.tx.objectScope(self.fxf)['fields'])
+        self.assertEqual([('key.sub', 'value'), ('key.sub', 'othervalue'), ('key.sub', 'value'), ('key.sub', 'separatedbyvalue')], self.fxf.ctx.tx.objectScope(self.fxf)['fields'])
 
     def testEmptyNamespace(self):
         ctx = CallTrace('CTX')
@@ -143,26 +143,26 @@ class Fields2XmlFieldsTest(SeecrTestCase):
         fxf.addField("key.sub", "value")
         list(compose(fxf.commit(tx.getId())))
 
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+        self.assertEqual(['add'], [m.name for m in observer.calledMethods])
         self.assertEqualsWS("""<fields>
                 <field name="key.sub">value</field>
             </fields>""", observer.calledMethods[0].kwargs['data']) 
 
     def testGenerateOneKeyXml(self):
-        self.assertEquals('<field name="key">value</field>', generateXml([('key','value')]))
+        self.assertEqual('<field name="key">value</field>', generateXml([('key','value')]))
 
     def testGenerateOneSubKeyXml(self):
-        self.assertEquals('<field name="key.sub">value</field>', generateXml([('key.sub','value')]))
+        self.assertEqual('<field name="key.sub">value</field>', generateXml([('key.sub','value')]))
    
     def testGenerateOtherParentKeyXml(self):
-        self.assertEquals('<field name="a.b">value</field><field name="c.d">value2</field>', generateXml([('a.b','value'), ('c.d','value2')]))
+        self.assertEqual('<field name="a.b">value</field><field name="c.d">value2</field>', generateXml([('a.b','value'), ('c.d','value2')]))
 
     def testGenerateXml(self):
-        self.assertEquals('<field name="a.b.c.d">DDD</field><field name="a.b.c.e">EEE</field><field name="a.b.c">CCC</field><field name="a.b.f">FFF</field><field name="a.b.c.d">DDD</field>', generateXml([('a.b.c.d','DDD'), ('a.b.c.e','EEE'), ('a.b.c', 'CCC'),('a.b.f', 'FFF'), ('a.b.c.d', 'DDD')]))
+        self.assertEqual('<field name="a.b.c.d">DDD</field><field name="a.b.c.e">EEE</field><field name="a.b.c">CCC</field><field name="a.b.f">FFF</field><field name="a.b.c.d">DDD</field>', generateXml([('a.b.c.d','DDD'), ('a.b.c.e','EEE'), ('a.b.c', 'CCC'),('a.b.f', 'FFF'), ('a.b.c.d', 'DDD')]))
 
     def testEscapeTagNamesAndValues(self):
-        self.assertEquals("""<field name="k/\\.sub">value</field>""", generateXml([('k/\\.sub','value')]))
-        self.assertEquals('<field name="key">&lt;/tag&gt;</field>', generateXml([('key','</tag>')]))
+        self.assertEqual("""<field name="k/\\.sub">value</field>""", generateXml([('k/\\.sub','value')]))
+        self.assertEqual('<field name="key">&lt;/tag&gt;</field>', generateXml([('key','</tag>')]))
 
     def testEscapeCorrectly(self):
         fields = [
@@ -170,5 +170,5 @@ class Fields2XmlFieldsTest(SeecrTestCase):
                ( 'vuurboom.aap' , 'normal' ),
             ]
         x = '<root>%s</root>' % generateXml(fields)
-        self.assertEquals("""<root><field name="vuur.aap">normal</field><field name="vuurboom.aap">normal</field></root>""", x)
+        self.assertEqual("""<root><field name="vuur.aap">normal</field><field name="vuurboom.aap">normal</field></root>""", x)
 

@@ -47,7 +47,7 @@ class Suggestion(Observable):
         if not hasattr(response, 'suggestions'):
             return
 
-        sortedSuggestions = sorted(response.suggestions.items(), key=lambda (word, (start, stop, suggestions)): start)
+        sortedSuggestions = sorted(list(response.suggestions.items()), key=lambda word_start_stop_suggestions: word_start_stop_suggestions[1][0])
         allSuggestions = [suggestions for (word, (start, stop, suggestions)) in sortedSuggestions]
 
         if not allSuggestions:

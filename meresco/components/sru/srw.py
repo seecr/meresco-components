@@ -34,7 +34,7 @@ from meresco.core import Observable
 from meresco.xml import namespaces as _namespaces
 from meresco.components.http import utils as httputils
 from lxml.etree import parse
-from StringIO import StringIO
+from io import StringIO
 
 from meresco.components.sru import SruParser
 from meresco.components.sru.sruparser import SruException, DIAGNOSTICS, UNSUPPORTED_PARAMETER, UNSUPPORTED_OPERATION
@@ -53,7 +53,7 @@ class Srw(Observable):
             if not 'recordSchema' in arguments and self._defaultRecordSchema:
                 arguments['recordSchema'] = [self._defaultRecordSchema]
 
-        except SoapException, e:
+        except SoapException as e:
             yield httputils.serverErrorXml
             yield SOAP % e.asSoap()
             raise StopIteration()
@@ -64,7 +64,7 @@ class Srw(Observable):
             operation, arguments = self.call._parseArguments(arguments)
             self._srwSpecificValidation(operation, arguments)
             sruArgs, queryArgs = self.call.parseSruArgs(arguments)
-        except SruException, e:
+        except SruException as e:
             yield SOAP % DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
             raise StopIteration()
 
@@ -72,7 +72,7 @@ class Srw(Observable):
             yield SOAP_HEADER
             yield self.all.searchRetrieve(sruArguments=sruArgs, **queryArgs)
             yield SOAP_FOOTER
-        except Exception, e:
+        except Exception as e:
             yield "Unexpected Exception:\n"
             yield str(e)
             raise e
@@ -81,7 +81,7 @@ class Srw(Observable):
         arguments = {}
         try:
             lxmlNode = parse(StringIO(body))
-        except Exception, e:
+        except Exception as e:
             raise  SoapException("SOAP:Server.userException", str(e))
         envelope = xpathFirst(lxmlNode, '/soap:Envelope')
         if envelope is None:

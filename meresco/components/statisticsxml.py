@@ -29,8 +29,8 @@
 #
 ## end license ##
 
-from urlparse import parse_qs
-from urlparse import urlsplit
+from urllib.parse import parse_qs
+from urllib.parse import urlsplit
 
 from time import mktime, gmtime
 
@@ -90,11 +90,11 @@ class StatisticsXml(object):
 
     def _query(self, fromTime, toTime, key, maxResults):
         try:
-            data = self._statistics.get(key, fromTime, toTime).items()
-        except KeyError, e:
+            data = list(self._statistics.get(key, fromTime, toTime).items())
+        except KeyError as e:
             yield "</header><error>Unknown key: %s</error></statistics>" % str(key)
             return
-        except AggregatorException, e:
+        except AggregatorException as e:
             yield "</header><error>Statistics Aggregation Exception: %s</error></statistics>" % str(e)
             return
 
@@ -115,7 +115,9 @@ class StatisticsXml(object):
         yield "</observations></statistics>"
 
     def _sorted(self, data):
-        def cmp((leftValue, leftCount), (rightValue, rightCount)):
+        def cmp(xxx_todo_changeme, xxx_todo_changeme1):
+            (leftValue, leftCount) = xxx_todo_changeme
+            (rightValue, rightCount) = xxx_todo_changeme1
             if not leftCount == rightCount:
                 return rightCount - leftCount
             return rightValue > leftValue

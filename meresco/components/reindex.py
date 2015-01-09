@@ -31,7 +31,7 @@
 
 from meresco.core import Observable
 from lxml.etree import parse
-from StringIO import StringIO
+from io import StringIO
 from os.path import isdir, join
 from os import makedirs, listdir, remove, rmdir
 from escaping import escapeFilename, unescapeFilename
@@ -105,7 +105,7 @@ class Reindex(Observable):
         for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
             try:
                 yield self.all.add(identifier=unescapeFilename(identifier), partname='ignoredName', lxmlNode=EMPTYDOC)
-            except Exception, e:
+            except Exception as e:
                 yield '\n!error processing "%s": %s' % (identifier, str(e))
                 return
             yield "+%s\n" % identifier

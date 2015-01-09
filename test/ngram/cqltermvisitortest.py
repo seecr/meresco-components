@@ -35,7 +35,7 @@ from cqlparser import parseString
 class CqlTermVisitorTest(TestCase):
 
     def assertTermVisitor(self, expectedList, cqlstring):
-        self.assertEquals(expectedList, CqlTermVisitor(parseString(cqlstring)).visit())
+        self.assertEqual(expectedList, CqlTermVisitor(parseString(cqlstring)).visit())
 
     def testCqlTermVisitor(self) :
         self.assertTermVisitor(['word0'], 'word0')

@@ -55,7 +55,7 @@ class TokenizeFieldletTest(SeecrTestCase):
             )
         )
         dna.do.addField('name', value)
-        self.assertEquals(expected, tokens.tokens)
+        self.assertEqual(expected, tokens.tokens)
 
     def testOne(self):
         self.assertTokenized(['value'], 'value')

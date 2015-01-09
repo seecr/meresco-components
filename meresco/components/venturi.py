@@ -30,7 +30,7 @@
 ## end license ##
 
 from lxml.etree import _Element, ElementTree, parse, XMLParser
-from StringIO import StringIO
+from io import StringIO
 
 from meresco.core import Observable
 

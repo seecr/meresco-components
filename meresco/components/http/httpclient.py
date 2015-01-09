@@ -26,8 +26,8 @@
 from weightless.http import httpget, httppost, httpspost, httpsget
 from meresco.components.http.utils import CRLF
 from lxml.etree import parse as lxmlParse
-from StringIO import StringIO
-from urllib import urlencode
+from io import StringIO
+from urllib.parse import urlencode
 
 class HttpClient(object):
 

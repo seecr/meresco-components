@@ -61,9 +61,9 @@ class SruLogTest(SeecrTestCase):
 
         result = asString(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), arguments={}, path='/path/sru', otherKwarg='value'))
 
-        self.assertEquals(okXml+'<sru></sru>', result)
+        self.assertEqual(okXml+'<sru></sru>', result)
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.1K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.1K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
 
     def testQuery(self):
@@ -98,7 +98,7 @@ class SruLogTest(SeecrTestCase):
             otherKwarg='value'))
         self.assertTrue('<srw:numberOfRecords>42</srw:numberOfRecords>' in result, result)
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.7K 1.000s 42hits /path/sru maximumRecords=0&operation=searchRetrieve&query=query&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.7K 1.000s 42hits /path/sru maximumRecords=0&operation=searchRetrieve&query=query&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testAlmostNoData(self):
         # No data due to HandleRequestLog is not used.
@@ -117,6 +117,6 @@ class SruLogTest(SeecrTestCase):
 
         result = asString(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), arguments={}, path='/path/sru', otherKwarg='value'))
 
-        self.assertEquals(okXml+'<sru></sru>', result)
-        self.assertEquals(0, len(listdir(self.tempdir)))
+        self.assertEqual(okXml+'<sru></sru>', result)
+        self.assertEqual(0, len(listdir(self.tempdir)))
 

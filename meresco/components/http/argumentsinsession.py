@@ -32,7 +32,7 @@ from meresco.core import Observable
 class ArgumentsInSession(Observable):
 
     def handleRequest(self, session, arguments = {}, *args, **kwargs):
-        for k,v in arguments.items():
+        for k,v in list(arguments.items()):
             if not k in session:
                 session[k] = []
             for arg in v:
@@ -43,7 +43,7 @@ class ArgumentsInSession(Observable):
                     source = repr(arg)
                 try:
                     value = eval(source, {'__builtins__': {}})
-                except Exception, e:
+                except Exception as e:
                     yield 'HTTP/1.0 400 Bad Request\r\n\r\n' + str(e)
                     return
                 if sign == '+':

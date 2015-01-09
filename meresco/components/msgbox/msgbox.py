@@ -134,11 +134,11 @@ class Msgbox(Observable):
                 composed = compose(self.all.add(identifier=identifier, filedata=File(filepath)))
                 try:
                     while True:
-                        composed.next()
-                except StopIteration, e:
+                        next(composed)
+                except StopIteration as e:
                     pass
                 needToAck = self._synchronous and not ackOrError
-            except Exception, e:
+            except Exception as e:
                 if not self._impliesInputError(e):
                     print_exc()
                 if not ackOrError:

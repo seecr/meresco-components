@@ -38,9 +38,9 @@ class ClauseCollectorTest(SeecrTestCase):
         SeecrTestCase.setUp(self)
 
     def testClauseCollector(self):
-        self.assertEquals(['cat', 'dog'], self.findClauses("cat or dog"))
-        self.assertEquals(['cat', 'dog'], self.findClauses("(cat or dog)"))
-        self.assertEquals(['cat', 'dog', 'horse'], self.findClauses("(cat or dog) not horse"))
+        self.assertEqual(['cat', 'dog'], self.findClauses("cat or dog"))
+        self.assertEqual(['cat', 'dog'], self.findClauses("(cat or dog)"))
+        self.assertEqual(['cat', 'dog', 'horse'], self.findClauses("(cat or dog) not horse"))
 
     def findClauses(self, cql):
         clauses = []

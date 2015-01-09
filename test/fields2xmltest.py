@@ -34,7 +34,7 @@ from meresco.components import Fields2Xml
 from meresco.components.fields2xml import Fields2XmlException, generateXml
 from meresco.core import Observable, TransactionScope, ResourceManager
 from weightless.core import be, compose
-from StringIO import StringIO
+from io import StringIO
 from lxml.etree import parse
 
 def add(identifier, partname, data):
@@ -52,12 +52,12 @@ class Fields2XmlTest(SeecrTestCase):
         def f():
             f = yield fields2Xml.beginTransaction()
             yield f
-        f = compose(f()).next()
+        f = next(compose(f()))
         f.addField('key.sub', 'value')
         list(compose(f.commit()))
 
-        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
-        self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
+        self.assertEqual(['add'], [m.name for m in intercept.calledMethods])
+        self.assertEqual(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
 
     def testAddNotCalledWhenNoAddFields(self):
         intercept = CallTrace(methods={'add': add})
@@ -66,10 +66,10 @@ class Fields2XmlTest(SeecrTestCase):
         def f():
             f = yield fields2Xml.beginTransaction()
             yield f
-        f = compose(f()).next()
+        f = next(compose(f()))
         f.commit()
 
-        self.assertEquals([], [m.name for m in intercept.calledMethods])
+        self.assertEqual([], [m.name for m in intercept.calledMethods])
     
     def testSameAddFieldGeneratedTwoTimes(self):
         __callstack_var_tx__ = CallTrace('TX')
@@ -80,15 +80,15 @@ class Fields2XmlTest(SeecrTestCase):
         def f():
             f = yield fields2Xml.beginTransaction()
             yield f
-        f = compose(f()).next()
+        f = next(compose(f()))
         f.addField('key.sub', 'value')
         f.addField('key.sub', 'othervalue')
         f.addField('key.sub', 'value')
         f.addField('key.sub', 'separatedbyvalue')
         list(compose(f.commit()))
 
-        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
-        self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key><key><sub>othervalue</sub></key><key><sub>value</sub></key><key><sub>separatedbyvalue</sub></key></extra>'), intercept.calledMethods[0].kwargs)
+        self.assertEqual(['add'], [m.name for m in intercept.calledMethods])
+        self.assertEqual(dict(identifier='identifier', partname='extra', data='<extra><key><sub>value</sub></key><key><sub>othervalue</sub></key><key><sub>value</sub></key><key><sub>separatedbyvalue</sub></key></extra>'), intercept.calledMethods[0].kwargs)
         # Filtering of duplicate keys is removed. (Was introduced in 3.4.4)
         # The generated XML will eventually create a LuceneDocument, the sequence of values is important
         # for phrasequeries.
@@ -121,10 +121,10 @@ class Fields2XmlTest(SeecrTestCase):
             )
         )
         list(compose(root.all.add('some', 'arguments')))
-        self.assertEquals(['add'], [m.name for m in intercept.calledMethods])
+        self.assertEqual(['add'], [m.name for m in intercept.calledMethods])
         method = intercept.calledMethods[0]
         expectedXml = "<partname><field><name>MyName</name></field><field><name>AnotherName</name></field><field><title>MyDocument</title></field></partname>"
-        self.assertEquals(((), {'identifier': 'an:identifier', 'partname': 'partname', 'data': expectedXml}), (method.args, method.kwargs))
+        self.assertEqual(((), {'identifier': 'an:identifier', 'partname': 'partname', 'data': expectedXml}), (method.args, method.kwargs))
 
 
     def testPartNameIsDefinedAtInitialization(self):
@@ -136,15 +136,15 @@ class Fields2XmlTest(SeecrTestCase):
         def f():
             f = yield fields2Xml.beginTransaction()
             yield f
-        f = compose(f()).next()
+        f = next(compose(f()))
         f.addField('key.sub', 'value')
         list(compose(f.commit()))
         
-        self.assertEquals('otherIdentifier', intercept.calledMethods[0].kwargs['identifier'])
-        self.assertEquals('partName', intercept.calledMethods[0].kwargs['partname'])
+        self.assertEqual('otherIdentifier', intercept.calledMethods[0].kwargs['identifier'])
+        self.assertEqual('partName', intercept.calledMethods[0].kwargs['partname'])
         data = intercept.calledMethods[0].kwargs['data']
         xml = parse(StringIO(data))
-        self.assertEquals('partName', xml.getroot().tag)
+        self.assertEqual('partName', xml.getroot().tag)
 
     def testNamespace(self):
         __callstack_var_tx__ = CallTrace('TX')
@@ -155,44 +155,44 @@ class Fields2XmlTest(SeecrTestCase):
         def f():
             f = yield fields2Xml.beginTransaction()
             yield f
-        f = compose(f()).next()
+        f = next(compose(f()))
         f.addField('key.sub', 'value')
         list(compose(f.commit()))
         
-        self.assertEquals(dict(identifier='identifier', partname='extra', data='<extra xmlns="http://meresco.org/namespace/fields/extra"><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
+        self.assertEqual(dict(identifier='identifier', partname='extra', data='<extra xmlns="http://meresco.org/namespace/fields/extra"><key><sub>value</sub></key></extra>'), intercept.calledMethods[0].kwargs)
 
     def testIllegalPartNameRaisesException(self):
         for partname in ['this is wrong', '%%@$%*^$^', '/slash', 'dot.dot']:
             try:
                 Fields2Xml(partname)
                 self.fail('Expected error for ' + partname)
-            except Fields2XmlException, e:
+            except Fields2XmlException as e:
                 self.assertTrue(partname in str(e))
 
     def testGenerateOneKeyXml(self):
-        self.assertEquals('<key>value</key>', generateXml([('key','value')]))
+        self.assertEqual('<key>value</key>', generateXml([('key','value')]))
 
     def testGenerateOneKeyXml(self):
-        self.assertEquals('<key>value</key>', generateXml([('key','value')]))
+        self.assertEqual('<key>value</key>', generateXml([('key','value')]))
     
     def testGenerateOneSubKeyXml(self):
-        self.assertEquals('<key><sub>value</sub></key>', generateXml([('key.sub','value')]))
+        self.assertEqual('<key><sub>value</sub></key>', generateXml([('key.sub','value')]))
    
     def testGenerateOtherParentKeyXml(self):
-        self.assertEquals('<a><b>value</b></a><c><d>value2</d></c>', generateXml([('a.b','value'), ('c.d','value2')]))
+        self.assertEqual('<a><b>value</b></a><c><d>value2</d></c>', generateXml([('a.b','value'), ('c.d','value2')]))
 
     def testGenerateXml(self):
-        self.assertEquals('<a><b><c><d>DDD</d></c></b></a><a><b><c><e>EEE</e></c></b></a><a><b><c>CCC</c></b></a><a><b><f>FFF</f></b></a><a><b><c><d>DDD</d></c></b></a>', generateXml([('a.b.c.d','DDD'), ('a.b.c.e','EEE'), ('a.b.c', 'CCC'),('a.b.f', 'FFF'), ('a.b.c.d', 'DDD')]))
+        self.assertEqual('<a><b><c><d>DDD</d></c></b></a><a><b><c><e>EEE</e></c></b></a><a><b><c>CCC</c></b></a><a><b><f>FFF</f></b></a><a><b><c><d>DDD</d></c></b></a>', generateXml([('a.b.c.d','DDD'), ('a.b.c.e','EEE'), ('a.b.c', 'CCC'),('a.b.f', 'FFF'), ('a.b.c.d', 'DDD')]))
 
     def testEscapeTagNamesAndValues(self):
         try:
             generateXml([('k/\\.sub','value')])
             self.fail()
-        except Fields2XmlException, e:
+        except Fields2XmlException as e:
             self.assertTrue('k/\\.sub' in str(e))
 
 
-        self.assertEquals('<key>&lt;/tag&gt;</key>', generateXml([('key','</tag>')]))
+        self.assertEqual('<key>&lt;/tag&gt;</key>', generateXml([('key','</tag>')]))
 
     def testEscapeCorrectly(self):
         fields = [
@@ -200,5 +200,5 @@ class Fields2XmlTest(SeecrTestCase):
                ( 'vuurboom.aap' , 'normal' ),
             ]
         x = '<root>%s</root>' % generateXml(fields)
-        self.assertEquals("<root><vuur><aap>normal</aap></vuur><vuurboom><aap>normal</aap></vuurboom></root>", x)
+        self.assertEqual("<root><vuur><aap>normal</aap></vuur><vuurboom><aap>normal</aap></vuurboom></root>", x)
 

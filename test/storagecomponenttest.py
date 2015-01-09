@@ -33,7 +33,7 @@ from seecr.test import SeecrTestCase
 
 from meresco.components.storagecomponent import StorageComponent, DefaultStrategy, HashDistributeStrategy
 from storage import HierarchicalStorage, Storage
-from cStringIO import StringIO
+from io import StringIO
 from meresco.core import Observable
 from subprocess import Popen, PIPE
 from weightless.core import compose
@@ -50,7 +50,7 @@ class StorageComponentTest(SeecrTestCase):
 
     def testAdd(self):
         list(compose(self.storageComponent.add("id_0", "partName", "The contents of the part")))
-        self.assertEquals('The contents of the part', self.storage.get(('id_0', 'partName')).read())
+        self.assertEqual('The contents of the part', self.storage.get(('id_0', 'partName')).read())
 
     def testAddEmptyIdentifier(self):
         self.assertRaises(ValueError, lambda: list(compose(self.storageComponent.add("", "part", "data"))))
@@ -90,7 +90,7 @@ class StorageComponentTest(SeecrTestCase):
         sink.close()
         stream = StringIO()
         self.storageComponent.write(stream, "some:thing:anId-123", "somePartName")
-        self.assertEquals('read string', stream.getvalue())
+        self.assertEqual('read string', stream.getvalue())
 
     def testDeleteParts(self):
         identifier = ('some:thing:anId-123','somePartName')
@@ -138,69 +138,72 @@ class StorageComponentTest(SeecrTestCase):
         self.assertFalse(identifier in self.storage)
 
     def testEnumerate(self):
-        self.assertEquals(set([]), set(self.storageComponent.listIdentifiers()))
+        self.assertEqual(set([]), set(self.storageComponent.listIdentifiers()))
         list(compose(self.storageComponent.add('some:thing:anId-123','somePartName', 'data')))
-        self.assertEquals(set(['some:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
+        self.assertEqual(set(['some:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
         list(compose(self.storageComponent.add('some:thing:anId-123','anotherPartName', 'data')))
-        self.assertEquals(set(['some:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
+        self.assertEqual(set(['some:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
         list(compose(self.storageComponent.add('some:thing:anId-122','anotherPartName', 'data')))
         list(compose(self.storageComponent.add('any:thing:anId-123','somePartName', 'data')))
-        self.assertEquals(set(['some:thing:anId-123', 'some:thing:anId-122', 'any:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
-        self.assertEquals(set(['some:thing:anId-123', 'any:thing:anId-123']), set(self.storageComponent.listIdentifiers('somePartName')))
+        self.assertEqual(set(['some:thing:anId-123', 'some:thing:anId-122', 'any:thing:anId-123']), set(self.storageComponent.listIdentifiers()))
+        self.assertEqual(set(['some:thing:anId-123', 'any:thing:anId-123']), set(self.storageComponent.listIdentifiers('somePartName')))
 
     def testGlob(self):
-        self.assertEquals(set([]), set(self.storageComponent.glob(('some:thing:anId-123', None))))
+        self.assertEqual(set([]), set(self.storageComponent.glob(('some:thing:anId-123', None))))
 
         list(compose(self.storageComponent.add('some:thing:anId-123','somePartName', 'data')))
-        self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('so', None))))
-        self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some', None))))
-        self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing', None))))
-        self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId', None))))
+        self.assertEqual(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('so', None))))
+        self.assertEqual(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some', None))))
+        self.assertEqual(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing', None))))
+        self.assertEqual(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId', None))))
 
         list(compose(self.storageComponent.add('some:thing:anId-123','anotherPartName', 'data')))
-        self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId', None))))
+        self.assertEqual(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId', None))))
 
         list(compose(self.storageComponent.add('some:thing:anId-124','anotherPartName', 'data')))
-        self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId-123', None))))
-        self.assertEquals(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId-123', 'somePartName'))))
+        self.assertEqual(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId-123', None))))
+        self.assertEqual(set([('some:thing:anId-123', 'somePartName')]), set(self.storageComponent.glob(('some:thing:anId-123', 'somePartName'))))
 
-        self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-124', 'anotherPartName')]), set(self.storageComponent.glob(('some:thing:anId', 'anotherPartName'))))
+        self.assertEqual(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-124', 'anotherPartName')]), set(self.storageComponent.glob(('some:thing:anId', 'anotherPartName'))))
 
         list(compose(self.storageComponent.add('some:thing:else-1','anotherPartName', 'data')))
-        self.assertEquals(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-124', 'anotherPartName')]), set(self.storageComponent.glob(('some:thing:anId', 'anotherPartName'))))
+        self.assertEqual(set([('some:thing:anId-123', 'anotherPartName'), ('some:thing:anId-124', 'anotherPartName')]), set(self.storageComponent.glob(('some:thing:anId', 'anotherPartName'))))
 
     def testObservableNameNotSet(self):
         s = StorageComponent(self.tempdir)
-        self.assertEquals(None, s.observable_name())
+        self.assertEqual(None, s.observable_name())
 
     def testObservableNameSet(self):
         s = StorageComponent(self.tempdir, name="name")
-        self.assertEquals("name", s.observable_name())
+        self.assertEqual("name", s.observable_name())
 
     def testDirectoryStrategy(self):
         class TestStrategy:
             @classmethod
-            def split(self, (identifier, partname)):
+            def split(self, xxx_todo_changeme):
+                (identifier, partname) = xxx_todo_changeme
                 return identifier.swapcase(), partname.swapcase()
             join = None
         s = StorageComponent(self.tempdir, strategy=TestStrategy)
         list(compose(s.add("AnIdentifier", "Part1", "Contents")))
-        self.assertEquals("Contents", open(join(self.tempdir, "aNiDENTIFIER", "pART1")).read())
+        self.assertEqual("Contents", open(join(self.tempdir, "aNiDENTIFIER", "pART1")).read())
 
     def testDirectorySplit(self):
         class TestStrategy:
             @classmethod
-            def split(self, (identifier, partname)):
+            def split(self, xxx_todo_changeme1):
+                (identifier, partname) = xxx_todo_changeme1
                 return tuple(c for c in identifier) + (partname,)
             join = None
         s = StorageComponent(self.tempdir, strategy=TestStrategy)
         list(compose(s.add("id09", "Part1", "Contents")))
-        self.assertEquals("Contents", open(join(self.tempdir, "i", "d", "0", "9", "Part1")).read())
+        self.assertEqual("Contents", open(join(self.tempdir, "i", "d", "0", "9", "Part1")).read())
 
     def testDirectoryStrategyJoin(self):
         class TestStrategy:
             @classmethod
-            def split(self, (identifier, partname)):
+            def split(self, xxx_todo_changeme2):
+                (identifier, partname) = xxx_todo_changeme2
                 result = tuple(c for c in identifier)
                 return result if not partname else result + (partname,)
             @classmethod
@@ -208,26 +211,26 @@ class StorageComponentTest(SeecrTestCase):
                 return ''.join(parts[:-1]), parts[-1]
         s = StorageComponent(self.tempdir, strategy=TestStrategy)
         list(compose(s.add("id09", "Part1", "Contents")))
-        self.assertEquals(["id09"], list(s.listIdentifiers()))
+        self.assertEqual(["id09"], list(s.listIdentifiers()))
 
     def testDefaultStrategy(self):
         s = DefaultStrategy
-        self.assertEquals(["a", "b", "c"], s.split(("a:b", "c")))
-        self.assertEquals(("a:b", "c"), s.join(("a", "b", "c")))
-        self.assertEquals(["a", "b"], s.split(("a:b", None)))
-        self.assertEquals(["a", "b:c", "d"], s.split(("a:b:c", "d")))
-        self.assertEquals(("a:b:c", "d"), s.join(("a", "b:c", "d")))
+        self.assertEqual(["a", "b", "c"], s.split(("a:b", "c")))
+        self.assertEqual(("a:b", "c"), s.join(("a", "b", "c")))
+        self.assertEqual(["a", "b"], s.split(("a:b", None)))
+        self.assertEqual(["a", "b:c", "d"], s.split(("a:b:c", "d")))
+        self.assertEqual(("a:b:c", "d"), s.join(("a", "b:c", "d")))
 
     def testDefaultStrategyIsDefaultStrategy(self):
         s = StorageComponent(self.tempdir)
         list(compose(s.add("a:b:c", "d", "Hi")))
-        self.assertEquals("Hi", open(join(self.tempdir, "a", "b:c", "d")).read())
+        self.assertEqual("Hi", open(join(self.tempdir, "a", "b:c", "d")).read())
 
     def testHashDistributeStrategy(self):
         s = HashDistributeStrategy()
-        self.assertEquals(("58", "eb", "58eb8a535f07b1f7b94cd6083e664137301048a7.rdf"), s.split(("AnIdentifier", "rdf")))
-        self.assertEquals(("58", "eb", "58eb8a535f07b1f7b94cd6083e664137301048a7.xml"), s.split(("AnIdentifier", "xml")))
-        self.assertEquals(("35", "6a", "356a192b7913b04c54574d18c28d46e6395428ab."), s.split(("1", "")))
-        self.assertEquals(("35", "6a", "356a192b7913b04c54574d18c28d46e6395428ab."), s.split(("1", None)))
+        self.assertEqual(("58", "eb", "58eb8a535f07b1f7b94cd6083e664137301048a7.rdf"), s.split(("AnIdentifier", "rdf")))
+        self.assertEqual(("58", "eb", "58eb8a535f07b1f7b94cd6083e664137301048a7.xml"), s.split(("AnIdentifier", "xml")))
+        self.assertEqual(("35", "6a", "356a192b7913b04c54574d18c28d46e6395428ab."), s.split(("1", "")))
+        self.assertEqual(("35", "6a", "356a192b7913b04c54574d18c28d46e6395428ab."), s.split(("1", None)))
 
         self.assertRaises(KeyError, lambda: s.join("NA"))

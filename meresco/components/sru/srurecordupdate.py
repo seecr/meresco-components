@@ -40,7 +40,7 @@ from meresco.components.xmlxpath import lxmlElementUntail
 
 from traceback import print_exc
 from lxml.etree import parse, XMLSyntaxError, ElementTree
-from StringIO import StringIO
+from io import StringIO
 from meresco.xml.namespaces import xpathFirst
 from meresco.components.http.utils import okXml
 from meresco.components.log import collectLogForScope
@@ -68,7 +68,7 @@ class SruRecordUpdate(Observable):
         try:
             try:
                 lxmlNode = parse(StringIO(Body))
-            except XMLSyntaxError, e:
+            except XMLSyntaxError as e:
                 self._log(Body, localLogCollector=localLogCollector)
                 raise
             updateRequest = xpathFirst(lxmlNode, '/*[local-name()="updateRequest"]')
@@ -96,14 +96,14 @@ class SruRecordUpdate(Observable):
             else:
                 raise ValueError("action value should refer to either 'create', 'replace' or 'delete'.")
             yield self._respond()
-        except ValidateException, e:
+        except ValidateException as e:
             localLogCollector['invalid'] = recordId
             self._log(Body, e, localLogCollector=localLogCollector)
             yield self._respond(
                 diagnosticUri='info:srw/diagnostic/12/12',
                 details=escapeXml(str(e)),
                 message='Invalid data:  record rejected')
-        except Exception, e:
+        except Exception as e:
             self._log(Body, e, localLogCollector=localLogCollector)
             yield self._respond(
                 diagnosticUri='info:srw/diagnostic/12/1',
@@ -128,7 +128,7 @@ class SruRecordUpdate(Observable):
         if not self._logErrors:
             return
         print_exc(file=self._stderr)
-        print >> self._stderr, data
+        print(data, file=self._stderr)
         self._stderr.flush()
 
 

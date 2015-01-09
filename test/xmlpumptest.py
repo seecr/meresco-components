@@ -30,7 +30,7 @@
 #
 ## end license ##
 
-from StringIO import StringIO
+from io import StringIO
 from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
@@ -56,10 +56,10 @@ class XmlPumpTest(SeecrTestCase):
         xmlString = """<tag><content>contents</content></tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals("add", self.observer.calledMethods[0].name)
-        self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
-        self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual("add", self.observer.calledMethods[0].name)
+        self.assertEqual("id", self.observer.calledMethods[0].kwargs['identifier'])
+        self.assertEqual("partName", self.observer.calledMethods[0].kwargs['partname'])
 
         xmlNode = self.observer.calledMethods[0].kwargs['lxmlNode']
         self.assertEqualsLxml(XML(xmlString), xmlNode)
@@ -72,7 +72,7 @@ class XmlPumpTest(SeecrTestCase):
         list(compose(self.observable.all.add(identifier="id", partname="partName", data=xmlString)))
         list(compose(self.observable.any.add(identifier="id", partname="partName", data=xmlString)))
 
-        self.assertEquals(4, len(self.observer.calledMethods))
+        self.assertEqual(4, len(self.observer.calledMethods))
         for i in range(4):
             xmlNode = self.observer.calledMethods[i].kwargs['lxmlNode']
             self.assertEqualsLxml(XML(xmlString), xmlNode)
@@ -81,29 +81,29 @@ class XmlPumpTest(SeecrTestCase):
         xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals("add", self.observer.calledMethods[0].name)
-        self.assertEquals("id", self.observer.calledMethods[0].kwargs['identifier'])
-        self.assertEquals("partName", self.observer.calledMethods[0].kwargs['partname'])
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual("add", self.observer.calledMethods[0].name)
+        self.assertEqual("id", self.observer.calledMethods[0].kwargs['identifier'])
+        self.assertEqual("partName", self.observer.calledMethods[0].kwargs['partname'])
 
         xmlNode = self.observer.calledMethods[0].kwargs['lxmlNode']
         rootTag = xmlNode.getroot()
-        self.assertEquals('tag', rootTag.tag)
-        self.assertEquals(['content'], [c.tag for c in rootTag.getchildren()])
+        self.assertEqual('tag', rootTag.tag)
+        self.assertEqual(['content'], [c.tag for c in rootTag.getchildren()])
 
     def testParseWithElementUnicodeResult(self):
-        xmlString = _ElementUnicodeResult(u"""<tag><content>conténts</content></tag>""")
+        xmlString = _ElementUnicodeResult("""<tag><content>conténts</content></tag>""")
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
         xmlNode = self.observer.calledMethods[0].kwargs['lxmlNode']
-        self.assertEquals(['conténts'], xmlNode.xpath('/tag/content/text()'))
+        self.assertEqual(['conténts'], xmlNode.xpath('/tag/content/text()'))
 
     def testParseWithParseOptions(self):
         xmlString = """<tag xmlns:xyz="uri:xyz">
                 <content xmlns:xyz="uri:xyz">contents</content>
             </tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
-        self.assertEquals(xmlString, lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+        self.assertEqual(xmlString, lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
 
         self.observable = be(
             (Observable(),
@@ -113,7 +113,7 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
-        self.assertEquals("""<tag xmlns:xyz="uri:xyz"><content>contents</content></tag>""", lxmltostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEqual("""<tag xmlns:xyz="uri:xyz"><content>contents</content></tag>""", lxmltostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
 
     def testXmlPrintLxml(self):
         observable = Observable()
@@ -122,9 +122,9 @@ class XmlPumpTest(SeecrTestCase):
         xmlprintlxml.addObserver(observer)
         observable.addObserver(xmlprintlxml)
         list(compose(observable.all.someMessage(lxmlNode=parse(StringIO('<a><b>“c</b></a>')))))
-        self.assertEquals(['someMessage'], observer.calledMethodNames())
-        self.assertEquals(['data'], observer.calledMethods[0].kwargs.keys())
-        self.assertEquals('''<a>
+        self.assertEqual(['someMessage'], observer.calledMethodNames())
+        self.assertEqual(['data'], list(observer.calledMethods[0].kwargs.keys()))
+        self.assertEqual('''<a>
   <b>“c</b>
 </a>
 ''', observer.calledMethods[0].kwargs['data'])
@@ -136,9 +136,9 @@ class XmlPumpTest(SeecrTestCase):
         xmlprintlxml.addObserver(observer)
         observable.addObserver(xmlprintlxml)
         list(compose(observable.all.someMessage(lxmlNode=parse(StringIO('<a><b>“c</b></a>')))))
-        self.assertEquals(['someMessage'], observer.calledMethodNames())
-        self.assertEquals(['data'], observer.calledMethods[0].kwargs.keys())
-        self.assertEquals('''<a><b>“c</b></a>''', observer.calledMethods[0].kwargs['data'])
+        self.assertEqual(['someMessage'], observer.calledMethodNames())
+        self.assertEqual(['data'], list(observer.calledMethods[0].kwargs.keys()))
+        self.assertEqual('''<a><b>“c</b></a>''', observer.calledMethods[0].kwargs['data'])
 
     def testTransparency(self):
         lxml = CallTrace('lxml')
@@ -173,8 +173,8 @@ class XmlPumpTest(SeecrTestCase):
         )
 
         observable.do.something('identifier', 'partname', parse(StringIO('<a/>')))
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals("<type 'lxml.etree._ElementTree'>", str(type(observer.calledMethods[0].args[2])))
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual("<type 'lxml.etree._ElementTree'>", str(type(observer.calledMethods[0].args[2])))
 
     def testFileParseLxml(self):
         observable = Observable()
@@ -190,11 +190,11 @@ class XmlPumpTest(SeecrTestCase):
 
         observable.do.someMessage(filedata=a)
         lxmlA = observer.calledMethods[0].kwargs['lxmlNode']
-        self.assertEquals('<a>aaa</a>', lxmltostring(lxmlA))
+        self.assertEqual('<a>aaa</a>', lxmltostring(lxmlA))
 
         observable.do.someMessage(filedata=b)
         lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
-        self.assertEquals('<b>bbb</b>', lxmltostring(lxmlB))
+        self.assertEqual('<b>bbb</b>', lxmltostring(lxmlB))
 
     def testRenameKwargOnConvert(self):
         observer = CallTrace()
@@ -206,10 +206,10 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
         observable.do.something('identifier', 'partname', lxmlNode=parse(StringIO('<someXml/>')))
-        self.assertEquals("something('identifier', 'partname', dataString='<someXml/>\n')", str(observer.calledMethods[0]))
+        self.assertEqual("something('identifier', 'partname', dataString='<someXml/>\n')", str(observer.calledMethods[0]))
 
         observable.do.something('identifier', 'partname', someKwarg=1)
-        self.assertEquals("something('identifier', 'partname', someKwarg=1)", str(observer.calledMethods[1]))
+        self.assertEqual("something('identifier', 'partname', someKwarg=1)", str(observer.calledMethods[1]))
 
     def testToKwargDefaultsToFromKwarg(self):
         observer = CallTrace()
@@ -221,7 +221,7 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
         observable.do.something('identifier', 'partname', data=parse(StringIO('<someXml/>')))
-        self.assertEquals("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
+        self.assertEqual("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
 
     def testLxmltostring(self):
         from lxml.etree import tostring
@@ -229,23 +229,23 @@ class XmlPumpTest(SeecrTestCase):
         xml = """<root><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri)
         lxmlNode = parse(StringIO(xml))
         subnode = lxmlNode.xpath("sub")[0]
-        self.assertEquals("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode))
+        self.assertEqual("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode))
         subsubnode = lxmlNode.xpath("sub/subsub")[0]
-        self.assertEquals("""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
-        self.assertEquals("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode))
+        self.assertEqual("""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
+        self.assertEqual("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode))
 
 
     def testLxmltostringFixes(self):
         from meresco.components.xmlpump import _fixLxmltostringRootElement
 
-        self.assertEquals('<root><sub ...', _fixLxmltostringRootElement('<root><sub ...'))
-        self.assertEquals('<root attrib="aap&amp;noot"><sub ...',
+        self.assertEqual('<root><sub ...', _fixLxmltostringRootElement('<root><sub ...'))
+        self.assertEqual('<root attrib="aap&amp;noot"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="aap&amp;noot"><sub ...'))
-        self.assertEquals('<root attrib="aap&euro;noot"><sub ...',
+        self.assertEqual('<root attrib="aap&euro;noot"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="aap&euro;noot"><sub ...'))
-        self.assertEquals('<root attrib="ĳs"><sub ...',
+        self.assertEqual('<root attrib="ĳs"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="&#307;s"><sub ...'))
-        self.assertEquals('<root attrib="ĳs"><sub ...',
+        self.assertEqual('<root attrib="ĳs"><sub ...',
                 _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub ...'))
-        self.assertEquals('<root attrib="ĳs"><sub attrib="&#x133;s">...',
+        self.assertEqual('<root attrib="ĳs"><sub attrib="&#x133;s">...',
                 _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub attrib="&#x133;s">...'))

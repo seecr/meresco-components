@@ -28,7 +28,7 @@
 # 
 ## end license ##
 
-from xmlpump import Converter
+from .xmlpump import Converter
 
 from lxml.etree import parse, XSLT, _ElementTree
 

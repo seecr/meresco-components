@@ -39,16 +39,16 @@ class CombinePartsTest(TestCase):
 
     def testPassThroughOtherStuff(self):
         result = list(compose(self.combine.yieldRecord(identifier='identifier', partname='partname')))
-        self.assertEquals(['<partname/>'], result)
-        self.assertEquals(['yieldRecord'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals([dict(identifier='identifier', partname='partname')], [m.kwargs for m in self.observer.calledMethods])
+        self.assertEqual(['<partname/>'], result)
+        self.assertEqual(['yieldRecord'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual([dict(identifier='identifier', partname='partname')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogether(self):
         result = ''.join(compose(self.combine.yieldRecord(identifier='identifier', partname='together')))
-        self.assertEquals('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part><doc:part name="two"><two/></doc:part></doc:document>', result)
+        self.assertEqual('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part><doc:part name="two"><two/></doc:part></doc:document>', result)
 
-        self.assertEquals(['yieldRecord', 'yieldRecord'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals([dict(identifier='identifier', partname='one'), dict(identifier='identifier', partname='two')], [m.kwargs for m in self.observer.calledMethods])
+        self.assertEqual(['yieldRecord', 'yieldRecord'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual([dict(identifier='identifier', partname='one'), dict(identifier='identifier', partname='two')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogetherWithOnePartMissingAllowed(self):
         self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
@@ -59,7 +59,7 @@ class CombinePartsTest(TestCase):
             yield '<%s/>' % partname
         self.observer.methods['yieldRecord'] = yieldRecord
         result = ''.join(compose(self.combine.yieldRecord(identifier='identifier', partname='together')))
-        self.assertEquals('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
+        self.assertEqual('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
 
     def testTogetherWithOnePartMissingNotAllowed(self):
         def yieldRecord(identifier, partname):
@@ -68,7 +68,7 @@ class CombinePartsTest(TestCase):
             yield '<%s/>' % partname
         self.observer.methods['yieldRecord'] = yieldRecord
         generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
-        self.assertRaises(IOError, generator.next)
+        self.assertRaises(IOError, generator.__next__)
 
     def testTogetherWithGivenMissingPartsAllowed(self):
         self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
@@ -79,5 +79,5 @@ class CombinePartsTest(TestCase):
             yield '<%s/>' % partname
         self.observer.methods['yieldRecord'] = yieldRecord
         generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
-        self.assertRaises(IOError, generator.next)
+        self.assertRaises(IOError, generator.__next__)
 

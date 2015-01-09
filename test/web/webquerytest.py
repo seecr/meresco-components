@@ -43,7 +43,7 @@ class WebQueryTest(TestCase):
         self.assertFalse(wq.isPlusMinusQuery())
         self.assertTrue(wq.isDefaultQuery())
         self.assertFalse(wq.needsBooleanHelp())
-        self.assertEquals(parseCql('cats'), wq.ast)
+        self.assertEqual(parseCql('cats'), wq.ast)
 
     def testPlusMinusQuery(self):
         self.assertPlusMinusQuery('cats', '+cats')
@@ -139,10 +139,10 @@ class WebQueryTest(TestCase):
         input = expected if input == None else input
         asString = expected if asString == None else asString
         wq = WebQuery(input, antiUnaryClause='antiunary exact true')
-        self.assertEquals((boolean, plusminus, default, needsBooleanHelp), (wq.isBooleanQuery(), wq.isPlusMinusQuery(), wq.isDefaultQuery(), wq.needsBooleanHelp()))
-        self.assertEquals(parseCql(expected), wq.ast)
-        self.assertEquals(asString, wq.asString())
-        self.assertEquals(input, wq.original)
+        self.assertEqual((boolean, plusminus, default, needsBooleanHelp), (wq.isBooleanQuery(), wq.isPlusMinusQuery(), wq.isDefaultQuery(), wq.needsBooleanHelp()))
+        self.assertEqual(parseCql(expected), wq.ast)
+        self.assertEqual(asString, wq.asString())
+        self.assertEqual(input, wq.original)
 
     def assertDefaultQuery(self, expected, input=None, needsBooleanHelp = False, asString=None):
         self._assertQuery(expected, input, default=True, needsBooleanHelp=needsBooleanHelp, asString=asString)
@@ -192,26 +192,26 @@ class WebQueryTest(TestCase):
     def testReplaceTerm(self):
         wq = WebQuery('fiets')
         newWq = wq.replaceTerm('fiets', 'bike')
-        self.assertEquals('fiets', wq.original)
-        self.assertEquals('bike', newWq.original)
+        self.assertEqual('fiets', wq.original)
+        self.assertEqual('bike', newWq.original)
 
     def testReplaceTermOnLabelQuery(self):
         wq = WebQuery('transport=fiets')
         newWq = wq.replaceTerm('fiets', 'bike')
-        self.assertEquals('transport=bike', newWq.original)
+        self.assertEqual('transport=bike', newWq.original)
 
     def testReplaceTerms(self):
         wq = WebQuery('fiets kaart')
         newWq = wq.replaceTerm('fiets', 'bike')
-        self.assertEquals('fiets kaart', wq.original)
-        self.assertEquals('bike AND kaart', newWq.original)
+        self.assertEqual('fiets kaart', wq.original)
+        self.assertEqual('bike AND kaart', newWq.original)
 
     def testReplaceTermsWithFilters(self):
         wq = WebQuery('fiets kaart')
         wq.addFilter('label', 'value')
         newWq = wq.replaceTerm('fiets', 'bike')
-        self.assertEquals('fiets kaart', wq.original)
-        self.assertEquals('bike AND kaart', newWq.original)
+        self.assertEqual('fiets kaart', wq.original)
+        self.assertEqual('bike AND kaart', newWq.original)
         self.assertCql(parseCql('(bike AND kaart) AND label exact value'), newWq.ast)
 
     def testHasFilters(self):
@@ -226,4 +226,4 @@ class WebQueryTest(TestCase):
         self.assertTrue(wq.hasFilters())
 
     def assertCql(self, expected, input):
-        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))
+        self.assertEqual(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

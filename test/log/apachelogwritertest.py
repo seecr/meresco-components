@@ -26,7 +26,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from StringIO import StringIO
+from io import StringIO
 from meresco.components.log import ApacheLogWriter
 
 class ApacheLogWriterTest(SeecrTestCase):
@@ -35,4 +35,4 @@ class ApacheLogWriterTest(SeecrTestCase):
         stream = StringIO()
         writer = ApacheLogWriter(stream)
         writer.writeLog(collectedLog={'key':['value']})
-        self.assertEquals("", stream.getvalue())
+        self.assertEqual("", stream.getvalue())

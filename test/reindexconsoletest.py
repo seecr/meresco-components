@@ -46,11 +46,11 @@ class ReindexConsoleTest(SeecrTestCase):
 
         observer.returnValues['reindex'] = (x for x in ['identifier'])
         result = list(dna.all.handleRequest())
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals("reindex(identifierPrefix='')", str(observer.calledMethods[0]))
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual("reindex(identifierPrefix='')", str(observer.calledMethods[0]))
 
         observer.calledMethods = []
         observer.returnValues['reindex'] = (x for x in ['identifier'])
         result = list(dna.all.handleRequest(arguments={'identifierPrefix': ['ident:ifier:1']}))
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals("reindex(identifierPrefix='ident:ifier:1')", str(observer.calledMethods[0]))
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual("reindex(identifierPrefix='ident:ifier:1')", str(observer.calledMethods[0]))

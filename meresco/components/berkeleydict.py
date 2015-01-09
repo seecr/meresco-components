@@ -29,7 +29,7 @@
 # 
 ## end license ##
 
-from bsddb import btopen
+from bsddb3 import btopen
 from os.path import join
 
 class BerkeleyDict(object):

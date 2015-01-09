@@ -36,8 +36,8 @@ class FilterPartByNameTest(TestCase):
         observer.methods['yieldRecord'] = lambda **kwargs: (f for f in ['data'])
         filter.addObserver(observer)
 
-        self.assertEquals(['data'], list(compose(filter.yieldRecord(identifier='identifier', partname='thisone'))))
-        self.assertEquals([], list(compose(filter.yieldRecord(identifier='identifier', partname='no'))))
+        self.assertEqual(['data'], list(compose(filter.yieldRecord(identifier='identifier', partname='thisone'))))
+        self.assertEqual([], list(compose(filter.yieldRecord(identifier='identifier', partname='no'))))
 
     def testFilterExcluded(self):
         filter = FilterPartByName(excluded=['thisone'])
@@ -45,8 +45,8 @@ class FilterPartByNameTest(TestCase):
         observer.methods['yieldRecord'] = lambda **kwargs: (f for f in ['data'])
         filter.addObserver(observer)
 
-        self.assertEquals([], list(compose(filter.yieldRecord(identifier='identifier', partname='thisone'))))
-        self.assertEquals(['data'], list(compose(filter.yieldRecord(identifier='identifier', partname='no'))))
+        self.assertEqual([], list(compose(filter.yieldRecord(identifier='identifier', partname='thisone'))))
+        self.assertEqual(['data'], list(compose(filter.yieldRecord(identifier='identifier', partname='no'))))
     
     def testFilter(self):
         self.assertRaises(ValueError, FilterPartByName)
@@ -57,8 +57,8 @@ class FilterPartByNameTest(TestCase):
         observer.methods['add'] = lambda **kwargs: (f for f in [])
         filter.addObserver(observer)
 
-        self.assertEquals([], list(compose(filter.add(identifier='identifier', partname='thisone'))))
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
+        self.assertEqual([], list(compose(filter.add(identifier='identifier', partname='thisone'))))
+        self.assertEqual(['add'], [m.name for m in observer.calledMethods])
         del observer.calledMethods[:]
-        self.assertEquals([], list(compose(filter.add(identifier='identifier', partname='no'))))
-        self.assertEquals([], [m.name for m in observer.calledMethods])
+        self.assertEqual([], list(compose(filter.add(identifier='identifier', partname='no'))))
+        self.assertEqual([], [m.name for m in observer.calledMethods])

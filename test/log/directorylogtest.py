@@ -38,16 +38,16 @@ class DirectoryLogTest(SeecrTestCase):
         log.log(
             timestamp=1257161136.0
             )
-        self.assertEquals(['2009-11-02-query.log'], listdir(self.tempdir))
-        self.assertEquals('2009-11-02T11:25:36Z - - - - - \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual(['2009-11-02-query.log'], listdir(self.tempdir))
+        self.assertEqual('2009-11-02T11:25:36Z - - - - - \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testAppendToLog(self):
         with open(join(self.tempdir, '2009-11-02-query.log'), 'w') as f:
             f.write('line0\n')
         log = DirectoryLog(self.tempdir)
         log.log(**DEFAULT_KWARGS())
-        self.assertEquals(['2009-11-02-query.log'], listdir(self.tempdir))
-        self.assertEquals('line0\n2009-11-02T11:25:36Z 11.22.33.44 1.1K 1.300s 42hits /path query=arguments\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual(['2009-11-02-query.log'], listdir(self.tempdir))
+        self.assertEqual('line0\n2009-11-02T11:25:36Z 11.22.33.44 1.1K 1.300s 42hits /path query=arguments\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testNewDayNewLogFile(self):
         kwargs = DEFAULT_KWARGS()
@@ -56,8 +56,8 @@ class DirectoryLogTest(SeecrTestCase):
         log.log(**kwargs)
         kwargs['timestamp'] += 24 * 60 * 60
         log.log(**kwargs)
-        self.assertEquals(['2009-11-02-query.log', '2009-11-03-query.log'], sorted(listdir(self.tempdir)))
-        self.assertEquals('2009-11-03T11:25:36Z 11.22.33.44 1.1K 1.300s 42hits /path query=arguments\n', open(join(self.tempdir, '2009-11-03-query.log')).read())
+        self.assertEqual(['2009-11-02-query.log', '2009-11-03-query.log'], sorted(listdir(self.tempdir)))
+        self.assertEqual('2009-11-03T11:25:36Z 11.22.33.44 1.1K 1.300s 42hits /path query=arguments\n', open(join(self.tempdir, '2009-11-03-query.log')).read())
 
     def testLogDirCreated(self):
         logDir = join(self.tempdir, 'amihere')
@@ -68,7 +68,7 @@ class DirectoryLogTest(SeecrTestCase):
     def testSetExtension(self):
         log = DirectoryLog(self.tempdir, extension='-the-end.log')
         log.log(**DEFAULT_KWARGS())
-        self.assertEquals(['2009-11-02-the-end.log'], listdir(self.tempdir))
+        self.assertEqual(['2009-11-02-the-end.log'], listdir(self.tempdir))
 
     def testRemoveOldLogs(self):
         kwargs = DEFAULT_KWARGS()
@@ -81,20 +81,20 @@ class DirectoryLogTest(SeecrTestCase):
         log.log(**kwargs)
         filesAfter = listdir(self.tempdir)
         self.assertFalse('000' in filesAfter)
-        self.assertEquals(len(filesAfter), len(filesBefore))
+        self.assertEqual(len(filesAfter), len(filesBefore))
 
         filesBefore = listdir(self.tempdir)
         kwargs['timestamp'] += 3600*24
         log.log(**kwargs)
         filesAfter = listdir(self.tempdir)
         self.assertFalse('001' in filesAfter)
-        self.assertEquals(len(filesAfter), len(filesBefore))
+        self.assertEqual(len(filesAfter), len(filesBefore))
 
         open(join(self.tempdir, '015'), 'w').close()
         open(join(self.tempdir, '016'), 'w').close()
         kwargs['timestamp'] += 3600*24
         log.log(**kwargs)
-        self.assertEquals(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
+        self.assertEqual(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
 
 
 

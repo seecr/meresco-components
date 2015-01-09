@@ -104,13 +104,13 @@ class Inbox(Observable):
             composed = compose(self.all.add(identifier=filename, lxmlNode=lxmlNode))
             try:
                 while True:
-                    composed.next()
-            except StopIteration, e:
+                    next(composed)
+            except StopIteration as e:
                 pass
-        except Exception, e:
+        except Exception as e:
             open(errorFilename, 'w').write(format_exc())
 
         try:
             rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))
-        except Exception, e:
+        except Exception as e:
             open(errorFilename, 'a').write(format_exc())

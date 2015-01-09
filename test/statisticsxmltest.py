@@ -33,7 +33,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.statisticsxml import StatisticsXml
 from meresco.components.statistics import Statistics
 from meresco.components.http.utils import CRLF
-from StringIO import StringIO
+from io import StringIO
 from lxml.etree import parse
 
 from weightless.core import compose
@@ -42,12 +42,12 @@ class StatisticsXmlTest(SeecrTestCase):
 
     def testParseTime(self):
         s = StatisticsXml('ignored')
-        self.assertEquals((2007,), s._parseTime('2007'))
-        self.assertEquals((2007, 1), s._parseTime('2007-01'))
-        self.assertEquals((2007, 1, 1), s._parseTime('2007-01-01'))
-        self.assertEquals((2007, 1, 1, 0), s._parseTime('2007-01-01T00'))
-        self.assertEquals((2007, 1, 1, 0, 0), s._parseTime('2007-01-01T00:00'))
-        self.assertEquals((2007, 1, 1, 0 , 0, 0), s._parseTime('2007-01-01T00:00:00Z'))
+        self.assertEqual((2007,), s._parseTime('2007'))
+        self.assertEqual((2007, 1), s._parseTime('2007-01'))
+        self.assertEqual((2007, 1, 1), s._parseTime('2007-01-01'))
+        self.assertEqual((2007, 1, 1, 0), s._parseTime('2007-01-01T00'))
+        self.assertEqual((2007, 1, 1, 0, 0), s._parseTime('2007-01-01T00:00'))
+        self.assertEqual((2007, 1, 1, 0 , 0, 0), s._parseTime('2007-01-01T00:00:00Z'))
 
     def testParseNonsense(self):
         s = StatisticsXml('ignored')
@@ -71,7 +71,7 @@ class StatisticsXmlTest(SeecrTestCase):
             statisticsxml._listKeys = lambda: []
             statisticsxml._query = shuntQuery
             list(statisticsxml.handleRequest(RequestURI='http://localhost/statistics?' + query))
-            self.assertEquals([expected], shuntedQuery)
+            self.assertEqual([expected], shuntedQuery)
         check(((1970, 1, 1), (1970, 1, 2), ('aKey',), 0), 'key=aKey&fromTime=1970-01-01&toTime=1970-01-02')
         check(((1970, 1, 1), (1970, 1, 2), ('aKey', 'key2'), 12), 'key=aKey&key=key2&fromTime=1970-01-01&toTime=1970-01-02&maxResults=12')
 
@@ -91,7 +91,7 @@ class StatisticsXmlTest(SeecrTestCase):
     def testSorted(self):
         statisticsxml = StatisticsXml('ignored')
         result = statisticsxml._sorted([('one', 1), ('big', 100)])
-        self.assertEquals([('big', 100), ('one', 1)], result)
+        self.assertEqual([('big', 100), ('one', 1)], result)
 
     def testResponseFormat(self):
         statisticsxml = StatisticsXml(Statistics(self.tempdir, [('a',), ('a', 'b', 'c')]))
@@ -117,13 +117,13 @@ class StatisticsXmlTest(SeecrTestCase):
         xmlnode = parse(StringIO(body))
         observations = xmlnode.xpath('/stats:statistics/stats:observations/stats:observation',
                 namespaces=nsmap)
-        self.assertEquals(2, len(observations))
+        self.assertEqual(2, len(observations))
         result = []
         for observation in observations:
             value = observation.xpath('stats:value/text()', namespaces=nsmap)[0]
             occurrences = observation.xpath('stats:occurrences/text()', namespaces=nsmap)[0]
             result.append((value, occurrences))
-        self.assertEquals([(value2, '100'), (value1, '13')], result)
+        self.assertEqual([(value2, '100'), (value1, '13')], result)
 
 
 

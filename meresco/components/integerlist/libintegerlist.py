@@ -32,7 +32,7 @@
 from ctypes import cdll, c_int, c_uint, c_uint32
 from os.path import join, abspath, dirname
 
-print "loading libIntegerList ...",
+print("loading libIntegerList ...", end=' ')
 libIntegerList = cdll.LoadLibrary(join(abspath(dirname(__file__)), '_integerlist.so'))
-print "loaded"
+print("loaded")
 

@@ -42,5 +42,5 @@ if isdir(join(projectdir, '.git')):                          #DO_NOT_DISTRIBUTE
         sys.exit(status)                                     #DO_NOT_DISTRIBUTE
                                                              #DO_NOT_DISTRIBUTE
 
-from integerlist import IntegerList
+from .integerlist import IntegerList
 

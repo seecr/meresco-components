@@ -67,7 +67,7 @@ class SuggestionTest(SeecrTestCase):
         suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
         responseData = list(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery': ["query"]})))
-        self.assertEquals([], responseData)
+        self.assertEqual([], responseData)
 
     def testHarriePoter(self):
         suggestions = Suggestion(count=1, field='afield')
@@ -110,9 +110,9 @@ class SuggestionTest(SeecrTestCase):
         suggestion.addObserver(self.observer)
         result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=10, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEqual(dict(count=10, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
 
     def testXSuggestionQueryCountAndFieldToSuggestionRequest(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
@@ -120,9 +120,9 @@ class SuggestionTest(SeecrTestCase):
         suggestion.addObserver(self.observer)
         result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=5, field='fieldname', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEqual(dict(count=5, field='fieldname', query='query'), methodKwargs['suggestionRequest'])
 
     def testXSuggestionCountMaximized(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsCount': ['50']}
@@ -130,9 +130,9 @@ class SuggestionTest(SeecrTestCase):
         suggestion.addObserver(self.observer)
         result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=20, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEqual(dict(count=20, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
 
     def testXSuggestionFieldDisabled(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
@@ -140,16 +140,16 @@ class SuggestionTest(SeecrTestCase):
         suggestion.addObserver(self.observer)
         result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=5, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEqual(dict(count=5, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
 
     def testNoSuggestionQuery(self):
         extraArguments = {'x-suggestionsQuery': [''], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=False)
         suggestion.addObserver(self.observer)
         result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(None, methodKwargs['suggestionRequest'])
+        self.assertEqual(None, methodKwargs['suggestionRequest'])
 

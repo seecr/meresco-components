@@ -54,15 +54,15 @@ class ConverterTest(SeecrTestCase):
         )
 
     def testNoneOfTheObserversRespondTransparency(self):
-        self.assertEquals(['done'], list(compose(self.observable.any.f(data=41))))
-        self.assertEquals('done', self.observable.call.g(data=41))
-        self.assertEquals('done2', self.observable.call.h(data=41))
+        self.assertEqual(['done'], list(compose(self.observable.any.f(data=41))))
+        self.assertEqual('done', self.observable.call.g(data=41))
+        self.assertEqual('done2', self.observable.call.h(data=41))
 
-        self.assertEquals(2, len(self.observer1.calledMethods))
-        self.assertEquals({'data': 41}, self.observer1.calledMethods[0].kwargs)
-        self.assertEquals({'data': 41}, self.observer1.calledMethods[1].kwargs)
-        self.assertEquals(1, len(self.observer2.calledMethods))
-        self.assertEquals({'fourtytwo': 42}, self.observer2.calledMethods[0].kwargs)
+        self.assertEqual(2, len(self.observer1.calledMethods))
+        self.assertEqual({'data': 41}, self.observer1.calledMethods[0].kwargs)
+        self.assertEqual({'data': 41}, self.observer1.calledMethods[1].kwargs)
+        self.assertEqual(1, len(self.observer2.calledMethods))
+        self.assertEqual({'fourtytwo': 42}, self.observer2.calledMethods[0].kwargs)
 
     def testFromKwargMustBeSpecified(self):
         self.assertRaises(ValueError, lambda: FourtytwoConverter(fromKwarg=None))

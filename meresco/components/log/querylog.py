@@ -30,7 +30,7 @@ from meresco.core import Observable, Transparent
 from weightless.core import compose
 
 from time import time
-from urllib import urlencode
+from urllib.parse import urlencode
 
 class QueryLog(Transparent):
     """

@@ -29,14 +29,14 @@
 ## end license ##
 
 from os.path import isfile, join, normpath, commonprefix, abspath
-from rfc822 import formatdate
+from email.utils import formatdate
 from time import time
 from stat import ST_MTIME
 from os import stat
 
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF
-from urllib import unquote, unquote_plus
+from urllib.parse import unquote, unquote_plus
 
 import magic
 magicCookie = magic.open(magic.MAGIC_MIME)
@@ -104,7 +104,7 @@ class FileServer(object):
             yield "</body></html>\n"
             return
         yield 'HTTP/1.0 200 OK' + CRLF
-        for item in file.getHeaders().items():
+        for item in list(file.getHeaders().items()):
             yield "%s: %s" % item + CRLF
         yield CRLF
         yield file.stream()

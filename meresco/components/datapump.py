@@ -30,9 +30,10 @@ from zlib import compress as _compress, decompress, decompressobj as DeflateDeco
 from base64 import encodestring, decodestring
 from weightless.core import compose
 from meresco.core import Transparent
-from StringIO import StringIO
+from io import StringIO
 
 from weightless.core import compose, Yield
+import collections
 
 compress = lambda data: _compress(data)
 
@@ -68,7 +69,7 @@ class _DeflateOutbound(Transparent):
         deflateObject = self.deflateClass()
         deflate = getattr(deflateObject, self.deflateMethodName)
         for data in allCall:
-            if data is Yield or callable(data):
+            if data is Yield or isinstance(data, collections.Callable):
                 yield data
                 continue
             yield deflate(data)

@@ -28,18 +28,18 @@
 # 
 ## end license ##
 
-from observablehttpserver import ObservableHttpServer
-from observablehttpsserver import ObservableHttpsServer
-from pathfilter import PathFilter
-from pathrename import PathRename
-from fileserver import StringServer, FileServer
-from ipfilter import IpFilter
-from basichttphandler import BasicHttpHandler
-from basicauthentication import BasicAuthentication
-from sessionhandler import SessionHandler
-from argumentsinsession import ArgumentsInSession
-from apachelogger import ApacheLogger
-from utils import insertHeader
-from handlerequestfilter import HandleRequestFilter
-from deproxy import Deproxy
-from httpclient import HttpClient
+from .observablehttpserver import ObservableHttpServer
+from .observablehttpsserver import ObservableHttpsServer
+from .pathfilter import PathFilter
+from .pathrename import PathRename
+from .fileserver import StringServer, FileServer
+from .ipfilter import IpFilter
+from .basichttphandler import BasicHttpHandler
+from .basicauthentication import BasicAuthentication
+from .sessionhandler import SessionHandler
+from .argumentsinsession import ArgumentsInSession
+from .apachelogger import ApacheLogger
+from .utils import insertHeader
+from .handlerequestfilter import HandleRequestFilter
+from .deproxy import Deproxy
+from .httpclient import HttpClient
