@@ -34,14 +34,14 @@
 from weightless.core import Yield
 import collections
 
-CRLF = b"\r\n"
-ContentTypeXml = b"text/xml; charset=utf-8"
-ContentTypeRss = b"application/rss+xml"
-ContentTypeHtml = b"text/html; charset=utf-8"
-ContentTypePlainText = b"text/plain; charset=utf-8"
-ContentTypeHeader = b"Content-Type: "
+CRLF = "\r\n"
+ContentTypeXml = "text/xml; charset=utf-8"
+ContentTypeRss = "application/rss+xml"
+ContentTypeHtml = "text/html; charset=utf-8"
+ContentTypePlainText = "text/plain; charset=utf-8"
+ContentTypeHeader = "Content-Type: "
 
-Ok = b"HTTP/1.0 200 OK" + CRLF
+Ok = "HTTP/1.0 200 OK" + CRLF
 
 #200
 okXml = Ok + \
@@ -61,51 +61,51 @@ okPlainText = Ok + \
         CRLF
 
 #204
-successNoContentPlainText = b"HTTP/1.0 204 No Content" + CRLF +\
+successNoContentPlainText = "HTTP/1.0 204 No Content" + CRLF +\
         ContentTypeHeader + ContentTypePlainText + CRLF + \
         CRLF
 
 #302
-redirectHttp = b"HTTP/1.0 302 Found" + CRLF + \
-              b"Location: %s" + CRLF + \
+redirectHttp = "HTTP/1.0 302 Found" + CRLF + \
+              "Location: %s" + CRLF + \
               CRLF
 
 #401
 unauthorizedHtml = \
-    b"HTTP/1.0 401 Unauthorized" + CRLF + \
+    "HTTP/1.0 401 Unauthorized" + CRLF + \
     ContentTypeHeader + ContentTypeHtml + CRLF + \
     CRLF
 
 #403
-forbiddenHtml = b"HTTP/1.0 403 Forbidden" + CRLF + \
+forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
                ContentTypeHeader + ContentTypeHtml + CRLF + \
                CRLF
 
 #404
-notFoundHtml = b"HTTP/1.0 404 Not Found" + CRLF + \
+notFoundHtml = "HTTP/1.0 404 Not Found" + CRLF + \
                ContentTypeHeader + ContentTypeHtml + CRLF + \
                CRLF
 
 #405
-methodNotAllowedHtml = lambda allowed: b"HTTP/1.0 405 Method Not Allowed" + CRLF + \
+methodNotAllowedHtml = lambda allowed: "HTTP/1.0 405 Method Not Allowed" + CRLF + \
                ContentTypeHeader + ContentTypeHtml + CRLF + \
-               b"Allow: " + ', '.join(allowed) + CRLF + \
+               "Allow: " + ', '.join(allowed) + CRLF + \
                CRLF
 
 #500
-serverErrorXml = b"HTTP/1.0 500 Internal Server Error" + CRLF +\
+serverErrorXml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
                  ContentTypeHeader + ContentTypeXml + CRLF + \
                  CRLF
 
-serverErrorPlainText = b"HTTP/1.0 500 Internal Server Error" + CRLF +\
+serverErrorPlainText = "HTTP/1.0 500 Internal Server Error" + CRLF +\
                  ContentTypeHeader + ContentTypePlainText + CRLF + \
                  CRLF
 
-serverErrorHtml = b"HTTP/1.0 500 Internal Server Error" + CRLF +\
+serverErrorHtml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
                   ContentTypeHeader + ContentTypeHtml + CRLF + \
                   CRLF
 #503
-serverUnavailableHtml = b"HTTP/1.0 503 Service Unavailable" + CRLF +\
+serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
                         ContentTypeHeader + ContentTypeHtml + CRLF +\
                         CRLF
 

@@ -36,7 +36,7 @@ from weightless.io import Reactor
 
 from os.path import join, isfile, basename
 from os import makedirs, rename, listdir, system, chmod, remove
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 from re import sub
 from shutil import rmtree
 from stat import S_IXUSR, S_IRUSR, S_IWUSR

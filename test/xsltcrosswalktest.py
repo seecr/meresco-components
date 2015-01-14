@@ -32,7 +32,7 @@
 from seecr.test import SeecrTestCase
 from os.path import join
 from lxml.etree import parse, _ElementTree
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 
 from weightless.core import be
 from meresco.core import Observable
@@ -92,7 +92,7 @@ class XsltCrosswalkTest(SeecrTestCase):
 
         class Intercept:
             def someMessage(innerself, lxmlNode):
-                self.crosswalkedNode.append(lxmltostring(lxmlNode, pretty_print=True))
+                self.crosswalkedNode.append(lxmltobytes(lxmlNode, pretty_print=True))
                 self.assertEqual(_ElementTree, type(lxmlNode))
         root = be(
             (Observable(),

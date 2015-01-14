@@ -33,7 +33,7 @@ from urllib.parse import urlencode
 from io import StringIO
 from lxml.etree import parse
 
-from .testhelpers import Response, Hit
+from testhelpers import Response, Hit
 from meresco.components.rss import Rss
 
 from weightless.core import compose
@@ -121,7 +121,7 @@ class RssTest(SeecrTestCase):
         rss.addObserver(observer)
         result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery%29'))) #%29 == ')'
 
-        xml = parse(StringIO(result[result.index("<?xml"):]))
+        xml = parse(StringIO(result[result.index("<rss"):]))
         self.assertEqual(['Test title'], xml.xpath('/rss/channel/title/text()'))
         self.assertEqual(['Test description'], xml.xpath('/rss/channel/description/text()'))
 
@@ -133,7 +133,8 @@ class RssTest(SeecrTestCase):
         )
         result = "".join(compose(rss.handleRequest(RequestURI='/')))
 
-        xml = parse(StringIO(result[result.index("<?xml"):]))
+        content = result[result.index("<rss"):]
+        xml = parse(StringIO(content))
         self.assertEqual(['ERROR Test title'], xml.xpath('/rss/channel/title/text()'))
         self.assertEqual(["An error occurred 'MANDATORY parameter 'query' not supplied or empty'"], xml.xpath('/rss/channel/description/text()'))
 

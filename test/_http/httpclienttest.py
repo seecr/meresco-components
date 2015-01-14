@@ -30,7 +30,7 @@ from meresco.components.http.utils import CRLF
 from meresco.components.http import httpclient
 from meresco.components.http.httpclient import HttpClient
 
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 
 from weightless.core import retval
 
@@ -63,7 +63,7 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = retval(gen)
 
-        self.assertEqual('<xml/>', lxmltostring(body))
+        self.assertEqual('<xml/>', lxmltobytes(body))
         self.assertEqual(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
 
     def testHttpPost(self):

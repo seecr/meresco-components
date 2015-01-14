@@ -35,7 +35,7 @@ from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, compose
 from lxml.etree import parse, _ElementStringResult, _ElementUnicodeResult, XML
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 
 from meresco.components import XmlPrintLxml, XmlParseLxml, FileParseLxml
 
@@ -103,7 +103,7 @@ class XmlPumpTest(SeecrTestCase):
                 <content xmlns:xyz="uri:xyz">contents</content>
             </tag>"""
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
-        self.assertEqual(xmlString, lxmltostring(self.observer.calledMethods[0].kwargs['lxmlNode']))
+        self.assertEqual(xmlString, lxmltobytes(self.observer.calledMethods[0].kwargs['lxmlNode']))
 
         self.observable = be(
             (Observable(),
@@ -113,7 +113,7 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
-        self.assertEqual("""<tag xmlns:xyz="uri:xyz"><content>contents</content></tag>""", lxmltostring(self.observer.calledMethods[1].kwargs['lxmlNode']))
+        self.assertEqual("""<tag xmlns:xyz="uri:xyz"><content>contents</content></tag>""", lxmltobytes(self.observer.calledMethods[1].kwargs['lxmlNode']))
 
     def testXmlPrintLxml(self):
         observable = Observable()
@@ -190,11 +190,11 @@ class XmlPumpTest(SeecrTestCase):
 
         observable.do.someMessage(filedata=a)
         lxmlA = observer.calledMethods[0].kwargs['lxmlNode']
-        self.assertEqual('<a>aaa</a>', lxmltostring(lxmlA))
+        self.assertEqual('<a>aaa</a>', lxmltobytes(lxmlA))
 
         observable.do.someMessage(filedata=b)
         lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
-        self.assertEqual('<b>bbb</b>', lxmltostring(lxmlB))
+        self.assertEqual('<b>bbb</b>', lxmltobytes(lxmlB))
 
     def testRenameKwargOnConvert(self):
         observer = CallTrace()
@@ -229,10 +229,10 @@ class XmlPumpTest(SeecrTestCase):
         xml = """<root><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri)
         lxmlNode = parse(StringIO(xml))
         subnode = lxmlNode.xpath("sub")[0]
-        self.assertEqual("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode))
+        self.assertEqual("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltobytes(subnode))
         subsubnode = lxmlNode.xpath("sub/subsub")[0]
         self.assertEqual("""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
-        self.assertEqual("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode))
+        self.assertEqual("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltobytes(subsubnode))
 
 
     def testLxmltostringFixes(self):

@@ -37,7 +37,7 @@ from .converter import Converter
 from re import compile as compileRe
 
 
-def lxmltostring(lxmlNode, **kwargs):
+def lxmltobytes(lxmlNode, **kwargs):
     return _fixLxmltostringRootElement(tostring(lxmlNode, encoding='utf-8', **kwargs))
 
 class FileParseLxml(Converter):
@@ -63,7 +63,7 @@ class XmlPrintLxml(Converter):
         self._pretty_print = pretty_print
 
     def _convert(self, anObject):
-        return lxmltostring(anObject, pretty_print=self._pretty_print)
+        return lxmltobytes(anObject, pretty_print=self._pretty_print)
 
 _CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):

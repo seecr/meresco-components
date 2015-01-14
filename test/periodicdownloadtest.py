@@ -559,11 +559,11 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % fileDict)
             with urlopen("http://127.0.0.1:%s/request" % port) as strm:
                 self.assertEqual(b'message', strm.read())
         self.assertEqual([
-            ('0.1s', b'message'),
-            ('0.2s', b'message'),
-            ('0.3s', b'message'),
+            ('0.1s', 'message'),
+            ('0.2s', 'message'),
+            ('0.3s', 'message'),
             'PAUSE',
-            ('1.1s', b'message'),
+            ('1.1s', 'message'),
             'PAUSE',
             ], receivedData)
 
@@ -609,10 +609,10 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % fileDict)
             with urlopen('http://127.0.0.1:%s/request' % port) as strm:
                 self.assertEqual(b'message', strm.read())
         self.assertEqual([
-            ('0.1s', b'message'),
-            ('0.2s', b'message'),
+            ('0.1s', 'message'),
+            ('0.2s', 'message'),
             'PAUSE',
-            ('1.1s', b'message'),
+            ('1.1s', 'message'),
             'PAUSE',
             ], receivedData)
 
@@ -969,15 +969,14 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % fileDict)
 
 
 HTTP_SEPARATOR = 2 * CRLF
-STATUSLINE = b"""HTTP/1.0 200 OK""" + HTTP_SEPARATOR
-STATUSLINE_ALTERNATIVE = b"""HTTP/1.1 200 ok""" + HTTP_SEPARATOR
+STATUSLINE = """HTTP/1.0 200 OK""" + HTTP_SEPARATOR
+STATUSLINE_ALTERNATIVE = """HTTP/1.1 200 ok""" + HTTP_SEPARATOR
 DROP_CONNECTION = object()
 
-def _body(record):
-    return b"""<aap:noot xmlns:aap="mies">""" + record + b"</aap:noot>"
-EMBEDDED_RECORD = b'<record>ignored</record>'
-ONE_RECORD = _body(EMBEDDED_RECORD)
-TWO_RECORDS = _body(EMBEDDED_RECORD * 2)
+BODY = """<aap:noot xmlns:aap="mies">%s</aap:noot>"""
+EMBEDDED_RECORD = '<record>ignored</record>'
+ONE_RECORD = BODY % EMBEDDED_RECORD
+TWO_RECORDS = BODY % EMBEDDED_RECORD * 2
 RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD
 RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS
 

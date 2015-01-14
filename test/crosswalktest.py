@@ -34,7 +34,7 @@ from meresco.xml import XMLRewrite
 
 from io import StringIO
 from lxml.etree import parse, XMLParser
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 from difflib import unified_diff
 
 from re import match
@@ -96,7 +96,7 @@ class CrosswalkTest(SeecrTestCase):
         with readRecord('triple-lrecord.xml') as strm:
             list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(strm))))
         self.assertEqual(1, len(self.observer.calledMethods))
-        self.assertFalse(b'2006-11-28 19:00' in lxmltostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
+        self.assertFalse(b'2006-11-28 19:00' in lxmltobytes(self.observer.calledMethods[0].kwargs['theXmlRecord']))
 
     def testReplacePrefix(self):
         rules = [('classification/taxonPath/taxon/entry', 'imsmd:classification/imsmd:taxonpath/imsmd:taxon/imsmd:entry', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<string language="%s">%s</string>',

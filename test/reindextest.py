@@ -33,7 +33,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import StorageComponent, Reindex, FilterMessages
 from meresco.core import Observable, asyncnoreturnvalue
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 from escaping import unescapeFilename, escapeFilename
 
 from os.path import join, isdir
@@ -97,8 +97,9 @@ class ReindexTest(SeecrTestCase):
         self.assertTrue(isdir(directory))
         files = listdir(directory)
         self.assertEqual(1, len(files))
-        identifiers = sorted(list(identifier for identifier in open(join(directory, files[0])).read().split('\n') if identifier != ''))
-        self.assertEqual(['id:1', 'id:2', 'id:3'], identifiers)
+        with open(join(directory, files[0])) as fp:
+            identifiers = sorted(list(identifier for identifier in fp.read().split('\n') if identifier != ''))
+            self.assertEqual(['id:1', 'id:2', 'id:3'], identifiers)
 
     def testCreateIdentifierFilesInBatches(self):
         storage = self.setupStorage([
@@ -143,7 +144,7 @@ class ReindexTest(SeecrTestCase):
         self.assertEqual(['add']*3, [m.name for m in observer.calledMethods])
         self.assertEqual(['id:1','id:2','id:3'], sorted([m.kwargs['identifier'] for m in observer.calledMethods]))
         self.assertEqual(['ignoredName']*3, [m.kwargs['partname'] for m in observer.calledMethods])
-        self.assertEqual(['<empty/>']*3, [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+        self.assertEqual([b'<empty/>']*3, [lxmltobytes(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 
     def testRemoveFilesAndDirectoryAfterProcess(self):
         storage = self.setupStorage([
@@ -225,5 +226,5 @@ class ReindexTest(SeecrTestCase):
         self.assertEqual(['add'], [m.name for m in observer.calledMethods])
         self.assertEqual([identifier], [m.kwargs['identifier'] for m in observer.calledMethods])
         self.assertEqual(['ignoredName'], [m.kwargs['partname'] for m in observer.calledMethods])
-        self.assertEqual(['<empty/>'], [lxmltostring(m.kwargs['lxmlNode']) for m in observer.calledMethods])
+        self.assertEqual([b'<empty/>'], [lxmltobytes(m.kwargs['lxmlNode']) for m in observer.calledMethods])
 

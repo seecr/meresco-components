@@ -30,7 +30,7 @@ from lxml.etree import _ElementTree as ElementTreeType
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 
 
 class LogComponent(Observable):
@@ -38,7 +38,7 @@ class LogComponent(Observable):
         printKwargs = dict(kwargs)
         for key, value in list(kwargs.items()):
             if type(value) == ElementTreeType:
-                printKwargs[key] = "%s(%s)" % (value.__class__.__name__, lxmltostring(value))
+                printKwargs[key] = "%s(%s)" % (value.__class__.__name__, lxmltobytes(value))
         print(("[%s] %s(*%s, **%s)" % (self.observable_name(), method, args, printKwargs)))
         stdout.flush()
     

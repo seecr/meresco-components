@@ -38,7 +38,7 @@ from meresco.core import Observable
 from meresco.components.sru.sruparser import SruMandatoryParameterNotSuppliedException
 from meresco.components.http import utils as httputils
 
-from cqlparser.cqlparser import parseString as CQLParseException
+from cqlparser.cqlparser import CQLParseException
 from meresco.components.web import WebQuery
 
 class BadRequestException(Exception):
