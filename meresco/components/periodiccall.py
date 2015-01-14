@@ -180,7 +180,7 @@ MAX_LENGTH=1500
 def shorten(response):
     if len(response) < MAX_LENGTH:
         return response
-    headLength = 2*MAX_LENGTH/3
+    headLength = int(2*MAX_LENGTH/3)
     tailLength = MAX_LENGTH - headLength
     return "%s ... %s" % (response[:headLength], response[-tailLength:])
 

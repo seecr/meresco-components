@@ -27,10 +27,10 @@
 
 from meresco.components import Converter, IteratorAsStream
 from zlib import compress as _compress, decompress, decompressobj as DeflateDecompressObj, compressobj as DeflateCompressObj
-from base64 import encodestring, decodestring
+from base64 import encodebytes, decodebytes
 from weightless.core import compose
 from meresco.core import Transparent
-from io import StringIO
+from io import BytesIO
 
 from weightless.core import compose, Yield
 import collections
@@ -43,7 +43,7 @@ class _OutboundConverter(Transparent):
             yield stuff
 
     def getStream(self, *args, **kwargs):
-        return StringIO(self._convert(self.call.getStream(*args, **kwargs).read()))
+        return BytesIO(self._convert(self.call.getStream(*args, **kwargs).read()))
 
 
 class ZipInbound(Converter):
@@ -58,7 +58,7 @@ class _DeflateIterator(object):
 
     def __iter__(self):
         for data in self.__aStream:
-            yield self._deflateMethod(data)
+            yield self._deflateMethod(data if type(data) == bytes else data.encode())
         f = self._deflateObject.flush()
         if f:
             yield f
@@ -72,7 +72,7 @@ class _DeflateOutbound(Transparent):
             if data is Yield or isinstance(data, collections.Callable):
                 yield data
                 continue
-            yield deflate(data)
+            yield deflate(data if type(data) == bytes else data.encode())
         f = deflateObject.flush()
         if f:
             yield f
@@ -100,17 +100,17 @@ class UnzipInbound(Converter):
 
 class Base64DecodeInbound(Converter):
     def _convert(self, data):
-        return decodestring(data)
+        return decodebytes(data)
 
 class Base64DecodeOutbound(_OutboundConverter):
     def _convert(self, data):
-        return decodestring(data)
+        return decodebytes(data)
 
 class Base64EncodeInbound(Converter):
     def _convert(self, data):
-        return encodestring(data)
+        return encodebytes(data)
 
 class Base64EncodeOutbound(_OutboundConverter):
     def _convert(self, data):
-        return encodestring(data)
+        return encodebytes(data)
 

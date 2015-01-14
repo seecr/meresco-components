@@ -48,8 +48,10 @@ class JsonTest(SeecrTestCase):
     def testLoad(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
-        open(tempfile, 'w').write(str(jd))
-        jd2 = JsonDict.load(open(tempfile))
+        with open(tempfile, "w") as fp:
+            fp.write(str(jd))
+        with open(tempfile) as fp:
+            jd2 = JsonDict.load(fp)
         self.assertEqual(jd, jd2)
 
     def testStrList(self):
@@ -70,7 +72,9 @@ class JsonTest(SeecrTestCase):
     def testLoadList(self):
         jd = JsonList(['hello', 'world'])
         tempfile = join(self.tempdir, 'json.json')
-        open(tempfile, 'w').write(str(jd))
-        jd2 = JsonList.load(open(tempfile))
+        with open(tempfile, 'w') as fp:
+            fp.write(str(jd))
+        with open(tempfile) as fp:
+            jd2 = JsonList.load(fp)
         self.assertEqual(jd, jd2)
 

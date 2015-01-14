@@ -51,8 +51,13 @@ class FieldletsTest(SeecrTestCase):
 
         dna.do.addField(name='fieldname', value="x")
         self.assertEqual(1, len(self.observert.calledMethods))
-
-        self.assertEqual("addField(name='fieldname.fieldname', value='x')", str(self.observert.calledMethods[0]))
+        self.assertEqual({
+            'name': 'addField',
+            'args': (),
+            'kwargs': {
+                'name': 'fieldname.fieldname',
+                'value': 'x'}
+            }, self.observert.calledMethods[0].asDict())
 
     def testTransformFieldValueWithTransform(self):
         dna = be(
@@ -65,8 +70,13 @@ class FieldletsTest(SeecrTestCase):
 
         dna.do.addField(name='f', value="x")
         self.assertEqual(1, len(self.observert.calledMethods))
-
-        self.assertEqual("addField(name='f', value='transform x')", str(self.observert.calledMethods[0]))
+        self.assertEqual({
+            'name': 'addField',
+            'args': (),
+            'kwargs': {
+                'name': 'f',
+                'value': 'transform x'}
+            }, self.observert.calledMethods[0].asDict())
 
     def testAddField(self):
         dna = be(
@@ -79,7 +89,10 @@ class FieldletsTest(SeecrTestCase):
 
         list(compose(dna.all.add(identifier='id', partname='part', lxmlNode='data')))
         self.assertEqual(1, len(self.observert.calledMethods))
-        self.assertEqual("addField(name='name', value='value')", str(self.observert.calledMethods[0]))
+        self.assertEqual({
+            'name': 'addField', 
+            'args': (), 
+            'kwargs': {'name': 'name', 'value': 'value'}}, self.observert.calledMethods[0].asDict())
 
     def testDoNotTransformFieldValueForTransformWithNoneResult(self):
         dna = be(
@@ -141,13 +154,13 @@ class FieldletsTest(SeecrTestCase):
         self.assertEqual([], result)
 
         self.assertEqual([
-            "addField(name='addfield.name', value='addfield.value')",
-            "addField(name='base.name1', value='value1')",
-            "addField(name='drilldown.base.name1', value='value1')",
-            "addField(name='base.name2', value='value2')",
-            "addField(name='normalize.base.name2', value='VALUE2')",
-            "addField(name='normalize3.base.name2', value='value2')",
-            "addField(name='valuefilter.base.name2', value='value2')",
-            "addField(name='base.name3', value='value3')",
-            ], [str(m) for m in self.observert.calledMethods])
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'addfield.name', 'value': 'addfield.value'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'base.name1', 'value': 'value1'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'drilldown.base.name1', 'value': 'value1'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'base.name2', 'value': 'value2'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'normalize.base.name2', 'value': 'VALUE2'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'normalize3.base.name2', 'value': 'value2'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'valuefilter.base.name2', 'value': 'value2'}},
+            {'name': 'addField', 'args': (), 'kwargs': {'name': 'base.name3', 'value': 'value3'}},
+            ], [m.asDict() for m in self.observert.calledMethods])
 

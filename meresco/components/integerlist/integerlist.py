@@ -148,6 +148,7 @@ class IntegerList(object):
         return self._cobj
 
     def save(self, filename, offset=0, append=False):
+        print(filename, offset, append)
         errno = IntegerList_save(self, filename, offset, append)
         if errno == -1:
             raise IndexError("Invalid index: %d [0..%d)" % (offset, len(self)))

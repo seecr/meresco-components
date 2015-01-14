@@ -138,26 +138,29 @@ class PeriodicDownload(Observable):
         if type(request) is dict:
             host = request['host']
             port = request['port']
-            requestString = request['request']
+            requestInBytes = request['request']
             proxyServer = request.get('proxyServer')
         else:
             host = self._host
             port = self._port
-            requestString = request
-        if requestString is None:
+            requestInBytes = request
+        if requestInBytes is None:
             self._startTimer(retryAfter=1)
             yield
             return
+        if type(requestInBytes) != bytes:
+            raise AssertionError("request is not in bytes!")
+
         self._sok = yield self._tryConnect(host, port, proxyServer=proxyServer)
         try:
-            yield self._quickOrAsyncSend(self._sok, requestString)
+            yield self._quickOrAsyncSend(self._sok, requestInBytes)
             self._reactor.addReader(self._sok, self._currentProcess.__next__, prio=self._prio)
             responses = []
             try:
                 while True:
                     yield
                     response = self._sok.recv(4096)
-                    if response == '':
+                    if response == b'':
                          break
                     responses.append(response)
             finally:
@@ -165,27 +168,27 @@ class PeriodicDownload(Observable):
                     self._reactor.removeReader(self._sok)
                 except KeyError:
                     pass
-        except SocketError as xxx_todo_changeme2:
-            (errno, msg) = xxx_todo_changeme2.args
-            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=self._retryAfterErrorTime)
+        except SocketError as socketError:
+            (errno, msg) = socketError.args
+            self._sok.close()
+            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestInBytes.decode(), retryAfter=self._retryAfterErrorTime)
             return
         finally:
-            try:
-                self._sok.shutdown(SHUT_RDWR)
-            except SocketError as xxx_todo_changeme1:
-                # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
-                (errno, msg) = xxx_todo_changeme1.args
-                # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
-                pass
-            self._sok.close()
-            self._sok = None
+            if self._sok:
+                try:
+                    self._sok.shutdown(SHUT_RDWR)
+                except SocketError as socketError:
+                    # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
+                    pass
+                self._sok.close()
+                self._sok = None
 
         try:
-            response = ''.join(responses)
+            response = b''.join(responses)
             headers, body = response.split(2 * CRLF, 1)
             statusLine = headers.split(CRLF)[0]
-            if not statusLine.strip().lower().endswith('200 ok'):
-                yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
+            if not statusLine.strip().lower().endswith(b'200 ok'):
+                yield self._retryAfterError('Unexpected response: ' + response.decode(), request=requestInBytes.decode(), retryAfter=self._retryAfterErrorTime)
                 return
 
             self._reactor.addProcess(self._currentProcess.__next__)
@@ -205,8 +208,8 @@ class PeriodicDownload(Observable):
             raise
         except Exception:
             message = format_exc()
-            message += 'Error while processing response: ' + _shorten(response)
-            self._logError(message, request=requestString)
+            message += 'Error while processing response: ' + _shorten(response.decode())
+            self._logError(message, request=requestInBytes.decode())
         self._errorState = None
         self._startTimer()
         yield
@@ -248,17 +251,17 @@ class PeriodicDownload(Observable):
                     yield self._quickOrAsyncSend(sok, "CONNECT {0}:{1} HTTP/1.0\r\nHost: {0}:{1}\r\n\r\n".format(origHost, origPort))
                     self._reactor.addReader(sok, self._currentProcess.__next__)
                     try:
-                        response = ''
+                        response = b''
                         while True:
                             yield
                             fragment = sok.recv(4096)
-                            if fragment == '':
+                            if fragment == b'':
                                 break
                             response += fragment
-                            if "\r\n\r\n" in response:
+                            if b"\r\n\r\n" in response:
                                 break
                         status = response.split()[:2]
-                        if not "200" in status:
+                        if not b"200" in status:
                             raise ValueError("Failed to connect through proxy")
                     finally:
                         self._reactor.removeReader(sok)
@@ -271,6 +274,8 @@ class PeriodicDownload(Observable):
         raise StopIteration(sok)
 
     def _quickOrAsyncSend(self, sok, data):
+        if type(data) is str:
+            data = data.encode()
         size = sok.send(data)
         data = data[size:]
         if not data:
@@ -280,7 +285,7 @@ class PeriodicDownload(Observable):
         self._reactor.addWriter(sok, self._currentProcess.__next__)
         yield
         try:
-            while data != "":
+            while data != b"":
                 size = sok.send(data)
                 data = data[size:]
                 yield
@@ -360,6 +365,6 @@ MAX_LENGTH=1500
 def _shorten(response):
     if len(response) < MAX_LENGTH:
         return response
-    headLength = 2*MAX_LENGTH/3
+    headLength = int(2*MAX_LENGTH/3)
     tailLength = MAX_LENGTH - headLength
     return "%s ... %s" % (response[:headLength], response[-tailLength:])

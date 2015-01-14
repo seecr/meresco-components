@@ -30,7 +30,7 @@ from weightless.core import compose, be
 from meresco.components.datapump import ZipInbound, UnzipInbound, Base64DecodeInbound, Base64EncodeInbound, ZipOutbound, UnzipOutbound, Base64DecodeOutbound, Base64EncodeOutbound
 from meresco.core import Observable
 from time import time
-from io import StringIO
+from io import StringIO, BytesIO
 from xml.sax.saxutils import escape as xmlEscape
 from lxml.etree import parse
 
@@ -63,9 +63,9 @@ class DataPumpTest(SeecrTestCase):
         self.assertEqual([str(HUGE)], result)
 
     def testOutbound(self):
-        realData = str(HUGE)
+        realData = str(HUGE).encode()
         observer = CallTrace('observer')
-        observer.methods['getStream'] = lambda **kwrgs: StringIO(realData)
+        observer.methods['getStream'] = lambda **kwrgs: BytesIO(realData)
 
         root = be((Observable(),
             (UnzipOutbound(),
@@ -79,21 +79,21 @@ class DataPumpTest(SeecrTestCase):
             )
         ))
 
-        result = ''.join(compose(root.all.yieldRecord(identifier='identifier', partname='part')))
+        result = b''.join(compose(root.all.yieldRecord(identifier='identifier', partname='part')))
         self.assertEqual(realData, result)
 
     def testSize(self):
-        realData = str(HUGE)
+        realData = str(HUGE).encode()
         data = [realData[i:i+4096] for i in range(0, len(realData), 4096)]
         observer = CallTrace('observer')
-        observer.methods['getStream'] = lambda **kwargs: StringIO(str(HUGE))
+        observer.methods['getStream'] = lambda **kwargs: BytesIO(realData)
         def yieldRecord(**kwargs):
             for d in data:
                 yield d
         observer.methods['yieldRecord'] = yieldRecord
         outbound = ZipOutbound()
         outbound.addObserver(observer)
-        yieldResult = ''.join(compose(outbound.yieldRecord(identifier='identifier', partname='part')))
+        yieldResult = b''.join(compose(outbound.yieldRecord(identifier='identifier', partname='part')))
         streamResult = outbound.getStream(identifier='identifier', partname='part').read()
         self.assertEqual(len(yieldResult), len(streamResult))
 

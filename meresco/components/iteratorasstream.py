@@ -26,15 +26,36 @@
 
 
 class IteratorAsStream(object):
-    def __init__(self, iterator):
+    def __init__(self, iterator, default=None):
         self._iterator = iter(iterator)
-        self._leftover = ''
+        self._default = default
+        self._reset()
+    
+    def _reset(self):
+        self._leftover = self._default
 
     def read(self, size=None):
         if size is None or size < 0:
             data = self._leftover
-            self._leftover = ''
-            return data + ''.join(self._iterator)
+            self._reset()
+            try:
+                result = next(self._iterator)
+            except StopIteration:
+                result = self._default
+                pass
+            for i in self._iterator:
+                result += i
+            if data:
+                return data + result if result else data
+            return result if result else self._default
+
+        if self._leftover is None:
+            try:
+                self._leftover = next(self._iterator)
+            except StopIteration:
+                self._leftover = self._default
+                pass
+
         while len(self._leftover) < size:
             try:
                 self._leftover += next(self._iterator)
@@ -47,7 +68,7 @@ class IteratorAsStream(object):
     def __next__(self):
         if self._leftover:
             data = self._leftover
-            self._leftover = ''
+            self._reset()
             return data
         return next(self._iterator)
 
