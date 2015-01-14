@@ -33,7 +33,7 @@ from io import StringIO
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 
 class ValidateException(Exception):
     pass
@@ -90,7 +90,7 @@ def assertValid(xmlString, schemaPath):
         raise AssertionError(formatException(schema, toValidate))
 
 def formatException(schema, lxmlNode):
-    xmlString = lxmltostring(lxmlNode, pretty_print=True).decode()
+    xmlString = lxmltobytes(lxmlNode, pretty_print=True).decode()
     message = str(schema.error_log.last_error) + "\n\n"
     for nr, line in enumerate(xmlString.split('\n')):
         message += "%s %s\n" % (nr+1, line)

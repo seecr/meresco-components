@@ -37,7 +37,7 @@ from urllib.request import urlopen
 from decimal import Decimal
 
 from lxml.etree import parse
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 from xml.sax.saxutils import escape as xmlEscape
 
 from weightless.core import compose, be, consume
@@ -775,8 +775,8 @@ class SruHandlerTest(SeecrTestCase):
             <sruQueryTime>PT1.500S</sruQueryTime>
             <index>PT0.005S</index>
         </querytimes>
-</srw:extraResponseData>""" % namespaces, lxmltostring(extraResponseData))
-        queryTimes = lxmltostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
+</srw:extraResponseData>""" % namespaces, lxmltobytes(extraResponseData))
+        queryTimes = lxmltobytes(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
         assertValid(queryTimes, join(schemasPath, 'timing-20120827.xsd'))
         self.assertEqual(['executeQuery', 'echoedExtraRequestData', 'extraResponseData', 'handleQueryTimes'], observer.calledMethodNames())
         self.assertEqual({'sru': Decimal("2.500"), 'queryTime': Decimal("1.500"), 'index': Decimal("0.005")}, observer.calledMethods[3].kwargs)

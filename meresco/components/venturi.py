@@ -35,7 +35,7 @@ from io import StringIO
 from meresco.core import Observable
 
 from meresco.components.xmlxpath import lxmlElementUntail
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 from warnings import warn
 from meresco.xml.namespaces import namespaces as _namespaces
 
@@ -98,7 +98,7 @@ class Venturi(Observable):
 
     def _elementOrText2Text(self, elementOrText):
         if type(elementOrText) == _Element:
-            return lxmltostring(elementOrText)
+            return lxmltobytes(elementOrText)
         return elementOrText
 
 

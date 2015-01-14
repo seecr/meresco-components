@@ -32,7 +32,7 @@
 from .converter import Converter
 from .timeddictionary import TimedDictionary
 from .xmlcompose import XmlCompose
-from .xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
+from .xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltobytes
 
 from .berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from .clausecollector import ClauseCollector

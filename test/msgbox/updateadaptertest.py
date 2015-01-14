@@ -30,7 +30,7 @@ from meresco.components.msgbox import UpdateAdapterToMsgbox, UpdateAdapterFromMs
 from weightless.core import compose
 from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 from io import StringIO
 from os.path import basename, join
 from os import makedirs

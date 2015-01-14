@@ -184,11 +184,11 @@ class PeriodicDownload(Observable):
                 self._sok = None
 
         try:
-            response = b''.join(responses)
+            response = b''.join(responses).decode()
             headers, body = response.split(2 * CRLF, 1)
             statusLine = headers.split(CRLF)[0]
-            if not statusLine.strip().lower().endswith(b'200 ok'):
-                yield self._retryAfterError('Unexpected response: ' + response.decode(), request=requestInBytes.decode(), retryAfter=self._retryAfterErrorTime)
+            if not statusLine.strip().lower().endswith('200 ok'):
+                yield self._retryAfterError('Unexpected response: ' + response, request=requestInBytes.decode(), retryAfter=self._retryAfterErrorTime)
                 return
 
             self._reactor.addProcess(self._currentProcess.__next__)
@@ -208,7 +208,7 @@ class PeriodicDownload(Observable):
             raise
         except Exception:
             message = format_exc()
-            message += 'Error while processing response: ' + _shorten(response.decode())
+            message += 'Error while processing response: ' + _shorten(response)
             self._logError(message, request=requestInBytes.decode())
         self._errorState = None
         self._startTimer()

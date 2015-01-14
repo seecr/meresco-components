@@ -38,7 +38,7 @@ from weightless.io import Reactor
 
 from os.path import join, isfile
 from os import makedirs, rename, listdir, remove
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
 
 from meresco.components.inbox import Inbox, InboxException
 

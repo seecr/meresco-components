@@ -102,13 +102,14 @@ class Reindex(Observable):
     def _processBatches(self, sessionDirectory):
         batchFile = join(sessionDirectory, listdir(sessionDirectory)[0])
 
-        for identifier in (identifier.strip() for identifier in open(batchFile).readlines()):
-            try:
-                yield self.all.add(identifier=unescapeFilename(identifier), partname='ignoredName', lxmlNode=EMPTYDOC)
-            except Exception as e:
-                yield '\n!error processing "%s": %s' % (identifier, str(e))
-                return
-            yield "+%s\n" % identifier
+        with open(batchFile) as fp:
+            for identifier in (identifier.strip() for identifier in fp.readlines()):
+                try:
+                    yield self.all.add(identifier=unescapeFilename(identifier), partname='ignoredName', lxmlNode=EMPTYDOC)
+                except Exception as e:
+                    yield '\n!error processing "%s": %s' % (identifier, str(e))
+                    return
+                yield "+%s\n" % identifier
 
         remove(batchFile)
         yield "=batches left: %d" % len(listdir(sessionDirectory))
