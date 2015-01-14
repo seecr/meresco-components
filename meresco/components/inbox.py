@@ -100,17 +100,20 @@ class Inbox(Observable):
     def processFile(self, filename):
         errorFilename = join(self._doneDirectory, filename + ".error")
         try:
-            lxmlNode = parse(open(join(self._inboxDirectory, filename)))
-            composed = compose(self.all.add(identifier=filename, lxmlNode=lxmlNode))
-            try:
-                while True:
-                    next(composed)
-            except StopIteration as e:
-                pass
+            with open(join(self._inboxDirectory, filename)) as fp:
+                lxmlNode = parse(fp)
+                composed = compose(self.all.add(identifier=filename, lxmlNode=lxmlNode))
+                try:
+                    while True:
+                        next(composed)
+                except StopIteration as e:
+                    pass
         except Exception as e:
-            open(errorFilename, 'w').write(format_exc())
+            with open(errorFilename, 'w') as fp:
+                fp.write(format_exc())
 
         try:
             rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))
         except Exception as e:
-            open(errorFilename, 'a').write(format_exc())
+            with open(errorFilename, 'a') as fp:
+                fp.write(format_exc())

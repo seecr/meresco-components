@@ -38,13 +38,11 @@ from re import compile as compileRe
 
 
 def lxmltostring(lxmlNode, **kwargs):
-    return _fixLxmltostringRootElement(tostring(lxmlNode, encoding="UTF-8", **kwargs))
-
+    return _fixLxmltostringRootElement(tostring(lxmlNode, encoding='utf-8', **kwargs))
 
 class FileParseLxml(Converter):
     def _convert(self, anObject):
         return parse(anObject)
-
 
 class XmlParseLxml(Converter):
     def __init__(self, parseOptions=None, **kwargs):
@@ -59,7 +57,6 @@ e.g. parserOptions=dict(huge_tree=True, remove_blank_text=True)"""
             parseKwargs = dict(parser=XMLParser(**self._parseOptions))
         return parse(StringIO(anObject.encode('UTF-8')), **parseKwargs)
 
-
 class XmlPrintLxml(Converter):
     def __init__(self, pretty_print=True, **kwargs):
         Converter.__init__(self, **kwargs)
@@ -68,15 +65,14 @@ class XmlPrintLxml(Converter):
     def _convert(self, anObject):
         return lxmltostring(anObject, pretty_print=self._pretty_print)
 
-
 _CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):
     code = matchObj.groupdict()['code']
     code = int(code[1:], base=16) if 'x' in code else int(code)
     return str(chr(code))
 
-def _fixLxmltostringRootElement(aString):
-    firstGt = aString.find('>')
-    if aString.find('&#', 0, firstGt) > -1:
-        return _CHAR_REF.sub(_replCharRef, aString[:firstGt]) + aString[firstGt:]
-    return aString
+def _fixLxmltostringRootElement(aByteString):
+    firstGt = aByteString.find(b'>')
+    if aByteString.find(b'&#', 0, firstGt) > -1:
+        return _CHAR_REF.sub(_replCharRef, aByteString[:firstGt]) + aByteString[firstGt:]
+    return aByteString

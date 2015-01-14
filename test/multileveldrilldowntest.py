@@ -196,7 +196,7 @@ class MultiLevelDrilldownTest(TestCase):
             levelField, levelMax, levelSorted = fieldNamesAndMaxResults[0]
             data = mockData[levelField]
             if levelSorted:
-                data = sorted(data, cmp=lambda (term0, card0), (term1, card1): cmp(card1, card0))
+                data = sorted(data, key=lambda termCardinalityTuple: termCardinalityTuple[1], reverse=True)
             if levelMax > 0:
                 data = data[:levelMax]
             raise StopIteration(iter([(levelField, iter(data))]))

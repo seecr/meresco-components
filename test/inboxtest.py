@@ -126,9 +126,10 @@ class InboxTest(SeecrTestCase):
         errorFile = join(self.doneDirectory, 'repo:identifier:1.record.error')
         self.assertTrue(isfile(errorFile))
 
-        errorMessage = open(errorFile).read()
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue(errorMessage.endswith("ZeroDivisionError: integer division or modulo by zero\n"), errorMessage)
+        self.assertTrue(errorMessage.endswith("ZeroDivisionError: division by zero\n"), errorMessage)
 
     def testNoXmlFile(self):
         identifier = 'repository:record'
@@ -137,7 +138,9 @@ class InboxTest(SeecrTestCase):
         errorFile = join(self.doneDirectory, identifier+'.record.error')
         self.assertTrue(isfile(errorFile))
         self.assertFalse(isfile(join(self.inboxDirectory, identifier+'.record')))
-        self.assertTrue('Start tag expected' in open(errorFile).read())
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
+        self.assertTrue('Start tag expected' in errorMessage, errorMessage)
 
     def testFileDeletedBeforeHandling(self):
         identifier = 'repository:record'
@@ -148,9 +151,10 @@ class InboxTest(SeecrTestCase):
         errorFile = join(self.doneDirectory, '%s.record.error' % identifier)
         self.assertTrue(isfile(errorFile))
 
-        errorMessage = open(errorFile).read()
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue("IOError: [Errno 2] No such file or directory" in errorMessage, errorMessage)
+        self.assertTrue("FileNotFoundError: [Errno 2] No such file or directory" in errorMessage, errorMessage)
 
     def testFileDeleteWhileProcessing(self):
         identifier = 'repository:record'
@@ -166,14 +170,16 @@ class InboxTest(SeecrTestCase):
         self.reactor.step()
         self.assertTrue(isfile(errorFile))
 
-        errorMessage = open(errorFile).read()
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
         self.assertTrue("rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))" in errorMessage, errorMessage)
-        self.assertTrue("OSError: [Errno 2] No such file or directory" in errorMessage, errorMessage)
+        self.assertTrue("FileNotFoundError: [Errno 2] No such file or directory" in errorMessage, errorMessage)
 
     def moveInRecord(self, identifier, data="<record/>"):
         filename = join(self.tempdir, identifier+".record")
-        open(filename, 'w').write(data)
+        with open(filename, 'w') as fp:
+            fp.write(data)
         rename(filename, join(self.inboxDirectory, identifier+".record"))
 
     def removeRecord(self, identifier):

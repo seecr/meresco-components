@@ -61,37 +61,52 @@ def server(responses, bufsize=4096, sleepWhile=None):
     end = Event()
     messages = []
     def serverThread():
-        s = socket()
-        s.bind(('127.0.0.1', port))
-        s.listen(0)
-        start.set()
-        while not end.isSet():
-            try:
-                connection, address = s.accept()
-                msg = connection.recv(bufsize)
-                messages.append(msg)
-                response = responses.pop(0)
-                if not response is DROP_CONNECTION:
-                    def respond(connection=connection, response=response):
-                        while sleepWhile():
-                            sleep(0.05)
-                        connection.send(response)
-                        connection.close()
-                    t = Thread(None, respond)
-                    t.daemon = True
-                    t.start()
-            except:
-                from traceback import print_exc; print_exc()
-                pass
+        with socket() as s: 
+            s.bind(('127.0.0.1', port))
+            s.listen(0)
+            start.set()
+            closeLater = []
+            while not end.isSet():
+                try:
+                    connection, address = s.accept()
+                    if end.isSet():
+                        closeLater.append(connection)
+                        break
+                    msg = connection.recv(bufsize)
+                    messages.append(msg)
+                    response = responses.pop(0)
+                    if not response is DROP_CONNECTION:
+                        def respond(connection=connection, response=response):
+                            while sleepWhile():
+                                sleep(0.05)
+                            if type(response) is str:
+                                response = response.encode()
+                            connection.send(response)
+                            connection.close()
+                        t = Thread(None, respond)
+                        t.daemon = True
+                        t.start()
+                    else:
+                        closeLater.append(connection)
+                except:
+                    from traceback import print_exc; print_exc()
+                    pass
+        for s in closeLater:
+            s.close()
     thread = Thread(None, serverThread)
     thread.daemon = True
     thread.start()
     start.wait()
     yield port, messages
     end.set()
-
+    with socket() as sokToBustOutOfAccept:
+        try:
+            sokToBustOutOfAccept.connect(("localhost", port))
+        except (ConnectionRefusedError, ConnectionResetError):
+            pass
 
 class PeriodicDownloadTest(SeecrTestCase):
+
     def testOne(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
@@ -103,7 +118,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[1].args[1]
             callback() # HTTP GET
             sleep(0.01)
-            self.assertEqual("GET", msgs[0][:3])
+            self.assertEqual(b"GET", msgs[0][:3])
             self.assertEqual('removeWriter', reactor.calledMethods[2].name)
             self.assertEqual('addReader', reactor.calledMethods[3].name)
             self.assertEqual(0, reactor.calledMethods[3].kwargs['prio'])
@@ -139,7 +154,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[-1].args[1]
             callback() #proxy recv
             sleep(0.01)
-            self.assertEqual("GET", msgs[0][:3])
+            self.assertEqual(b"GET", msgs[0][:3])
             self.assertEqual('addReader', reactor.calledMethods[-1].name)
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
@@ -160,7 +175,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         downloader, observer, reactor = self._prepareDownloader("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
-        self.assertEqual("%s: an integer is required\n" % repr(downloader), downloader._err.getvalue())
+        self.assertEqual("%s: an integer is required (got type str)\n" % repr(downloader), downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
     def testNoConnectionPossible(self):
@@ -305,7 +320,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # _processOne.next -> HTTP GET
             self.assertEqual('buildRequest', observer.calledMethods[0].name)
             sleep(0.01)
-            self.assertEqual(['GET /path?argument=value HTTP/1.0\r\n\r\n'], msgs) # message received, getting response
+            self.assertEqual([b'GET /path?argument=value HTTP/1.0\r\n\r\n'], msgs) # message received, getting response
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''; then addProcess
             callback() # first self.all.handle(data=body) -> 1st response
@@ -316,15 +331,17 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # 2nd response / raise Exception(...)
             result = downloader._err.getvalue()
             self.assertTrue('Traceback' in result, result)
-            expected =  ignoreLineNumbers("""%s: Traceback (most recent call last):
-  File "%%(periodicdownload.py)s", line 104, in _processOne
-    for _response  in g:
-  File "%%(__file__)s", line 243, in handleGenerator
+
+            self.assertTrue(ignoreLineNumbers(result).startswith(ignoreLineNumbers("""%s: Traceback (most recent call last):
+  File "%%(periodicdownload.py)s", line 104, in _processOne""" % repr(downloader) % fileDict)), result)
+
+            tracebackTail = ignoreLineNumbers("""  File "%(__file__)s", line 314, in handleGenerator
     raise Exception('xcptn')
 Exception: xcptn
-Error while processing response: HTTP/1.0 200 OK \r\n\r\n<aap:noot xmlns:aap="mies"><record>ignored</record></aap:noot>
-For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % fileDict)
-            self.assertEqual(expected, ignoreLineNumbers(result))
+Error while processing response: HTTP/1.0 200 OK\r\n\r\n<aap:noot xmlns:aap="mies"><record>ignored</record></aap:noot>
+For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % fileDict)
+
+            self.assertTrue(tracebackTail in ignoreLineNumbers(result), result) 
 
             self.assertEqual('removeProcess', reactor.calledMethods[-2].name)
             self.assertEqual('addTimer', reactor.calledMethods[-1].name)
@@ -410,7 +427,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback = reactor.calledMethods[-1].args[1]
             callback() # _processOne.next -> HTTP GET
             sleep(0.01)
-            self.assertEqual("GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
+            self.assertEqual(b"GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''
             callback() # _processOne.next -> addProcess
@@ -483,7 +500,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         err = StringIO()
         with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*20, sleepWhile=lambda: suspended[0]) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.01), err=err)
-            observer = CallTrace(methods={'handle': handle}, returnValues={'buildRequest': 'request'}, emptyGeneratorMethods=['handle'])
+            observer = CallTrace(methods={'handle': handle}, returnValues={'buildRequest': b'request'}, emptyGeneratorMethods=['handle'])
             dna = be(
             (Observable(),
                 (download,
@@ -515,7 +532,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 Observable.__init__(self)
                 self._t0 = time()
             def buildRequest(self, additionalHeaders=None):
-                return 'request'
+                return b'request'
             def handle(self, data):
                 receivedData.append(('%.1fs' % (time() - self._t0), data))
                 if len(receivedData) >= 3:
@@ -539,13 +556,14 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             reactor.addTimer(1, lambda: dna.call.resume())
             while stepping[0]:
                 reactor.step()
-            self.assertEqual('message', urlopen('http://127.0.0.1:%s/request' % port).read())
+            with urlopen("http://127.0.0.1:%s/request" % port) as strm:
+                self.assertEqual(b'message', strm.read())
         self.assertEqual([
-            ('0.1s', 'message'),
-            ('0.2s', 'message'),
-            ('0.3s', 'message'),
+            ('0.1s', b'message'),
+            ('0.2s', b'message'),
+            ('0.3s', b'message'),
             'PAUSE',
-            ('1.1s', 'message'),
+            ('1.1s', b'message'),
             'PAUSE',
             ], receivedData)
 
@@ -563,7 +581,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 Observable.__init__(self)
                 self._t0 = time()
             def buildRequest(self, additionalHeaders=None):
-                return 'request'
+                return b'request'
             def handle(self, data):
                 receivedData.append(('%.1fs' % (time() - self._t0), data))
                 if len(receivedData) >= 2:
@@ -588,12 +606,13 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             reactor.addTimer(1, lambda: dna.call.resume())
             while stepping[0]:
                 reactor.step()
-            self.assertEqual('message', urlopen('http://127.0.0.1:%s/request' % port).read())
+            with urlopen('http://127.0.0.1:%s/request' % port) as strm:
+                self.assertEqual(b'message', strm.read())
         self.assertEqual([
-            ('0.1s', 'message'),
-            ('0.2s', 'message'),
+            ('0.1s', b'message'),
+            ('0.2s', b'message'),
             'PAUSE',
-            ('1.1s', 'message'),
+            ('1.1s', b'message'),
             'PAUSE',
             ], receivedData)
 
@@ -615,6 +634,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         self.assertEqual('addWriter', reactor.calledMethods[-1].name)
         callback = reactor.calledMethods[-1].args[1]
         downloader._err.truncate(0)
+        downloader._err.seek(0)
         callback()
         self.assertEqual('removeWriter', reactor.calledMethods[-1].name)
         self.assertEqual("%s: Connection refused.\n" % repr(downloader), downloader._err.getvalue())
@@ -721,7 +741,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         sok = socket()
         sok.close()
         reactor = CallTrace('reactor')
-        observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
+        observer = CallTrace('observer', returnValues={'buildRequest': b'request'})
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
         def mockTryConnect(host, port, proxyServer=None):
@@ -759,7 +779,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         sleep(0.01)
 
         reactor = CallTrace('reactor')
-        observer = CallTrace('observer', returnValues={'buildRequest': 'request'})
+        observer = CallTrace('observer', returnValues={'buildRequest': b'request'})
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
         def mockTryConnect(host, port, proxyServer=None):
@@ -776,61 +796,68 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         client, server = socketpair(AF_UNIX)
         client.setblocking(0)
         server.setblocking(0)
-        reactor = CallTrace()
-        class BuildRequest(object):
-            def buildRequest(self, additionalHeaders=None):
-                # A.k.a. not fitting into the buffer.
-                return 'small request'
-        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
-        def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(client)
-            yield
-        downloader._tryConnect = mockTryConnect
-        downloader._currentProcess = compose(downloader._processOne())
-        downloader.addObserver(BuildRequest())
-
-        next(downloader._currentProcess)
-        self.assertEqual(['addReader'], reactor.calledMethodNames())
-        sleep(0.01)
-        self.assertEqual('small request', server.recv(4096))
-
-        sleep(0.01)
         try:
-            _ = server.recv(1)
-        except SocketError as xxx_todo_changeme2:
-            (errno, msg) = xxx_todo_changeme2.args
-            self.assertEqual(EAGAIN, errno)
-        else:
-            self.fail('TCP connection must remain open until the request is finished.')
+            reactor = CallTrace()
+            class BuildRequest(object):
+                def buildRequest(self, additionalHeaders=None):
+                    # A.k.a. not fitting into the buffer.
+                    return b'small request'
+            downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+            def mockTryConnect(host, port, proxyServer=None):
+                raise StopIteration(client)
+                yield
+            downloader._tryConnect = mockTryConnect
+            downloader._currentProcess = compose(downloader._processOne())
+            downloader.addObserver(BuildRequest())
 
-        # cleanup
-        reactor.calledMethods.reset()
-        list(downloader._currentProcess)
-        self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+            next(downloader._currentProcess)
+            self.assertEqual(['addReader'], reactor.calledMethodNames())
+            sleep(0.01)
+            self.assertEqual(b'small request', server.recv(4096))
+
+            sleep(0.01)
+            try:
+                _ = server.recv(1)
+            except SocketError as e:
+                (errno, msg) = e.args
+                self.assertEqual(EAGAIN, errno)
+            else:
+                self.fail('TCP connection must remain open until the request is finished.')
+
+            # cleanup
+            reactor.calledMethods.reset()
+            list(downloader._currentProcess)
+            self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+        finally:
+            server.close()
 
     def testShortRequestSendWithoutReactor(self):
         client, server = socketpair(AF_UNIX)
         client.setblocking(0)
-        reactor = CallTrace()
-        class BuildRequest(object):
-            def buildRequest(self, additionalHeaders=None):
-                # A.k.a. not fitting into the buffer.
-                return 'small request'
-        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
-        def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(client)
-            yield
-        downloader._tryConnect = mockTryConnect
-        downloader._currentProcess = compose(downloader._processOne())
-        downloader.addObserver(BuildRequest())
+        try:
+            reactor = CallTrace()
+            class BuildRequest(object):
+                def buildRequest(self, additionalHeaders=None):
+                    # A.k.a. not fitting into the buffer.
+                    return b'small request'
+            downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+            def mockTryConnect(host, port, proxyServer=None):
+                raise StopIteration(client)
+                yield
+            downloader._tryConnect = mockTryConnect
+            downloader._currentProcess = compose(downloader._processOne())
+            downloader.addObserver(BuildRequest())
 
-        next(downloader._currentProcess)
-        self.assertEqual(['addReader'], reactor.calledMethodNames())
-        self.assertEqual('small request', server.recv(4096))
+            next(downloader._currentProcess)
+            self.assertEqual(['addReader'], reactor.calledMethodNames())
+            self.assertEqual(b'small request', server.recv(4096))
 
-        reactor.calledMethods.reset()
-        list(downloader._currentProcess)
-        self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+            reactor.calledMethods.reset()
+            list(downloader._currentProcess)
+            self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+        finally:
+            client.close()
+            server.close()
 
     def testReallyLargeRequestSendWithReactor(self):
         def readall():
@@ -854,7 +881,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         class BuildRequest(object):
             def buildRequest(self, additionalHeaders=None):
                 # A.k.a. not fitting into the buffer.
-                return ('x' * (256 * 1024))
+                return (b'x' * (256 * 1024))
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         def mockTryConnect(host, port, proxyServer=None):
             raise StopIteration(client)
@@ -896,7 +923,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
     def testUseBuildRequestHostAndPort(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             reactor = CallTrace('reactor')
-            observer = CallTrace('observer', returnValues={'buildRequest': dict(host='localhost', port=port, request='GET /path HTTP/1.0\r\n\r\n')}, emptyGeneratorMethods=['handle'])
+            observer = CallTrace('observer', returnValues={'buildRequest': dict(host='localhost', port=port, request=b'GET /path HTTP/1.0\r\n\r\n')}, emptyGeneratorMethods=['handle'])
             observer.methods['handle'] = lambda data: (x for x in 'X')
             downloader = PeriodicDownload(reactor, err=StringIO(), autoStart=False)
             downloader.addObserver(observer)
@@ -918,9 +945,9 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         self._downloader = PeriodicDownload(self._reactor, host, port, schedule=Schedule(period=period), prio=0, err=StringIO())
         self._observer = CallTrace("observer", methods={'handle': lambda data: handleGenerator})
         if proxyServer:
-            self._observer.returnValues["buildRequest"] = dict(request="GET /path?argument=value HTTP/1.0\r\n\r\n", host=host, port=port, proxyServer=proxyServer)
+            self._observer.returnValues["buildRequest"] = dict(request=b"GET /path?argument=value HTTP/1.0\r\n\r\n", host=host, port=port, proxyServer=proxyServer)
         else:
-            self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
+            self._observer.returnValues["buildRequest"] = b"GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._downloader.addObserver(self._observer)
         self._downloader.observer_init()
         self.assertEqual(period, self._reactor.calledMethods[0].args[0])
@@ -942,14 +969,15 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 
 
 HTTP_SEPARATOR = 2 * CRLF
-STATUSLINE = """HTTP/1.0 200 OK """ + HTTP_SEPARATOR
-STATUSLINE_ALTERNATIVE = """HTTP/1.1 200 ok """ + HTTP_SEPARATOR
+STATUSLINE = b"""HTTP/1.0 200 OK""" + HTTP_SEPARATOR
+STATUSLINE_ALTERNATIVE = b"""HTTP/1.1 200 ok""" + HTTP_SEPARATOR
 DROP_CONNECTION = object()
 
-EMBEDDED_RECORD = '<record>ignored</record>'
-BODY = """<aap:noot xmlns:aap="mies">%s</aap:noot>"""
-ONE_RECORD = BODY % (EMBEDDED_RECORD)
-TWO_RECORDS = BODY % (EMBEDDED_RECORD * 2)
+def _body(record):
+    return b"""<aap:noot xmlns:aap="mies">""" + record + b"</aap:noot>"
+EMBEDDED_RECORD = b'<record>ignored</record>'
+ONE_RECORD = _body(EMBEDDED_RECORD)
+TWO_RECORDS = _body(EMBEDDED_RECORD * 2)
 RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD
 RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS
 
@@ -971,9 +999,10 @@ def proxyServer(port, request):
             self.send_response(200, "Connection established")
             self.end_headers()
             origRequest = self.connection.recv(4096)
-            path = "http://" + self.path + origRequest.split()[1]
-            self.wfile.write("HTTP/1.0 200 OK\r\n\r\n")
-            self.wfile.write(urlopen(path).read())
+            path = "http://" + self.path + origRequest.decode().split()[1]
+            self.wfile.write(b"HTTP/1.0 200 OK\r\n\r\n")
+            with urlopen(path) as strm:
+                self.wfile.write(strm.read())
             self.wfile.flush()
             self.connection.close()
 

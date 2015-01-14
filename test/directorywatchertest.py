@@ -42,32 +42,28 @@ class DirectoryWatcherTest(SeecrTestCase):
     def testNotifyOnCreateFile(self):
         changedFiles = []
         dw = DirectoryWatcher(self.tempdir, lambda f: changedFiles.append(f), CreateFile=True)
-        f = open(join(self.tempdir, 'createtest'), 'w')
-        f.write("test")
-        f.close()
+        with open(join(self.tempdir, 'createtest'), 'w') as f:
+            f.write("test")
         dw()
         self.assertEqual(1, len(changedFiles))
         self.assertEqual('createtest', changedFiles[0].name)
 
     def testNotifyOnModifyFile(self):
         changedFiles = []
-        f = open(join(self.tempdir, 'modifytest'), 'w')
-        f.write("line 1")
-        f.close()
+        with open(join(self.tempdir, 'modifytest'), 'w') as f:
+            f.write("line 1")
 
         dw = DirectoryWatcher(self.tempdir, lambda f: changedFiles.append(f), ModifyFile=True)
-        f = open(join(self.tempdir, 'modifytest'), 'a')
-        f.write("line 2")
-        f.close()
+        with open(join(self.tempdir, 'modifytest'), 'a') as f:
+            f.write("line 2")
 
         dw()
         self.assertEqual(1, len(changedFiles))
         self.assertEqual('modifytest', changedFiles[0].name)
 
     def testNotifyOnMoveInFile(self):
-        f = open('/tmp/tempfile', 'w')
-        f.write("test")
-        f.close()
+        with open('/tmp/tempfile', 'w') as f:
+            f.write("test")
         changedFiles = []
         dw = DirectoryWatcher(self.tempdir, lambda f: changedFiles.append(f), MoveInFile=True)
 
@@ -79,13 +75,15 @@ class DirectoryWatcherTest(SeecrTestCase):
     def testNotifyOnCreateAndModifyFile(self):
         changedFiles = []
         dw = DirectoryWatcher(self.tempdir, lambda f: changedFiles.append(f), CreateFile=True, ModifyFile=True)
-        open(join(self.tempdir, 'createmodifytest'), 'w').close()
+        with open(join(self.tempdir, 'createmodifytest'), 'w') as f:
+            pass
         
         dw()
         self.assertEqual(1, len(changedFiles))
         self.assertEqual('createmodifytest', changedFiles[0].name)
 
-        open(join(self.tempdir, 'createmodifytest'), 'a').write('test')
+        with open(join(self.tempdir, 'createmodifytest'), 'a') as f:
+            f.write('test')
         dw()
         self.assertEqual(2, len(changedFiles))
         self.assertEqual('createmodifytest', changedFiles[1].name)

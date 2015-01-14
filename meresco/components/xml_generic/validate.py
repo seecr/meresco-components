@@ -42,11 +42,11 @@ class Validate(Observable):
     def __init__(self, schemaPath):
         Observable.__init__(self)
         try:
-            self._schema = XMLSchema(parse(open(schemaPath)))
+            with open(schemaPath) as fp:
+                self._schema = XMLSchema(parse(fp))
         except XMLSchemaParseError as e:
             print((e.error_log.last_error))
             raise
-
 
     def all_unknown(self, message, *args, **kwargs):
         self._detectAndValidate(*args, **kwargs)
@@ -90,8 +90,9 @@ def assertValid(xmlString, schemaPath):
         raise AssertionError(formatException(schema, toValidate))
 
 def formatException(schema, lxmlNode):
+    xmlString = lxmltostring(lxmlNode, pretty_print=True).decode()
     message = str(schema.error_log.last_error) + "\n\n"
-    for nr, line in enumerate(lxmltostring(lxmlNode, pretty_print=True).split('\n')):
+    for nr, line in enumerate(xmlString.split('\n')):
         message += "%s %s\n" % (nr+1, line)
     return message
 

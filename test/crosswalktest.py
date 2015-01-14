@@ -61,7 +61,8 @@ class CrosswalkTest(SeecrTestCase):
 
     def testOne(self):
         self.observer.methods['crosswalk'] = lambda *args, **kwargs: (x for x in [])
-        list(compose(self.crosswalk.all_unknown('crosswalk', 'id', 'metadata', theXmlRecord=parse(readRecord('imsmd_v1p2-1.xml')))))
+        with readRecord('imsmd_v1p2-1.xml') as strm:
+            list(compose(self.crosswalk.all_unknown('crosswalk', 'id', 'metadata', theXmlRecord=parse(strm))))
         self.assertEqual(1, len(self.observer.calledMethods))
         self.assertEqual(2, len(self.observer.calledMethods[0].args))
         arguments = self.observer.calledMethods[0].args
@@ -70,9 +71,11 @@ class CrosswalkTest(SeecrTestCase):
 
     def testValidate(self):
         self.observer.methods['methodname'] = lambda *args, **kwargs: (x for x in [])
-        list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('lom-cc-nbc.xml')))))
+        with readRecord('lom-cc-nbc.xml') as strm:
+            list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(strm))))
         try:
-            list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(readRecord('imsmd_v1p2-1.xml')))))
+            with readRecord('imsmd_v1p2-1.xml') as strm:
+                list(compose(self.validate.all_unknown('methodname', 'id', 'metadata', parse(strm))))
             self.fail('must raise exception')
         except Exception as e:
             self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://dpc.uba.uva.nl/schema/lom/triplel}lom': No matching global declaration available for the validation root." in str(e), str(e))
@@ -80,18 +83,20 @@ class CrosswalkTest(SeecrTestCase):
     def testTripleLExample(self):
         self.observer.methods['methodname'] = lambda *args, **kwargs: (x for x in [])
         try:
-            list(compose(self.crosswalk.all_unknown('methodname', 'id', 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
+            with readRecord('triple-lrecord.xml') as strm:
+                list(compose(self.crosswalk.all_unknown('methodname', 'id', 'metadata', theXmlRecord=parse(strm))))
         except Exception as e:
-            message = readRecord('triple-lrecord.xml').read()
-            for n, line in enumerate(message.split('\n')):
-                print(n+1, line)
+            with readRecord('triple-lrecord.xml') as strm:
+                for n, line in enumerate(strm.read().split('\n')):
+                    print(n+1, line)
             raise
 
     def testNormalize(self):
         self.observer.methods['add'] = lambda *args, **kwargs: (x for x in [])
-        list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(readRecord('triple-lrecord.xml')))))
+        with readRecord('triple-lrecord.xml') as strm:
+            list(compose(self.crosswalk.all_unknown('add', None, 'metadata', theXmlRecord=parse(strm))))
         self.assertEqual(1, len(self.observer.calledMethods))
-        self.assertFalse('2006-11-28 19:00' in lxmltostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
+        self.assertFalse(b'2006-11-28 19:00' in lxmltostring(self.observer.calledMethods[0].kwargs['theXmlRecord']))
 
     def testReplacePrefix(self):
         rules = [('classification/taxonPath/taxon/entry', 'imsmd:classification/imsmd:taxonpath/imsmd:taxon/imsmd:entry', ('imsmd:langstring/@xml:lang', 'imsmd:langstring'), '<string language="%s">%s</string>',
@@ -100,7 +105,8 @@ class CrosswalkTest(SeecrTestCase):
         self.assertEqual(rules[0][-1], newRules[0][-1])
 
     def testAddCustomNormalizeMethods(self):
-        open(join(self.tempdir, 'my.rules'), 'w').write("""
+        with open(join(self.tempdir, 'my.rules'), 'w') as fp:
+            fp.write("""
 inputNamespace = defaultNameSpace = 'CrosswalkTest'
 vocabDict = {}
 rootTagName = 'new'

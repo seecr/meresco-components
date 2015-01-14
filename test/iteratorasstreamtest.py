@@ -31,8 +31,8 @@ from meresco.components import IteratorAsStream
 
 class IteratorAsStreamTest(SeecrTestCase):
     def testEmptyIterator(self):
-        stream = IteratorAsStream(iter([]))
-        self.assertEqual('', stream.read())
+        stream = IteratorAsStream(iter([]), default=b'')
+        self.assertEqual(b'', stream.read())
 
     def testReadWithSize(self):
         def assertStream1(stream):
@@ -60,23 +60,23 @@ class IteratorAsStreamTest(SeecrTestCase):
         assertStream4(StringIO("1234567890"))
         assertStream5(StringIO("1234567890"))
 
-        assertStream1(IteratorAsStream("1234567890"))
-        assertStream2(IteratorAsStream("1234567890"))
-        assertStream3(IteratorAsStream("1234567890"))
-        assertStream4(IteratorAsStream("1234567890"))
-        assertStream5(IteratorAsStream("1234567890"))
+        assertStream1(IteratorAsStream("1234567890", default=''))
+        assertStream2(IteratorAsStream("1234567890", default=''))
+        assertStream3(IteratorAsStream("1234567890", default=''))
+        assertStream4(IteratorAsStream("1234567890", default=''))
+        assertStream5(IteratorAsStream("1234567890", default=''))
 
-        assertStream1(IteratorAsStream(iter("1234567890")))
-        assertStream2(IteratorAsStream(iter("1234567890")))
-        assertStream3(IteratorAsStream(iter("1234567890")))
-        assertStream4(IteratorAsStream(iter("1234567890")))
-        assertStream5(IteratorAsStream(iter("1234567890")))
+        assertStream1(IteratorAsStream(iter("1234567890"), default=''))
+        assertStream2(IteratorAsStream(iter("1234567890"), default=''))
+        assertStream3(IteratorAsStream(iter("1234567890"), default=''))
+        assertStream4(IteratorAsStream(iter("1234567890"), default=''))
+        assertStream5(IteratorAsStream(iter("1234567890"), default=''))
         
-        assertStream1(IteratorAsStream((f for f in ["123","456","78","90"])))
-        assertStream2(IteratorAsStream((f for f in ["123","456","78","90"])))
-        assertStream3(IteratorAsStream((f for f in ["123","456","78","90"])))
-        assertStream4(IteratorAsStream((f for f in ["123","456","78","90"])))
-        assertStream5(IteratorAsStream((f for f in ["123","456","78","90"])))
+        assertStream1(IteratorAsStream((f for f in ["123","456","78","90"]), default=''))
+        assertStream2(IteratorAsStream((f for f in ["123","456","78","90"]), default=''))
+        assertStream3(IteratorAsStream((f for f in ["123","456","78","90"]), default=''))
+        assertStream4(IteratorAsStream((f for f in ["123","456","78","90"]), default=''))
+        assertStream5(IteratorAsStream((f for f in ["123","456","78","90"]), default=''))
 
 
     def testStreamAsIterator(self):

@@ -67,7 +67,8 @@ class Crosswalk(Observable):
 
     def readConfig(self, ruleSetName, localsDict):
         self._globs['extend']= lambda name: self.readConfig(name, localsDict)
-        exec(compile(open(self.rulesDir + '/' + ruleSetName + EXTENSION).read(), self.rulesDir + '/' + ruleSetName + EXTENSION, 'exec'), self._globs, localsDict)
+        with open(self.rulesDir + '/' + ruleSetName + EXTENSION) as fp:
+            exec(compile(fp.read(), self.rulesDir + '/' + ruleSetName + EXTENSION, 'exec'), self._globs, localsDict)
 
     def _detectAndConvert(self, anObject):
         if type(anObject) == _ElementTree:
