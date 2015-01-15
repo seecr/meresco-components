@@ -882,34 +882,38 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % fileDict)
             def buildRequest(self, additionalHeaders=None):
                 # A.k.a. not fitting into the buffer.
                 return (b'x' * (256 * 1024))
-        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
-        def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(client)
-            yield
-        downloader._tryConnect = mockTryConnect
-        downloader._currentProcess = compose(downloader._processOne())
-        downloader.addObserver(BuildRequest())
+        try:
+            downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+            def mockTryConnect(host, port, proxyServer=None):
+                raise StopIteration(client)
+                yield
+            downloader._tryConnect = mockTryConnect
+            downloader._currentProcess = compose(downloader._processOne())
+            downloader.addObserver(BuildRequest())
 
-        next(downloader._currentProcess)
-        self.assertEqual(['addWriter'], reactor.calledMethodNames())
-        addWriterCB = reactor.calledMethods[0].args[1]
-        self.assertEqual(addWriterCB, downloader._currentProcess.__next__)
+            next(downloader._currentProcess)
+            self.assertEqual(['addWriter'], reactor.calledMethodNames())
+            addWriterCB = reactor.calledMethods[0].args[1]
+            self.assertEqual(addWriterCB, downloader._currentProcess.__next__)
 
-        count = readall()
+            count = readall()
 
-        reactor.calledMethods.reset()
-        next(downloader._currentProcess)
-        self.assertEqual([], reactor.calledMethodNames())
+            reactor.calledMethods.reset()
+            next(downloader._currentProcess)
+            self.assertEqual([], reactor.calledMethodNames())
 
-        count = readall()
+            count = readall()
 
-        reactor.calledMethods.reset()
-        next(downloader._currentProcess)
-        self.assertEqual(['removeWriter', 'addReader'], reactor.calledMethodNames())
+            reactor.calledMethods.reset()
+            next(downloader._currentProcess)
+            self.assertEqual(['removeWriter', 'addReader'], reactor.calledMethodNames())
 
-        reactor.calledMethods.reset()
-        list(downloader._currentProcess)
-        self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+            reactor.calledMethods.reset()
+            list(downloader._currentProcess)
+            self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+        finally:
+            client.close()
+            server.close()
 
     def testNoBuildRequestSleeps(self):
         reactor = CallTrace('reactor')
