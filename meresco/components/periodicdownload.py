@@ -231,9 +231,10 @@ class PeriodicDownload(Observable):
             try:
                 try:
                     sok.connect((host, port))
-                except SocketError as xxx_todo_changeme:
-                    (errno, msg) = xxx_todo_changeme.args
+                except SocketError as e:
+                    (errno, msg) = e.args
                     if errno != EINPROGRESS:
+                        sok.close()
                         yield self._retryAfterError("%s: %s" % (errno, msg))
                         return
                 self._reactor.addWriter(sok, self._currentProcess.__next__)
@@ -269,6 +270,7 @@ class PeriodicDownload(Observable):
             except (AssertionError, KeyboardInterrupt, SystemExit) as e:
                 raise
             except Exception as e:
+                sok.close()
                 yield self._retryAfterError(str(e), retryAfter=self._retryAfterErrorTime)
                 return
         raise StopIteration(sok)
