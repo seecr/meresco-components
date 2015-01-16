@@ -80,7 +80,7 @@ class BasicAuthenticationTest(TestCase):
         authentication = BasicAuthentication(realm='Test Realm')
         interceptor = CallTrace('httphandler', returnValues={'isValidLogin': True}, methods={'handleRequest': lambda *a, **kw: (x for x in 'response')})
         authentication.addObserver(interceptor)
-        headers = {'Authorization': 'Basic ' + b64encode('aUser:aPassword')}
+        headers = {'Authorization': b'Basic ' + b64encode(b'aUser:aPassword')}
         results = authentication.handleRequest(port='8080', RequestURI='/private', Method='GET', Headers=headers)
         response = ''.join(compose(results))
         self.assertFalse('WWW-Authenticate: Basic realm="Test Realm"\r\n' in response, response)

@@ -101,5 +101,6 @@ class XsltCrosswalkTest(SeecrTestCase):
                 )
             )
         )
-        root.do.someMessage(lxmlNode=parse(open(self.xmlFilename)))
+        with open(self.xmlFilename) as fp:
+            root.do.someMessage(lxmlNode=parse(fp))
         self.assertEqualsWS(expectedXml, self.crosswalkedNode[0])

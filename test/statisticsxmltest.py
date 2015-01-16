@@ -33,7 +33,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.statisticsxml import StatisticsXml
 from meresco.components.statistics import Statistics
 from meresco.components.http.utils import CRLF
-from io import StringIO
+from io import BytesIO
 from lxml.etree import parse
 
 from weightless.core import compose
@@ -114,16 +114,14 @@ class StatisticsXmlTest(SeecrTestCase):
         stats.returnValues['listKeys'] = [('key',)]
         xml = StatisticsXml(stats)
         head, body = ''.join(compose(xml.handleRequest(RequestURI="http://localhost/statistics?key=key"))).split(CRLF*2)
-        xmlnode = parse(StringIO(body))
+        xmlnode = parse(BytesIO(body.encode()))
         observations = xmlnode.xpath('/stats:statistics/stats:observations/stats:observation',
                 namespaces=nsmap)
         self.assertEqual(2, len(observations))
-        result = []
+        result = set()
         for observation in observations:
             value = observation.xpath('stats:value/text()', namespaces=nsmap)[0]
             occurrences = observation.xpath('stats:occurrences/text()', namespaces=nsmap)[0]
-            result.append((value, occurrences))
-        self.assertEqual([(value2, '100'), (value1, '13')], result)
-
-
+            result.add((value, occurrences))
+        self.assertEqual(set([(value2, '100'), (value1, '13')]), result)
 

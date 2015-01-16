@@ -29,7 +29,7 @@
 # 
 ## end license ##
 
-import pickle as pickle
+import pickle
 from time import time
 from random import randint
 from seecr.test import SeecrTestCase
@@ -44,152 +44,193 @@ class StatisticsTest(SeecrTestCase):
 
     def testStatistics(self):
         stats = Statistics(self.tempdir, [('date',), ('date', 'protocol'), ('date', 'ip', 'protocol')])
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['sru']})
+            self.assertEqual({
+                    ('2007-12-20',): 1
+            }, stats.get(('date',), ()))
+            self.assertEqual({
+                    ('2007-12-20', 'sru'): 1,
+            }, stats.get(('date', 'protocol')))
+            self.assertEqual({
+                    ('2007-12-20', '127.0.0.1', 'sru'): 1
+            }, stats.get(('date', 'ip', 'protocol')))
 
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['sru']})
-        self.assertEqual({
-                ('2007-12-20',): 1
-        }, stats.get(('date',), ()))
-        self.assertEqual({
-                ('2007-12-20', 'sru'): 1,
-        }, stats.get(('date', 'protocol')))
-        self.assertEqual({
-                ('2007-12-20', '127.0.0.1', 'sru'): 1
-        }, stats.get(('date', 'ip', 'protocol')))
-
-        stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['srw']})
-        self.assertEqual({
-                ('2007-12-20',): 2
-        }, stats.get(('date',)))
-        self.assertEqual({
-                ('2007-12-20', 'sru'): 1,
-                ('2007-12-20', 'srw'): 1,
-        }, stats.get(('date', 'protocol')))
-        self.assertEqual({
-                ('2007-12-20', '127.0.0.1', 'sru'): 1,
-                ('2007-12-20', '127.0.0.1', 'srw'): 1
-        }, stats.get(('date', 'ip', 'protocol')))
+            stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['srw']})
+            self.assertEqual({
+                    ('2007-12-20',): 2
+            }, stats.get(('date',)))
+            self.assertEqual({
+                    ('2007-12-20', 'sru'): 1,
+                    ('2007-12-20', 'srw'): 1,
+            }, stats.get(('date', 'protocol')))
+            self.assertEqual({
+                    ('2007-12-20', '127.0.0.1', 'sru'): 1,
+                    ('2007-12-20', '127.0.0.1', 'srw'): 1
+            }, stats.get(('date', 'ip', 'protocol')))
+        finally:
+            stats._closeTx()
 
     def testReadTxLog(self):
-        fp = open(self.tempdir + '/txlog', 'w')
-        try:
+        with open(self.tempdir + '/txlog', 'w') as fp:
             fp.write("(1970, 1, 1, 0, 0, 0)\t{'date':['2007-12-20'],'ip':['127.0.0.1'],'protocol':['sru']}\n")
             fp.write("(1970, 1, 1, 0, 0, 0)\t{'date':['2007-12-20'],'ip':['127.0.0.1'],'protocol':['srw']}\n")
-        finally:
-            fp.close()
         stats = Statistics(self.tempdir, [('date',), ('date', 'protocol'), ('date', 'ip', 'protocol')])
-        self.assertEqual({
-                ('2007-12-20',): 2
-        }, stats.get(('date',)))
-        self.assertEqual({
-                ('2007-12-20', 'sru'): 1,
-                ('2007-12-20', 'srw'): 1,
-        }, stats.get(('date', 'protocol')))
-        self.assertEqual({
-                ('2007-12-20', '127.0.0.1', 'sru'): 1,
-                ('2007-12-20', '127.0.0.1', 'srw'): 1
-        }, stats.get(('date', 'ip', 'protocol')))
+        try:
+            self.assertEqual({
+                    ('2007-12-20',): 2
+            }, stats.get(('date',)))
+            self.assertEqual({
+                    ('2007-12-20', 'sru'): 1,
+                    ('2007-12-20', 'srw'): 1,
+            }, stats.get(('date', 'protocol')))
+            self.assertEqual({
+                    ('2007-12-20', '127.0.0.1', 'sru'): 1,
+                    ('2007-12-20', '127.0.0.1', 'srw'): 1
+            }, stats.get(('date', 'ip', 'protocol')))
+        finally:
+            stats._closeTx()
 
     def testWriteTxLog(self):
         def readlines():
-            fp = open(self.tempdir + '/txlog')
-            try:
+            with open(self.tempdir + '/txlog') as fp:
                 lines = fp.readlines()
-            finally:
-                fp.close()
             return lines
 
         stats = Statistics(self.tempdir, [('date',), ('date', 'protocol'), ('date', 'ip', 'protocol')])
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['sru']})
 
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['sru']})
+            lines = readlines()
+            self.assertEqual(1, len(lines))
+            timestamp, data = lines[0].split("\t")
+            self.assertEqual("(1970, 1, 1, 0, 0, 0)", timestamp)
+            self.assertEqual({'date': ['2007-12-20'], 'ip': ['127.0.0.1'], 'protocol': ['sru']}, eval(data))
 
-        lines = readlines()
-        self.assertEqual(1, len(lines))
-        self.assertEqual("(1970, 1, 1, 0, 0, 0)\t{'date': ['2007-12-20'], 'ip': ['127.0.0.1'], 'protocol': ['sru']}\n", lines[0])
+            stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['srw']})
+            lines = readlines()
+            self.assertEqual(2, len(lines))
+            timestamp, data = lines[0].split("\t")
+            self.assertEqual("(1970, 1, 1, 0, 0, 0)", timestamp)
+            self.assertEqual({'date': ['2007-12-20'], 'ip': ['127.0.0.1'], 'protocol': ['sru']}, eval(data))
 
-        stats._process({'date':['2007-12-20'], 'ip':['127.0.0.1'], 'protocol':['srw']})
-        lines = readlines()
-        self.assertEqual(2, len(lines))
-        self.assertEqual("(1970, 1, 1, 0, 0, 0)\t{'date': ['2007-12-20'], 'ip': ['127.0.0.1'], 'protocol': ['sru']}\n", lines[0])
-        self.assertEqual("(1970, 1, 1, 0, 0, 0)\t{'date': ['2007-12-20'], 'ip': ['127.0.0.1'], 'protocol': ['srw']}\n", lines[1])
+            timestamp, data = lines[1].split("\t")
+            self.assertEqual("(1970, 1, 1, 0, 0, 0)", timestamp)
+            self.assertEqual({'date': ['2007-12-20'], 'ip': ['127.0.0.1'], 'protocol': ['srw']}, eval(data))
+        finally:
+            stats._closeTx()
 
     def testUndefinedFieldValues(self):
         stats = Statistics(self.tempdir, [('protocol',)])
-        stats._process({'date':['2007-12-20']})
-        self.assertEqual({}, stats.get(('protocol',)))
+        try:
+            stats._process({'date':['2007-12-20']})
+            self.assertEqual({}, stats.get(('protocol',)))
+        finally:
+            stats._closeTx()
 
         stats = Statistics(self.tempdir, [('date', 'protocol')])
-        stats._process({'date':['2007-12-20']})
-        self.assertEqual({}, stats.get(('date', 'protocol')))
+        try:
+            stats._process({'date':['2007-12-20']})
+            self.assertEqual({}, stats.get(('date', 'protocol')))
+        finally:
+            stats._closeTx()
 
     def testSnapshotState(self):
         stats = Statistics(self.tempdir, [('keys',)])
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        stats._process({'keys': ['2007-12-20']})
-        stats._writeSnapshot()
-        self.assertTrue(isfile(join(self.tempdir , snapshotFilename)))
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            stats._process({'keys': ['2007-12-20']})
+            stats._writeSnapshot()
+            self.assertTrue(isfile(join(self.tempdir , snapshotFilename)))
+        finally:
+            stats._closeTx()
+
         stats = Statistics(self.tempdir, [('keys',)])
-        self.assertEqual({('2007-12-20',): 1}, stats.get(('keys',)))
+        try:
+            self.assertEqual({('2007-12-20',): 1}, stats.get(('keys',)))
+        finally:
+            stats._closeTx()
 
     def testCrashInWriteSnapshotDuringWriteRecovery(self):
         stats = Statistics(self.tempdir, [('keys',)])
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        stats._process({'keys': ['the old one']})
-        stats._writeSnapshot()
-        open(self.tempdir + '/txlog', 'w').write("(1970, 1, 1, 0, 0, 0)\t{'keys': ['from_log']}\n")
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            stats._process({'keys': ['the old one']})
+            stats._writeSnapshot()
 
-        snapshotFile = open(join(self.tempdir, snapshotFilename + '.writing'), 'w')
-        snapshotFile.write('boom')
-        snapshotFile.close()
+            with open(self.tempdir + '/txlog', 'w') as fp:
+                fp.write("(1970, 1, 1, 0, 0, 0)\t{'keys': ['from_log']}\n")
+
+            with open(join(self.tempdir, snapshotFilename + '.writing'), 'w') as snapshotFile:
+                snapshotFile.write('boom')
+        finally:
+            stats._closeTx()
 
         stats = Statistics(self.tempdir, [('keys',)])
-        self.assertEqual({('the old one',): 1, ('from_log',): 1}, stats.get(('keys',)))
-
-        self.assertFalse(isfile(join(self.tempdir , snapshotFilename + '.writing')))
+        try:
+            self.assertEqual({('the old one',): 1, ('from_log',): 1}, stats.get(('keys',)))
+            self.assertFalse(isfile(join(self.tempdir , snapshotFilename + '.writing')))
+        finally:
+            stats._closeTx()
 
     def testCrashInWriteSnapshotAfterWriteRecovery(self):
-        snapshotFile = open(join(self.tempdir , snapshotFilename), 'wb')
-        theOldOne = {'0': Top100s(data={('keys',): {('the old one',): 3}})}
-        pickle.dump(theOldOne, snapshotFile)
-        snapshotFile.close()
+        with open(join(self.tempdir , snapshotFilename), 'wb') as snapshotFile:
+            theOldOne = {'0': Top100s(data={('keys',): {('the old one',): 3}})}
+            pickle.dump(theOldOne, snapshotFile)
 
-        open(self.tempdir + '/txlog', 'w').write('keys:should_not_appear\n')
+        with open(self.tempdir + '/txlog', 'w') as fp:
+            fp.write('keys:should_not_appear\n')
 
-        snapshotFile = open(join(self.tempdir, snapshotFilename + '.writing.done'), 'w')
-        theNewOne = {'0': Top100s(data={('keys',): {('the new one',): 3}})}
-        pickle.dump(theNewOne, snapshotFile)
-        snapshotFile.close()
+        with open(join(self.tempdir, snapshotFilename + '.writing.done'), 'wb') as snapshotFile:
+            theNewOne = {'0': Top100s(data={('keys',): {('the new one',): 3}})}
+            pickle.dump(theNewOne, snapshotFile)
 
         stats = Statistics(self.tempdir, [('keys',)])
-        self.assertEqual(theNewOne, stats._data)
-        self.assertFalse(isfile(join(self.tempdir, snapshotFilename + '.writing.done')))
-        self.assertTrue(isfile(join(self.tempdir, snapshotFilename)))
-        self.assertEqual(theNewOne, pickle.load(open(join(self.tempdir, snapshotFilename))))
-        self.assertFalse(isfile(self.tempdir + '/txlog'))
-    
+        try:
+            self.assertEqual(theNewOne, stats._data)
+            fullSnapshotFilename = join(self.tempdir, snapshotFilename)
+            self.assertFalse(isfile(fullSnapshotFilename + '.writing.done'))
+            self.assertTrue(isfile(fullSnapshotFilename))
+            with open(fullSnapshotFilename, 'rb') as fp:
+                self.assertEqual(theNewOne, pickle.load(fp))
+            self.assertFalse(isfile(self.tempdir + '/txlog'))
+        finally:
+            stats._closeTx()
+
     def testRecoverWhenCrashedJustAfterWritingANewSnapshot(self):
         stats = Statistics(self.tempdir, [('keys',)])
-        stats._process({'keys': ['the new one']})
-        stats._writeSnapshot()
-        self.assertEqual({('the new one',):1}, stats.get(('keys',)))
-        rename(join(self.tempdir, snapshotFilename), join(self.tempdir, 'new'))
+        try:
+            stats._process({'keys': ['the new one']})
+            stats._writeSnapshot()
+            self.assertEqual({('the new one',):1}, stats.get(('keys',)))
+            rename(join(self.tempdir, snapshotFilename), join(self.tempdir, 'new'))
+        finally:
+            stats._closeTx()
         
         stats = Statistics(self.tempdir, [('keys',)])
-        stats._process({'keys': ['the old one']})
-        stats._writeSnapshot()
-        self.assertEqual({('the old one',):1}, stats.get(('keys',)))
-        rename(join(self.tempdir, snapshotFilename), join(self.tempdir, 'old'))
-        
-        rename(join(self.tempdir, 'old'), join(self.tempdir, snapshotFilename))
-        rename(join(self.tempdir, 'new'), join(self.tempdir, snapshotFilename + '.writing.done'))
-        open(self.tempdir + '/txlog', 'w').write('keys:should_not_appear\n')
+        try:
+            stats._process({'keys': ['the old one']})
+            stats._writeSnapshot()
+            self.assertEqual({('the old one',):1}, stats.get(('keys',)))
+            rename(join(self.tempdir, snapshotFilename), join(self.tempdir, 'old'))
+            
+            rename(join(self.tempdir, 'old'), join(self.tempdir, snapshotFilename))
+            rename(join(self.tempdir, 'new'), join(self.tempdir, snapshotFilename + '.writing.done'))
+            with open(self.tempdir + '/txlog', 'w') as fp:
+                fp.write('keys:should_not_appear\n')
+        finally:
+            stats._closeTx()
 
         stats = Statistics(self.tempdir, [('keys',)])
-        self.assertFalse(isfile(join(self.tempdir, snapshotFilename + '.writing.done')))
-        self.assertTrue(isfile(join(self.tempdir, snapshotFilename)))
-        self.assertFalse(isfile(self.tempdir + '/txlog'))
-        self.assertEqual({('the new one',):1}, stats.get(('keys',)))
+        try:
+            self.assertFalse(isfile(join(self.tempdir, snapshotFilename + '.writing.done')))
+            self.assertTrue(isfile(join(self.tempdir, snapshotFilename)))
+            self.assertFalse(isfile(self.tempdir + '/txlog'))
+            self.assertEqual({('the new one',):1}, stats.get(('keys',)))
+        finally:
+            stats._closeTx()
 
     def testSelfLog(self):
         class MyObserver(Logger):
@@ -197,13 +238,16 @@ class StatisticsTest(SeecrTestCase):
             def aMessage(self):
                 self.log(message='newValue')
         stats = Statistics(self.tempdir, [('message',)])
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        myObserver = MyObserver()
-        observable = Observable()
-        observable.addObserver(stats)
-        stats.addObserver(myObserver)
-        list(compose(observable.all.aMessage()))
-        self.assertEqual({('newValue',): 1}, stats.get(('message',)))
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            myObserver = MyObserver()
+            observable = Observable()
+            observable.addObserver(stats)
+            stats.addObserver(myObserver)
+            list(compose(observable.all.aMessage()))
+            self.assertEqual({('newValue',): 1}, stats.get(('message',)))
+        finally:
+            stats._closeTx()
 
     def testSelfLogWithObservableAndDelegation(self):
         class MyObserver(Observable):
@@ -212,13 +256,16 @@ class StatisticsTest(SeecrTestCase):
             def aMessage(self):
                 self.log(message='newValue')
         stats = Statistics(self.tempdir, [('message',)])
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        myObserver = MyObserver()
-        observable = Observable()
-        observable.addObserver(stats)
-        stats.addObserver(myObserver)
-        list(compose(observable.all.aMessage()))
-        self.assertEqual({('newValue',): 1}, stats.get(('message',)))
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            myObserver = MyObserver()
+            observable = Observable()
+            observable.addObserver(stats)
+            stats.addObserver(myObserver)
+            list(compose(observable.all.aMessage()))
+            self.assertEqual({('newValue',): 1}, stats.get(('message',)))
+        finally:
+            stats._closeTx()
 
     def testLogWithoutStatistics(self):
         result = []
@@ -251,51 +298,66 @@ class StatisticsTest(SeecrTestCase):
                 self.log(message='value1')
                 self.log(message='value2')
         stats = Statistics(self.tempdir, [('message',)])
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        myObserver = MyObserver()
-        observable = Observable()
-        observable.addObserver(stats)
-        stats.addObserver(myObserver)
-        list(compose(observable.all.aMessage()))
-        self.assertEqual({('value1',): 1, ('value2',) : 1}, stats.get(('message',)))
+        try:
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            myObserver = MyObserver()
+            observable = Observable()
+            observable.addObserver(stats)
+            stats.addObserver(myObserver)
+            list(compose(observable.all.aMessage()))
+            self.assertEqual({('value1',): 1, ('value2',) : 1}, stats.get(('message',)))
+        finally:
+            stats._closeTx()
 
     def testCatchErrorsAndCloseTxLog(self):
         pass
 
     def testAccumulateOverTime(self):
         stats = Statistics(self.tempdir, [('message',)])
-        t0 = (1970, 1, 1, 0, 0, 0)
-        stats._clock = lambda: t0
-        stats._process({'message': 'A'})
-        #count, max, min, avg, pct99
-        t1 = (1970, 1, 1, 0, 0, 1)
-        stats._process({'message': 'A'})
-        self.assertEqual({('A',): 2}, stats.get(('message',), (1970, 1, 1, 0, 0, 0), (1970, 1, 1, 0, 0, 2)))
+        try:
+            t0 = (1970, 1, 1, 0, 0, 0)
+            stats._clock = lambda: t0
+            stats._process({'message': 'A'})
+            #count, max, min, avg, pct99
+            t1 = (1970, 1, 1, 0, 0, 1)
+            stats._process({'message': 'A'})
+            self.assertEqual({('A',): 2}, stats.get(('message',), (1970, 1, 1, 0, 0, 0), (1970, 1, 1, 0, 0, 2)))
+        finally:
+            stats._closeTx()
 
     def testListKeys(self):
         stats = Statistics(self.tempdir, [('message',), ('ape', 'nut')])
-        self.assertEqual([('message',), ('ape', 'nut')], stats.listKeys())
+        try:
+            self.assertEqual([('message',), ('ape', 'nut')], stats.listKeys())
+        finally:
+            stats._closeTx()
 
     def testEmptyDataForKey(self):
         stats = Statistics(self.tempdir, [('message',)])
-        retval = stats.get(('message',))
-        self.assertEqual({}, retval)
+        try:
+            retval = stats.get(('message',))
+            self.assertEqual({}, retval)
+        finally:
+            stats._closeTx()
 
     def testObligatoryKey(self):
         stats = Statistics(self.tempdir, [('message',), ('message', 'submessage')])
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        stats._process({'message': 'A', 'submessage': 'B'})
-        retval = stats.get(('message',))
-        self.assertTrue(retval)
-
-        retval = stats.get(('message', 'submessage'))
-        self.assertTrue(retval)
-
         try:
-            stats.get(('not specified',))
-            self.fail('must not accept unspecified key')
-        except KeyError:
-            pass
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            stats._process({'message': 'A', 'submessage': 'B'})
+            retval = stats.get(('message',))
+            self.assertTrue(retval)
+
+            retval = stats.get(('message', 'submessage'))
+            self.assertTrue(retval)
+
+            try:
+                stats.get(('not specified',))
+                self.fail('must not accept unspecified key')
+            except KeyError:
+                pass
+        finally:
+            stats._closeTx()
 
     def testFlattenValuesNothingToDo(self):
         fieldValues = ([1], [2], [5])
@@ -324,24 +386,27 @@ class StatisticsTest(SeecrTestCase):
             stats._lastSnapshot = stats._clock() #needed because overwritten
 
         stats = Statistics(self.tempdir, [('date',), ('date', 'protocol'), ('date', 'ip', 'protocol')], snapshotInterval=3600)
-        stats._writeSnapshot = shuntWriteSnapshot
-        stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
-        stats._readState() #must be done again after the clock is shunted
+        try:
+            stats._writeSnapshot = shuntWriteSnapshot
+            stats._clock = lambda: (1970, 1, 1, 0, 0, 0)
+            stats._readState() #must be done again after the clock is shunted
 
-        stats._snapshotIfNeeded()
-        self.assertEqual(0, len(snapshots))
+            stats._snapshotIfNeeded()
+            self.assertEqual(0, len(snapshots))
 
-        stats._clock = lambda: (1970, 1, 1, 0, 59, 58)
-        stats._snapshotIfNeeded()
-        self.assertEqual(0, len(snapshots))
+            stats._clock = lambda: (1970, 1, 1, 0, 59, 58)
+            stats._snapshotIfNeeded()
+            self.assertEqual(0, len(snapshots))
 
-        stats._clock = lambda: (1970, 1, 1, 1, 0, 0)
-        stats._snapshotIfNeeded()
-        self.assertEqual(1, len(snapshots))
+            stats._clock = lambda: (1970, 1, 1, 1, 0, 0)
+            stats._snapshotIfNeeded()
+            self.assertEqual(1, len(snapshots))
 
-        stats._clock = lambda: (1970, 1, 1, 1, 0, 1)
-        stats._snapshotIfNeeded()
-        self.assertEqual(1, len(snapshots))
+            stats._clock = lambda: (1970, 1, 1, 1, 0, 1)
+            stats._snapshotIfNeeded()
+            self.assertEqual(1, len(snapshots))
+        finally:
+            stats._closeTx()
 
     def testStatisticsAggregatorEmpty(self):
         aggregator = Aggregator(ListFactory())
@@ -443,7 +508,7 @@ class StatisticsTest(SeecrTestCase):
         self.assertEqual(["value00", "value01"], aggregator.get((2000, 1, 1, 0), (2000, 1, 1, 0)))
 
     def testDataSnapshotStaysCompatible(self):
-        data = """eJyVk81u2zAQhO/7IvbJEMUfWcdeCuQSoE3uAk0RrFJHJEQ6cN6+uyvJcZMeKsAQVqRnv50R6VxM
+        data = b"""eJyVk81u2zAQhO/7IvbJEMUfWcdeCuQSoE3uAk0RrFJHJEQ6cN6+uyvJcZMeKsAQVqRnv50R6VxM
 793kA+DDxTGX6eJKnCAJ2LtXP/nsoouTP7j4muLox5IPudgy5DK4DN9CQLFlRQ2u606X4VyGsesg
 nl68K5AkPJafScG+Txqedp1dJEMcf1z8xecdJAP7c2rocYSwlfwYew+phTCTREUoISAYCA1kRF6v
 1++WbL0jS9T/i3iO2KzKixSV8sZQ3He14nvqq+Ghqnj9zZ5nX8JsZKGkuUGObKSl0HpbLPar2Vst
@@ -451,12 +516,11 @@ IJ+I434N537yI+3UvCPhQTAy3PKoOfpar3kEDkBRsUwcljHDB7s2LML3BXkkZFgo7VeK5L9JsYki
 uZ2UK0WqO4ok3WcKjyWbbRTOUbYrRVV3FCW+UtS8IzdRFMes9I1i7inNPyg8lmo3UTT31mKlaGz/
 tPvt8WCXpCUvKVriI4jnQmvaMPTBcv4YSDc03d8/a/H+abyAeGLmmmat5trg+Jj+XCMeM5prHBqd
 zLUES8dyirHQpVafHBtNaGM2OTYNi46rY9Pe5dpUaKxtKFpU0/ra8nSAPzePWl4="""
-        from base64 import decodestring
+        from base64 import decodebytes
         from zlib import decompress
         snaphotFilename=join(self.tempdir, 'snapshot')
-        f = open(snaphotFilename,'w')
-        f.write(decompress(decodestring(data)))
-        f.close()
+        with open(snaphotFilename,'wb') as fp:
+            fp.write(decompress(decodebytes(data)))
         try:
             stats = Statistics(self.tempdir, [('key',)])
             self.fail()
@@ -479,8 +543,10 @@ zLUES8dyirHQpVafHBtNaGM2OTYNi46rY9Pe5dpUaKxtKFpU0/ra8nSAPzePWl4="""
         # </hack>
         
         stats = Statistics(self.tempdir, [('key',)])
-        self.assertEqual({('value',): 1}, stats.get(('key',)))
-        
+        try:
+            self.assertEqual({('value',): 1}, stats.get(('key',)))
+        finally:
+            stats._closeTx()
     
     def createStatsdirForMergeTests(self, name):
         statsDir = join(self.tempdir, name)
@@ -494,80 +560,92 @@ zLUES8dyirHQpVafHBtNaGM2OTYNi46rY9Pe5dpUaKxtKFpU0/ra8nSAPzePWl4="""
     def testMergeNode(self):
         stats1 = self.createStatsdirForMergeTests('stats1')
         stats2 = self.createStatsdirForMergeTests('stats2')
+        try:
+            leaf1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]._children[0]
+            leaf2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]._children[0]
+            self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, leaf1._values._data)
+            self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, leaf2._values._data)
 
-        leaf1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]._children[0]
-        leaf2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]._children[0]
-        self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, leaf1._values._data)
-        self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, leaf2._values._data)
+            leaf1.merge(leaf2)
+            self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 2}}, leaf1._values._data)
 
-        leaf1.merge(leaf2)
-        self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 2}}, leaf1._values._data)
-
-        self.assertEqual(False, leaf2._aggregated)
-        self.assertEqual(False, leaf1._aggregated)
+            self.assertEqual(False, leaf2._aggregated)
+            self.assertEqual(False, leaf1._aggregated)
+        finally:
+            stats1._closeTx()
+            stats2._closeTx()
 
     def testMergeTree(self):
         stats1 = self.createStatsdirForMergeTests('stats1')
         stats2 = self.createStatsdirForMergeTests('stats2')
-
-        root1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]
-        root2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]
-
-        self.assertEqual({}, root1._values._data)
-        self.assertEqual({}, root2._values._data)
-
-        root1.merge(root2)
-
-        self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 2}}, root1.get(Top100s(), None, None)._data)
-
+        try:
+            root1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]
+            root2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]._children[0]
+            self.assertEqual({}, root1._values._data)
+            self.assertEqual({}, root2._values._data)
+            root1.merge(root2)
+            self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 2}}, root1.get(Top100s(), None, None)._data)
+        finally:
+            stats1._closeTx()
+            stats2._closeTx()
         
     def testMergeTreeWherePartsHaveAlreadyBeenAggregated(self):
         stats1 = self.createStatsdirForMergeTests('stats1')
         stats2 = self.createStatsdirForMergeTests('stats2')
-        stats1._clock = lambda: (1970, 1, 1, 0, 1, 0)
-        stats1._process({'protocol':['srw']})
-        stats1._clock = lambda: (1970, 1, 1, 0, 2, 0)
-        stats1._process({'protocol':['rss']})
+        try:
+            stats1._clock = lambda: (1970, 1, 1, 0, 1, 0)
+            stats1._process({'protocol':['srw']})
+            stats1._clock = lambda: (1970, 1, 1, 0, 2, 0)
+            stats1._process({'protocol':['rss']})
 
-        root1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]
-        root2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]
-        
-        self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 2, ('rss',):1}}, root1.get(Top100s(), None, None)._data)
-        self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, root2.get(Top100s(), None, None)._data)
+            root1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]
+            root2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]
+            
+            self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 2, ('rss',):1}}, root1.get(Top100s(), None, None)._data)
+            self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, root2.get(Top100s(), None, None)._data)
 
-        root1.merge(root2)
-        
-
-        self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 3, ('rss',):1}}, root1.get(Top100s(), None, None)._data)
+            root1.merge(root2)
+            self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 3, ('rss',):1}}, root1.get(Top100s(), None, None)._data)
+        finally:
+            stats1._closeTx()
+            stats2._closeTx()
 
     def testMergeTreeWherePartsHaveAlreadyBeenAggregatedTheOtherWayAround(self):
         stats1 = self.createStatsdirForMergeTests('stats1')
         stats2 = self.createStatsdirForMergeTests('stats2')
-        stats1._clock = lambda: (1970, 1, 1, 0, 1, 0)
-        stats1._process({'protocol':['srw']})
-        stats1._clock = lambda: (1970, 1, 1, 0, 2, 0)
-        stats1._process({'protocol':['rss']})
+        try:
+            stats1._clock = lambda: (1970, 1, 1, 0, 1, 0)
+            stats1._process({'protocol':['srw']})
+            stats1._clock = lambda: (1970, 1, 1, 0, 2, 0)
+            stats1._process({'protocol':['rss']})
 
-        root1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]
-        root2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]
-        
-        self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 2, ('rss',):1}}, root1.get(Top100s(), None, None)._data)
-        self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, root2.get(Top100s(), None, None)._data)
-        root2.merge(root1)
-        
-        self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 3, ('rss',):1}}, root2.get(Top100s(), None, None)._data)
+            root1 = stats1._data._root._children[1970]._children[1]._children[1]._children[0]
+            root2 = stats2._data._root._children[1970]._children[1]._children[1]._children[0]
+            
+            self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 2, ('rss',):1}}, root1.get(Top100s(), None, None)._data)
+            self.assertEqual({('protocol',): {('sru',): 1, ('srw',): 1}}, root2.get(Top100s(), None, None)._data)
+            root2.merge(root1)
+            
+            self.assertEqual({('protocol',): {('sru',): 2, ('srw',): 3, ('rss',):1}}, root2.get(Top100s(), None, None)._data)
+        finally:
+            stats1._closeTx()
+            stats2._closeTx()
 
     def testMergeStatistics(self):
         stats1 = self.createStatsdirForMergeTests('stats1')
         stats2 = self.createStatsdirForMergeTests('stats2')
-        stats1._clock = lambda: (1970, 1, 1, 0, 1, 0)
-        stats1._process({'protocol':['srw']})
-        stats1._clock = lambda: (1970, 1, 1, 0, 2, 0)
-        stats1._process({'protocol':['rss']})
+        try:
+            stats1._clock = lambda: (1970, 1, 1, 0, 1, 0)
+            stats1._process({'protocol':['srw']})
+            stats1._clock = lambda: (1970, 1, 1, 0, 2, 0)
+            stats1._process({'protocol':['rss']})
 
-        self.assertEqual({('sru',): 1, ('srw',): 2, ('rss',):1}, stats1.get(('protocol',)))
-        stats1.merge(stats2)
-        self.assertEqual({('sru',): 2, ('srw',): 3, ('rss',):1}, stats1.get(('protocol',)))
+            self.assertEqual({('sru',): 1, ('srw',): 2, ('rss',):1}, stats1.get(('protocol',)))
+            stats1.merge(stats2)
+            self.assertEqual({('sru',): 2, ('srw',): 3, ('rss',):1}, stats1.get(('protocol',)))
+        finally:
+            stats1._closeTx()
+            stats2._closeTx()
 
     def testExtendResults(self):
         one = Top100s({('keys',):dict([('a%02d' % i,10) for i in range(99)] + [('c',5)])})
@@ -577,13 +655,16 @@ zLUES8dyirHQpVafHBtNaGM2OTYNi46rY9Pe5dpUaKxtKFpU0/ra8nSAPzePWl4="""
 
     def testPerformanceOfSchwartzianTransformInTopSorting(self):
         stats = Statistics(self.tempdir, [('keys',)])
-        for i in range(1000):
-            stats._process({'keys': [randint(0, 10000)]})
-        t0 = time()
-        for i in range(100):
-            stats._data.get((2000,1,1,0,0,0), (2099,1,1,0,0,0)).getTop(('keys',))
-        t = time() - t0
-        self.assertTiming(0.02, t, 0.1) # used to be ~2.5
+        try:
+            for i in range(1000):
+                stats._process({'keys': [randint(0, 10000)]})
+            t0 = time()
+            for i in range(100):
+                stats._data.get((2000,1,1,0,0,0), (2099,1,1,0,0,0)).getTop(('keys',))
+            t = time() - t0
+            self.assertTiming(0.02, t, 0.1) # used to be ~2.5
+        finally:
+            stats._closeTx()
     
 class ListFactory(object):
     def doInit(self):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ## begin license ##
 # 
@@ -35,26 +35,24 @@ from os.path import isfile
 def convert_pickle_file(pickle_file):
     target = "%s.converted" % pickle_file
     if isfile(target):
-        print "File '%s' already exists" % target
+        print("File '%s' already exists" % target)
         return
-        
-    contents = open(pickle_file).read()
-    converted = contents.replace('merescocore.components.statistics', 'meresco.components.statistics')
+       
+    with open(pickle_file, "rb") as fp:
+        contents = fp.read()
+    converted = contents.replace(b'merescocore.components.statistics', b'meresco.components.statistics')
     
-    fp = open(target, 'wb')
-    try:
+    with open(target, 'wb') as fp:
         fp.write(converted)
-    finally:
-        fp.close()
     return target
 
 if __name__ == '__main__':
     args = argv[1:]
     if args == []:
-        print "Usage: %s <pickle-file>" % argv[0]
+        print("Usage: %s <pickle-file>" % argv[0])
         exit(1)
 
     if not isfile(args[0]):
-        print "File '%s' not found" % args[0]
+        print("File '%s' not found" % args[0])
         exit(1)
     convert_pickle_file(args[0])

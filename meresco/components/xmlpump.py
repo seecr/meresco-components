@@ -30,8 +30,8 @@
 #
 ## end license ##
 
-from io import StringIO
-from lxml.etree import parse, tostring, XMLParser
+from io import BytesIO
+from lxml.etree import parse, tostring, XMLParser, _ElementStringResult
 
 from .converter import Converter
 from re import compile as compileRe
@@ -55,7 +55,8 @@ e.g. parserOptions=dict(huge_tree=True, remove_blank_text=True)"""
         parseKwargs = {}
         if not self._parseOptions is None:
             parseKwargs = dict(parser=XMLParser(**self._parseOptions))
-        return parse(StringIO(anObject.encode('UTF-8')), **parseKwargs)
+        toParse = anObject if type(anObject) in [bytes, _ElementStringResult] else str(anObject).encode('UTF-8')
+        return parse(BytesIO(toParse), **parseKwargs)
 
 class XmlPrintLxml(Converter):
     def __init__(self, pretty_print=True, **kwargs):
@@ -65,11 +66,11 @@ class XmlPrintLxml(Converter):
     def _convert(self, anObject):
         return lxmltobytes(anObject, pretty_print=self._pretty_print)
 
-_CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
+_CHAR_REF = compileRe(b'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):
     code = matchObj.groupdict()['code']
-    code = int(code[1:], base=16) if 'x' in code else int(code)
-    return str(chr(code))
+    code = int(code[1:], base=16) if b'x' in code else int(code)
+    return chr(code).encode()
 
 def _fixLxmltostringRootElement(aByteString):
     firstGt = aByteString.find(b'>')

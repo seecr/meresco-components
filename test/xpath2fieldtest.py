@@ -50,8 +50,9 @@ class XPath2FieldTest(SeecrTestCase):
 
         list(compose(xpath2field.add('id', 'partname', node)))
         self.assertEqual(1, len(observer.calledMethods))
-
-        self.assertEqual("addField(name='a.b.attr', value='The Attribute')", str(observer.calledMethods[0]))
+        self.assertEqual(
+            dict(name="addField", args=(), kwargs=dict(name='a.b.attr', value='The Attribute')), 
+            observer.calledMethods[0].asDict())
 
     def testMultipleXPath2Field(self):
         observer = CallTrace()
@@ -72,9 +73,15 @@ class XPath2FieldTest(SeecrTestCase):
 
         list(compose(xpath2field.add('id', 'partname', node)))
         self.assertEqual(3, len(observer.calledMethods))
-        self.assertEqual("addField(name='a.b.attr', value='attr_1')", str(observer.calledMethods[0]))
-        self.assertEqual("addField(name='a.b.attr', value='attr_2')", str(observer.calledMethods[1]))
-        self.assertEqual("addField(name='a.b.attr', value='attr_3')", str(observer.calledMethods[2]))
+        self.assertEqual(
+            dict(name='addField', args=(), kwargs=dict(name='a.b.attr', value='attr_1')), 
+            observer.calledMethods[0].asDict())
+        self.assertEqual(
+            dict(name='addField', args=(), kwargs=dict(name='a.b.attr', value='attr_2')), 
+            observer.calledMethods[1].asDict())
+        self.assertEqual(
+            dict(name='addField', args=(), kwargs=dict(name='a.b.attr', value='attr_3')), 
+            observer.calledMethods[2].asDict())
 
     def testSendAsList(self):
         observer = CallTrace()

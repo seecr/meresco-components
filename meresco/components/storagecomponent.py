@@ -55,9 +55,9 @@ defaultJoin = DefaultStrategy.join
 
 class HashDistributeStrategy(object):
 
-    def split(self, xxx_todo_changeme2):
-        (identifier, partname) = xxx_todo_changeme2
-        hash = sha1(identifier).hexdigest()
+    def split(self, qualifiedIdentifier):
+        (identifier, partname) = qualifiedIdentifier
+        hash = sha1(identifier.encode()).hexdigest()
         if partname is None:
             partname = ""
         return hash[0:2], hash[2:4], hash + '.' + partname

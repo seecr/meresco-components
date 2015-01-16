@@ -175,11 +175,8 @@ class Statistics(Observable):
         self._lastSnapshot = self._clock()
 
     def _prepareSnapshot(self):
-        snapshotFile = open(self._snapshotFilename + '.writing', 'wb')
-        try:
+        with open(self._snapshotFilename + '.writing', 'wb') as snapshotFile:
             pickle.dump(self._data, snapshotFile)
-        finally:
-            snapshotFile.close()
         rename(self._snapshotFilename + '.writing', self._snapshotFilename + '.writing.done')
 
     def _commitSnapshot(self):
@@ -192,26 +189,21 @@ class Statistics(Observable):
         remove(self._snapshotFilename + ".writing")
 
     def _initializeFromTxLog(self):
-        txfile = open(self._txlogFileName, 'r')
-        try:
+        with open(self._txlogFileName, 'r') as txfile:
             for logLine in txfile:
                 t, dictString = logLine.strip().split('\t')
                 for key in self._keys:
                     self._updateData(eval(t), key, eval(dictString))
-        finally:
-            txfile.close()
 
     def _initializeFromSnapshot(self):
-        snapshotFile = open(self._snapshotFilename, 'rb')
-        try:
-            self._data = pickle.load(snapshotFile)
-        except ImportError as e:
-            if str(e) == 'No module named merescocore.components.statistics':
-                raise ImportError("merescocore.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory")
-            else:
-                raise
-        finally:
-            snapshotFile.close()
+        with open(self._snapshotFilename, 'rb') as snapshotFile:
+            try:
+                self._data = pickle.load(snapshotFile)
+            except ImportError as e:
+                if str(e) == "No module named 'merescocore'":
+                    raise ImportError("merescocore.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory")
+                else:
+                    raise
 
     def _txlog(self):
         if not self._txlogFile:
@@ -223,6 +215,10 @@ class Statistics(Observable):
         fp = self._txlog()
         fp.write(line + "\n")
         fp.flush()
+
+    def _closeTx(self):
+        if self._txlogFile:
+            self._txlogFile.close()
 
     def _tm(self, sixTuple):
         return mktime(sixTuple + (0,0,0))
