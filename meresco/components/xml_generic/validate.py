@@ -29,7 +29,7 @@
 ## end license ##
 
 from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree
-from io import StringIO
+from io import StringIO, BytesIO
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
@@ -83,8 +83,9 @@ class Validate(Observable):
 
 
 def assertValid(xmlString, schemaPath):
-    schema = XMLSchema(parse(open(schemaPath)))
-    toValidate = parse(StringIO(xmlString))
+    with open(schemaPath) as strm:
+        schema = XMLSchema(parse(strm))
+    toValidate = parse(BytesIO(xmlString.encode()))
     schema.validate(toValidate)
     if schema.error_log:
         raise AssertionError(formatException(schema, toValidate))

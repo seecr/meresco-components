@@ -78,7 +78,7 @@ class SruFieldDrilldownTest(SeecrTestCase):
             yield result
         result = next(compose(dd()))
         self.assertEqual(2, len(observer.calledMethods))
-        self.assertEqual("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
+        self.assertEqual("executeQuery(cqlAbstractSyntaxTree=<class cqlparser.CQL_QUERY>)", str(observer.calledMethods[0]))
         self.assertEqual(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
         self.assertEqual([("field0", 16), ("field1", 16)], result)
 

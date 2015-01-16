@@ -115,13 +115,15 @@ class StatisticsXml(object):
         yield "</observations></statistics>"
 
     def _sorted(self, data):
-        def cmp(xxx_todo_changeme, xxx_todo_changeme1):
-            (leftValue, leftCount) = xxx_todo_changeme
-            (rightValue, rightCount) = xxx_todo_changeme1
-            if not leftCount == rightCount:
-                return rightCount - leftCount
-            return rightValue > leftValue
-        return sorted(data, cmp=cmp)
+        class SortKey(object):
+            def __init__(this, value, count):
+                this._value = value
+                this._count = count
+            def __lt__(this, otherSortKey):
+                if not this._count == otherSortKey._count:
+                    return otherSortKey._count - this._count
+                return otherSortKey._value > this._value
+        return sorted(data, key=lambda v: SortKey(*v))
 
     def _list(self, list, tagName):
         if not list:

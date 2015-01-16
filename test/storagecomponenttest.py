@@ -50,7 +50,11 @@ class StorageComponentTest(SeecrTestCase):
 
     def testAdd(self):
         list(compose(self.storageComponent.add("id_0", "partName", "The contents of the part")))
-        self.assertEqual('The contents of the part', self.storage.get(('id_0', 'partName')).read())
+        fp = self.storage.get(('id_0', 'partName'))
+        try:
+            self.assertEqual('The contents of the part', fp.read())
+        finally:
+            fp.close()
 
     def testAddEmptyIdentifier(self):
         self.assertRaises(ValueError, lambda: list(compose(self.storageComponent.add("", "part", "data"))))
@@ -186,7 +190,8 @@ class StorageComponentTest(SeecrTestCase):
             join = None
         s = StorageComponent(self.tempdir, strategy=TestStrategy)
         list(compose(s.add("AnIdentifier", "Part1", "Contents")))
-        self.assertEqual("Contents", open(join(self.tempdir, "aNiDENTIFIER", "pART1")).read())
+        with open(join(self.tempdir, "aNiDENTIFIER", "pART1")) as fp:
+            self.assertEqual("Contents", fp.read())
 
     def testDirectorySplit(self):
         class TestStrategy:
@@ -197,7 +202,8 @@ class StorageComponentTest(SeecrTestCase):
             join = None
         s = StorageComponent(self.tempdir, strategy=TestStrategy)
         list(compose(s.add("id09", "Part1", "Contents")))
-        self.assertEqual("Contents", open(join(self.tempdir, "i", "d", "0", "9", "Part1")).read())
+        with open(join(self.tempdir, "i", "d", "0", "9", "Part1")) as fp:
+            self.assertEqual("Contents", fp.read())
 
     def testDirectoryStrategyJoin(self):
         class TestStrategy:
@@ -224,7 +230,8 @@ class StorageComponentTest(SeecrTestCase):
     def testDefaultStrategyIsDefaultStrategy(self):
         s = StorageComponent(self.tempdir)
         list(compose(s.add("a:b:c", "d", "Hi")))
-        self.assertEqual("Hi", open(join(self.tempdir, "a", "b:c", "d")).read())
+        with open(join(self.tempdir, "a", "b:c", "d")) as fp:
+            self.assertEqual("Hi", fp.read())
 
     def testHashDistributeStrategy(self):
         s = HashDistributeStrategy()

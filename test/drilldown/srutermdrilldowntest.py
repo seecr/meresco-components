@@ -238,7 +238,8 @@ class SruTermDrilldownTest(SeecrTestCase):
 
         xsdFilename = self._getXsdFilename(result)
         assertValid(result, join(schemasPath, xsdFilename))
-        assertValid(open(join(schemasPath, xsdFilename)).read(), join(schemasPath, 'XMLSchema.xsd'))
+        with open(join(schemasPath, xsdFilename)) as strm:
+            assertValid(strm.read(), join(schemasPath, 'XMLSchema.xsd'))
 
     def testEchoedExtraRequestDataWithEmptyTermDrilldownFormat(self):
         component = SruTermDrilldown(defaultFormat=FORMAT_XML)

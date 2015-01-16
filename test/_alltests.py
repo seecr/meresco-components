@@ -71,31 +71,31 @@ from requestscopetest import RequestScopeTest
 from rewritepartnametest import RewritePartnameTest
 from rssitemtest import RssItemTest
 from rsstest import RssTest
-#from .scheduletest import ScheduleTest
-#from .sorteditertoolstest import SortedItertoolsTest
-#from .statisticstest import StatisticsTest
-#from .statisticsxmltest import StatisticsXmlTest
-#from .storagecomponenttest import StorageComponentTest
-#from .tokenizefieldlettest import TokenizeFieldletTest
-#from .venturitest import VenturiTest
-#from .xml2fieldstest import Xml2FieldsTest
-#from .xmlcomposetest import XmlComposeTest
-#from .xmlpumptest import XmlPumpTest
-#from .xmlxpathtest import XmlXPathTest
-#from .xpath2fieldtest import XPath2FieldTest
-#from .xsltcrosswalktest import XsltCrosswalkTest
+from scheduletest import ScheduleTest
+from sorteditertoolstest import SortedItertoolsTest
+from statisticstest import StatisticsTest
+from statisticsxmltest import StatisticsXmlTest
+from storagecomponenttest import StorageComponentTest
+from tokenizefieldlettest import TokenizeFieldletTest
+from venturitest import VenturiTest
+from xml2fieldstest import Xml2FieldsTest
+from xmlcomposetest import XmlComposeTest
+from xmlpumptest import XmlPumpTest
+from xmlxpathtest import XmlXPathTest
+from xpath2fieldtest import XPath2FieldTest
+from xsltcrosswalktest import XsltCrosswalkTest
 
-#from .cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
+from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
 
-#from .autocomplete.autocompletetest import AutocompleteTest
+from autocomplete.autocompletetest import AutocompleteTest
 
-#from .drilldown.srufielddrilldowntest import SruFieldDrilldownTest
-#from .drilldown.srutermdrilldowntest import SruTermDrilldownTest
-#from .drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
+from drilldown.srufielddrilldowntest import SruFieldDrilldownTest
+from drilldown.srutermdrilldowntest import SruTermDrilldownTest
+from drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
 
-#from .http.apacheloggertest import ApacheLoggerTest
-#from .http.argumentsinsessiontest import ArgumentsInSessionTest
-#from .http.basicauthenticationtest import BasicAuthenticationTest
+from _http.apacheloggertest import ApacheLoggerTest
+from _http.argumentsinsessiontest import ArgumentsInSessionTest
+from _http.basicauthenticationtest import BasicAuthenticationTest
 #from .http.basichttphandlertest import BasicHttpHandlerTest
 #from .http.deproxytest import DeproxyTest
 #from .http.fileservertest import FileServerTest

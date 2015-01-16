@@ -36,7 +36,11 @@ class XsltCrosswalk(Converter):
     def __init__(self, xslFileList, name=None, fromKwarg=None, toKwarg=None):
         Converter.__init__(self, name=name, fromKwarg=fromKwarg, toKwarg=toKwarg)
         self._xsltFilelist = xslFileList
-        self._xslts = [XSLT(parse(open(s))) for s in self._xsltFilelist]
+        self._xslts = []
+
+        for s in self._xsltFilelist:
+            with open(s) as strm:
+                self._xslts.append(XSLT(parse(strm)))
 
     def _convert(self, xmlSource):
         result = xmlSource
