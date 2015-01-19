@@ -35,7 +35,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from os import remove, makedirs
 from time import time
-from rfc822 import parsedate
+from email.utils import parsedate
 from calendar import timegm
 
 from weightless.core import compose
@@ -88,9 +88,8 @@ class FileServerTest(TestCase):
             remove('/tmp/testFileExists')
 
     def testServeFile(self):
-        f = open(join(self.directory, 'someFile'), 'w')
-        f.write("Some Contents")
-        f.close()
+        with open(join(self.directory, 'someFile'), 'w') as f:
+            f.write("Some Contents")
 
         fileServer = FileServer(self.directory)
         response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
@@ -105,9 +104,8 @@ class FileServerTest(TestCase):
                 ('.png', 'image/png'),
                 ('.css', 'text/css')]:
             filename = 'someFile' + extension
-            f = open(join(self.directory, filename), 'w')
-            f.write("Some Contents")
-            f.close()
+            with open(join(self.directory, filename), 'w') as f:
+                f.write("Some Contents")
 
             fileServer = FileServer(self.directory)
             response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={})))
@@ -118,8 +116,10 @@ class FileServerTest(TestCase):
             self.assertTrue('Content-Type: %s' % expectedType in headersList, headersList)
 
     def testFirstOneWins(self):
-        f = open(join(self.directory, 'someFile'), 'w').write("Some Contents")
-        f = open(join(self.directory2, 'someFile'), 'w').write("Different Contents")
+        with open(join(self.directory, 'someFile'), 'w') as f:
+            f.write("Some Contents")
+        with open(join(self.directory2, 'someFile'), 'w') as f:
+            f.write("Different Contents")
 
         fileServer = FileServer(documentRoot=[self.directory, self.directory2])
         response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))

@@ -38,7 +38,7 @@ class BasicAuthentication(Observable):
 
     def handleRequest(self, Headers={}, *args, **kwargs):
         relevantHeader = Headers.get('Authorization', None)
-        if relevantHeader == None:
+        if relevantHeader is None:
             yield REQUEST_AUTHENTICATION_RESPONSE % (self._realm, 'Please give username and password.')
             return
         username, password = self._parseHeader(relevantHeader)
@@ -53,10 +53,10 @@ class BasicAuthentication(Observable):
         if len(parts) != 2:
             return None
         part0, b64encoded = parts
-        if part0 != "Basic":
+        if part0 != b"Basic":
             return None
 
-        parts = b64decode(b64encoded).split(":", 1)
+        parts = b64decode(b64encoded).split(b":", 1)
         if len(parts) != 2:
             return None
         username, password = parts

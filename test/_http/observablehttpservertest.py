@@ -53,10 +53,9 @@ class ObservableHttpServerTest(SeecrTestCase):
 
     def testHandleRequest(self):
         observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
-        s = ObservableHttpServer(CallTrace('Reactor'), 1024)
-        s.addObserver(observer)
-
-        list(compose(s.handleRequest(RequestURI='http://localhost/path?key=value&emptykey#fragment')))
+        with ObservableHttpServer(CallTrace('Reactor'), 1024) as s:
+            s.addObserver(observer)
+            list(compose(s.handleRequest(RequestURI='http://localhost/path?key=value&emptykey#fragment')))
         self.assertEqual(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
         self.assertEqual('handleRequest', method.name)
@@ -73,53 +72,53 @@ class ObservableHttpServerTest(SeecrTestCase):
         observer = CallTrace('Observer', methods={'handleRequest': lambda *a, **kw: (x for x in [])})
         reactor = CallTrace('Reactor')
 
-        s = ObservableHttpServer(reactor, 1024, maxConnections=5)
-        s.addObserver(observer)
-        result = ''.join(s._error(ResponseCode=503, something='bicycle'))
+        with ObservableHttpServer(reactor, 1024, maxConnections=5) as s:
+            s.addObserver(observer)
+            result = ''.join(s._error(ResponseCode=503, something='bicycle'))
 
-        self.assertEqual(1, len(observer.calledMethods))
-        self.assertEqual('logHttpError', observer.calledMethods[0].name)
-        self.assertEqual({'ResponseCode': 503, 'something': 'bicycle'}, observer.calledMethods[0].kwargs)
-        header, body = result.split(CRLF * 2)
-        self.assertTrue(header.startswith('HTTP/1.0 503'), header)
-        self.assertTrue('Service Unavailable' in body, body)
+            self.assertEqual(1, len(observer.calledMethods))
+            self.assertEqual('logHttpError', observer.calledMethods[0].name)
+            self.assertEqual({'ResponseCode': 503, 'something': 'bicycle'}, observer.calledMethods[0].kwargs)
+            header, body = result.split(CRLF * 2)
+            self.assertTrue(header.startswith('HTTP/1.0 503'), header)
+            self.assertTrue('Service Unavailable' in body, body)
 
     def testErrorHandlerRegisteredOnWeightlessHttpServer(self):
         reactor = CallTrace('Reactor')
 
-        s = ObservableHttpServer(reactor, 1024, maxConnections=5)
-        s.startServer()
+        with ObservableHttpServer(reactor, 1024, maxConnections=5) as s:
+            s.startServer()
 
-        acceptor = s._httpserver._acceptor
-        httphandler = acceptor._sinkFactory('sok')
-        errorHandler = httphandler._errorHandler
-        self.assertTrue(errorHandler == s._error)
+            acceptor = s._server._acceptor
+            httphandler = acceptor._sinkFactory('sok')
+            errorHandler = httphandler._errorHandler
+            self.assertTrue(errorHandler == s._error)
 
     def testSetMaximumConnections(self):
         reactor = CallTrace('Reactor')
 
-        s = ObservableHttpServer(reactor, 2048, maxConnections=5)
-        s.startServer()
+        with ObservableHttpServer(reactor, 2048, maxConnections=5) as s:
+            s.startServer()
 
-        httpserver = s._httpserver
-        self.assertEqual(5, httpserver._maxConnections)
-        s.setMaxConnections(6)
-        acceptor = s._httpserver
-        self.assertEqual(6, httpserver._maxConnections)
-        self.assertEqual(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
+            httpserver = s._server
+            self.assertEqual(5, httpserver._maxConnections)
+            s.setMaxConnections(6)
+            acceptor = s._server
+            self.assertEqual(6, httpserver._maxConnections)
+            self.assertEqual(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
 
     def testCompressResponseFlag(self):
         reactor = CallTrace('Reactor')
 
-        s = ObservableHttpServer(reactor, 0, compressResponse=True)
-        s.startServer()
-        httpserver = s._httpserver
-        self.assertEqual(True, httpserver._compressResponse)
+        with ObservableHttpServer(reactor, 0, compressResponse=True) as s:
+            s.startServer()
+            httpserver = s._server
+            self.assertEqual(True, httpserver._compressResponse)
 
-        s = ObservableHttpServer(reactor, 0)
-        s.startServer()
-        httpserver = s._httpserver
-        self.assertEqual(False, httpserver._compressResponse)
+        with ObservableHttpServer(reactor, 0) as s:
+            s.startServer()
+            httpserver = s._server
+            self.assertEqual(False, httpserver._compressResponse)
 
     def testServerWithPrio(self):
         prios = []
@@ -134,28 +133,28 @@ class ObservableHttpServerTest(SeecrTestCase):
                 prios.append(('write', kwargs['prio']))
                 return Reactor.addWriter(self, *args, **kwargs)
         reactor = MyReactor()
-        s = ObservableHttpServer(reactor, 2000, prio=3)
-        s.addObserver(MyServer())
-        s.observer_init()
+        with ObservableHttpServer(reactor, 2000, prio=3) as s:
+            s.addObserver(MyServer())
+            s.observer_init()
 
-        sok = socket()
-        sok.connect(('localhost', 2000))
-        sok.send('GET / HTTP/1.0\r\n\r\n')
-        reactor.step()
-        reactor.step()
-        self.assertEqual([('read', 3)], prios)
-        reactor.step().step()
-        self.assertEqual([('read', 3), ('read', 3)], prios)
-        reactor.step()
-        reactor.step()
-        self.assertEqual([('read', 3), ('read', 3), ('write', 3)], prios)
-        # one more step to let the connection finalize and all objects reclaimed and avoid garbage
-        reactor.step()
+            with socket() as sok:
+                sok.connect(('localhost', 2000))
+                sok.send(b'GET / HTTP/1.0\r\n\r\n')
+                reactor.step()
+                reactor.step()
+                self.assertEqual([('read', 3)], prios)
+                reactor.step().step()
+                self.assertEqual([('read', 3), ('read', 3)], prios)
+                reactor.step()
+                reactor.step()
+                self.assertEqual([('read', 3), ('read', 3), ('write', 3)], prios)
+                # one more step to let the connection finalize and all objects reclaimed and avoid garbage
+                reactor.step()
 
     def testServerBindAddress(self):
         reactor = CallTrace()
         port = randint(2**10, 2**16)
-        server = ObservableHttpServer(reactor, port, bindAddress='127.0.0.1')
-        server.startServer()
-        self.assertEqual(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
+        with ObservableHttpServer(reactor, port, bindAddress='127.0.0.1') as server:
+            server.startServer()
+            self.assertEqual(('127.0.0.1', port), server._server._acceptor._sok.getsockname())
 

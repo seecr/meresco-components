@@ -51,6 +51,14 @@ class ObservableHttpServer(Observable):
         self._maxConnections = maxConnections
         self._compressResponse = compressResponse
         self._bindAddress = bindAddress
+        self._server = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        if self._server is not None:
+            self._server.shutdown()
 
     def startServer(self):
         """Starts server,
@@ -59,7 +67,7 @@ class ObservableHttpServer(Observable):
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
-        self._httpserver = HttpServer(
+        self._server = HttpServer(
                 self._reactor,
                 self._port,
                 self._connect,
@@ -71,7 +79,7 @@ class ObservableHttpServer(Observable):
                 compressResponse=self._compressResponse,
                 bindAddress=self._bindAddress
             )
-        self._httpserver.listen()
+        self._server.listen()
         self._started = True
 
     def observer_init(self):
@@ -97,4 +105,5 @@ class ObservableHttpServer(Observable):
         yield self.all.handleRequest(**requestArguments)
 
     def setMaxConnections(self, m):
-        self._httpserver.setMaxConnections(m)
+        self._server.setMaxConnections(m)
+

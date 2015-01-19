@@ -51,13 +51,13 @@ class BasicAuthenticationTest(TestCase):
         authentication = BasicAuthentication(realm='Test Realm')
         interceptor = CallTrace('httphandler', returnValues={'isValidLogin': True, 'getUser':{'name':'aUser'}}, methods={'handleRequest': handleRequest})
         authentication.addObserver(interceptor)
-        headers = {'Authorization': 'Basic ' + b64encode('aUser:aPassword')}
+        headers = {'Authorization': b'Basic ' + b64encode(b'aUser:aPassword')}
         response = authentication.handleRequest(port='8080', RequestURI='/private', Method='GET', Headers=headers)
         list(compose(response))
         self.assertEqual('isValidLogin', interceptor.calledMethods[0].name)
-        self.assertEqual(('aUser', 'aPassword'), interceptor.calledMethods[0].args)
+        self.assertEqual((b'aUser', b'aPassword'), interceptor.calledMethods[0].args)
         self.assertEqual('getUser', interceptor.calledMethods[1].name)
-        self.assertEqual(('aUser',), interceptor.calledMethods[1].args)
+        self.assertEqual((b'aUser',), interceptor.calledMethods[1].args)
         self.assertEqual('handleRequest', interceptor.calledMethods[2].name)
         self.assertEqual({'name': 'aUser'}, interceptor.calledMethods[2].kwargs['user'])
 
@@ -66,11 +66,11 @@ class BasicAuthenticationTest(TestCase):
         userdata = {'name':'aUser'}
         interceptor = CallTrace('httphandler', returnValues={'isValidLogin': True, 'getUser':userdata}, methods={'handleRequest': handleRequest})
         authentication.addObserver(interceptor)
-        headers = {'Authorization': 'Basic ' + b64encode('aUser:aPassword')}
+        headers = {'Authorization': b'Basic ' + b64encode(b'aUser:aPassword')}
         response = authentication.handleRequest(port='8080', RequestURI='/private', Method='GET', Headers=headers)
         list(compose(response))
         self.assertEqual({'name': 'aUser'}, interceptor.calledMethods[2].kwargs['user'])
-        headers = {'Authorization': 'Basic ' + b64encode('anotherUser:anotherPassword')}
+        headers = {'Authorization': b'Basic ' + b64encode(b'anotherUser:anotherPassword')}
         userdata['name'] = 'anotherUser'
         response = authentication.handleRequest(port='8080', RequestURI='/private', Method='GET', Headers=headers)
         list(compose(response))
@@ -85,7 +85,7 @@ class BasicAuthenticationTest(TestCase):
         response = ''.join(compose(results))
         self.assertFalse('WWW-Authenticate: Basic realm="Test Realm"\r\n' in response, response)
         interceptor.returnValues['isValidLogin'] = False
-        headers = {'Authorization': 'Basic ' + b64encode('aUser:aCompletelyWrongPassword')}
+        headers = {'Authorization': b'Basic ' + b64encode(b'aUser:aCompletelyWrongPassword')}
         response = ''.join(authentication.handleRequest(port='8080', RequestURI='/private', Method='GET', Headers=headers))
         self.assertTrue('WWW-Authenticate: Basic realm="Test Realm"\r\n' in response, response)
 
@@ -93,7 +93,7 @@ class BasicAuthenticationTest(TestCase):
         authentication = BasicAuthentication(realm='Test Realm')
         interceptor = CallTrace('httphandler', returnValues={'isValidLogin': False}, methods={'handleRequest': handleRequest})
         authentication.addObserver(interceptor)
-        headers = {'Authorization': 'Basic ' + b64encode('aUser:aPassword')}
+        headers = {'Authorization': b'Basic ' + b64encode(b'aUser:aPassword')}
         response = ''.join(authentication.handleRequest(port='8080', RequestURI='/private', Method='GET', Headers=headers))
         self.assertEqual('isValidLogin', interceptor.calledMethods[0].name)
         self.assertTrue('WWW-Authenticate: Basic realm="Test Realm"\r\n' in response, response)
@@ -101,11 +101,11 @@ class BasicAuthenticationTest(TestCase):
 
     def testParseHeader(self):
         authentication = BasicAuthentication(realm='Test Realm')
-        self.assertEqual(("username", "password"), authentication._parseHeader("Basic " + b64encode("username:password")))
+        self.assertEqual((b"username", b"password"), authentication._parseHeader(b"Basic " + b64encode(b"username:password")))
 
     def testParseHeaderWeirdCases(self):
         authentication = BasicAuthentication(realm='Test Realm')
         self.assertEqual(None, authentication._parseHeader("bla bla bla"))
         self.assertEqual(None, authentication._parseHeader("NonsenseInPart0 QWxhZGRpbjpvcGVuIHNlc2FtZQ=="))
-        self.assertEqual(None, authentication._parseHeader("Basic " + b64encode("nonsense")))
+        self.assertEqual(None, authentication._parseHeader(b"Basic " + b64encode(b"nonsense")))
 
