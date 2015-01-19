@@ -42,16 +42,16 @@ class ObservableHttpsServerTest(SeecrTestCase):
         certfile = join(testDataDir, 'server.cert')
         mockSok = object()
 
-        s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, compressResponse=True)
-        s.startServer()
-        httpsserver_acceptor = s._httpsserver._acceptor
-        httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
-        self.assertEqual(True, httpHandler._compressResponse)
+        with ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, compressResponse=True) as s:
+            s.startServer()
+            httpsserver_acceptor = s._server._acceptor
+            httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
+            self.assertEqual(True, httpHandler._compressResponse)
 
-        s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, bindAddress='127.0.0.1')
-        s.startServer()
-        httpsserver_acceptor = s._httpsserver._acceptor
-        httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
-        self.assertEqual(False, httpHandler._compressResponse)
-        self.assertEqual('127.0.0.1', httpsserver_acceptor._sok.getsockname()[0])
+        with ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, bindAddress='127.0.0.1') as s:
+            s.startServer()
+            httpsserver_acceptor = s._server._acceptor
+            httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
+            self.assertEqual(False, httpHandler._compressResponse)
+            self.assertEqual('127.0.0.1', httpsserver_acceptor._sok.getsockname()[0])
 

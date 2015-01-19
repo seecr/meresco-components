@@ -53,7 +53,7 @@ class ObservableHttpsServer(ObservableHttpServer):
         root user. In other cases it will be started when initializing all observers,
         see observer_init()
         """
-        self._httpsserver = HttpsServer(
+        self._server = HttpsServer(
                 reactor=self._reactor,
                 port=self._port,
                 generatorFactory=self._connect,
@@ -67,6 +67,6 @@ class ObservableHttpsServer(ObservableHttpServer):
                 compressResponse=self._compressResponse,
                 bindAddress=self._bindAddress
             )
-        self._httpsserver.listen()
+        self._server.listen()
         self._started = True
 

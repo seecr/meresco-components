@@ -66,7 +66,7 @@ class SessionHandler(Observable):
 
         if session == None:
             clientaddress, ignoredPort = Client
-            sessionid = md5('%s%s%s%s' % (time(), randint(0, 9999999999), clientaddress, self._secretSeed)).hexdigest()
+            sessionid = md5(('%s%s%s%s' % (time(), randint(0, 9999999999), clientaddress, self._secretSeed)).encode()).hexdigest()
             session = Session(sessionid)
             self._sessions[sessionid] = session
         else:

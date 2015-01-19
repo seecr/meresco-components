@@ -63,7 +63,7 @@ class HttpClientTest(SeecrTestCase):
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = retval(gen)
 
-        self.assertEqual('<xml/>', lxmltobytes(body))
+        self.assertEqual(b'<xml/>', lxmltobytes(body))
         self.assertEqual(['HTTP/1.0 200 OK', 'Content-Type: text/xml'], headers.split(CRLF))
 
     def testHttpPost(self):
