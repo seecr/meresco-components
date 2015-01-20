@@ -62,7 +62,8 @@ class QueryLogTest(SeecrTestCase):
         self.assertEqual([dict(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
 
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
-        self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        with open(join(self.tempdir, '2009-11-02-query.log')) as fp:
+            self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru \n', fp.read())
 
     def testLogCanReturnCallables(self):
         observer= CallTrace('observer')
@@ -70,7 +71,8 @@ class QueryLogTest(SeecrTestCase):
         self.queryLog.addObserver(observer)
         list(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')))
 
-        self.assertEqual(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
+        with open(join(self.tempdir, '2009-11-02-query.log')) as fp:
+            self.assertEqual(1, len(fp.readlines()))
 
     def testIncludedPathsOnly(self):
         observer = CallTrace('observer')
@@ -97,7 +99,8 @@ class QueryLogTest(SeecrTestCase):
         self.queryLog.addObserver(HandleRequestObserver())
         result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')))
         self.assertEqual('result', result)
-        self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        with open(join(self.tempdir, '2009-11-02-query.log')) as fp:
+            self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru a=A&b=B&c=C&d=D&d=DD\n', fp.read())
 
     def testQueryLogHelperForSru(self):
         __callstack_var_queryLogValues__ = {'queryArguments':{}}
@@ -154,5 +157,6 @@ class QueryLogTest(SeecrTestCase):
                     'query': ['field=value'],
                     },
             )))
-        self.assertEqual('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201hits /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        with open(join(self.tempdir, '2009-11-02-query.log')) as fp:
+            self.assertEqual('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201hits /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', fp.read())
 

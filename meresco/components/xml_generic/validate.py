@@ -85,7 +85,8 @@ class Validate(Observable):
 def assertValid(xmlString, schemaPath):
     with open(schemaPath) as strm:
         schema = XMLSchema(parse(strm))
-    toValidate = parse(BytesIO(xmlString.encode()))
+    strm = BytesIO(xmlString.encode() if type(xmlString) is str else xmlString)
+    toValidate = parse(strm)
     schema.validate(toValidate)
     if schema.error_log:
         raise AssertionError(formatException(schema, toValidate))
