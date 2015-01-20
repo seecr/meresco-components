@@ -124,9 +124,10 @@ class MsgboxTest(SeecrTestCase):
         self.assertFalse(isfile(join(self.inDirectory, filename)))
         errorFile = join(self.outDirectory, filename + '.error')
         self.assertTrue(isfile(errorFile))
-        errorMessage = open(errorFile).read()
-        self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
+            self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
+            self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
 
     def testErrorHandlingWithReactorStep(self):
         self.observer.methods['add'] = failingAddMock
@@ -173,15 +174,17 @@ class MsgboxTest(SeecrTestCase):
         self.assertFalse(isfile(join(self.inDirectory, filename)))
         errorFile = join(self.outDirectory, filename + '.error')
         self.assertTrue(isfile(errorFile))
-        errorMessage = open(errorFile).read()
-        self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
-        self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
+            self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
+            self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
         self.assertTrue(self.msgbox._watcher in self.reactor._readers)
 
     def testAck(self):
         self.createMsgbox(asynchronous=True)
         filename='repository:some:identifier:1.record'
-        open(join(self.inDirectory, filename), 'w').write(DATA)
+        with open(join(self.inDirectory, filename), 'w') as fp:
+            fp.write(DATA)
         self.assertFalse(isfile(join(self.outDirectory, filename + '.ack')))
         self.msgbox._ack(filename)
         self.assertTrue(isfile(join(self.inDirectory, filename)))
@@ -192,12 +195,14 @@ class MsgboxTest(SeecrTestCase):
         filename='repository:some:identifier:1.record'
         errormessage = "an error occurred"
         errorfile = join(self.outDirectory, filename + '.error')
-        open(join(self.inDirectory, filename), 'w').write(DATA)
+        with open(join(self.inDirectory, filename), 'w') as fp:
+            fp.write(DATA)
         self.assertFalse(isfile(errorfile))
         self.msgbox._error(filename, errormessage)
         self.assertTrue(isfile(join(self.inDirectory, filename)))
         self.assertFalse(isfile(join(self.outDirectory, filename + '.ack')))
-        self.assertEqual(errormessage, open(errorfile).read())
+        with open(errorfile) as fp:
+            self.assertEqual(errormessage, fp.read())
 
     def testNoFilesInTmpWhenStarting(self):
         filename = "testFile"
@@ -224,7 +229,8 @@ class MsgboxTest(SeecrTestCase):
         self.createMsgbox()
         filename = "testfile"
         filepath = join(self.tempdir, filename)
-        open(filepath, "w").write(DATA)
+        with open(filepath, "w") as fp:
+            fp.write(DATA)
         list(self.msgbox.add(filename, File(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEqual(filename, outFiles[0])
@@ -235,7 +241,8 @@ class MsgboxTest(SeecrTestCase):
         self.createMsgbox()
         filename = "testfile"
         filepath = join(self.tempdir, filename)
-        open(filepath, "w").write(DATA)
+        with open(filepath, "w") as fp:
+            fp.write(DATA)
         list(self.msgbox.add(filename, open(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEqual(basename(filepath), outFiles[0])
@@ -251,7 +258,8 @@ class MsgboxTest(SeecrTestCase):
         list(self.msgbox.add(filename, data2))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEqual([filename], outFiles)
-        self.assertEqual(data2, open(join(self.outDirectory, filename)).read())
+        with open(join(self.outDirectory, filename)) as fp:
+            self.assertEqual(data2, fp.read())
 
     # suspicious (old reality)!
     def testExistingAckReplaced(self):
@@ -307,7 +315,8 @@ class MsgboxTest(SeecrTestCase):
         self.assertTrue('filename' in self.msgbox._suspended)
         newResult = self.msgbox.add('filename', 'data2')
         next(newResult)
-        self.assertEqual('data', open(join(self.msgbox._outDirectory, 'filename')).read())
+        with open(join(self.msgbox._outDirectory, 'filename')) as fp:
+            self.assertEqual('data', fp.read())
         self.assertTrue('filename' in self.msgbox._suspended)
         self.assertTrue(1, len(self.msgbox._waiting))
 
@@ -350,7 +359,8 @@ class MsgboxTest(SeecrTestCase):
         suspend2 = next(result2)
         suspend2(myreactor, lambda: None)
 
-        self.assertEqual('data', open(join(self.outDirectory, 'filename')).read())
+        with open(join(self.outDirectory, 'filename')) as fp:
+            self.assertEqual('data', fp.read())
 
         self.assertEqual(['suspend', 'suspend'], [m.name for m in myreactor.calledMethods])
 
@@ -362,7 +372,8 @@ class MsgboxTest(SeecrTestCase):
         next(result2)
         self.assertTrue('filename' in self.msgbox._suspended)
         self.assertFalse(0, len(self.msgbox._waiting))
-        self.assertEqual('data2', open(join(self.outDirectory, 'filename')).read())
+        with open(join(self.outDirectory, 'filename')) as fp:
+            self.assertEqual('data2', fp.read())
 
         self.moveInRecord('filename.ack', '')
         self.reactor.step()
@@ -392,7 +403,8 @@ class MsgboxTest(SeecrTestCase):
         suspend3 = next(result3)
         suspend3(myreactor, lambda: None)
 
-        self.assertEqual('data', open(join(self.outDirectory, 'filename')).read())
+        with open(join(self.outDirectory, 'filename')) as fp:
+            self.assertEqual('data', fp.read())
 
         self.assertEqual(['suspend', 'suspend', 'suspend'], [m.name for m in myreactor.calledMethods])
 
@@ -403,7 +415,8 @@ class MsgboxTest(SeecrTestCase):
         next(result2)
         self.assertTrue('filename' in self.msgbox._suspended)
         self.assertEqual(1, len(self.msgbox._waiting))
-        self.assertEqual('data2', open(join(self.outDirectory, 'filename')).read())
+        with  open(join(self.outDirectory, 'filename')) as fp:
+            self.assertEqual('data2', fp.read())
 
         remove(join(self.outDirectory, 'filename'))
         self.moveInRecord('filename.ack', '')
@@ -411,7 +424,8 @@ class MsgboxTest(SeecrTestCase):
         next(result3)
         self.assertTrue('filename' in self.msgbox._suspended)
         self.assertEqual(0, len(self.msgbox._waiting))
-        self.assertEqual('data3', open(join(self.outDirectory, 'filename')).read())
+        with open(join(self.outDirectory, 'filename')) as fp:
+            self.assertEqual('data3', fp.read())
 
         self.moveInRecord('filename.ack', '')
         self.reactor.step()
@@ -450,18 +464,22 @@ class MsgboxTest(SeecrTestCase):
             self.fail('Expected an exception.')
         except Exception as e:
             self.assertEqual("MsgboxRemoteError('Stacktrace',)", repr(e))
+            from weightless.io import _suspend
             fileDict = {
                 '__file__': ignoreLineNumbers.__code__.co_filename,
+                '_suspend.py': _suspend.__file__,
                 'msgbox.py': Msgbox.processFile.__code__.co_filename, 
             }
             self.assertEqualsWS(ignoreLineNumbers("""Traceback (most recent call last):
   File "%(__file__)s", line 442, in testAddAsynchronousYieldsSuspendAndReceivesError
-    result.next()
+    next(result)
   File "%(msgbox.py)s", line 167, in add
     suspend.getResult()
+  File "%(_suspend.py)s", line [#], in getResult
+    raise self._exception[1].with_traceback(self._exception[2])
   File "%(msgbox.py)s", line 124, in processFile
     raise MsgboxRemoteError(open(filepath).read())
-MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
+meresco.components.msgbox.msgbox.MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
         self.assertRaises(StopIteration, result.__next__)
 
     def testEscapeIdentifiersWhenUsedAsOutFilenames(self):
@@ -524,7 +542,8 @@ MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
         def mockAck(filename):
             filepath = join(self.msgbox._inDirectory, filename)
             fileExistsOnAck.append(isfile(filepath))
-            open(filepath, 'w').write(DATA)
+            with open(filepath, 'w') as fp:
+                fp.write(DATA)
         self.msgbox._ack = mockAck
         self.moveInRecord('aName')
         self.reactor.step()
@@ -537,12 +556,12 @@ MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
         self.msgbox.observer_init()
 
     def moveInRecord(self, filename, data=DATA):
-        open(join(self.tempdir, filename), 'w').write(data)
+        with open(join(self.tempdir, filename), 'w') as fp:
+            fp.write(data)
         rename(join(self.tempdir, filename), join(self.inDirectory, filename))
 
     def listfiles(self, directory):
         return [f for f in listdir(directory) if isfile(join(directory, f))]
-
 
 def ignoreLineNumbers(s):
     return sub("line \d+,", "line [#],", s)

@@ -110,34 +110,34 @@ from _http.sessionhandlertest import SessionHandlerTest
 from _http.timeddictionarytest import TimedDictionaryTest
 from _http.utilstest import UtilsTest
 
-#from .log.apachelogwritertest import ApacheLogWriterTest
-#from .log.directorylogtest import DirectoryLogTest
-#from .log.handlerequestlogtest import HandleRequestLogTest
-#from .log.logcollectortest import LogCollectorTest
-#from .log.logfileservertest import LogFileServerTest
-#from .log.querylogtest import QueryLogTest
-#from .log.querylogwritertest import QueryLogWriterTest
-#from .log.srulogtest import SruLogTest
+from log.apachelogwritertest import ApacheLogWriterTest
+from log.directorylogtest import DirectoryLogTest
+from log.handlerequestlogtest import HandleRequestLogTest
+from log.logcollectortest import LogCollectorTest
+from log.logfileservertest import LogFileServerTest
+from log.querylogtest import QueryLogTest
+from log.querylogwritertest import QueryLogWriterTest
+from log.srulogtest import SruLogTest
 
-#from .numeric.converttest import ConvertTest
+from numeric.converttest import ConvertTest
 
-#from .sru.sruhandlertest import SruHandlerTest
-#from .sru.sruparsertest import SruParserTest
-#from .sru.srurecordupdatetest import SruRecordUpdateTest
-#from .sru.sruupdateclienttest import SruUpdateClientTest
-#from .sru.srulimitstartrecordtest import SruLimitStartRecordTest
-#from .sru.srwtest import SrwTest
+from sru.sruhandlertest import SruHandlerTest
+from sru.sruparsertest import SruParserTest
+from sru.srurecordupdatetest import SruRecordUpdateTest
+from sru.sruupdateclienttest import SruUpdateClientTest
+from sru.srulimitstartrecordtest import SruLimitStartRecordTest
+from sru.srwtest import SrwTest
 
-#from .suggestion.suggestiontest import SuggestionTest
+from suggestion.suggestiontest import SuggestionTest
 
-#from .xml_generic.validatetest import ValidateTest
+from xml_generic.validatetest import ValidateTest
 
-#from .integerlist.integerlisttest import IntegerListTest
+#from integerlist.integerlisttest import IntegerListTest
 
-#from .ngram.cqlsuggestertest import CqlSuggesterTest
-#from .ngram.cqltermvisitortest import CqlTermVisitorTest
+from ngram.cqlsuggestertest import CqlSuggesterTest
+from ngram.cqltermvisitortest import CqlTermVisitorTest
 
-#from .msgbox.msgboxtest import MsgboxTest
+from msgbox.msgboxtest import MsgboxTest
 #from .msgbox.updateadaptertest import UpdateAdapterTest
 
 #from .web.webquerytest import WebQueryTest

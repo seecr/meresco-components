@@ -40,7 +40,7 @@ from meresco.components.xmlxpath import lxmlElementUntail
 
 from traceback import print_exc
 from lxml.etree import parse, XMLSyntaxError, ElementTree
-from io import StringIO
+from io import BytesIO
 from meresco.xml.namespaces import xpathFirst
 from meresco.components.http.utils import okXml
 from meresco.components.log import collectLogForScope
@@ -55,7 +55,7 @@ class SruRecordUpdate(Observable):
         if enableCollectLog:
             self._collectLogForScope = collectLogForScope
 
-    def handleRequest(self, Body="", **kwargs):
+    def handleRequest(self, Body=b"", **kwargs):
         yield okXml
         if not Body:
             yield self._respond(
@@ -67,7 +67,7 @@ class SruRecordUpdate(Observable):
         localLogCollector = dict()
         try:
             try:
-                lxmlNode = parse(StringIO(Body))
+                lxmlNode = parse(BytesIO(Body))
             except XMLSyntaxError as e:
                 self._log(Body, localLogCollector=localLogCollector)
                 raise

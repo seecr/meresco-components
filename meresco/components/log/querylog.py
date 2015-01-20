@@ -64,12 +64,12 @@ class QueryLog(Transparent):
         numberOfRecords = __callstack_var_queryLogValues__.get('numberOfRecords', None)
 
         self._log.log(timestamp=timestamp,
-                path=path,
-                ipAddress=ipAddress,
-                size=size,
-                duration=duration,
-                queryArguments=queryArguments,
-                numberOfRecords=numberOfRecords)
+            path=path,
+            ipAddress=ipAddress,
+            size=size,
+            duration=duration,
+            queryArguments=queryArguments,
+            numberOfRecords=numberOfRecords)
 
     def _time(self):
         return time()

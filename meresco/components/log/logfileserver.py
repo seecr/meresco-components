@@ -29,7 +29,7 @@
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF
 
-from cgi import escape as _escapeHtml
+from html import escape as _escapeHtml
 
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')

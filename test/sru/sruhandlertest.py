@@ -849,7 +849,8 @@ class SruHandlerTest(SeecrTestCase):
 
     def testTestXsdEqualsPublishedXsd(self):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
-        localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
+        with open(join(schemasPath, 'timing-20120827.xsd')) as fp:
+            localxsd = fp.read()
         self.assertEqualsWS(xsd, localxsd)
 
 

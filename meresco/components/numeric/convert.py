@@ -27,8 +27,13 @@
 # 
 ## end license ##
 
+from decimal import Decimal, ROUND_HALF_UP
+
+ONE = Decimal('1')
+
 class Convert(object):
     def __init__(self, nrOfDecimals):
-        self._scale = 10 ** nrOfDecimals
+        self._scale = Decimal(10 ** nrOfDecimals)
+
     def __call__(self, value):
-        return int(round(float(value) * self._scale))
+        return int((Decimal(value) * self._scale).quantize(ONE, rounding=ROUND_HALF_UP))
