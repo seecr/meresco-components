@@ -123,26 +123,29 @@ class Msgbox(Observable):
         if not suspend is None:
             if extension == 'error':
                 try:
-                    raise MsgboxRemoteError(open(filepath).read())
+                    with open(filepath) as fp:
+                        contents = fp.read()
+                    raise MsgboxRemoteError(contents)
                 except:
                     suspend.throw(*exc_info())
             else:
                 suspend.resume()
         else:
             identifier = unescapeFilename(filename)
-            try:
-                composed = compose(self.all.add(identifier=identifier, filedata=File(filepath)))
+            with File(filepath) as fp:
                 try:
-                    while True:
-                        next(composed)
-                except StopIteration as e:
-                    pass
-                needToAck = self._synchronous and not ackOrError
-            except Exception as e:
-                if not self._impliesInputError(e):
-                    print_exc()
-                if not ackOrError:
-                    self._error(filename, format_exc())
+                    composed = compose(self.all.add(identifier=identifier, filedata=fp))
+                    try:
+                        while True:
+                            next(composed)
+                    except StopIteration as e:
+                        pass
+                    needToAck = self._synchronous and not ackOrError
+                except Exception as e:
+                    if not self._impliesInputError(e):
+                        print_exc()
+                    if not ackOrError:
+                        self._error(filename, format_exc())
         remove(filepath)
         if needToAck:
             self._ack(filename)
@@ -230,7 +233,13 @@ class File(object):
         while x:
             yield x
             x = f.read(4096)
+    
+    def __enter__(self):
+        return self
 
+    def __exit__(self, *args, **kwargs):
+        if self.__file is not None:
+            self.__file.close()
 
 class MsgboxRemoteError(RuntimeError):
     pass
