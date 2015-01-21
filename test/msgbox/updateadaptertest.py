@@ -53,16 +53,17 @@ class UpdateAdapterTest(SeecrTestCase):
         adapter.addObserver(self.msgbox)
         
         list(compose(adapter.add(identifier='identifier', partname='partname', data='data')))
-        
-        self.assertEqual('data', open(join(self.outdir, 'identifier.add')).read()) 
+        with open(join(self.outdir, 'identifier.add')) as fp:
+            self.assertEqual('data', fp.read()) 
 
     def testToAdapterAndMsgboxDelete(self):
         adapter = UpdateAdapterToMsgbox()
         adapter.addObserver(self.msgbox)
         
         list(compose(adapter.delete(identifier='identifier')))
-        
-        self.assertEqual('', open(join(self.outdir, 'identifier.delete')).read()) 
+       
+        with open(join(self.outdir, 'identifier.delete')) as fp:
+            self.assertEqual('', fp.read()) 
 
     def testWrongExtension(self):
         adapter = UpdateAdapterFromMsgbox()
@@ -71,9 +72,10 @@ class UpdateAdapterTest(SeecrTestCase):
         open(join(self.indir, 'filename.extension'), 'w').close()
 
         self.msgbox.processFile('filename.extension')
-
-        errorContents = open(join(self.outdir, 'filename.extension.error')).read()
-        self.assertTrue('Expected add or delete as file extension' in errorContents, errorContents)
+        
+        with open(join(self.outdir, 'filename.extension.error')) as fp:
+            errorContents = fp.read()
+            self.assertTrue('Expected add or delete as file extension' in errorContents, errorContents)
 
     def testMsgboxAndFromAdapterDelete(self):
         adapter = UpdateAdapterFromMsgbox()
@@ -100,9 +102,8 @@ class UpdateAdapterTest(SeecrTestCase):
         observer.methods['add'] = addMethod
         self.msgbox.addObserver(adapter)
         adapter.addObserver(observer)
-        f = open(join(self.indir, 'identifier.add'), 'w')
-        f.write('data')
-        f.close()
+        with open(join(self.indir, 'identifier.add'), 'w') as f:
+            f.write('data')
 
         self.msgbox.processFile('identifier.add')
 

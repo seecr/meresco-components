@@ -138,9 +138,9 @@ from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
 
 from msgbox.msgboxtest import MsgboxTest
-#from .msgbox.updateadaptertest import UpdateAdapterTest
+from msgbox.updateadaptertest import UpdateAdapterTest
 
-#from .web.webquerytest import WebQueryTest
+from web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':
     unittest.main()

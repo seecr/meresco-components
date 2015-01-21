@@ -140,7 +140,8 @@ class MsgboxTest(SeecrTestCase):
         self.assertFalse(isfile(join(self.inDirectory, filename)))
         errorFile = join(self.outDirectory, filename + '.error')
         self.assertTrue(isfile(errorFile))
-        errorMessage = open(errorFile).read()
+        with open(errorFile) as fp:
+            errorMessage = fp.read()
         self.assertTrue(errorMessage.startswith("Traceback (most recent call last):"))
         self.assertTrue(errorMessage.endswith("ValueError\n"), errorMessage)
         self.assertTrue(self.msgbox._watcher in self.reactor._readers)
@@ -231,7 +232,8 @@ class MsgboxTest(SeecrTestCase):
         filepath = join(self.tempdir, filename)
         with open(filepath, "w") as fp:
             fp.write(DATA)
-        list(self.msgbox.add(filename, File(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
+        with File(filepath) as fp:
+            list(self.msgbox.add(filename, fp, ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEqual(filename, outFiles[0])
         with open(join(self.outDirectory, outFiles[0]), 'r') as f:
@@ -243,7 +245,8 @@ class MsgboxTest(SeecrTestCase):
         filepath = join(self.tempdir, filename)
         with open(filepath, "w") as fp:
             fp.write(DATA)
-        list(self.msgbox.add(filename, open(filepath), ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
+        with open(filepath) as fp:
+            list(self.msgbox.add(filename, fp, ignoredKwarg="e.g. useful to have parsed lxmlNode included in combination with XmlXPath filtering"))
         outFiles = self.listfiles(self.outDirectory)
         self.assertEqual(basename(filepath), outFiles[0])
         with open(join(self.outDirectory, outFiles[0]), 'r') as f:
@@ -478,7 +481,7 @@ class MsgboxTest(SeecrTestCase):
   File "%(_suspend.py)s", line [#], in getResult
     raise self._exception[1].with_traceback(self._exception[2])
   File "%(msgbox.py)s", line 124, in processFile
-    raise MsgboxRemoteError(open(filepath).read())
+    raise MsgboxRemoteError(contents)
 meresco.components.msgbox.msgbox.MsgboxRemoteError: Stacktrace""" % fileDict), ignoreLineNumbers(format_exc()))
         self.assertRaises(StopIteration, result.__next__)
 
