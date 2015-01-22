@@ -431,7 +431,8 @@ class IntegerListTest(SeecrTestCase):
         self.vmsize = self._getVmSize()
 
     def _getVmSize(self):
-        status = open('/proc/%d/status' % getpid()).read()
+        with  open('/proc/%d/status' % getpid()) as fp:
+            status = fp.read()
         i = status.find('VmSize:') + len('VmSize:')
         j = status.find('kB', i)
         vmsize = int(status[i:j].strip())

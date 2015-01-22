@@ -31,8 +31,12 @@
 
 from ctypes import cdll, c_int, c_uint, c_uint32
 from os.path import join, abspath, dirname
+from os import listdir
 
 print("loading libIntegerList ...", end=' ')
-libIntegerList = cdll.LoadLibrary(join(abspath(dirname(__file__)), '_integerlist.so'))
+foundSOs = ([fname 
+    for fname in listdir(join(abspath(dirname(__file__)))) 
+        if fname.startswith("_integerlist.") and fname.endswith(".so")])
+libIntegerList = cdll.LoadLibrary(join(abspath(dirname(__file__)), foundSOs[0]))
 print("loaded")
 

@@ -53,7 +53,8 @@ class PersistentSortedIntegerListTest(SeecrTestCase):
         s.append(1)
         s.append(2)
         self.assertEqual([1,2], list(iter(s)))
-        self.assertEqual(16, len(open(self.filepath).read()))
+        with open(self.filepath) as fp:
+            self.assertEqual(16, len(fp.read()))
         self.assertEqual([1,2], list(s))
         s = PersistentSortedIntegerList(self.filepath)
         self.assertEqual([1,2], list(iter(s)))

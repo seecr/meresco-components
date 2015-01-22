@@ -31,7 +31,7 @@
 #
 ## end license ##
 
-from ctypes import c_uint64, c_int64, c_char_p, POINTER, c_int
+from ctypes import c_uint64, c_int64, c_char_p, POINTER, c_int, c_char_p
 from .libintegerlist import libIntegerList
 
 INTEGERLIST = POINTER(None)
@@ -148,15 +148,14 @@ class IntegerList(object):
         return self._cobj
 
     def save(self, filename, offset=0, append=False):
-        print(filename, offset, append)
-        errno = IntegerList_save(self, filename, offset, append)
+        errno = IntegerList_save(self, filename.encode('ascii'), offset, append)
         if errno == -1:
             raise IndexError("Invalid index: %d [0..%d)" % (offset, len(self)))
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
 
     def extendFrom(self, filename):
-        errno = IntegerList_extendFrom(self, filename)
+        errno = IntegerList_extendFrom(self, filename.encode('ascii'))
         if errno:
             raise IOError("[Errno %d] No such file or directory: '%s'" % (errno, filename))
 

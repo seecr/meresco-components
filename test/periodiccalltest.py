@@ -215,7 +215,7 @@ class PeriodicCallTest(SeecrTestCase):
             self.assertEqual(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
 
     def testHandleWithCallableAndData(self):
-        suspend = CallTrace('Suspend', returnValues={'__call__': lambda *a, **kw: None})
+        suspend = CallTrace('Suspend', returnValues={'__call__': None})
         handleLog = []
         def handle():
             handleLog.append('ignored-da')
@@ -252,6 +252,11 @@ class PeriodicCallTest(SeecrTestCase):
         self.assertEqual([], self.reactor.calledMethodNames())
         self.assertEqual(['__call__'], suspend.calledMethodNames())
         dunderCall, = suspend.calledMethods
+        self.assertEqual(2, len(dunderCall.args))
+        self.assertEqual(self.reactor, dunderCall.args[0])
+        self.assertEqual(GeneratorType, type(dunderCall.args[1].__self__))
+        self.assertEqual('_periodicCall', dunderCall.args[1].__self__.gi_frame.f_code.co_name)
+        self.assertEqual({}, dunderCall.kwargs)
         self.assertEqual(2, len(dunderCall.args))
         self.assertEqual(self.reactor, dunderCall.args[0])
         self.assertEqual(GeneratorType, type(dunderCall.args[1].__self__))
@@ -427,9 +432,6 @@ class PeriodicCallTest(SeecrTestCase):
 
         addProcess.args[0]()  # <-- doing more stuff
         self.assertEqual([True, True], busybusy)
-        self.assertEqual([], self.reactor.calledMethodNames())
-        addProcess.args[0]()  # <-- done doing and delayed resume (addTimer)
-        self.assertEqual(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
 
     @stderr_replaced
     def testGetState(self):

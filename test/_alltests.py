@@ -34,7 +34,7 @@
 from os import getuid
 assert getuid() != 0, "Do not run tests as 'root'"
 
-from seecr.deps import includeParentAndDeps         #DO_NOT_DISTRIBUTE
+from seecrdeps import includeParentAndDeps         #DO_NOT_DISTRIBUTE
 includeParentAndDeps(__file__)                      #DO_NOT_DISTRIBUTE
 
 import unittest
@@ -61,9 +61,9 @@ from jsontest import JsonTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from parseargumentstest import ParseArgumentsTest
 from parsecqltest import ParseCQLTest
-#from periodiccalltest import PeriodicCallTest
+from periodiccalltest import PeriodicCallTest
 from periodicdownloadtest import PeriodicDownloadTest
-#from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
+from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
 from renamecqlindextest import RenameCqlIndexTest
 from renamefieldforexacttest import RenameFieldForExactTest
@@ -132,7 +132,7 @@ from suggestion.suggestiontest import SuggestionTest
 
 from xml_generic.validatetest import ValidateTest
 
-#from integerlist.integerlisttest import IntegerListTest
+from integerlist.integerlisttest import IntegerListTest
 
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
