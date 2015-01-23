@@ -29,7 +29,7 @@ from seecr.test.io import stderr_replaced
 
 from types import GeneratorType
 
-from weightless.core import be, compose
+from weightless.core import be, compose, Yield
 
 from meresco.core import Observable
 
@@ -188,6 +188,43 @@ class PeriodicCallTest(SeecrTestCase):
 
         _, addTimer = self.reactor.calledMethods
         self.assertEqual(((15, self.pc._periodicCall), {}), (addTimer.args, addTimer.kwargs))
+
+    def testErrorStateReset(self):
+        handleCalledBefore = []
+        def handle():
+            if not handleCalledBefore:
+                handleCalledBefore.append(True)
+                raise Exception('exception')
+            yield Yield
+        self.observer.methods['handle'] = handle
+
+        addTimer, = self.reactor.calledMethods
+        timerCallback = addTimer.args[1]
+        self.reactor.calledMethods.reset()
+        timerCallback()
+        addProcess, = self.reactor.calledMethods
+        addProcessCallback = addProcess.args[0]
+        self.reactor.calledMethods.reset()
+
+        with stderr_replaced():
+            addProcessCallback()
+            self.assertEquals('exception', self.pc.getState().errorState)
+
+        self.assertEqual(['handle'], self.observer.calledMethodNames())
+        self.assertEqual(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
+
+        _, addTimer = self.reactor.calledMethods
+        timerCallback = addTimer.args[1]
+        self.reactor.calledMethods.reset()
+        timerCallback()
+        addProcess, = self.reactor.calledMethods
+        addProcessCallback = addProcess.args[0]
+        self.reactor.calledMethods.reset()
+        addProcessCallback()
+        self.assertEquals(['handle', 'handle'], self.observer.calledMethodNames())
+        addProcessCallback()
+        self.assertEquals(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
+        self.assertEquals(None, self.pc.getState().errorState)
 
     def testFatalErrorReRaised(self):
         for exception in [KeyboardInterrupt, SystemExit, AssertionError]:

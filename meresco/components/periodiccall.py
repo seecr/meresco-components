@@ -106,6 +106,7 @@ class PeriodicCall(Observable):
                     yield
                     _response.resumeProcess()
                 yield
+            self._errorState = None
         except (AssertionError, KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -119,7 +120,6 @@ class PeriodicCall(Observable):
             else:
                 self._log('paused')
             self._busy = False
-
         yield  # Done, wait for GC
 
     def _addTimer(self, interval=None):
