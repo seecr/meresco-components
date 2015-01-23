@@ -508,47 +508,6 @@ class StatisticsTest(SeecrTestCase):
             pass
         self.assertEqual(["value00", "value01"], aggregator.get((2000, 1, 1, 0), (2000, 1, 1, 0)))
 
-    def testDataSnapshotStaysCompatible(self):
-        data = b"""eJyVk81u2zAQhO/7IvbJEMUfWcdeCuQSoE3uAk0RrFJHJEQ6cN6+uyvJcZMeKsAQVqRnv50R6VxM
-793kA+DDxTGX6eJKnCAJ2LtXP/nsoouTP7j4muLox5IPudgy5DK4DN9CQLFlRQ2u606X4VyGsesg
-nl68K5AkPJafScG+Txqedp1dJEMcf1z8xecdJAP7c2rocYSwlfwYew+phTCTREUoISAYCA1kRF6v
-1++WbL0jS9T/i3iO2KzKixSV8sZQ3He14nvqq+Ghqnj9zZ5nX8JsZKGkuUGObKSl0HpbLPar2Vst
-IJ+I434N537yI+3UvCPhQTAy3PKoOfpar3kEDkBRsUwcljHDB7s2LML3BXkkZFgo7VeK5L9JsYki
-uZ2UK0WqO4ok3WcKjyWbbRTOUbYrRVV3FCW+UtS8IzdRFMes9I1i7inNPyg8lmo3UTT31mKlaGz/
-tPvt8WCXpCUvKVriI4jnQmvaMPTBcv4YSDc03d8/a/H+abyAeGLmmmat5trg+Jj+XCMeM5prHBqd
-zLUES8dyirHQpVafHBtNaGM2OTYNi46rY9Pe5dpUaKxtKFpU0/ra8nSAPzePWl4="""
-        from base64 import decodebytes
-        from zlib import decompress
-        snaphotFilename=join(self.tempdir, 'snapshot')
-        with open(snaphotFilename,'wb') as fp:
-            fp.write(decompress(decodebytes(data)))
-        try:
-            stats = Statistics(self.tempdir, [('key',)])
-            self.fail()
-        except ImportError as e:
-            self.assertEqual("merescocore.components.statistics has been replaced, therefore you have to convert your statisticsfile using the 'convert_statistics.py' script in the tools directory", str(e))
-
-        #
-        # Add the tools package to the python path so the conversion tool can
-        # be imported
-        # <hack>
-        from os.path import dirname, isdir
-        toolsPath = join(dirname(dirname(__file__)), 'tools')
-        if not isdir(toolsPath):
-            return
-        from sys import path
-        path.insert(0, toolsPath)
-        import convert_statistics
-        convertedFilename = convert_statistics.convert_pickle_file(snaphotFilename)
-        rename(convertedFilename, snaphotFilename)
-        # </hack>
-        
-        stats = Statistics(self.tempdir, [('key',)])
-        try:
-            self.assertEqual({('value',): 1}, stats.get(('key',)))
-        finally:
-            stats._closeTx()
-    
     def createStatsdirForMergeTests(self, name):
         statsDir = join(self.tempdir, name)
         makedirs(statsDir)
