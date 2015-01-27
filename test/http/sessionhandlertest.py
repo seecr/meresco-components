@@ -9,8 +9,9 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 SURF http://www.surf.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -34,12 +35,14 @@ from unittest import TestCase
 from meresco.components.http import SessionHandler, utils
 from weightless.core import asString, consume
 from seecr.test import CallTrace
+from seecr.zulutime import ZuluTime
 
 #Cookies RFC 2109 http://www.ietf.org/rfc/rfc2109.txt
 class SessionHandlerTest(TestCase):
     def setUp(self):
         TestCase.setUp(self)
         self.handler = SessionHandler(secretSeed='SessionHandlerTest')
+        self.handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
         self.observer = CallTrace('Observer')
         self.handler.addObserver(self.observer)
 
@@ -65,8 +68,8 @@ class SessionHandlerTest(TestCase):
         self.assertEquals("HTTP/1.0 200 OK", headerParts[0])
         sessionCookie = [p for p in headerParts[1:] if 'Set-Cookie' in p][0]
         self.assertTrue(sessionCookie.startswith('Set-Cookie: session='))
-        self.assertTrue(sessionCookie.endswith('; path=/'))
-        self.assertEquals('Set-Cookie: session=%s; path=/' % session['id'], sessionCookie)
+        self.assertTrue(sessionCookie.endswith('; path=/; Expires=Tue, 27 Jan 2015 15:34:45 GMT'))
+        self.assertEquals('Set-Cookie: session=%s; path=/; Expires=Tue, 27 Jan 2015 15:34:45 GMT' % session['id'], sessionCookie)
 
     def testCreateSessionWithName(self):
         self.handler = SessionHandler(secretSeed='SessionHandlerTest', nameSuffix='Mine')

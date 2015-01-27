@@ -7,8 +7,9 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 SURF http://www.surf.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -38,6 +39,7 @@ from random import randint, choice
 from urllib import urlencode
 from UserDict import UserDict
 from string import ascii_letters
+from seecr.zulutime import ZuluTime
 
 class Session(UserDict):
     def __init__(self, sessionId):
@@ -55,6 +57,7 @@ class SessionHandler(Observable):
         Observable.__init__(self)
         self._secretSeed = secretSeed or createSeed()
         self._nameSuffix = nameSuffix
+        self._timeout = timeout
         self._sessions = TimedDictionary(timeout)
 
     def handleRequest(self, RequestURI='', Client=None, Headers={}, arguments = {}, *args, **kwargs):
@@ -72,12 +75,15 @@ class SessionHandler(Observable):
         else:
             self._sessions.touch(sessionid)
 
-        extraHeader = 'Set-Cookie: session%s=%s; path=/' % (self._nameSuffix, sessionid)
+        extraHeader = 'Set-Cookie: session%s=%s; path=/; Expires=%s' % (self._nameSuffix, sessionid, self._zulutime().add(seconds=self._timeout).rfc1123())
 
         result = compose(self.all.handleRequest(session=session, arguments=arguments, RequestURI=RequestURI, Client=Client, Headers=Headers, *args, **kwargs))
 
         for response in insertHeader(result, extraHeader) :
             yield response
+
+    def _zulutime(self):
+        return ZuluTime()
 
 def createSeed():
     return ''.join(choice(ascii_letters) for i in xrange(20))
