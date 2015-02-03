@@ -73,12 +73,11 @@ class File(object):
         }
 
     def stream(self):
-        fp = open(self._filename)
-        data = fp.read(1024)
-        while data:
-            yield data
+        with open(self._filename, "rb") as fp:
             data = fp.read(1024)
-        fp.close()
+            while data:
+                yield data
+                data = fp.read(1024)
 
     def _date(self, offset=0):
         return formatdate(time() + offset)
