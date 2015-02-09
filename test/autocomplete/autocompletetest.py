@@ -29,9 +29,11 @@
 ## end license ##
 
 from meresco.components.autocomplete import Autocomplete
+from io import BytesIO
 
 from testhelpers import Response as SolrResponse
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.utils import splitHttpHeaderBody
 from weightless.core import compose
 
 class AutocompleteTest(SeecrTestCase):
@@ -57,7 +59,7 @@ class AutocompleteTest(SeecrTestCase):
             yield
         observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['Te']}))).split('\r\n'*2)
+        header, body = splitHttpHeaderBody(''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['Te']}))).encode())
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["Te", ["term0", "term&/\\""]]""", body)
@@ -86,7 +88,7 @@ class AutocompleteTest(SeecrTestCase):
             yield
         observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']}))).split('\r\n'*2)
+        header, body = splitHttpHeaderBody(''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']}))).encode())
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["te", ["term0", "term&/\\""]]""", body)
@@ -108,7 +110,7 @@ class AutocompleteTest(SeecrTestCase):
         observer = CallTrace('observer')
         auto.addObserver(observer)
 
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['test']}))).split('\r\n'*2)
+        header, body = splitHttpHeaderBody(''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['test']}))).encode())
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["test", []]""", body)
@@ -128,7 +130,7 @@ class AutocompleteTest(SeecrTestCase):
         observer = CallTrace('observer')
         auto.addObserver(observer)
 
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['t']}))).split('\r\n'*2)
+        header, body = splitHttpHeaderBody(''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['t']}))).encode())
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["t", []]""", body)
@@ -147,10 +149,9 @@ class AutocompleteTest(SeecrTestCase):
             shortname="Web Search",
             description="Use this web search to search something",
         )
-        result = ''.join(compose(auto.handleRequest(
+        header, body = splitHttpHeaderBody(''.join(compose(auto.handleRequest(
             path='/path/opensearchdescription.xml', 
-            arguments={})))
-        header,body = result.split('\r\n'*2)
+            arguments={}))).encode())
 
         self.assertTrue("Content-Type: text/xml" in header, header)
         self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
@@ -173,10 +174,8 @@ class AutocompleteTest(SeecrTestCase):
             shortname="Web Search",
             description="Use this web search to search something",
         )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/jquery.js', 
-            arguments={})))
-        header,body = result.split('\r\n'*2)
+        header, body = splitHeaderBody(auto.handleRequest(path="/path/jquery.js", arguments={}))
+
         self.assertTrue('jQuery JavaScript Library' in body, body[:300])
         try:
             self.assertTrue('Content-Type: application/x-javascript' in header, header)
@@ -195,10 +194,7 @@ class AutocompleteTest(SeecrTestCase):
             shortname="Web Search",
             description="Use this web search to search something",
         )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/jquery.autocomplete.js', 
-            arguments={})))
-        header,body = result.split('\r\n'*2)
+        header, body = splitHeaderBody(auto.handleRequest(path='/path/jquery.autocomplete.js', arguments={}))
         self.assertTrue('Extending jQuery with autocomplete' in body, body[:300])
         try:
             self.assertTrue('Content-Type: application/x-javascript' in header, header)
@@ -217,9 +213,12 @@ class AutocompleteTest(SeecrTestCase):
             shortname="Web Search",
             description="Use this web search to search something",
         )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/autocomplete.css', 
-            arguments={})))
-        header,body = result.split('\r\n'*2)
+        header, body = splitHeaderBody(auto.handleRequest(path='/path/autocomplete.css', arguments={}))
         self.assertTrue('jqac-' in body, body[:300])
         self.assertTrue('Content-Type: text/css' in header, header)
+
+def splitHeaderBody(gen):
+    response = BytesIO()
+    for part in compose(gen):
+        response.write(part.encode() if type(part) is str else part)
+    return splitHttpHeaderBody(response.getvalue())

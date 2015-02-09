@@ -37,10 +37,11 @@ from os import remove, makedirs
 from time import time
 from email.utils import parsedate
 from calendar import timegm
+from io import BytesIO
 
 from weightless.core import compose
 from meresco.components.http.fileserver import FileServer
-
+from seecr.test.utils import splitHttpHeaderBody
 
 class FileServerTest(TestCase):
     def setUp(self):
@@ -92,10 +93,10 @@ class FileServerTest(TestCase):
             f.write("Some Contents")
 
         fileServer = FileServer(self.directory)
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        header, body = splitHeaderBody(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
 
-        self.assertTrue("HTTP/1.0 200 OK" in response)
-        self.assertTrue("Some Contents" in response)
+        self.assertTrue("HTTP/1.0 200 OK" in header)
+        self.assertTrue("Some Contents" in body)
 
     def testServeFileWithCorrectContentType(self):
         for extension, expectedType in [
@@ -108,11 +109,10 @@ class FileServerTest(TestCase):
                 f.write("Some Contents")
 
             fileServer = FileServer(self.directory)
-            response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={})))
-            headersList = response.split('\r\n\r\n', 1)[0].split('\r\n')
-
-            self.assertTrue("HTTP/1.0 200 OK" in response)
-            self.assertTrue("Some Contents" in response)
+            header, body = splitHeaderBody(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={}))
+            headersList = header.split('\r\n')
+            self.assertTrue("HTTP/1.0 200 OK" in header)
+            self.assertTrue("Some Contents" in body)
             self.assertTrue('Content-Type: %s' % expectedType in headersList, headersList)
 
     def testFirstOneWins(self):
@@ -122,23 +122,21 @@ class FileServerTest(TestCase):
             f.write("Different Contents")
 
         fileServer = FileServer(documentRoot=[self.directory, self.directory2])
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
-        self.assertTrue("Some Contents" in response)
-        self.assertFalse("Different Contents" in response)
+        headers, body = splitHeaderBody(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        self.assertTrue("Some Contents" in body)
+        self.assertFalse("Different Contents" in body)
 
         fileServer = FileServer(documentRoot=[self.directory2, self.directory])
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
-        self.assertTrue("Different Contents" in response)
-        self.assertFalse("Some Contents" in response)
+        headers, body = splitHeaderBody(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        self.assertTrue("Different Contents" in body)
+        self.assertFalse("Some Contents" in body)
 
     def testCacheControlStuff(self):
-        f = open(join(self.directory, 'someFile'), 'w')
-        f.write("Some Contents")
-        f.close()
+        with open(join(self.directory, 'someFile'), 'w') as fp:
+            fp.write("Some Contents")
 
         fileServer = FileServer(self.directory)
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
-        headers, body = response.split("\r\n\r\n")
+        headers, body = splitHeaderBody(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
 
         self.assertTrue("Date: " in headers)
         self.assertTrue("Last-Modified: " in headers)
@@ -154,9 +152,8 @@ class FileServerTest(TestCase):
         documentRoot = join(self.directory, 'documentRoot')
         makedirs(documentRoot)
         notAllowedFile = join(self.directory, 'notAllowed.txt')
-        f = open(notAllowedFile, 'w')
-        f.write("DO NOT READ ME")
-        f.close()
+        with open(notAllowedFile, 'w') as fp:
+            fp.write("DO NOT READ ME")
         fileServer = FileServer(documentRoot)
 
         response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={})))
@@ -164,3 +161,8 @@ class FileServerTest(TestCase):
         self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
         self.assertTrue("<title>404 Not Found</title>" in response)
 
+def splitHeaderBody(gen):
+    response = BytesIO()
+    for part in compose(gen):
+        response.write(part.encode() if type(part) is str else part)
+    return splitHttpHeaderBody(response.getvalue())
