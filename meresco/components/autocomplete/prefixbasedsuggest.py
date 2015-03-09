@@ -37,6 +37,9 @@ class PrefixBasedSuggest(Observable):
         self._minimumLength = minimumLength
 
     def suggest(self, arguments):
+        yield self._suggest(arguments=arguments, outside=self.any)
+
+    def _suggest(self, arguments, outside):
         prefix = arguments['prefix'][0]
 
         fieldname = arguments.get('field', [self._defaultField])[0]
@@ -49,7 +52,7 @@ class PrefixBasedSuggest(Observable):
         yield CRLF
         hits = []
         if len(prefix) >= self._minimumLength:
-            response = yield self.any.prefixSearch(fieldname=fieldname, prefix=prefix.lower(), limit=limit)
+            response = yield outside.prefixSearch(fieldname=fieldname, prefix=prefix.lower(), limit=limit)
             hits = response.hits
         yield JsonList([prefix, hits]).dumps()
 

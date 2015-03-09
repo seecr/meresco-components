@@ -33,13 +33,14 @@ from meresco.core import Observable
 from meresco.components.http.utils import okXml
 from meresco.components.http import FileServer
 from os.path import join, dirname, abspath
+from warnings import warn
 
 filesDir = join(dirname(abspath(__file__)), 'files')
 
 
 class Autocomplete(Observable):
-    def __init__(self, host, port, path, templateQuery, shortname, description):
-        Observable.__init__(self)
+    def __init__(self, host, port, path, templateQuery, shortname, description, name=None, **kwargs):
+        Observable.__init__(self, name=name)
         self._host = host
         self._port = port
         self._path = path
@@ -47,6 +48,15 @@ class Autocomplete(Observable):
         self._shortname = shortname
         self._description = description
         self._fileServer = FileServer(documentRoot=filesDir)
+        if 'defaultField' in kwargs:
+            warn("Using old-style Autocomplete, please use PrefixBasedSuggest as observer.", DeprecationWarning)
+            from .prefixbasedsuggest import PrefixBasedSuggest
+            suggest = PrefixBasedSuggest(**kwargs)
+            def _suggest(arguments):
+                yield suggest._suggest(arguments=arguments, outside=self.any)
+            self._suggest = _suggest
+            self._templateQueryForSuggest = suggest.templateQueryForSuggest
+
 
     def handleRequest(self, arguments, path, **kwargs):
         filename = path.rsplit('/', 1)[-1]
@@ -55,7 +65,13 @@ class Autocomplete(Observable):
         elif filename == 'opensearchdescription.xml':
             yield self._openSearchDescription(path=path, arguments=arguments, **kwargs)
         else:
-            yield self.all.suggest(arguments=arguments)
+            yield self._suggest(arguments=arguments)
+
+    def _suggest(self, arguments):
+        yield self.all.suggest(arguments=arguments)
+
+    def _templateQueryForSuggest(self):
+        return self.call.templateQueryForSuggest()
 
     def _openSearchDescription(self, **kwargs):
         yield okXml
@@ -73,7 +89,7 @@ class Autocomplete(Observable):
             'port': self._port,
             'path': self._path,
             'templateQuery': escapeXml(self._templateQuery),
-            'templateQueryForSuggest': escapeXml(self.call.templateQueryForSuggest()),
+            'templateQueryForSuggest': escapeXml(self._templateQueryForSuggest()),
         }
 
     def _files(self, filename, **kwargs):

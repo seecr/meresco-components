@@ -34,6 +34,7 @@ from meresco.components.autocomplete import Autocomplete, PrefixBasedSuggest
 from testhelpers import Response as SolrResponse
 from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import be, asString
+from seecr.test.io import stderr_replaced
 
 class AutocompleteTest(SeecrTestCase):
 
@@ -94,6 +95,38 @@ class AutocompleteTest(SeecrTestCase):
         self.assertEquals("""["te", ["term0", "term&/\\""]]""", body)
         self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
         self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
+
+    @stderr_replaced
+    def testOldStyleAutocomplete(self):
+        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
+        self.auto = be((Autocomplete(
+                host='localhost',
+                port=8000,
+                path='/some/path',
+                templateQuery=queryTemplate,
+                shortname="Web Search",
+                description="Use this web search to search something",
+                defaultLimit=50,
+                defaultField='lom',
+            ),
+            (self.observer,),
+        ))
+        response = SolrResponse()
+        response.hits = ['term0', 'term&/"']
+        response.total = 2
+        response.qtime = 5
+        def prefixSearch(**kwargs):
+            raise StopIteration(response)
+            yield
+        self.observer.methods['prefixSearch'] = prefixSearch
+
+        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
+
+        self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
+        self.assertEquals("""["te", ["term0", "term&/\\""]]""", body)
+        self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
+        self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
+
 
     def testMinimumLength(self):
         self._setUpAuto(prefixBasedSearchKwargs=dict(minimumLength=5))
