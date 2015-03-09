@@ -6,9 +6,10 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -28,26 +29,39 @@
 #
 ## end license ##
 
-from meresco.components.autocomplete import Autocomplete
+from meresco.components.autocomplete import Autocomplete, PrefixBasedSuggest
 
 from testhelpers import Response as SolrResponse
 from seecr.test import SeecrTestCase, CallTrace
-from weightless.core import compose
+from weightless.core import be, asString
 
 class AutocompleteTest(SeecrTestCase):
-    def testDefaultHandleRequest(self):
+
+    def setUp(self):
+        super(AutocompleteTest, self).setUp()
+        self.observer = CallTrace('observer')
+        self._setUpAuto()
+
+    def _setUpAuto(self, prefixBasedSearchKwargs=None):
+        prefixBasedSearchKwargs = {} if prefixBasedSearchKwargs is None else prefixBasedSearchKwargs
         queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost', 
-            port=8000, 
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='lom',
-            templateQuery=queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something")
-        observer = CallTrace('observer')
-        auto.addObserver(observer)
+        self.auto = be((Autocomplete(
+                host='localhost',
+                port=8000,
+                path='/some/path',
+                templateQuery=queryTemplate,
+                shortname="Web Search",
+                description="Use this web search to search something"),
+            (PrefixBasedSuggest(
+                    defaultLimit=50,
+                    defaultField='lom',
+                    **prefixBasedSearchKwargs
+                ),
+                (self.observer,),
+            ),
+        ))
+
+    def testDefaultHandleRequest(self):
         response = SolrResponse()
         response.hits = ['term0', 'term&/"']
         response.total = 2
@@ -55,28 +69,16 @@ class AutocompleteTest(SeecrTestCase):
         def prefixSearch(**kwargs):
             raise StopIteration(response)
             yield
-        observer.methods['prefixSearch'] = prefixSearch
+        self.observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['Te']}))).split('\r\n'*2)
+        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['Te']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEquals("""["Te", ["term0", "term&/\\""]]""", body)
-        self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'fieldname':'lom', 'limit':50}, observer.calledMethods[0].kwargs)
-        
+        self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
+        self.assertEquals({'prefix':'te', 'fieldname':'lom', 'limit':50}, self.observer.calledMethods[0].kwargs)
+
     def testHandleRequest(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost', 
-            port=8000, 
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='lom',
-            templateQuery=queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something")
-        observer = CallTrace('observer')
-        auto.addObserver(observer)
         response = SolrResponse()
         response.hits = ['term0', 'term&/"']
         response.total = 2
@@ -84,72 +86,34 @@ class AutocompleteTest(SeecrTestCase):
         def prefixSearch(**kwargs):
             raise StopIteration(response)
             yield
-        observer.methods['prefixSearch'] = prefixSearch
+        self.observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']}))).split('\r\n'*2)
+        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEquals("""["te", ["term0", "term&/\\""]]""", body)
-        self.assertEquals(['prefixSearch'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, observer.calledMethods[0].kwargs)
+        self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
+        self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
 
     def testMinimumLength(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost', 
-            port=8000, 
-            path='/some/path', 
-            minimumLength=5,
-            defaultLimit=50, 
-            defaultField='lom',
-            templateQuery=queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something")
-        observer = CallTrace('observer')
-        auto.addObserver(observer)
-
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['test']}))).split('\r\n'*2)
+        self._setUpAuto(prefixBasedSearchKwargs=dict(minimumLength=5))
+        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['test']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEquals("""["test", []]""", body)
-        self.assertEquals([], [m.name for m in observer.calledMethods])
+        self.assertEquals([], [m.name for m in self.observer.calledMethods])
 
     def testDefaultMinimumLength(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost', 
-            port=8000, 
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='lom',
-            templateQuery=queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something")
-        observer = CallTrace('observer')
-        auto.addObserver(observer)
-
-        header, body = ''.join(compose(auto.handleRequest(path='/path', arguments={'prefix':['t']}))).split('\r\n'*2)
+        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['t']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEquals("""["t", []]""", body)
-        self.assertEquals([], [m.name for m in observer.calledMethods])
-
+        self.assertEquals([], [m.name for m in self.observer.calledMethods])
 
     def testOpenSearchDescriptionXml(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost',
-            port=8000,
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='drilldown.dc.subject',
-            templateQuery = queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something",
-        )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/opensearchdescription.xml', 
-            arguments={})))
+        result = asString(self.auto.handleRequest(
+            path='/path/opensearchdescription.xml',
+            arguments={}))
         header,body = result.split('\r\n'*2)
 
         self.assertTrue("Content-Type: text/xml" in header, header)
@@ -162,20 +126,9 @@ class AutocompleteTest(SeecrTestCase):
 </OpenSearchDescription>""", body)
 
     def testJQueryJS(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost',
-            port=8000,
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='drilldown.dc.subject',
-            templateQuery = queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something",
-        )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/jquery.js', 
-            arguments={})))
+        result = asString(self.auto.handleRequest(
+            path='/path/jquery.js',
+            arguments={}))
         header,body = result.split('\r\n'*2)
         self.assertTrue('jQuery JavaScript Library' in body, body[:300])
         try:
@@ -184,20 +137,9 @@ class AutocompleteTest(SeecrTestCase):
             self.assertTrue('Content-Type: application/javascript' in header, header)
 
     def testJQueryAutocompleteJS(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost',
-            port=8000,
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='drilldown.dc.subject',
-            templateQuery = queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something",
-        )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/jquery.autocomplete.js', 
-            arguments={})))
+        result = asString(self.auto.handleRequest(
+            path='/path/jquery.autocomplete.js',
+            arguments={}))
         header,body = result.split('\r\n'*2)
         self.assertTrue('Extending jQuery with autocomplete' in body, body[:300])
         try:
@@ -206,20 +148,9 @@ class AutocompleteTest(SeecrTestCase):
             self.assertTrue('Content-Type: application/javascript' in header, header)
 
     def testAutocompleteCSS(self):
-        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
-        auto = Autocomplete(
-            host='localhost',
-            port=8000,
-            path='/some/path', 
-            defaultLimit=50, 
-            defaultField='drilldown.dc.subject',
-            templateQuery = queryTemplate,
-            shortname="Web Search",
-            description="Use this web search to search something",
-        )
-        result = ''.join(compose(auto.handleRequest(
-            path='/path/autocomplete.css', 
-            arguments={})))
+        result = asString(self.auto.handleRequest(
+            path='/path/autocomplete.css',
+            arguments={}))
         header,body = result.split('\r\n'*2)
         self.assertTrue('jqac-' in body, body[:300])
         self.assertTrue('Content-Type: text/css' in header, header)

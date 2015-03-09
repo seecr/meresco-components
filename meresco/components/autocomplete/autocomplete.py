@@ -5,9 +5,10 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -29,27 +30,22 @@
 
 from xml.sax.saxutils import escape as escapeXml
 from meresco.core import Observable
-from meresco.components.http.utils import Ok as HttpOk, ContentTypeHeader, CRLF, okXml
+from meresco.components.http.utils import okXml
 from meresco.components.http import FileServer
-from simplejson import dumps as dumps_json
 from os.path import join, dirname, abspath
 
 filesDir = join(dirname(abspath(__file__)), 'files')
 
-ContentTypeJsonSuggestions = "application/x-suggestions+json"
 
 class Autocomplete(Observable):
-    def __init__(self, host, port, path, defaultField, templateQuery, defaultLimit, shortname, description, minimumLength=2):
+    def __init__(self, host, port, path, templateQuery, shortname, description):
         Observable.__init__(self)
         self._host = host
         self._port = port
         self._path = path
-        self._defaultField = defaultField
         self._templateQuery = templateQuery
-        self._defaultLimit = defaultLimit
         self._shortname = shortname
         self._description = description
-        self._minimumLength = minimumLength
         self._fileServer = FileServer(documentRoot=filesDir)
 
     def handleRequest(self, arguments, path, **kwargs):
@@ -59,24 +55,7 @@ class Autocomplete(Observable):
         elif filename == 'opensearchdescription.xml':
             yield self._openSearchDescription(path=path, arguments=arguments, **kwargs)
         else:
-            yield self._prefixSearch(arguments)
-
-    def _prefixSearch(self, arguments):
-        prefix = arguments['prefix'][0]
-
-        fieldname = arguments.get('field', [self._defaultField])[0]
-        limit = int(arguments.get('limit', [self._defaultLimit])[0])
-        
-        yield HttpOk
-        yield ContentTypeHeader + ContentTypeJsonSuggestions + CRLF
-        yield "Access-Control-Allow-Origin: *" + CRLF
-        yield "Access-Control-Allow-Headers: X-Requested-With" + CRLF
-        yield CRLF
-        hits = []
-        if len(prefix) >= self._minimumLength:
-            response = yield self.any.prefixSearch(fieldname=fieldname, prefix=prefix.lower(), limit=limit)
-            hits = response.hits
-        yield dumps_json([prefix, hits])
+            yield self.all.suggest(arguments=arguments)
 
     def _openSearchDescription(self, **kwargs):
         yield okXml
@@ -84,17 +63,20 @@ class Autocomplete(Observable):
         yield """<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>%(shortname)s</ShortName>
     <Description>%(description)s</Description>
-    <Url type="text/xml" method="get" template="http://%(host)s:%(port)s%(temlateQuery)s"/>
-    <Url type="application/x-suggestions+json" template="http://%(host)s:%(port)s%(path)s?prefix={searchTerms}"/>
+    <Url type="text/xml" method="get" template="http://%(host)s:%(port)s%(templateQuery)s"/>
+    <Url type="%(contentTypeSuggest)s" template="http://%(host)s:%(port)s%(path)s?%(templateQueryForSuggest)s"/>
 </OpenSearchDescription>""" % {
+            'contentTypeSuggest': CONTENT_TYPE_JSON_SUGGESTIONS,
             'shortname': self._shortname,
             'description': self._description,
             'host': self._host,
             'port': self._port,
             'path': self._path,
-            'temlateQuery': escapeXml(self._templateQuery),
+            'templateQuery': escapeXml(self._templateQuery),
+            'templateQueryForSuggest': escapeXml(self.call.templateQueryForSuggest()),
         }
 
     def _files(self, filename, **kwargs):
         yield self._fileServer.handleRequest(path=filename, **kwargs)
 
+CONTENT_TYPE_JSON_SUGGESTIONS = "application/x-suggestions+json"
