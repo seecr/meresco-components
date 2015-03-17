@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -71,17 +72,20 @@ class DirectoryLogTest(SeecrTestCase):
         self.assertEquals(['2009-11-02-the-end.log'], listdir(self.tempdir))
 
     def testRemoveOldLogs(self):
+        nrOfFilesKept = 5
         kwargs = DEFAULT_KWARGS()
         kwargs['timestamp'] = 1257161136.0
-        for filename in ("%03d" % r for r in range(NR_OF_FILES_KEPT)):
+        for filename in ("%03d-the-end.log" % r for r in range(10)):
+            open(join(self.tempdir, filename), 'w').close()
+        for filename in ("%03d-the-other-end.log" % r for r in range(10)):
             open(join(self.tempdir, filename), 'w').close()
 
         filesBefore = listdir(self.tempdir)
-        log = DirectoryLog(self.tempdir, extension='-the-end.log')
+        log = DirectoryLog(self.tempdir, extension='-the-end.log', nrOfFilesKept=nrOfFilesKept)
         log.log(**kwargs)
         filesAfter = listdir(self.tempdir)
-        self.assertFalse('000' in filesAfter)
-        self.assertEquals(len(filesAfter), len(filesBefore))
+        self.assertFalse('000-the-end.log' in filesAfter)
+        self.assertTrue('000-the-other-end.log' in filesAfter)
 
         filesBefore = listdir(self.tempdir)
         kwargs['timestamp'] += 3600*24
@@ -90,14 +94,11 @@ class DirectoryLogTest(SeecrTestCase):
         self.assertFalse('001' in filesAfter)
         self.assertEquals(len(filesAfter), len(filesBefore))
 
-        open(join(self.tempdir, '015'), 'w').close()
-        open(join(self.tempdir, '016'), 'w').close()
+        open(join(self.tempdir, '015-the-end.log'), 'w').close()
+        open(join(self.tempdir, '016-the-end.log'), 'w').close()
         kwargs['timestamp'] += 3600*24
         log.log(**kwargs)
-        self.assertEquals(NR_OF_FILES_KEPT, len(listdir(self.tempdir)))
-
-
-
+        self.assertEquals(5+10, len(listdir(self.tempdir)))
 
 DEFAULT_KWARGS = lambda: dict(
         timestamp=1257161136.0,

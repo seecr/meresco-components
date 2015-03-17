@@ -6,8 +6,9 @@
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2006-2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -55,12 +56,17 @@ def logline(aDict):
 logtemplate = '%(strTimestamp)s %(ipAddress)s %(size).1fK %(duration).3fs %(path)s %(queryArguments)s\n'
 
 class DirectoryLog(object):
-    def __init__(self, logdir, extension='-query.log'):
+    def __init__(self, logdir, extension='-query.log', nrOfFilesKept=NR_OF_FILES_KEPT):
         self._previousLog = None
         self._logdir = logdir
         if not isdir(self._logdir):
             makedirs(self._logdir)
         self._filenameExtension = extension
+        self._nrOfFilesKept = nrOfFilesKept
+
+    def setNrOfFilesKept(self, value):
+        if value > 0:
+            self._nrOfFilesKept = value
 
     def _filename(self, timestamp):
         date = strftime('%Y-%m-%d', gmtime(timestamp))
@@ -71,14 +77,17 @@ class DirectoryLog(object):
         logFilename = self._filename(timestamp)
 
         if logFilename != self._previousLog:
-            logs = sorted(listdir(self._logdir))
-            while len(logs) >= NR_OF_FILES_KEPT:
+            logs = self._logfiles()
+            while len(logs) >= self._nrOfFilesKept:
                 remove(join(self._logdir, logs[0]))
-                logs = sorted(listdir(self._logdir))
+                logs = self._logfiles()
+            self._previousLog = logFilename
 
         with open(logFilename, 'a') as f:
             f.write(logline(kwargs))
 
+    def _logfiles(self):
+        return sorted(f for f in listdir(self._logdir) if f.endswith(self._filenameExtension))
 
     def logExists(self, logName):
         return isfile(join(self._logdir, logName))
