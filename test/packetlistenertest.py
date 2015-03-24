@@ -39,7 +39,7 @@ from meresco.components.packetlistener import UdpPacketListener, TcpPacketListen
 class PacketListenerTest(TestCase):
     def testUdpPacketListener(self):
         reactor = CallTrace('reactor')
-        observer = CallTrace('observer')
+        observer = CallTrace('observer', emptyGeneratorMethods=['handlePacket'])
         udpPacketListener = UdpPacketListener(reactor, port=1234)
         server = be((Observable(),
             (udpPacketListener,
@@ -54,12 +54,13 @@ class PacketListenerTest(TestCase):
         sok.sendto("TEST", ('localhost', 1234))
         sok.close()
         handleCallback()
+        reactor.calledMethods[-1].args[0]()
         self.assertEquals(['observer_init', 'handlePacket'], observer.calledMethodNames())
         self.assertEquals("TEST", observer.calledMethods[1].kwargs['data'])
 
     def testTcpPacketListener(self):
         reactor = CallTrace('reactor')
-        observer = CallTrace('observer')
+        observer = CallTrace('observer', emptyGeneratorMethods=['handlePacket'])
         tcpPacketListener = TcpPacketListener(reactor, port=1234)
         server = be((Observable(),
             (tcpPacketListener,
@@ -82,13 +83,17 @@ class PacketListenerTest(TestCase):
         self.assertEquals('addReader', reactor.calledMethods[1].name)
         handleCallback = reactor.calledMethods[1].args[1]
         handleCallback()
+        self.assertEquals('addProcess', reactor.calledMethods[-2].name)
+        reactor.calledMethods[-2].args[0]()
 
         self.assertEquals(['observer_init', 'handlePacket'], observer.calledMethodNames())
         self.assertEquals(data, observer.calledMethods[1].kwargs['data'])
-        self.assertEquals('removeReader', reactor.calledMethods[2].name)
+        self.assertEquals('removeReader', reactor.calledMethods[-2].name)
+        self.assertEquals('removeProcess', reactor.calledMethods[-1].name)
 
     def testExceptionInDownstreamHandlePacket(self):
-        server = UdpPacketListener(reactor=None, port=1234)
+        reactor = CallTrace()
+        server = UdpPacketListener(reactor=reactor, port=1234)
         sok = CallTrace(returnValues={'recvfrom': ('data', ('127.0.0.1', 1234))})
         observer = CallTrace()
         observer.exceptions['handlePacket'] = Exception("This should be happening")
@@ -98,6 +103,7 @@ class PacketListenerTest(TestCase):
         sys.stderr = mockStderr
         try:
             server._handlePacket(sok)
+            reactor.calledMethods[-1].args[0]()
         finally:
             sys.stderr = sys.__stderr__
         lines = mockStderr.getvalue().split('\n')

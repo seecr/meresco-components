@@ -31,6 +31,7 @@ from traceback import print_exc
 from weightless.http import Acceptor as TcpAcceptor
 from weightless.udp import Acceptor as UdpAcceptor
 from meresco.core import Observable
+from weightless.core import compose, Yield, identify
 
 
 class _PacketListener(Observable):
@@ -59,13 +60,31 @@ class _PacketListener(Observable):
         if remote is None:
             remote = sok.getpeername()
         try:
-            self.do.handlePacket(data=packet, remote=remote)
+            self._processPacket(packet, remote)
+        finally:
+            self.transmissionDone(sok)
+
+    @identify
+    def _processPacket(self, packet, remote):
+        this = yield # this generator, from @identify
+        self._reactor.addProcess(this.next)
+        try:
+            yield
+            for _response in compose(self.all.handlePacket(data=packet, remote=remote)):
+                if _response is not Yield and callable(_response):
+                    _response(self._reactor, this.next)
+                    yield
+                    _response.resumeProcess()
+                yield
+        except (AssertionError, KeyboardInterrupt, SystemExit):
+            raise
         except Exception:
             print >> sys.stderr, "Exception in _handlePacket for data=%s from %s" % (repr(packet), remote)
             print_exc()
             sys.stderr.flush()
         finally:
-            self.transmissionDone(sok)
+            self._reactor.removeProcess()
+        yield  # Done, wait for GC
 
     def transmissionDone(self, sok):
         pass
