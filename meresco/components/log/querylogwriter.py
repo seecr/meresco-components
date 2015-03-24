@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -32,9 +33,9 @@ from meresco.core import Observable
 from weightless.core import NoneOfTheObserversRespond
 
 class QueryLogWriter(Observable):
-    def __init__(self, log, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments'), **kwargs):
+    def __init__(self, log=None, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments'), **kwargs):
         Observable.__init__(self, **kwargs)
-        self._log = log
+        self._log = self.call if log is None else log
         self._scopeNames = () if scopeNames is None else scopeNames
         self._argumentSelectionScope = argumentsSelection['scope']
         self._argumentSelectionKey = argumentsSelection['key']
@@ -76,7 +77,7 @@ class QueryLogWriter(Observable):
         return sortedUrlEncode(args)
 
     @classmethod
-    def forHttpArguments(cls, log, **kwargs):
+    def forHttpArguments(cls, log=None, **kwargs):
         return cls(log=log, argumentsSelection=dict(scope='httpRequest', key='arguments'), **kwargs)
 
 

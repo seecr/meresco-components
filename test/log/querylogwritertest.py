@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -76,6 +77,14 @@ class QueryLogWriterTest(SeecrTestCase):
         writer.writeLog(defaultCollectedLogWithPath('/srw.php'))
         self.assertEquals(['log','log', 'log'], log.calledMethodNames())
         self.assertEquals(['/sru', '/srv', '/srw.php'], [m.kwargs['path'] for m in log.calledMethods])
+
+    def testLogAsObservable(self):
+        log = CallTrace('log', onlySpecifiedMethods=True, methods={'log': lambda **kwargs: None})
+        writer = QueryLogWriter()
+        writer.addObserver(log)
+        writer.writeLog(defaultCollectedLogWithPath('/sru'))
+        self.assertEquals(['log'], log.calledMethodNames())
+        self.assertEquals(['/sru'], [m.kwargs['path'] for m in log.calledMethods])
 
     def testLog(self):
         log = CallTrace('log')
