@@ -33,6 +33,7 @@
 
 from weightless.core import Yield
 
+
 CRLF = "\r\n"
 ContentTypeXml = "text/xml; charset=utf-8"
 ContentTypeRss = "application/rss+xml"
@@ -44,30 +45,36 @@ Ok = "HTTP/1.0 200 OK" + CRLF
 
 #200
 okXml = Ok + \
-        ContentTypeHeader + ContentTypeXml + CRLF + \
-        CRLF
+    ContentTypeHeader + ContentTypeXml + CRLF + \
+    CRLF
 
 okRss = Ok + \
-        ContentTypeHeader + ContentTypeRss + CRLF + \
-        CRLF
+    ContentTypeHeader + ContentTypeRss + CRLF + \
+    CRLF
 
 okHtml = Ok + \
-        ContentTypeHeader + ContentTypeHtml + CRLF + \
-        CRLF
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
 
 okPlainText = Ok + \
-        ContentTypeHeader + ContentTypePlainText + CRLF + \
-        CRLF
+    ContentTypeHeader + ContentTypePlainText + CRLF + \
+    CRLF
 
 #204
 successNoContentPlainText = "HTTP/1.0 204 No Content" + CRLF +\
-        ContentTypeHeader + ContentTypePlainText + CRLF + \
-        CRLF
+    ContentTypeHeader + ContentTypePlainText + CRLF + \
+    CRLF
 
 #302
 redirectHttp = "HTTP/1.0 302 Found" + CRLF + \
-              "Location: %s" + CRLF + \
-              CRLF
+    "Location: %s" + CRLF + \
+    CRLF
+
+#400
+badRequestHtml = \
+    "HTTP/1.0 400 Bad Request" + CRLF + \
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
 
 #401
 unauthorizedHtml = \
@@ -77,36 +84,43 @@ unauthorizedHtml = \
 
 #403
 forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
-               ContentTypeHeader + ContentTypeHtml + CRLF + \
-               CRLF
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
 
 #404
 notFoundHtml = "HTTP/1.0 404 Not Found" + CRLF + \
-               ContentTypeHeader + ContentTypeHtml + CRLF + \
-               CRLF
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
 
 #405
 methodNotAllowedHtml = lambda allowed: "HTTP/1.0 405 Method Not Allowed" + CRLF + \
-               ContentTypeHeader + ContentTypeHtml + CRLF + \
-               "Allow: " + ', '.join(allowed) + CRLF + \
-               CRLF
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    "Allow: " + ', '.join(allowed) + CRLF + \
+    CRLF
 
 #500
 serverErrorXml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
-                 ContentTypeHeader + ContentTypeXml + CRLF + \
-                 CRLF
+    ContentTypeHeader + ContentTypeXml + CRLF + \
+    CRLF
 
 serverErrorPlainText = "HTTP/1.0 500 Internal Server Error" + CRLF +\
-                 ContentTypeHeader + ContentTypePlainText + CRLF + \
-                 CRLF
+    ContentTypeHeader + ContentTypePlainText + CRLF + \
+    CRLF
 
 serverErrorHtml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
-                  ContentTypeHeader + ContentTypeHtml + CRLF + \
-                  CRLF
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
+
+#502
+badGatewayHtml = "HTTP/1.0 502 Bad Gateway" + CRLF + \
+    ContentTypeHeader + ContentTypeHtml + CRLF + \
+    CRLF
+
 #503
 serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
-                        ContentTypeHeader + ContentTypeHtml + CRLF +\
-                        CRLF
+    ContentTypeHeader + ContentTypeHtml + CRLF +\
+    CRLF
+
 
 def insertHeader(httpResponse, extraHeader):
     alreadyDone = False

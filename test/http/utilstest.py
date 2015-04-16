@@ -34,11 +34,10 @@ import meresco.components.http.utils as utils
 from meresco.components.http.utils import redirectHttp
 
 from unittest import TestCase
-from weightless.core import compose
+
 
 class UtilsTest(TestCase):
     def testInsertHeader(self):
-
         def handleRequest(*args, **kwargs):
             yield  utils.okHtml
             yield '<ht'
@@ -65,4 +64,3 @@ class UtilsTest(TestCase):
 
     def testRedirect(self):
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")
-
