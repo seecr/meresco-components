@@ -145,9 +145,6 @@ from integerlist.integerlisttest import IntegerListTest
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
 
-from msgbox.msgboxtest import MsgboxTest
-from msgbox.updateadaptertest import UpdateAdapterTest
-
 from web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':
