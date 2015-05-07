@@ -3,8 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -24,11 +25,12 @@
 #
 ## end license ##
 
-from meresco.core import Observable
 from xml.sax.saxutils import escape as xmlEscape
 
-class Suggestion(Observable):
+from meresco.core import Observable
 
+
+class Suggestion(Observable):
     def __init__(self, count, field, allowOverrideField=False, maximumCount=None):
         Observable.__init__(self)
         self._count = count
@@ -39,7 +41,10 @@ class Suggestion(Observable):
     def executeQuery(self, extraArguments, **kwargs):
         suggestionRequest = None
         if 'x-suggestionsQuery' in extraArguments and extraArguments['x-suggestionsQuery'][0]:
-            suggestionRequest = dict(count=self._getCount(extraArguments), field=self._getField(extraArguments), query=extraArguments['x-suggestionsQuery'][0])
+            suggestionRequest = dict(
+                count=self._getCount(extraArguments),
+                field=self._getField(extraArguments),
+                query=extraArguments['x-suggestionsQuery'][0])
         response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, extraArguments=extraArguments, **kwargs)
         raise StopIteration(response)
 
@@ -49,21 +54,19 @@ class Suggestion(Observable):
 
         sortedSuggestions = sorted(response.suggestions.items(), key=lambda (word, (start, stop, suggestions)): start)
         allSuggestions = [suggestions for (word, (start, stop, suggestions)) in sortedSuggestions]
-
         if not allSuggestions:
             return
 
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
         shortest = min([len(suggestions) for suggestions in allSuggestions])
         for i in range(shortest):
-            newSuggestionsQuery = sruArguments['x-suggestionsQuery'][0]
+            suggestion = unicode(sruArguments['x-suggestionsQuery'][0])
             for word, (start, stop, suggestions) in reversed(sortedSuggestions):
                 replaceWord = suggestions[i]
-                leftPart = newSuggestionsQuery[:start]
-                rightPart = newSuggestionsQuery[stop:]
-
-                newSuggestionsQuery = leftPart + replaceWord + rightPart
-            yield "<suggestion>%s</suggestion>\n" % xmlEscape(newSuggestionsQuery)
+                leftPart = suggestion[:start]
+                rightPart = suggestion[stop:]
+                suggestion = leftPart + replaceWord + rightPart
+            yield "<suggestion>%s</suggestion>\n" % xmlEscape(suggestion)
         yield '</suggestions>\n'
 
     def echoedExtraRequestData(self, sruArguments, **kwargs):

@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -25,9 +27,12 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from meresco.components.suggestion import Suggestion
-from testhelpers import Response
+
 from weightless.core import compose, retval
+from meresco.components.suggestion import Suggestion
+
+from testhelpers import Response
+
 
 class SuggestionTest(SeecrTestCase):
     def setUp(self):
@@ -77,6 +82,16 @@ class SuggestionTest(SeecrTestCase):
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
     <suggestion>harry AND potter</suggestion>
     <suggestion>marie AND peter</suggestion>
+</suggestions>
+""", responseData)
+
+    def testSpecialCharacters(self):
+        suggestions = Suggestion(count=1, field='afield')
+        response = Response(total=0, hits=[])
+        response.suggestions={'Éäéðĉ': (0, 5, ['Éäéðĉ'])}
+        responseData = ''.join(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery':['Éäéðĉ']})))
+        self.assertXmlEquals("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
+    <suggestion>Éäéðĉ</suggestion>
 </suggestions>
 """, responseData)
 
@@ -152,4 +167,3 @@ class SuggestionTest(SeecrTestCase):
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals(None, methodKwargs['suggestionRequest'])
-
