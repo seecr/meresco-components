@@ -8,10 +8,11 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2014 SURF http://www.surf.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -887,11 +888,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field,']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20,field2']))
-        self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}]], handler._parseDrilldownArgs(['field:20/field2']))
-        self.assertEquals([[{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}],{'fieldname':'field3', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20/field2,field3']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
-        handler = SruHandler(drilldownSortBy='count', pivotDelimiter=None)
-        self.assertEquals([{'fieldname':'field/field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field/field2']))
 
 
 MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0), localLogCollector=dict())

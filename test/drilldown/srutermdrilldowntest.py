@@ -7,9 +7,10 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -74,7 +75,7 @@ class SruTermDrilldownTest(SeecrTestCase):
         xsdFilename = self._getXsdFilename(response)
         assertValid(response, join(schemasPath, xsdFilename))
 
-    def testSruTermDrilldownWithPivots(self):
+    def testSruTermDrilldownWithSubTerms(self):
         sruTermDrilldown = SruTermDrilldown(defaultFormat=FORMAT_XML)
 
         drilldownData = [
@@ -84,19 +85,16 @@ class SruTermDrilldownTest(SeecrTestCase):
                         {
                             'term': 'value0',
                             'count': 1,
-                            'pivot': {
-                                'fieldname': 'field1',
-                                'terms': [
-                                    {
-                                        'term': 'value0_0',
-                                        'count': 10,
-                                    },
-                                    {
-                                        'term': 'value0_1',
-                                        'count': 20
-                                    }
-                                ]
-                            }
+                            'subterms': [
+                                {
+                                    'term': 'value0_0',
+                                    'count': 10,
+                                },
+                                {
+                                    'term': 'value0_1',
+                                    'count': 20
+                                }
+                            ]
                         },
                         {
                             'term': 'value1',
@@ -110,7 +108,7 @@ class SruTermDrilldownTest(SeecrTestCase):
 
         self.assertEqualsWS(_DRILLDOWN_HEADER % _DRILLDOWN_XSD_2013 + """<dd:term-drilldown><dd:navigator name="field0">
     <dd:item count="1" value="value0">
-        <dd:navigator name="field1">
+        <dd:navigator name="subterms">
             <dd:item count="10" value="value0_0"/>
             <dd:item count="20" value="value0_1"/>
         </dd:navigator>

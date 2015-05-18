@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -94,9 +95,9 @@ class SruTermDrilldown(Observable):
 
     def _dd_item_new(self, term):
         yield '<dd:item count=%s value=%s' % (quoteattr(str(term['count'])), quoteattr(str(term['term'])))
-        if 'pivot' in term:
+        if 'subterms' in term:
             yield '>'
-            yield self._dd_navigator(term['pivot']['fieldname'], term['pivot']['terms'])
+            yield self._dd_navigator('subterms', term['subterms'])
             yield '</dd:item>'
         else:
             yield '/>'
