@@ -85,6 +85,7 @@ from statisticstest import StatisticsTest
 from statisticsxmltest import StatisticsXmlTest
 from storagecomponenttest import StorageComponentTest
 from tokenizefieldlettest import TokenizeFieldletTest
+from urltest import UrlTest
 from venturitest import VenturiTest
 from xml2fieldstest import Xml2FieldsTest
 from xmlcomposetest import XmlComposeTest
