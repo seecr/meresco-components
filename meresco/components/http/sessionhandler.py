@@ -40,6 +40,7 @@ from urllib import urlencode
 from UserDict import UserDict
 from string import ascii_letters
 from seecr.zulutime import ZuluTime
+from os.path import isfile
 
 class Session(UserDict):
     def __init__(self, sessionId):
@@ -55,7 +56,7 @@ class Session(UserDict):
 class SessionHandler(Observable):
     def __init__(self, secretSeed=None, nameSuffix='', timeout=3600*2):
         Observable.__init__(self)
-        self._secretSeed = secretSeed or createSeed()
+        self._secretSeed = secretSeed or self.createSeed()
         self._nameSuffix = nameSuffix
         self._timeout = timeout
         self._sessions = TimedDictionary(timeout)
@@ -85,8 +86,20 @@ class SessionHandler(Observable):
     def _zulutime(self):
         return ZuluTime()
 
-def createSeed():
-    return ''.join(choice(ascii_letters) for i in xrange(20))
+    @staticmethod
+    def createSeed():
+        return ''.join(choice(ascii_letters) for i in xrange(20))
+
+    @classmethod
+    def seedFromFile(cls, filename):
+        if isfile(filename):
+            seed = open(filename).read().strip()
+            if seed:
+                return seed
+        seed = cls.createSeed()
+        with open(filename, 'w') as f:
+            f.write(seed)
+        return seed
 
 #steps:
 #Generate some kind of unique id. bijv. md5(time() + ip + secret_seed)

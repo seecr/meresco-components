@@ -31,16 +31,16 @@
 #
 ## end license ##
 
-from unittest import TestCase
 from meresco.components.http import SessionHandler, utils
 from weightless.core import asString, consume
-from seecr.test import CallTrace
+from seecr.test import CallTrace, SeecrTestCase
 from seecr.zulutime import ZuluTime
+from os.path import join
 
 #Cookies RFC 2109 http://www.ietf.org/rfc/rfc2109.txt
-class SessionHandlerTest(TestCase):
+class SessionHandlerTest(SeecrTestCase):
     def setUp(self):
-        TestCase.setUp(self)
+        SeecrTestCase.setUp(self)
         self.handler = SessionHandler(secretSeed='SessionHandlerTest')
         self.handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
         self.observer = CallTrace('Observer')
@@ -180,6 +180,24 @@ class SessionHandlerTest(TestCase):
         self.assertEquals(callableMethod, result[4])
         self.assertTrue(result[2].startswith('Set-Cookie: session'), result[2])
         self.assertEquals("THE END", result[5])
+
+    def testSeedFromFile(self):
+        seedfile = join(self.tempdir, 'seed')
+        seed = SessionHandler.seedFromFile(seedfile)
+        self.assertEquals(20, len(seed))
+        seed2 = SessionHandler.seedFromFile(seedfile)
+        self.assertEquals(seed, seed2)
+        self.assertEquals(seed, open(seedfile).read())
+        with open(seedfile, 'w') as f:
+            f.write('123')
+        self.assertEquals('123', SessionHandler.seedFromFile(seedfile))
+        with open(seedfile, 'w') as f:
+            f.write('123\n')
+        self.assertEquals('123', SessionHandler.seedFromFile(seedfile))
+        with open(seedfile, 'w') as f:
+            f.write('') # empty files are regenerated
+        seed = SessionHandler.seedFromFile(seedfile)
+        self.assertEquals(20, len(seed))
 
     def assertSessionCookie(self, handleRequestOutput, nameSuffix=''):
         header, body = handleRequestOutput.split(utils.CRLF*2,1)
