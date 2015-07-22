@@ -3,8 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -74,7 +75,7 @@ class SruUpdateClient(object):
     def _httppost(self, **kwargs):
         if self._synchronous:
             req = Request("http://%(host)s:%(port)s%(request)s" % kwargs, kwargs['body'])
-            req.add_header('User-Agent', kwargs['headers'])
+            req.add_header('User-Agent', kwargs['headers']['User-Agent'])
             response = urlopen(req)
             raise StopIteration((str(response.getcode()), response.read()))
         response = yield httppost(**kwargs)
