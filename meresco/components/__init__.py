@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010, 2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2010, 2013, 2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -55,7 +55,6 @@ from parsearguments import ParseArguments
 from parsecql import ParseCQL
 from periodiccall import PeriodicCall
 from periodicdownload import PeriodicDownload
-from persistentsortedintegerlist import PersistentSortedIntegerList
 from reindex import Reindex
 from renamecqlindex import RenameCqlIndex
 from renamefieldforexact import RenameFieldForExact

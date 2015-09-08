@@ -10,8 +10,9 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -32,9 +33,7 @@
 ## end license ##
 
 from distutils.core import setup
-from distutils.extension import Extension
 from os import walk
-from os.path import join
 
 packages = []
 for path, dirs, files in walk('meresco'):
@@ -59,15 +58,6 @@ setup(
             'schemas-lom/vocab/*'
         ]
     },
-    ext_modules = [
-        Extension("meresco.components.integerlist._integerlist", [
-                      'meresco/components/integerlist/_integerlist.cpp',
-                  ],
-                  extra_compile_args = [
-                      '-g', 
-                  ],
-        )
-    ],
     version = '%VERSION%',
     url = 'http://seecr.nl',
     author = 'Seecr (Seek You Too B.V.)',

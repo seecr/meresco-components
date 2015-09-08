@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2010-2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2010-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -71,7 +71,6 @@ from parsecqltest import ParseCQLTest
 from packetlistenertest import PacketListenerTest
 from periodiccalltest import PeriodicCallTest
 from periodicdownloadtest import PeriodicDownloadTest
-from persistentsortedintegerlisttest import PersistentSortedIntegerListTest
 from reindextest import ReindexTest
 from renamecqlindextest import RenameCqlIndexTest
 from renamefieldforexacttest import RenameFieldForExactTest
@@ -140,8 +139,6 @@ from sru.srwtest import SrwTest
 from suggestion.suggestiontest import SuggestionTest
 
 from xml_generic.validatetest import ValidateTest
-
-from integerlist.integerlisttest import IntegerListTest
 
 from ngram.cqlsuggestertest import CqlSuggesterTest
 from ngram.cqltermvisitortest import CqlTermVisitorTest
