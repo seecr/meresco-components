@@ -4,7 +4,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -27,13 +28,14 @@
 set -o errexit
 rm -rf tmp build
 mydir=$(cd $(dirname $0); pwd)
-source /usr/share/seecr-test/functions
+source /usr/share/seecr-tools/functions.d/test
 
-pyversions="2.6"
-if distro_is_debian_wheezy; then
-    pyversions="2.6 2.7"
+if [ -e /usr/bin/python2.6 ]; then
+    pyversions="python2.6"
 fi
-
+if [ -e /usr/bin/python2.7 ]; then
+    pyversions="python2.7"
+fi
 VERSION="x.y.z"
 
 for pyversion in $pyversions; do
