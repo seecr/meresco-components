@@ -8,8 +8,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -37,7 +37,7 @@ from meresco.components.drilldown import SruFieldDrilldown, DRILLDOWN_HEADER
 
 from weightless.core import compose
 
-from cqlparser import parseString, cql2string
+from cqlparser import cqlToExpression
 
 class SruFieldDrilldownTest(SeecrTestCase):
 
@@ -61,9 +61,9 @@ class SruFieldDrilldownTest(SeecrTestCase):
 <dd:field name="field1">10</dd:field></dd:field-drilldown></dd:drilldown>""", "".join(result))
 
         self.assertEquals(['executeQuery', 'executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(['cqlAbstractSyntaxTree', 'cqlAbstractSyntaxTree'], [','.join((m.kwargs.keys())) for m in observer.calledMethods])
-        self.assertEquals('(original) AND field0=term', cql2string(observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree']))
-        self.assertEquals('(original) AND field1=term', cql2string(observer.calledMethods[1].kwargs['cqlAbstractSyntaxTree']))
+        self.assertEquals(['query', 'query'], [','.join((m.kwargs.keys())) for m in observer.calledMethods])
+        self.assertEquals(cqlToExpression('(original) AND field0=term'), observer.calledMethods[0].kwargs['query'])
+        self.assertEquals(cqlToExpression('(original) AND field1=term'), observer.calledMethods[1].kwargs['query'])
 
     def testDrilldown(self):
         adapter = SruFieldDrilldown()
@@ -78,8 +78,8 @@ class SruFieldDrilldownTest(SeecrTestCase):
             yield result
         result = compose(dd()).next()
         self.assertEquals(2, len(observer.calledMethods))
-        self.assertEquals("executeQuery(cqlAbstractSyntaxTree=<class CQL_QUERY>)", str(observer.calledMethods[0]))
-        self.assertEquals(parseString("(original) and field0=term"),  observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals("executeQuery(query=<class QueryExpression>)", str(observer.calledMethods[0]))
+        self.assertEquals(cqlToExpression("(original) and field0=term"),  observer.calledMethods[0].kwargs['query'])
         self.assertEquals([("field0", 16), ("field1", 16)], result)
 
     def testEchoedExtraRequestData(self):

@@ -8,7 +8,7 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -38,7 +38,7 @@ from meresco.components.drilldown import DEFAULT_MAXIMUM_TERMS
 from meresco.components.sru.sruparser import SruException
 from weightless.core import compose, Yield
 
-from cqlparser import parseString as parseCQL
+from cqlparser import cqlToExpression
 
 from time import time
 from decimal import Decimal
@@ -76,16 +76,17 @@ class SruHandler(Observable):
         try:
             t0 = self._timeNow()
             start = startRecord - SRU_IS_ONE_BASED
-            cqlAbstractSyntaxTree = parseCQL(query)
 
             facets = None
             if 'x-term-drilldown' in sruArguments:
                 facets = self._parseDrilldownArgs(sruArguments['x-term-drilldown'])
 
+            queryExpression = cqlToExpression(query)
+
             extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
             try:
                 response = yield self.any.executeQuery(
-                        cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+                        query=queryExpression,
                         start=start,
                         stop=start + maximumRecords,
                         facets=facets,
@@ -119,7 +120,7 @@ class SruHandler(Observable):
 
             yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
             yield self._writeDiagnostics(diagnostics=diagnostics)
-            yield self._writeExtraResponseData(cqlAbstractSyntaxTree=cqlAbstractSyntaxTree, version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, localLogCollector=localLogCollector, **kwargs)
+            yield self._writeExtraResponseData(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, localLogCollector=localLogCollector, **kwargs)
             yield self._endResults()
         finally:
             self._collectLogForScope(sru=localLogCollector)

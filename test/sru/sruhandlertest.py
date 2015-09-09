@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2014 SURF http://www.surf.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -43,7 +43,7 @@ from xml.sax.saxutils import escape as xmlEscape
 
 from weightless.core import compose, be, consume
 
-from cqlparser import parseString
+from cqlparser import parseString, cqlToExpression
 
 from meresco.components.sru.sruparser import SruException
 from meresco.components.sru import SruHandler, SruParser
@@ -353,7 +353,7 @@ class SruHandlerTest(SeecrTestCase):
         executeQueryMethod, extraRecordData1, extraRecordData2, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
         self.assertEquals('executeQuery', executeQueryMethod.name)
         methodKwargs = executeQueryMethod.kwargs
-        self.assertEquals(parseString('field=value'), methodKwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals(cqlToExpression('field=value'), methodKwargs['query'])
         self.assertEquals(0, methodKwargs['start'])
         self.assertEquals(2, methodKwargs['stop'])
         self.assertEquals({'x-recordSchema': ['extra', 'evenmore'], 'x-extra-key': 'extraValue'}, methodKwargs['extraArguments'])
@@ -439,7 +439,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals((), echoedExtraRequestDataMethod.args)
         self.assertEquals(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
         self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(sorted(['version', 'recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'cqlAbstractSyntaxTree', 'response', 'drilldownData', 'queryTime', 'sruArguments']), sorted(extraResponseDataMethod.kwargs.keys()))
+        self.assertEquals(sorted(['version', 'recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'response', 'drilldownData', 'queryTime', 'sruArguments']), sorted(extraResponseDataMethod.kwargs.keys()))
 
     def testExtraRecordDataOldStyle(self):
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}

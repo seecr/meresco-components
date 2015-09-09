@@ -36,7 +36,6 @@ from xmlcompose import XmlCompose
 from xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
 
 from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
-from clausecollector import ClauseCollector
 from combineparts import CombineParts
 from configuration import Configuration, readConfig
 from contextset import ContextSetList, ContextSet
@@ -52,7 +51,6 @@ from inbox import Inbox
 from iteratorasstream import IteratorAsStream
 from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
 from parsearguments import ParseArguments
-from parsecql import ParseCQL
 from periodiccall import PeriodicCall
 from periodicdownload import PeriodicDownload
 from reindex import Reindex
@@ -63,7 +61,6 @@ from rewritepartname import RewritePartname
 from rss import Rss
 from rssitem import RssItem
 from schedule import Schedule
-from statisticsxml import StatisticsXml
 from storagecomponent import StorageComponent, defaultSplit, defaultJoin
 from venturi import Venturi
 from xml2fields import Xml2Fields

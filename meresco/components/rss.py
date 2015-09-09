@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -29,7 +29,6 @@
 ## end license ##
 
 from xml.sax.saxutils import escape as xmlEscape
-from xml.sax import SAXParseException
 
 from urlparse import parse_qs
 from urlparse import urlsplit
@@ -38,7 +37,8 @@ from meresco.core import Observable
 from meresco.components.sru.sruparser import SruMandatoryParameterNotSuppliedException
 from meresco.components.http import utils as httputils
 
-from cqlparser.cqlparser import parseString as CQLParseException
+from cqlparser import cqlToExpression
+from cqlparser.cqlparser import CQLParseException
 from meresco.components.web import WebQuery
 
 class BadRequestException(Exception):
@@ -77,11 +77,11 @@ class Rss(Observable):
             webquery = WebQuery(query, antiUnaryClause=self._antiUnaryClause)
             for filter in filters:
                 if not ':' in filter:
-                    raise BadRequestException('Invalid filter: %s' % filter) 
+                    raise BadRequestException('Invalid filter: %s' % filter)
                 field,term = filter.split(':', 1)
                 webquery.addFilter(field, term)
 
-            cqlAbstractSyntaxTree = webquery.ast
+            ast = webquery.ast
         except (SruMandatoryParameterNotSuppliedException, BadRequestException, CQLParseException), e:
             yield '<title>ERROR %s</title>' % xmlEscape(self._title)
             yield '<link>%s</link>' % xmlEscape(self._link)
@@ -94,7 +94,7 @@ class Rss(Observable):
 
         SRU_IS_ONE_BASED = 1 #And our RSS plugin is closely based on SRU
         yield self._yieldResults(
-                cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+                query=cqlToExpression(ast),
                 start=startRecord - SRU_IS_ONE_BASED,
                 stop=startRecord - SRU_IS_ONE_BASED+maximumRecords,
                 sortBy=sortBy,
@@ -103,9 +103,9 @@ class Rss(Observable):
         yield """</channel>"""
         yield """</rss>"""
 
-    def _yieldResults(self, cqlAbstractSyntaxTree=None, start=0, stop=9, sortBy=None, sortDescending=False):
+    def _yieldResults(self, query=None, start=0, stop=9, sortBy=None, sortDescending=False):
         response = yield self.any.executeQuery(
-            cqlAbstractSyntaxTree=cqlAbstractSyntaxTree,
+            query=query,
             start=start,
             stop=stop,
             sortKeys=[{'sortBy': sortBy, 'sortDescending': sortDescending}] if sortBy is not None else None

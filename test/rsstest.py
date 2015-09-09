@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -36,9 +36,9 @@ from lxml.etree import parse
 from testhelpers import Response, Hit
 from meresco.components.rss import Rss
 
-from weightless.core import compose
+from weightless.core import consume, asString
 
-from cqlparser import parseString as parseCql
+from cqlparser import cqlToExpression
 
 RSS_HEAD = """HTTP/1.0 200 OK
 Content-Type: application/rss+xml
@@ -75,7 +75,7 @@ class RssTest(SeecrTestCase):
         )
         rss.addObserver(observer)
 
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery')))
+        result = asString(rss.handleRequest(RequestURI='/?query=aQuery'))
         self.assertEqualsWS(RSS % '', result)
 
     def testOneResult(self):
@@ -84,7 +84,7 @@ class RssTest(SeecrTestCase):
                 'getRecord': '<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>',
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        
+
         def executeQuery(**kwargs):
             raise StopIteration(Response(total=1, hits=[Hit(1)]))
             yield
@@ -99,7 +99,7 @@ class RssTest(SeecrTestCase):
         )
         rss.addObserver(observer)
 
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery')))
+        result = asString(rss.handleRequest(RequestURI='/?query=aQuery'))
         self.assertEqualsWS(RSS % """<item>
         <title>Test Title</title>
         <link>Test Identifier</link>
@@ -119,7 +119,7 @@ class RssTest(SeecrTestCase):
             link = 'http://www.example.org',
         )
         rss.addObserver(observer)
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery%29'))) #%29 == ')'
+        result = asString(rss.handleRequest(RequestURI='/?query=aQuery%29')) #%29 == ')'
 
         xml = parse(StringIO(result[result.index("<?xml"):]))
         self.assertEquals(['Test title'], xml.xpath('/rss/channel/title/text()'))
@@ -131,7 +131,7 @@ class RssTest(SeecrTestCase):
             description = 'Test description',
             link = 'http://www.example.org',
         )
-        result = "".join(compose(rss.handleRequest(RequestURI='/')))
+        result = asString(rss.handleRequest(RequestURI='/'))
 
         xml = parse(StringIO(result[result.index("<?xml"):]))
         self.assertEquals(['ERROR Test title'], xml.xpath('/rss/channel/title/text()'))
@@ -149,7 +149,7 @@ class RssTest(SeecrTestCase):
         def getRecord(identifier):
             recordIds.append(identifier)
             return '<item/>'
-    
+
         def executeQuery(start, stop, *args, **kwargs):
             response = Response(total=50, hits=[Hit(i) for i in range(start, stop)])
             raise StopIteration(response)
@@ -162,7 +162,7 @@ class RssTest(SeecrTestCase):
             ignoredAttributes=['extraResponseData', 'echoedExtraRequestData'])
         rss.addObserver(observer)
 
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs))))
+        consume(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs)))
 
         method = observer.calledMethods[0]
         self.assertEquals('executeQuery', method.name)
@@ -202,7 +202,7 @@ class RssTest(SeecrTestCase):
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two')))
+        consume(rss.handleRequest(RequestURI='/?query=one+two'))
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
@@ -218,13 +218,13 @@ class RssTest(SeecrTestCase):
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
         rss.addObserver(observer)
 
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=not+fiets')))
-        
+        consume(rss.handleRequest(RequestURI='/?query=not+fiets'))
+
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
-        self.assertCql(parseCql("antiunary NOT fiets"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals(cqlToExpression("antiunary NOT fiets"), observer.calledMethods[0].kwargs['query'])
 
     def testEmptyQueryWithAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
@@ -236,13 +236,13 @@ class RssTest(SeecrTestCase):
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
         rss.addObserver(observer)
 
-        result = ''.join(compose(rss.handleRequest(RequestURI='/?query=')))
-        
+        consume(rss.handleRequest(RequestURI='/?query='))
+
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
-        self.assertCql(parseCql("antiunary"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals(cqlToExpression("antiunary"), observer.calledMethods[0].kwargs['query'])
 
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
@@ -254,12 +254,12 @@ class RssTest(SeecrTestCase):
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 
-        result = "".join(compose(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2')))
+        consume(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
         self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
-        self.assertCql(parseCql("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['cqlAbstractSyntaxTree'])
+        self.assertEquals(cqlToExpression("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['query'])
 
     def testWebQueryIgnoresWrongFilters(self):
         observer = CallTrace(
@@ -271,6 +271,3 @@ class RssTest(SeecrTestCase):
         result = "".join(rss.handleRequest(RequestURI='/?query=one+two&filter=invalid&filter='))
 
         self.assertTrue("<description>An error occurred 'Invalid filter: invalid'</description>" in result, result)
-
-    def assertCql(self, expected, input):
-        self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))

@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2012, 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2014-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -31,7 +31,7 @@
 
 from xml.sax.saxutils import quoteattr, escape
 
-from cqlparser.cqlparser import parseString as parseCQL
+from cqlparser import cqlToExpression
 
 from meresco.core.observable import Observable
 from meresco.core.generatorutils import decorateWith
@@ -55,7 +55,7 @@ class SruFieldDrilldown(Observable):
         drilldownResult = []
         for field in fields:
             cqlString = '(%s) AND %s=%s' % (query, field, term)
-            response = yield self.any.executeQuery(cqlAbstractSyntaxTree=parseCQL(cqlString))
+            response = yield self.any.executeQuery(query=cqlToExpression(cqlString))
             drilldownResult.append((field, response.total))
         raise StopIteration(drilldownResult)
 

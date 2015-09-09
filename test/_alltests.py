@@ -49,7 +49,6 @@ from warnings import simplefilter
 simplefilter('default')
 
 from berkeleydicttest import DoubleUniqueBerkeleyDictTest, BerkeleyDictTest
-from clausecollectortest import ClauseCollectorTest
 from combinepartstest import CombinePartsTest
 from contextsettest import ContextSetTest
 from convertertest import ConverterTest
@@ -67,7 +66,6 @@ from iteratorasstreamtest import IteratorAsStreamTest
 from jsontest import JsonTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from parseargumentstest import ParseArgumentsTest
-from parsecqltest import ParseCQLTest
 from packetlistenertest import PacketListenerTest
 from periodiccalltest import PeriodicCallTest
 from periodicdownloadtest import PeriodicDownloadTest
@@ -80,8 +78,6 @@ from rssitemtest import RssItemTest
 from rsstest import RssTest
 from scheduletest import ScheduleTest
 from sorteditertoolstest import SortedItertoolsTest
-from statisticstest import StatisticsTest
-from statisticsxmltest import StatisticsXmlTest
 from storagecomponenttest import StorageComponentTest
 from tokenizefieldlettest import TokenizeFieldletTest
 from urltest import UrlTest
