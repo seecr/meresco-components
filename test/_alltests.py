@@ -136,9 +136,6 @@ from suggestion.suggestiontest import SuggestionTest
 
 from xml_generic.validatetest import ValidateTest
 
-from ngram.cqlsuggestertest import CqlSuggesterTest
-from ngram.cqltermvisitortest import CqlTermVisitorTest
-
 from web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':

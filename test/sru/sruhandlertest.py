@@ -43,7 +43,7 @@ from xml.sax.saxutils import escape as xmlEscape
 
 from weightless.core import compose, be, consume
 
-from cqlparser import parseString, cqlToExpression
+from cqlparser import cqlToExpression
 
 from meresco.components.sru.sruparser import SruException
 from meresco.components.sru import SruHandler, SruParser
@@ -57,7 +57,6 @@ from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
 from meresco.xml import namespaces
-from collections import defaultdict
 
 SUCCESS = "SUCCESS"
 

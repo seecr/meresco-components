@@ -39,7 +39,7 @@ from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from combineparts import CombineParts
 from configuration import Configuration, readConfig
 from contextset import ContextSetList, ContextSet
-from cqlconversion import CQLConversion, CqlSearchClauseConversion, CqlMultiSearchClauseConversion
+from cqlconversion import CqlSearchClauseConversion, CqlMultiSearchClauseConversion
 from crosswalk import Crosswalk
 from directorywatcher import DirectoryWatcher, DirectoryWatcherException
 from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
