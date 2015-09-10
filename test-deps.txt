@@ -1,2 +1,2 @@
-seecr-test (>= 1.3)
-seecr-test (<< 1.4)
+python-seecr-test (>= 1.4.6)
+python-seecr-test (<< 1.5)
