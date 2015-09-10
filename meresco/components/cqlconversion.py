@@ -38,10 +38,8 @@ class CqlMultiSearchClauseConversion(Converter):
 
     def _convert(self, query):
         for expression in query.iter():
-            if not expression.isSearchterm():
-                continue
             for searchClauseFilter, searchClauseModifier in self._filtersAndModifiers:
-                if searchClauseFilter(expression):
+                if expression.isSearchterm() and searchClauseFilter(expression):
                     searchClauseModifier(expression)
         return query
 

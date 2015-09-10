@@ -105,3 +105,20 @@ class CQLConversionTest(SeecrTestCase):
         self.assertEquals(cqlToExpression('termOne AND term2 AND termThree'), resultClassic)
         self.assertEquals(cqlToExpression('termOne AND term2 AND termThree'), resultNewStyle)
 
+    def testNestedWithReplaced(self):
+        q = cqlToExpression('A')
+        def canModify1(expression):
+            return expression.term == 'A'
+        def modify1(expression):
+            expression.replaceWith(cqlToExpression('aa OR bb'))
+        def canModify2(expression):
+            return expression.term == 'bb'
+        def modify2(expression):
+            expression.term = 'B'
+        conversion = CqlMultiSearchClauseConversion([
+                    (canModify1, modify1),
+                    (canModify2, modify2),
+                ], fromKwarg="thisQuery")
+        result = conversion._convert(q)
+        self.assertEqual(cqlToExpression('aa OR B'), result)
+

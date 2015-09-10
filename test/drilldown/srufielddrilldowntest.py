@@ -78,7 +78,7 @@ class SruFieldDrilldownTest(SeecrTestCase):
             yield result
         result = compose(dd()).next()
         self.assertEquals(2, len(observer.calledMethods))
-        self.assertEquals("executeQuery(query=<class QueryExpression>)", str(observer.calledMethods[0]))
+        self.assertEquals(['executeQuery', 'executeQuery'], observer.calledMethodNames())
         self.assertEquals(cqlToExpression("(original) and field0=term"),  observer.calledMethods[0].kwargs['query'])
         self.assertEquals([("field0", 16), ("field1", 16)], result)
 
