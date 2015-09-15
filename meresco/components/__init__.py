@@ -46,7 +46,7 @@ from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, Filter
 from fields2xml import Fields2Xml
 from fields2xmlfields import Fields2XmlFields
 from filtermessages import FilterMessages
-from filterpartbyname import FilterPartByName
+from filterdatabyname import FilterPartByName, FilterDataByName
 from inbox import Inbox
 from iteratorasstream import IteratorAsStream
 from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException

@@ -60,7 +60,7 @@ from fieldletstest import FieldletsTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
 from fields2xmltest import Fields2XmlTest
 from filtermessagestest import FilterMessagesTest
-from filterpartbynametest import FilterPartByNameTest
+from filterdatabynametest import FilterDataByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
 from jsontest import JsonTest
