@@ -123,13 +123,15 @@ class Directory(object):
         <pre>
 <a href="../">../</a>
 """ % locals()
-        for filename in sorted(listdir(self._path)):
+        files = sorted(listdir(self._path))
+        longest = max(map(str.__len__, files)) + 2
+        for filename in files:
             fullFilename = join(self._path, filename)
             fileStats = stat(fullFilename)
             if isdir(fullFilename):
                 filename += "/"
             yield '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename))
-            yield ' ' * (40-len(filename))
+            yield ' ' * (longest-len(filename))
             yield '%-20s' % formatdate(fileStats[ST_MTIME])
             yield '%20.d' % fileStats[ST_SIZE]
             yield "\n"
