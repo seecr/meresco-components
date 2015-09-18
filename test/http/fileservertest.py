@@ -28,28 +28,24 @@
 #
 ## end license ##
 
-from unittest import TestCase
+from seecr.test import SeecrTestCase
+from seecr.test.utils import mkdir
 
 from os.path import join
-from shutil import rmtree
-from tempfile import mkdtemp
 from os import remove, makedirs
 from time import time
 from rfc822 import parsedate
 from calendar import timegm
 
-from weightless.core import compose
+from weightless.core import asString
 from meresco.components.http.fileserver import FileServer
 
 
-class FileServerTest(TestCase):
+class FileServerTest(SeecrTestCase):
     def setUp(self):
-        self.directory = mkdtemp()
-        self.directory2 = mkdtemp()
-
-    def tearDown(self):
-        rmtree(self.directory)
-        rmtree(self.directory2)
+        SeecrTestCase.setUp(self)
+        self.directory = mkdir(self.tempdir, "directory1")
+        self.directory2 = mkdir(self.tempdir, "directory2")
 
     def testInit(self):
         self.assertRaises(TypeError, lambda: FileServer())
@@ -93,7 +89,7 @@ class FileServerTest(TestCase):
         f.close()
 
         fileServer = FileServer(self.directory)
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
 
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue("Some Contents" in response)
@@ -110,7 +106,7 @@ class FileServerTest(TestCase):
             f.close()
 
             fileServer = FileServer(self.directory)
-            response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={})))
+            response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={}))
             headersList = response.split('\r\n\r\n', 1)[0].split('\r\n')
 
             self.assertTrue("HTTP/1.0 200 OK" in response)
@@ -118,26 +114,27 @@ class FileServerTest(TestCase):
             self.assertTrue('Content-Type: %s' % expectedType in headersList, headersList)
 
     def testFirstOneWins(self):
-        f = open(join(self.directory, 'someFile'), 'w').write("Some Contents")
-        f = open(join(self.directory2, 'someFile'), 'w').write("Different Contents")
+        with open(join(self.directory, 'someFile'), 'w') as f:
+            f.write("Some Contents")
+        with open(join(self.directory2, 'someFile'), 'w') as f:
+            f.write("Different Contents")
 
         fileServer = FileServer(documentRoot=[self.directory, self.directory2])
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
         self.assertTrue("Some Contents" in response)
         self.assertFalse("Different Contents" in response)
 
         fileServer = FileServer(documentRoot=[self.directory2, self.directory])
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
         self.assertTrue("Different Contents" in response)
         self.assertFalse("Some Contents" in response)
 
     def testCacheControlStuff(self):
-        f = open(join(self.directory, 'someFile'), 'w')
-        f.write("Some Contents")
-        f.close()
+        with open(join(self.directory, 'someFile'), 'w') as f:
+            f.write("Some Contents")
 
         fileServer = FileServer(self.directory)
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={})))
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
         headers, body = response.split("\r\n\r\n")
 
         self.assertTrue("Date: " in headers)
@@ -154,13 +151,39 @@ class FileServerTest(TestCase):
         documentRoot = join(self.directory, 'documentRoot')
         makedirs(documentRoot)
         notAllowedFile = join(self.directory, 'notAllowed.txt')
-        f = open(notAllowedFile, 'w')
-        f.write("DO NOT READ ME")
-        f.close()
+        with open(notAllowedFile, 'w') as f:
+            f.write("DO NOT READ ME")
         fileServer = FileServer(documentRoot)
 
-        response = ''.join(compose(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={})))
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={}))
 
         self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
         self.assertTrue("<title>404 Not Found</title>" in response)
 
+
+    def testListDirectory(self):
+        fileServer = FileServer(self.directory)
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
+        self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)
+        
+        fileServer = FileServer(self.directory, allowDirectoryListing=True)
+        subdir = mkdir(self.directory, "subdir")
+        with open(join(self.directory, "dummy.txt"), "w") as f:
+            f.write("Dummy")
+        with open(join(self.directory, 'The "real" <deal>.txt'), "w") as f:
+            f.write("to test escaping")
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
+        self.assertTrue(response.startswith("HTTP/1.0 200 OK"), response)
+        self.assertTrue("<title>Index of /</title>" in response, response)
+
+        links = [line for line in response.split("\n") if line.startswith("<a href")]
+        self.assertEqual(3, len(links))
+
+
+
+        self.assertTrue(links[0].startswith('''<a href='The "real" &lt;deal&gt;.txt'>The "real" &lt;deal&gt;.txt</a>'''), links[0])
+        self.assertTrue(links[0].endswith(' 16'), links[0])
+        self.assertTrue(links[1].startswith('<a href="dummy.txt">dummy.txt</a>'), links[1])
+        self.assertTrue(links[1].endswith(' 5'), links[1])
+        self.assertTrue(links[2].startswith('<a href="subdir/">subdir/</a>'), links[2])
+        self.assertTrue(links[2].endswith(' 40'), links[2])

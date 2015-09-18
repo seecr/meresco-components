@@ -28,15 +28,17 @@
 #
 ## end license ##
 
-from os.path import isfile, join, normpath, commonprefix, abspath
+from os.path import isfile, join, normpath, commonprefix, abspath, isdir, basename
 from rfc822 import formatdate
 from time import time
-from stat import ST_MTIME
-from os import stat
+from stat import ST_MTIME, ST_SIZE
+from os import stat, listdir
 
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF
 from urllib import unquote, unquote_plus
+#from cgi import escape as escapeHtml
+from xml.sax.saxutils import quoteattr, escape as escapeHtml
 
 import magic
 magicCookie = magic.open(magic.MAGIC_MIME)
@@ -83,17 +85,57 @@ class File(object):
     def _date(self, offset=0):
         return formatdate(time() + offset)
 
+class Directory(object):
+    def __init__(self, path, documentRoot):
+        self._path = path
+        self._documentRoot = documentRoot
+
+    def getHeaders(self):
+        return {}
+
+    def _stripDocumentRoot(self, path):
+        return '/' + path[len(self._documentRoot):]
+
+    def stream(self):
+        title = 'Index of %(path)s' % dict(path=self._stripDocumentRoot(self._path))
+        yield """<html>
+    <head>
+        <title>%(title)s</title>
+    </head>
+    <body>
+        <h1>%(title)s</h1>
+        <hr>
+        <pre>
+            <a href="../">../</a>
+""" % locals()
+        for filename in listdir(self._path):
+            filenameEscaped = escapeHtml(filename).replace('"', '&quot')
+            fullFilename = join(self._path, filename)
+            fileStats = stat(fullFilename)
+            if isdir(fullFilename):
+                filename += "/"
+                filenameEscaped += "/"
+            yield '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename))
+            yield ' ' * (40-len(filename))
+            yield '%-20s' % formatdate(fileStats[ST_MTIME])
+            yield '%20.d' % fileStats[ST_SIZE]
+            yield "\n"
+        yield """       </pre>
+    </body>
+</html>
+        
+        """
 
 class FileServer(object):
-    def __init__(self, documentRoot):
-        self._documentRoots = documentRoot
-        if hasattr(documentRoot, 'endswith'):
-            self._documentRoots = [documentRoot]
-        self._documentRoots = [abspath(d) for d in self._documentRoots]
+    def __init__(self, documentRoot, allowDirectoryListing=False):
+        self._documentRoots = [abspath(d) for d in (documentRoot if type(documentRoot) is list else [documentRoot])]
+        if not type(allowDirectoryListing) is bool:
+            raise TypeError("allowDirectoryListing should be a boolean")
+        self._allowDirectoryListing = allowDirectoryListing
 
     def handleRequest(self, path, port=None, Client=None, Method=None, Headers=None, **kwargs):
-        file = self._findFile(path)
-        if file is None:
+        resolvedFileOrDir = self._findFile(path)
+        if resolvedFileOrDir is None:
             yield httputils.notFoundHtml
             yield '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n'
             yield "<html><head>\n"
@@ -104,19 +146,28 @@ class FileServer(object):
             yield "</body></html>\n"
             return
         yield 'HTTP/1.0 200 OK' + CRLF
-        for item in file.getHeaders().items():
+        for item in resolvedFileOrDir.getHeaders().items():
             yield "%s: %s" % item + CRLF
         yield CRLF
-        yield file.stream()
+        yield resolvedFileOrDir.stream()
 
     def _findFile(self, filename):
+        resolvedPaths = list(self._resolvePaths(filename))
+        files = [resolvedPath for (resolvedPath, _) in resolvedPaths if isfile(resolvedPath)]
+        if len(files) > 0:
+            return File(files[0])
+        if self._allowDirectoryListing:
+            dirs = [(resolvedPath, documentRoot) for (resolvedPath, documentRoot) in resolvedPaths if isdir(resolvedPath)]
+            return Directory(*dirs[0]) if len(dirs) > 0 else None
+
+    def _resolvePaths(self, filename):
         possibleFilenames = unquoteFilename(filename)
         for filename in possibleFilenames:
             filename = '/'.join(part for part in filename.split('/') if part)
             for documentRoot in self._documentRoots:
                 path = normpath(join(documentRoot, filename))
-                if commonprefix([documentRoot, path]) == documentRoot and isfile(path):
-                    return File(path)
+                if commonprefix([documentRoot, path]) == documentRoot:
+                    yield (path, documentRoot) 
 
 
 def unquoteFilename(filename):
