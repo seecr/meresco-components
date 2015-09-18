@@ -94,7 +94,7 @@ class Directory(object):
         return {}
 
     def _stripDocumentRoot(self, path):
-        return '/' + path[len(self._documentRoot):]
+        return '/' if path == self._documentRoot else path[len(self._documentRoot):]
 
     def stream(self):
         title = 'Index of %(path)s' % dict(path=self._stripDocumentRoot(self._path))
@@ -106,15 +106,13 @@ class Directory(object):
         <h1>%(title)s</h1>
         <hr>
         <pre>
-            <a href="../">../</a>
+<a href="../">../</a>
 """ % locals()
-        for filename in listdir(self._path):
-            filenameEscaped = escapeHtml(filename).replace('"', '&quot')
+        for filename in sorted(listdir(self._path)):
             fullFilename = join(self._path, filename)
             fileStats = stat(fullFilename)
             if isdir(fullFilename):
                 filename += "/"
-                filenameEscaped += "/"
             yield '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename))
             yield ' ' * (40-len(filename))
             yield '%-20s' % formatdate(fileStats[ST_MTIME])
