@@ -188,7 +188,10 @@ class FileServerTest(SeecrTestCase):
         self.assertTrue(links[2].endswith(' 60'), links[2])
         
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir"))
-        self.assertTrue("<title>Index of /subdir</title>" in response, response)
+        self.assertTrue(response.startswith("HTTP/1.0 301 Moved Permanently"), response)
+
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir/"))
+        self.assertTrue("<title>Index of /subdir/</title>" in response, response)
         links = [line for line in response.split("\n") if line.startswith("<a href")]
         self.assertEquals('<a href="../">../</a>', links[0])
         self.assertTrue(links[1].startswith('''<a href='The "real" &lt;deal&gt;.txt'>The "real" &lt;deal&gt;.txt</a>'''), links[1])

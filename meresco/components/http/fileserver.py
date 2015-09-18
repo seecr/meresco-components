@@ -75,6 +75,11 @@ class File(object):
         }
 
     def stream(self):
+        yield 'HTTP/1.0 200 OK' + CRLF
+        for item in self.getHeaders().items():
+            yield "%s: %s" % item + CRLF
+        yield CRLF
+
         fp = open(self._filename)
         data = fp.read(1024)
         while data:
@@ -97,7 +102,17 @@ class Directory(object):
         return '/' if path == self._documentRoot else path[len(self._documentRoot):]
 
     def stream(self):
-        title = 'Index of %(path)s' % dict(path=self._stripDocumentRoot(self._path))
+        strippedPath = self._stripDocumentRoot(self._path)
+        if strippedPath[-1] != "/":
+            yield self._permanentRedirect(strippedPath)
+            return
+        
+        yield 'HTTP/1.0 200 OK' + CRLF
+        for item in self.getHeaders().items():
+            yield "%s: %s" % item + CRLF
+        yield CRLF
+
+        title = 'Index of %(path)s' % dict(path=strippedPath)
         yield """<html>
     <head>
         <title>%(title)s</title>
@@ -119,10 +134,13 @@ class Directory(object):
             yield '%20.d' % fileStats[ST_SIZE]
             yield "\n"
         yield """       </pre>
+        <hr>
     </body>
 </html>
-        
         """
+    def _permanentRedirect(self, path):
+        yield "HTTP/1.0 301 Moved Permanently\r\n"
+        yield "Location: %s/\r\n\r\n" % path
 
 class FileServer(object):
     def __init__(self, documentRoot, allowDirectoryListing=False):
@@ -143,10 +161,6 @@ class FileServer(object):
             yield "<p>The requested URL %s was not found on this server.</p>\n" % path
             yield "</body></html>\n"
             return
-        yield 'HTTP/1.0 200 OK' + CRLF
-        for item in resolvedFileOrDir.getHeaders().items():
-            yield "%s: %s" % item + CRLF
-        yield CRLF
         yield resolvedFileOrDir.stream()
 
     def _findFile(self, filename):
@@ -156,7 +170,10 @@ class FileServer(object):
             return File(files[0])
         if self._allowDirectoryListing:
             dirs = [(resolvedPath, documentRoot) for (resolvedPath, documentRoot) in resolvedPaths if isdir(resolvedPath)]
-            return Directory(*dirs[0]) if len(dirs) > 0 else None
+            resolvedPath, documentRoot = dirs[0]
+            if filename[-1] == '/':
+                resolvedPath += "/"
+            return Directory(resolvedPath, documentRoot) if len(dirs) > 0 else None
 
     def _resolvePaths(self, filename):
         possibleFilenames = unquoteFilename(filename)
