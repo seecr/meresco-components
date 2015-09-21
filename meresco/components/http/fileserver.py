@@ -124,17 +124,18 @@ class Directory(object):
 <a href="../">../</a>
 """ % locals()
         files = sorted(listdir(self._path))
-        longest = max(map(str.__len__, files)) + 2
-        for filename in files:
-            fullFilename = join(self._path, filename)
-            fileStats = stat(fullFilename)
-            if isdir(fullFilename):
-                filename += "/"
-            yield '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename))
-            yield ' ' * (longest-len(filename))
-            yield '%-20s' % formatdate(fileStats[ST_MTIME])
-            yield '%20.d' % fileStats[ST_SIZE]
-            yield "\n"
+        if len(files) > 0:
+            longest = max(map(str.__len__, files)) + 2
+            for filename in files:
+                fullFilename = join(self._path, filename)
+                fileStats = stat(fullFilename)
+                if isdir(fullFilename):
+                    filename += "/"
+                yield '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename))
+                yield ' ' * (longest-len(filename))
+                yield '%-20s' % formatdate(fileStats[ST_MTIME])
+                yield '%20.d' % fileStats[ST_SIZE]
+                yield "\n"
         yield """       </pre>
         <hr>
     </body>
@@ -172,10 +173,11 @@ class FileServer(object):
             return File(files[0])
         if self._allowDirectoryListing:
             dirs = [(resolvedPath, documentRoot) for (resolvedPath, documentRoot) in resolvedPaths if isdir(resolvedPath)]
-            resolvedPath, documentRoot = dirs[0]
-            if filename[-1] == '/':
-                resolvedPath += "/"
-            return Directory(resolvedPath, documentRoot) if len(dirs) > 0 else None
+            if len(dirs) > 0:
+                resolvedPath, documentRoot = dirs[0]
+                if filename[-1] == '/':
+                    resolvedPath += "/"
+                return Directory(resolvedPath, documentRoot) if len(dirs) > 0 else None
 
     def _resolvePaths(self, filename):
         possibleFilenames = unquoteFilename(filename)

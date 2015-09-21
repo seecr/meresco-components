@@ -196,3 +196,14 @@ class FileServerTest(SeecrTestCase):
         self.assertEquals('<a href="../">../</a>', links[0])
         self.assertTrue(links[1].startswith('''<a href='The "real" &lt;deal&gt;.txt'>The "real" &lt;deal&gt;.txt</a>'''), links[1])
         self.assertTrue(links[1].endswith(' 16'), links[1])
+
+        subdir = mkdir(self.directory, "subdir2")
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir2/"))
+        self.assertTrue("<title>Index of /subdir2/</title>" in response, response)
+        links = [line for line in response.split("\n") if line.startswith("<a href")]
+        self.assertTrue(1, len(links))
+        hrs = [line for line in response.split("\n") if line.strip() == "<hr>"]
+        self.assertEquals(2, len(hrs))
+
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/does_not_exist/"))
+        self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)
