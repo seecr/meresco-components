@@ -64,6 +64,7 @@ from filterdatabynametest import FilterDataByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
 from jsontest import JsonTest
+from messagerewritetest import MessageRewriteTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from parseargumentstest import ParseArgumentsTest
 from packetlistenertest import PacketListenerTest
