@@ -10,6 +10,7 @@
 # Copyright (C) 2010, 2013, 2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
@@ -68,4 +69,5 @@ from xmlxpath import XmlXPath
 from xpath2field import XPath2Field
 from xsltcrosswalk import XsltCrosswalk
 from url import parseAbsoluteUrl
+from onlyadddeleteifchanged import OnlyAddDeleteIfChanged
 

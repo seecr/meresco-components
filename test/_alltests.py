@@ -12,6 +12,7 @@
 # Copyright (C) 2010-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
@@ -66,6 +67,7 @@ from iteratorasstreamtest import IteratorAsStreamTest
 from jsontest import JsonTest
 from messagerewritetest import MessageRewriteTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
+from onlyadddeleteifchangedtest import OnlyAddDeleteIfChangedTest
 from parseargumentstest import ParseArgumentsTest
 from packetlistenertest import PacketListenerTest
 from periodiccalltest import PeriodicCallTest
@@ -89,6 +91,7 @@ from xmlpumptest import XmlPumpTest
 from xmlxpathtest import XmlXPathTest
 from xpath2fieldtest import XPath2FieldTest
 from xsltcrosswalktest import XsltCrosswalkTest
+
 
 from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
 
