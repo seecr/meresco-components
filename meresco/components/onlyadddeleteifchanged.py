@@ -30,10 +30,13 @@ from meresco.core import Observable
 
 class OnlyAddDeleteIfChanged(Observable):
     def add(self, identifier, partname, data):
-        try:
-            storedData = self.call.getData(identifier=identifier, name=partname)
-        except KeyError:
-            storedData = None
+        storedData = None
+        record = self.call.getRecord(identifier=identifier)
+        if not record is None:
+            try:
+                storedData = self.call.getData(identifier=identifier, name=partname)
+            except KeyError:
+                pass
         if data != storedData:
             yield self.all.add(identifier=identifier, partname=partname, data=data)
 

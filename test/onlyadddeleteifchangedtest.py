@@ -35,10 +35,9 @@ from meresco.components.onlyadddeleteifchanged import OnlyAddDeleteIfChanged
 
 
 class OnlyAddDeleteIfChangedTest(SeecrTestCase):
-
     def setUp(self):
         super(OnlyAddDeleteIfChangedTest, self).setUp()
-        self.observer = CallTrace('storageAndMore', emptyGeneratorMethods=['add', 'delete'], returnValues={'getData': 'data', 'getRecord': CallTrace()})
+        self.observer = CallTrace('storageAndMore', emptyGeneratorMethods=['add', 'delete'], returnValues={'getRecord': CallTrace(), 'getData': 'data'})
         self.top = be(
             (Observable(),
                 (OnlyAddDeleteIfChanged(),
@@ -48,10 +47,20 @@ class OnlyAddDeleteIfChangedTest(SeecrTestCase):
         )
 
     def testAddNew(self):
+        self.observer.returnValues['getRecord'] = None
         self.observer.returnValues['getData'] = None
         consume(self.top.all.add(identifier='identifier', partname='partname', data="data"))
-        self.assertEquals(['getData', 'add'], self.observer.calledMethodNames())
-        getDataCall, addCall = self.observer.calledMethods
+        self.assertEquals(['getRecord', 'add'], self.observer.calledMethodNames())
+        getRecordCall, addCall = self.observer.calledMethods
+        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
+        self.assertEquals(dict(identifier='identifier', partname='partname', data='data'), addCall.kwargs)
+
+    def testAddKnownDataMissing(self):
+        self.observer.returnValues['getData'] = None
+        consume(self.top.all.add(identifier='identifier', partname='partname', data="data"))
+        self.assertEquals(['getRecord', 'getData', 'add'], self.observer.calledMethodNames())
+        getRecordCall, getDataCall, addCall = self.observer.calledMethods
+        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
         self.assertEquals(dict(identifier='identifier', name='partname'), getDataCall.kwargs)
         self.assertEquals(dict(identifier='identifier', partname='partname', data='data'), addCall.kwargs)
 
@@ -64,19 +73,11 @@ class OnlyAddDeleteIfChangedTest(SeecrTestCase):
         self.assertEquals(dict(identifier='identifier'), deleteCall.kwargs)
 
     def testAddNotChanged(self):
-        observer = CallTrace('storageAndMore', emptyGeneratorMethods=['add'], methods={'getData': lambda identifier, name: 'data'})
-        top = be(
-            (Observable(),
-                (OnlyAddDeleteIfChanged(),
-                    (observer,)
-                )
-            )
-        )
-        consume(top.all.add(identifier='identifier', partname='partname', data="data"))
-        self.assertEquals(['getData'], observer.calledMethodNames())
+        consume(self.top.all.add(identifier='identifier', partname='partname', data="data"))
+        self.assertEquals(['getRecord', 'getData'], self.observer.calledMethodNames())
 
     def testAddChanged(self):
-        observer = CallTrace('storageAndMore', emptyGeneratorMethods=['add'], returnValues={'getData': 'data'})
+        observer = CallTrace('storageAndMore', emptyGeneratorMethods=['add'], returnValues={'getRecord': CallTrace(), 'getData': 'data'})
         top = be(
             (Observable(),
                 (OnlyAddDeleteIfChanged(),
@@ -85,8 +86,9 @@ class OnlyAddDeleteIfChangedTest(SeecrTestCase):
             )
         )
         consume(top.all.add(identifier='identifier', partname='partname', data="different"))
-        self.assertEquals(['getData', 'add'], observer.calledMethodNames())
-        getDataCall, addCall = observer.calledMethods
+        self.assertEquals(['getRecord', 'getData', 'add'], observer.calledMethodNames())
+        getRecordCall, getDataCall, addCall = observer.calledMethods
+        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
         self.assertEquals(dict(identifier='identifier', name='partname'), getDataCall.kwargs)
         self.assertEquals(dict(identifier='identifier', partname='partname', data='different'), addCall.kwargs)
 
