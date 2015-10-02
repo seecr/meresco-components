@@ -9,8 +9,9 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -49,7 +50,7 @@ class FileParseLxml(Converter):
 class XmlParseLxml(Converter):
     def __init__(self, parseOptions=None, **kwargs):
         """When provided, parserOptions must contain arguments to lxml.etree.XMLParser,
-e.g. parserOptions=dict(huge_tree=True, remove_blank_text=True)"""
+e.g. parseOptions=dict(huge_tree=True, remove_blank_text=True)"""
         Converter.__init__(self, **kwargs)
         self._parseOptions = parseOptions
 
