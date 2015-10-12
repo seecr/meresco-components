@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -41,7 +42,7 @@ from weightless.core import consume, asString
 from cqlparser import cqlToExpression
 
 RSS_HEAD = """HTTP/1.0 200 OK
-Content-Type: application/rss+xml
+Content-Type: application/rss+xml; charset=utf-8
 
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
