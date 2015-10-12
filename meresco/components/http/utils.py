@@ -10,8 +10,9 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -36,7 +37,7 @@ from weightless.core import Yield
 
 CRLF = "\r\n"
 ContentTypeXml = "text/xml; charset=utf-8"
-ContentTypeRss = "application/rss+xml"
+ContentTypeRss = "application/rss+xml; charset=utf-8"
 ContentTypeHtml = "text/html; charset=utf-8"
 ContentTypePlainText = "text/plain; charset=utf-8"
 ContentTypeHeader = "Content-Type: "

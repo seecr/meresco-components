@@ -7,8 +7,9 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -41,7 +42,7 @@ from weightless.core import compose
 from cqlparser import parseString as parseCql
 
 RSS_HEAD = """HTTP/1.0 200 OK
-Content-Type: application/rss+xml
+Content-Type: application/rss+xml; charset=utf-8
 
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -84,7 +85,7 @@ class RssTest(SeecrTestCase):
                 'getRecord': '<item><title>Test Title</title><link>Test Identifier</link><description>Test Description</description></item>',
             },
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
-        
+
         def executeQuery(**kwargs):
             raise StopIteration(Response(total=1, hits=[Hit(1)]))
             yield
@@ -149,7 +150,7 @@ class RssTest(SeecrTestCase):
         def getRecord(identifier):
             recordIds.append(identifier)
             return '<item/>'
-    
+
         def executeQuery(start, stop, *args, **kwargs):
             response = Response(total=50, hits=[Hit(i) for i in range(start, stop)])
             raise StopIteration(response)
@@ -219,7 +220,7 @@ class RssTest(SeecrTestCase):
         rss.addObserver(observer)
 
         result = "".join(compose(rss.handleRequest(RequestURI='/?query=not+fiets')))
-        
+
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
@@ -237,7 +238,7 @@ class RssTest(SeecrTestCase):
         rss.addObserver(observer)
 
         result = ''.join(compose(rss.handleRequest(RequestURI='/?query=')))
-        
+
         self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
         self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
         self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
