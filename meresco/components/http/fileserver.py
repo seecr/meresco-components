@@ -7,8 +7,9 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -28,7 +29,7 @@
 #
 ## end license ##
 
-from os.path import isfile, join, normpath, commonprefix, abspath, isdir, basename
+from os.path import isfile, join, normpath, commonprefix, abspath, isdir
 from rfc822 import formatdate
 from time import time
 from stat import ST_MTIME, ST_SIZE
@@ -106,7 +107,7 @@ class Directory(object):
         if strippedPath[-1] != "/":
             yield self._permanentRedirect(strippedPath)
             return
-        
+
         yield 'HTTP/1.0 200 OK' + CRLF
         for item in self.getHeaders().items():
             yield "%s: %s" % item + CRLF
@@ -186,7 +187,7 @@ class FileServer(object):
             for documentRoot in self._documentRoots:
                 path = normpath(join(documentRoot, filename))
                 if commonprefix([documentRoot, path]) == documentRoot:
-                    yield (path, documentRoot) 
+                    yield (path, documentRoot)
 
 
 def unquoteFilename(filename):
@@ -197,15 +198,18 @@ def unquoteFilename(filename):
             result.append(unquoted)
     return result
 
-class StringServer(object):
-    def __init__(self, aString, contentType):
-        self._aString = aString
-        self._contentType = contentType
+class SimpleServer(object):
+    def __init__(self, completeHttpResponse):
+        self._response = completeHttpResponse
 
     def handleRequest(self, *args, **kwargs):
-        yield 'HTTP/1.0 200 OK\r\n'
-        yield "Content-Type: %s\r\n" % self._contentType
-        yield "\r\n"
+        yield self._response
 
-        yield self._aString
+class StringServer(SimpleServer):
+    def __init__(self, aString, contentType):
+        SimpleServer.__init__(self, completeHttpResponse=CRLF.join([
+            "HTTP/1.0 200 OK",
+            "Content-Type: %s" % contentType,
+            "",
+            aString]))
 
