@@ -36,32 +36,31 @@ from os.path import join
 from StringIO import StringIO
 from urllib2 import urlopen
 from decimal import Decimal
-
-from lxml.etree import parse
-from meresco.components import lxmltostring
 from xml.sax.saxutils import escape as xmlEscape
 
-from weightless.core import compose, be, consume
+from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.io import stderr_replaced
+
+from lxml.etree import parse
 
 from cqlparser import cqlToExpression
 
+from weightless.core import compose, be, consume
+from meresco.core import Observable
+from meresco.xml import namespaces
+
+from meresco.components import lxmltostring
 from meresco.components.sru.sruparser import SruException
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
 from meresco.components.drilldown import SRUTermDrilldown, DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
 from meresco.components.xml_generic.validate import assertValid
 from meresco.components.xml_generic import schemasPath
+
 from testhelpers import Response, Hit
-from meresco.core import Observable
 
-from seecr.test import SeecrTestCase, CallTrace
-from seecr.test.io import stderr_replaced
-from meresco.xml import namespaces
-
-SUCCESS = "SUCCESS"
 
 class SruHandlerTest(SeecrTestCase):
-
     def testEchoedSearchRetrieveRequest(self):
         sruArguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string'}
         component = SruHandler()
@@ -540,6 +539,7 @@ class SruHandlerTest(SeecrTestCase):
             '&lt;/tag&gt;',
             '</srw:recordData>'], result)
 
+    @stderr_replaced
     def testIOErrorInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         observer.exceptions["yieldRecord"] = IOError()
@@ -550,6 +550,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>recordSchema 'schema' for identifier 'ID' does not exist</details>" in result)
 
+    @stderr_replaced
     def testExceptionInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
         observer.exceptions["yieldRecord"] = Exception("Test Exception")
@@ -560,6 +561,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>Test Exception</details>" in result)
 
+    @stderr_replaced
     def testExceptionInWriteExtraRecordData(self):
         class RaisesException(object):
             def extraResponseData(self, *args, **kwargs):
@@ -632,7 +634,6 @@ class SruHandlerTest(SeecrTestCase):
             {'uri': 'info://srw/diagnostics/1/998', 'message': 'Diagnostic 998', 'details': 'The <tag> message'},
             {'uri': 'info://srw/diagnostics/1/999', 'message': 'Diagnostic 999', 'details': 'Some message'},
             ], diagnostics)
-
 
     def testSearchRetrieveAssertsDrilldownMaximumMaximumResultsWhenSet(self):
         drilldownMaximumMaximumResults = 3
@@ -846,12 +847,10 @@ class SruHandlerTest(SeecrTestCase):
             }
         }, __callstack_var_logCollector__)
 
-
     def testTestXsdEqualsPublishedXsd(self):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
         self.assertEqualsWS(xsd, localxsd)
-
 
     def testDiagnosticGetHandledByObserver(self):
         def mockAdditionalDiagnosticDetails(**kwargs):
@@ -877,7 +876,6 @@ class SruHandlerTest(SeecrTestCase):
             response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
             self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
             self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
-
 
     def testParseDrilldownArguments(self):
         handler = SruHandler(drilldownSortBy='count')

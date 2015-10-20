@@ -31,22 +31,22 @@
 #
 ## end license ##
 
-from xml.sax.saxutils import escape as xmlEscape
-
-from meresco.core import Observable, decorate
-from meresco.components.drilldown import DEFAULT_MAXIMUM_TERMS
-from meresco.components.sru.sruparser import SruException
-from weightless.core import compose, Yield
-
-from cqlparser import cqlToExpression
-
 from time import time
 from decimal import Decimal
 from traceback import print_exc
+from xml.sax.saxutils import escape as xmlEscape
 
+from cqlparser import cqlToExpression
+
+from weightless.core import compose, Yield
+from meresco.core import Observable, decorate
+
+from meresco.components.drilldown import DEFAULT_MAXIMUM_TERMS
+from meresco.components.sru.sruparser import SruException
+from meresco.components.log import collectLogForScope
 from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
 from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
-from meresco.components.log import collectLogForScope
+
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
 
@@ -188,11 +188,11 @@ class SruHandler(Observable):
         if headerWritten:
             yield '</srw:extraResponseData>'
 
-
     def _extraResponseDataTryExcept(self, **kwargs):
         try:
             yield self.all.extraResponseData(**kwargs)
         except Exception, e:
+            print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _startResults(self, numberOfRecords, version):
@@ -222,8 +222,10 @@ class SruHandler(Observable):
         try:
             yield dataGenerator
         except IOError, e:
+            print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
         except Exception, e:
+            print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
     def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):

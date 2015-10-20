@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -29,44 +29,22 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.io import stderr_replaced
+
+from lxml.etree import XML
+
+from weightless.core import compose, asString
+from meresco.core import asyncnoreturnvalue
+
+from meresco.xml import xpath, namespaces
 
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.srw import Srw
-from testhelpers import Response
-from meresco.core import asyncnoreturnvalue
-from lxml.etree import XML
-from meresco.xml import xpath, namespaces
+
 from testhelpers import Response, Hit
 
-from weightless.core import compose
-from weightless.core.utils import asString
-
-httpResponse = """HTTP/1.0 200 OK
-Content-Type: text/xml; charset=utf-8
-
-%s"""
-
-soapEnvelope = """<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/"><SOAP:Body>%s</SOAP:Body></SOAP:Envelope>"""
-
-echoedSearchRetrieveRequest = """<srw:echoedSearchRetrieveRequest>
-<srw:version>1.1</srw:version>
-<srw:query>%s</srw:query>
-<srw:startRecord>1</srw:startRecord>
-<srw:maximumRecords>10</srw:maximumRecords>
-<srw:recordPacking>xml</srw:recordPacking>
-<srw:recordSchema>dc</srw:recordSchema>
-</srw:echoedSearchRetrieveRequest>"""
-
-searchRetrieveResponse = """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>\n<srw:version>1.1</srw:version><srw:numberOfRecords>%%i</srw:numberOfRecords>%%s</srw:searchRetrieveResponse>""" % namespaces
-
-wrappedMockAnswer = searchRetrieveResponse % (1, '<srw:records><srw:record><srw:recordSchema>dc</srw:recordSchema><srw:recordPacking>xml</srw:recordPacking><srw:recordData><DATA>%s-dc</DATA></srw:recordData></srw:record></srw:records>' + echoedSearchRetrieveRequest)
-
-SRW_REQUEST = """<SRW:searchRetrieveRequest xmlns:SRW="http://www.loc.gov/zing/srw/">%s</SRW:searchRetrieveRequest>"""
-
-argumentsWithMandatory = """<SRW:version>1.1</SRW:version><SRW:query>dc.author = "jones" and  dc.title = "smith"</SRW:query>%s"""
 
 class SrwTest(SeecrTestCase):
-
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.srw = Srw()
@@ -119,8 +97,6 @@ Content-Type: text/xml; charset=utf-8
         header, body = response.split('\r\n\r\n')
         self.assertEquals(['1'], xpath(XML(body), '//srw:searchRetrieveResponse/srw:numberOfRecords/text()'))
 
-
-
     def testNonSRUArguments(self):
         """Arguments that are invalid in any SRU implementation"""
         request =  soapEnvelope % SRW_REQUEST % argumentsWithMandatory % """<SRW:illegalParameter>value</SRW:illegalParameter>"""
@@ -147,7 +123,6 @@ Content-Type: text/xml; charset=utf-8
         <details>stylesheet</details>
         <message>Unsupported Parameter</message>
     </diagnostic></srw:diagnostics></srw:searchRetrieveResponse>""" % namespaces, response)
-
 
     def testOperationIsIllegal(self):
         request = soapEnvelope % SRW_REQUEST % """<SRW:version>1.1</SRW:version><SRW:operation>explain</SRW:operation>"""
@@ -225,7 +200,7 @@ Content-Type: text/xml; charset=utf-8
 
         self.assertEqualsWS(httpResponse % soapEnvelope % searchRetrieveResponse % (1, '<srw:records><srw:record><srw:recordSchema>info:srw/schema/1/mods-v3.0</srw:recordSchema><srw:recordPacking>xml</srw:recordPacking><srw:recordData><DATA>recordId-info:srw/schema/1/mods-v3.0</DATA></srw:recordData></srw:record></srw:records>' +echoRequest), response)
 
-
+    @stderr_replaced
     def testConstructorVariablesAreUsed(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
         srw = Srw(
@@ -257,3 +232,28 @@ Content-Type: text/xml; charset=utf-8
         response = "".join(compose(srw.handleRequest(Body=request)))
         self.assertTrue("DEFAULT_RECORD_SCHEMA" in response, response)
         self.assertTrue("DEFAULT_RECORD_PACKING" in response, response)
+
+
+httpResponse = """HTTP/1.0 200 OK
+Content-Type: text/xml; charset=utf-8
+
+%s"""
+
+soapEnvelope = """<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/"><SOAP:Body>%s</SOAP:Body></SOAP:Envelope>"""
+
+echoedSearchRetrieveRequest = """<srw:echoedSearchRetrieveRequest>
+<srw:version>1.1</srw:version>
+<srw:query>%s</srw:query>
+<srw:startRecord>1</srw:startRecord>
+<srw:maximumRecords>10</srw:maximumRecords>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordSchema>dc</srw:recordSchema>
+</srw:echoedSearchRetrieveRequest>"""
+
+searchRetrieveResponse = """<srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>\n<srw:version>1.1</srw:version><srw:numberOfRecords>%%i</srw:numberOfRecords>%%s</srw:searchRetrieveResponse>""" % namespaces
+
+wrappedMockAnswer = searchRetrieveResponse % (1, '<srw:records><srw:record><srw:recordSchema>dc</srw:recordSchema><srw:recordPacking>xml</srw:recordPacking><srw:recordData><DATA>%s-dc</DATA></srw:recordData></srw:record></srw:records>' + echoedSearchRetrieveRequest)
+
+SRW_REQUEST = """<SRW:searchRetrieveRequest xmlns:SRW="http://www.loc.gov/zing/srw/">%s</SRW:searchRetrieveRequest>"""
+
+argumentsWithMandatory = """<SRW:version>1.1</SRW:version><SRW:query>dc.author = "jones" and  dc.title = "smith"</SRW:query>%s"""

@@ -26,22 +26,22 @@
 #
 ## end license ##
 
-from meresco.core import Observable, decorateWith, decorate
-from drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2007, _DRILLDOWN_XSD_2013, DRILLDOWN_FOOTER
-from xml.sax.saxutils import escape as xmlEscape, quoteattr
 from traceback import print_exc
+from xml.sax.saxutils import escape as xmlEscape, quoteattr
 from simplejson import dumps
 
-from meresco.components.sru.diagnostic import generalSystemError
-
 from weightless.core import compose
+from meresco.core import Observable, decorateWith, decorate
+
+from meresco.components.sru.diagnostic import generalSystemError
+from drilldown import _DRILLDOWN_HEADER, _DRILLDOWN_XSD_2007, _DRILLDOWN_XSD_2013, DRILLDOWN_FOOTER
+
 
 FORMAT_OLD_XML = 'xml2007'
 FORMAT_XML = 'xml'
 FORMAT_JSON = 'json'
 
 class SruTermDrilldown(Observable):
-
     def __init__(self, defaultFormat=FORMAT_OLD_XML):
         Observable.__init__(self)
         if defaultFormat not in [FORMAT_JSON, FORMAT_XML, FORMAT_OLD_XML]:
@@ -90,6 +90,7 @@ class SruTermDrilldown(Observable):
             yield '<dd:navigator name=%s/>' % quoteattr(fieldname)
             return
         except Exception, e:
+            print_exc()
             yield generalSystemError(xmlEscape(str(e)))
             return
 
@@ -123,5 +124,6 @@ class SruTermDrilldown(Observable):
                 yield "<dd:x-drilldown-format>%s</dd:x-drilldown-format>" % xmlEscape(outputFormat)
             yield '</dd:request>'
             yield DRILLDOWN_FOOTER
+
 
 SRUTermDrilldown = SruTermDrilldown
