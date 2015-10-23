@@ -41,6 +41,7 @@ ContentTypeXml = "text/xml; charset=utf-8"
 ContentTypeRss = "application/rss+xml; charset=utf-8"
 ContentTypeHtml = "text/html; charset=utf-8"
 ContentTypePlainText = "text/plain; charset=utf-8"
+ContentTypeJson = "application/json"
 ContentTypeHeader = "Content-Type: "
 
 Ok = "HTTP/1.0 200 OK" + CRLF
@@ -60,6 +61,10 @@ okHtml = Ok + \
 
 okPlainText = Ok + \
     ContentTypeHeader + ContentTypePlainText + CRLF + \
+    CRLF
+
+okJson = Ok + \
+    ContentTypeHeader + ContentTypeJson + CRLF + \
     CRLF
 
 #204
