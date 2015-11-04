@@ -126,6 +126,7 @@ from log.logfileservertest import LogFileServerTest
 from log.querylogtest import QueryLogTest
 from log.querylogwritertest import QueryLogWriterTest
 from log.srulogtest import SruLogTest
+from log.utilstest import UtilsTest
 
 from numeric.converttest import ConvertTest
 

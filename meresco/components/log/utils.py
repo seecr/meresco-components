@@ -3,9 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2014-2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -25,6 +25,8 @@
 #
 ## end license ##
 
+from collections import namedtuple
+import sys
 
 def getFirst(aDict, key, default=None):
     return aDict.get(key, [default])[0]
@@ -51,4 +53,28 @@ def scopePresent(aDict, scopeNames):
         return True
     except KeyError:
         return False
+
+DEFAULT_PARTS = ['timestamp', 'ipaddress', 'size', 'duration', 'hits', 'path', 'arguments']
+
+class LogParse(object):
+    def __init__(self, inputStream, parts=DEFAULT_PARTS):
+        self.Line = namedtuple('Line', parts)
+        self._partLength = len(parts)
+        self._in = inputStream
+
+    def lines(self):
+        for line in self._in:
+            parts = line.strip().split(' ') + [''] * self._partLength
+            if any(parts):
+                yield self.Line(*parts[:self._partLength])
+
+    @classmethod
+    def parse(cls, inputStreamOrFilename, **kwargs):
+        if hasattr(inputStreamOrFilename, 'read'):
+            inputStream = inputStreamOrFilename
+        elif inputStreamOrFilename == '-':
+            inputStream = sys.stdin
+        else:
+            inputStream = open(inputStreamOrFilename)
+        return cls(inputStream, **kwargs)
 
