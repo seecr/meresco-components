@@ -9,8 +9,9 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -30,14 +31,17 @@
 #
 ## end license ##
 
-from meresco.core import Observable
+from traceback import print_exc
+from urlparse import parse_qs, urlsplit
+from StringIO import StringIO
+
 from weightless.core import compose
 from weightless.http import HttpServer
-from urlparse import parse_qs
-from urlparse import urlsplit
-from StringIO import StringIO
-from socket import gethostname
+
+from meresco.core import Observable
+
 from utils import serverUnavailableHtml
+
 
 class ObservableHttpServer(Observable):
     def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=False, bindAddress=None):
@@ -94,7 +98,13 @@ class ObservableHttpServer(Observable):
             'arguments': arguments,
             'RequestURI': RequestURI}
         requestArguments.update(kwargs)
-        yield self.all.handleRequest(**requestArguments)
+        try:
+            yield self.all.handleRequest(**requestArguments)
+        except (AssertionError, SystemExit, KeyboardInterrupt):
+            raise
+        except:
+            print_exc()
+            raise
 
     def setMaxConnections(self, m):
         self._httpserver.setMaxConnections(m)
