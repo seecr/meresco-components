@@ -123,6 +123,7 @@ from log.apachelogwritertest import ApacheLogWriterTest
 from log.directorylogtest import DirectoryLogTest
 from log.handlerequestlogtest import HandleRequestLogTest
 from log.logcollectortest import LogCollectorTest
+from log.logcomponenttest import LogComponentTest
 from log.logfileservertest import LogFileServerTest
 from log.querylogtest import QueryLogTest
 from log.querylogwritertest import QueryLogWriterTest

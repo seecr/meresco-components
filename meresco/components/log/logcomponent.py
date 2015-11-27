@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from sys import stdout
+import sys
 from lxml.etree import _ElementTree as ElementTreeType
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
@@ -34,14 +34,14 @@ from meresco.components import lxmltostring
 
 
 class LogComponent(Observable):
-    def _log(self, method, *args, **kwargs):
+    def _log(self, message, *args, **kwargs):
         printKwargs = dict(kwargs)
         for key, value in kwargs.items():
             if type(value) == ElementTreeType:
                 printKwargs[key] = "%s(%s)" % (value.__class__.__name__, lxmltostring(value))
-        print "[%s] %s(*%s, **%s)" % (self.observable_name(), method, args, printKwargs)
-        stdout.flush()
-    
+        sys.stdout.write("[%s] %s(*%s, **%s)\n" % (self.observable_name(), message, args, printKwargs))
+        sys.stdout.flush()
+
     def all_unknown(self, message, *args, **kwargs):
         self._log(message, *args, **kwargs)
         yield self.all.unknown(message, *args, **kwargs)
@@ -64,4 +64,3 @@ class LogComponent(Observable):
             return self.call.unknown(message, *args, **kwargs)
         except NoneOfTheObserversRespond:
             raise DeclineMessage
-
