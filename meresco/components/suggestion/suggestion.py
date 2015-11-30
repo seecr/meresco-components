@@ -44,29 +44,25 @@ class Suggestion(Observable):
             suggestionRequest = dict(
                 count=self._getCount(extraArguments),
                 field=self._getField(extraArguments),
-                query=extraArguments['x-suggestionsQuery'][0])
+                suggests=extraArguments['x-suggestionsQuery'][0].split())
         response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, extraArguments=extraArguments, **kwargs)
         raise StopIteration(response)
 
     def extraResponseData(self, response, sruArguments, **kwargs):
         if not hasattr(response, 'suggestions'):
             return
-
-        sortedSuggestions = sorted(response.suggestions.items(), key=lambda (word, (start, stop, suggestions)): start)
-        allSuggestions = [suggestions for (word, (start, stop, suggestions)) in sortedSuggestions]
-        if not allSuggestions:
+        sortedSuggestions = sorted(response.suggestions.items())
+        if not sortedSuggestions:
             return
 
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
-        shortest = min([len(suggestions) for suggestions in allSuggestions])
+        shortest = min([len(suggestions) for word, suggestions in sortedSuggestions])
         for i in range(shortest):
-            suggestion = unicode(sruArguments['x-suggestionsQuery'][0])
-            for word, (start, stop, suggestions) in reversed(sortedSuggestions):
+            suggestionWords = unicode(sruArguments['x-suggestionsQuery'][0]).split()
+            for word, suggestions in reversed(sortedSuggestions):
                 replaceWord = suggestions[i]
-                leftPart = suggestion[:start]
-                rightPart = suggestion[stop:]
-                suggestion = leftPart + replaceWord + rightPart
-            yield "<suggestion>%s</suggestion>\n" % xmlEscape(suggestion)
+                suggestionWords[suggestionWords.index(word)] = replaceWord
+            yield "<suggestion>%s</suggestion>\n" % xmlEscape(' '.join(suggestionWords))
         yield '</suggestions>\n'
 
     def echoedExtraRequestData(self, sruArguments, **kwargs):

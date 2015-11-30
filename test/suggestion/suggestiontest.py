@@ -47,20 +47,20 @@ class SuggestionTest(SeecrTestCase):
     def testCreateExtraResponseDataWithSingleSuggestions(self):
         suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
-        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen', 'qu<een'])}
-        responseData = ''.join(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery':["query"]})))
+        response.suggestions={'query': ['que', 'emery', 'queen', 'qu<een']}
+        responseData = ''.join(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery':["query AND querying"]})))
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
-    <suggestion>que</suggestion>
-    <suggestion>emery</suggestion>
-    <suggestion>queen</suggestion>
-    <suggestion>qu&lt;een</suggestion>
+    <suggestion>que AND querying</suggestion>
+    <suggestion>emery AND querying</suggestion>
+    <suggestion>queen AND querying</suggestion>
+    <suggestion>qu&lt;een AND querying</suggestion>
 </suggestions>
 """, responseData)
 
     def testCreateExtraResponseDataWithMultipleSuggestions(self):
         suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
-        response.suggestions={'query': (0, 5, ['que', 'emery', 'queen']), 'value': (10, 15, ['valu', 'ot']) }
+        response.suggestions={'query': ['que', 'emery', 'queen'], 'value': ['valu', 'ot'] }
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery':["query AND value"]})))
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
     <suggestion>que AND valu</suggestion>
@@ -77,7 +77,7 @@ class SuggestionTest(SeecrTestCase):
     def testHarriePoter(self):
         suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
-        response.suggestions={'harrie': (0, 6, ['harry', 'marie']), 'poter': (11, 16, ['potter', 'peter']) }
+        response.suggestions={'harrie': ['harry', 'marie'], 'poter': ['potter', 'peter'] }
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery':["harrie AND poter"]})))
         self.assertEqualsWS("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
     <suggestion>harry AND potter</suggestion>
@@ -88,7 +88,7 @@ class SuggestionTest(SeecrTestCase):
     def testSpecialCharacters(self):
         suggestions = Suggestion(count=1, field='afield')
         response = Response(total=0, hits=[])
-        response.suggestions={'Éäéðĉ': (0, 5, ['Éäéðĉ'])}
+        response.suggestions={'Éäéðĉ': ['Éäéðĉ']}
         responseData = ''.join(compose(suggestions.extraResponseData(response=response, sruArguments={'x-suggestionsQuery':['Éäéðĉ']})))
         self.assertXmlEquals("""<suggestions xmlns="http://meresco.org/namespace/suggestions">
     <suggestion>Éäéðĉ</suggestion>
@@ -127,7 +127,7 @@ class SuggestionTest(SeecrTestCase):
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=10, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEquals(dict(count=10, field='dcterms:title', suggests=['query']), methodKwargs['suggestionRequest'])
 
     def testXSuggestionQueryCountAndFieldToSuggestionRequest(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
@@ -137,7 +137,7 @@ class SuggestionTest(SeecrTestCase):
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=5, field='fieldname', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEquals(dict(count=5, field='fieldname', suggests=['query']), methodKwargs['suggestionRequest'])
 
     def testXSuggestionCountMaximized(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsCount': ['50']}
@@ -147,7 +147,7 @@ class SuggestionTest(SeecrTestCase):
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=20, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEquals(dict(count=20, field='dcterms:title', suggests=['query']), methodKwargs['suggestionRequest'])
 
     def testXSuggestionFieldDisabled(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
@@ -157,7 +157,7 @@ class SuggestionTest(SeecrTestCase):
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=5, field='dcterms:title', query='query'), methodKwargs['suggestionRequest'])
+        self.assertEquals(dict(count=5, field='dcterms:title', suggests=['query']), methodKwargs['suggestionRequest'])
 
     def testNoSuggestionQuery(self):
         extraArguments = {'x-suggestionsQuery': [''], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
