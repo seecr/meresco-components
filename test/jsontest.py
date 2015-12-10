@@ -30,6 +30,7 @@ from os.path import join
 from seecr.test import SeecrTestCase
 
 from meresco.components.json import JsonDict, JsonList
+from simplejson import JSONDecodeError
 
 class JsonTest(SeecrTestCase):
     def testStr(self):
@@ -98,3 +99,10 @@ class JsonTest(SeecrTestCase):
             jd2 = JsonList.load(fp)
         self.assertEqual(jd, jd2)
 
+    def testLoadEmptyFile(self):
+        tempfile = join(self.tempdir, 'json.json')
+        open(tempfile, 'w').close()
+        self.assertRaises(JSONDecodeError, lambda: JsonDict.load(tempfile))
+        self.assertEquals({}, JsonDict.load(tempfile, emptyOnError=True))
+        self.assertRaises(JSONDecodeError, lambda: JsonList.load(tempfile))
+        self.assertEquals([], JsonList.load(tempfile, emptyOnError=True))
