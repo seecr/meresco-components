@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -26,6 +27,7 @@
 ## end license ##
 
 from simplejson import dumps, dump, loads, load
+from os import rename
 
 
 class _Json(object):
@@ -37,7 +39,12 @@ class _Json(object):
         return dumps(self, indent=indent, sort_keys=True)
 
     def dump(self, fp, *args, **kwargs):
-        return dump(self, fp, *args, **kwargs)
+        if hasattr(fp, 'write'):
+            dump(self, fp, *args, **kwargs)
+        else:
+            with open(fp+'~', 'w') as f:
+                dump(self, f, *args, **kwargs)
+            rename(fp+'~', fp)
 
     @classmethod
     def loads(clz, s, *args, **kwargs):
@@ -45,6 +52,8 @@ class _Json(object):
 
     @classmethod
     def load(clz, fp, *args, **kwargs):
+        if not hasattr(fp, 'read'):
+            fp = open(fp)
         return clz(load(fp, *args, **kwargs))
 
 class JsonDict(dict, _Json):
