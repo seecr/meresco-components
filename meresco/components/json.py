@@ -26,7 +26,7 @@
 #
 ## end license ##
 
-from simplejson import dumps, dump, loads, load
+from simplejson import dumps, dump, loads, load, JSONDecodeError
 from os import rename
 
 
@@ -51,10 +51,15 @@ class _Json(object):
         return clz(loads(s, *args, **kwargs))
 
     @classmethod
-    def load(clz, fp, *args, **kwargs):
+    def load(clz, fp, emptyOnError=False, *args, **kwargs):
         if not hasattr(fp, 'read'):
             fp = open(fp)
-        return clz(load(fp, *args, **kwargs))
+        try:
+            return clz(load(fp, *args, **kwargs))
+        except JSONDecodeError:
+            if emptyOnError:
+                return clz()
+            raise
 
 class JsonDict(dict, _Json):
     pass
