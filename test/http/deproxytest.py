@@ -6,8 +6,9 @@
 #
 # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -32,8 +33,6 @@ from unittest import TestCase
 from meresco.core import Observable
 
 from seecr.test import CallTrace
-
-from meresco.core import Observable
 
 from meresco.components.http import Deproxy
 
@@ -93,13 +92,13 @@ class DeproxyTest(TestCase):
 
         self.assertEquals(1, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
+        self.assertEquals('4.4.4.4', handleRequestCallKwargs['Client'][0])
         self.assertEquals({"X-Forwarded-For": "2.2.2.2,3.3.3.3,4.4.4.4"}, handleRequestCallKwargs['Headers'])
 
         list(compose(self.top.all.handleRequest(
              Client=("1.1.1.1", 11111),
-             Headers={"X-Forwarded-For": " 2.2.2.2 , 3.3.3.3,4.4.4.4"})))
-        self.assertEquals("2.2.2.2", self.observer.calledMethods[1].kwargs['Client'][0])
+             Headers={"X-Forwarded-For": " 2.2.2.2 , 3.3.3.3, 4.4.4.4 ,"})))
+        self.assertEquals('4.4.4.4', self.observer.calledMethods[1].kwargs['Client'][0])
 
     def testHostFromXForwardedHost(self):
         self.createTree(deproxyForIpRanges=[
@@ -112,18 +111,18 @@ class DeproxyTest(TestCase):
 
         self.assertEquals(1, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals("2.2.2.2:22222", handleRequestCallKwargs['Headers']['Host'])
-        self.assertEquals(22222, handleRequestCallKwargs['port'])
+        self.assertEquals("4.4.4.4:44444", handleRequestCallKwargs['Headers']['Host'])
+        self.assertEquals(44444, handleRequestCallKwargs['port'])
 
         Headers={
             "Host": "1.1.1.1:11111",
-            "X-Forwarded-Host": "2.2.2.2,3.3.3.3:33333,4.4.4.4:44444"
+            "X-Forwarded-Host": "2.2.2.2,3.3.3.3,4.4.4.4"
         }
         consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
 
         self.assertEquals(2, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[1].kwargs
-        self.assertEquals("2.2.2.2", handleRequestCallKwargs['Headers']['Host'])
+        self.assertEquals('4.4.4.4', handleRequestCallKwargs['Headers']['Host'])
         self.assertEquals(80, handleRequestCallKwargs['port'])
 
     def testDeproxyForIps(self):

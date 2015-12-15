@@ -6,8 +6,9 @@
 #
 # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -39,8 +40,8 @@ class Deproxy(Observable):
     def handleRequest(self, Client, Headers, port=80, **kwargs):
         clientHost, clientPort = Client
         if self._ipfilter.filterIpAddress(ipaddress=clientHost, Headers=Headers):
-            clientHost = _firstFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
-            host = _firstFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
+            clientHost = _lastFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
+            host = _lastFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
             if host != '':
                 Headers['Host'] = host
                 port = int(host.partition(':')[2] or '80')
@@ -50,6 +51,5 @@ class Deproxy(Observable):
         self._ipfilter.updateIps(ipAddresses=ipAddresses, ipRanges=ipRanges)
 
 
-def _firstFromCommaSeparated(s):
-    return s.split(",", 1)[0].strip()
-
+def _lastFromCommaSeparated(s):
+    return ''.join([p.strip() for p in s.split(',') if p.strip()][-1:])
