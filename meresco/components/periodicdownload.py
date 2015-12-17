@@ -36,6 +36,7 @@ from urlparse import urlsplit
 from warnings import warn
 
 from weightless.core import compose, Yield
+from weightless.http import parseHeaders, SUPPORTED_COMPRESSION_CONTENT_ENCODINGS, REGEXP
 
 from meresco.core import Observable
 
@@ -44,7 +45,7 @@ from .schedule import Schedule
 
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None, retryAfterErrorTime=30):
+    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None, retryAfterErrorTime=30, compress=False):
         super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host
@@ -66,6 +67,7 @@ class PeriodicDownload(Observable):
         self._sok = None
         self._errorState = None
         self._retryAfterErrorTime = retryAfterErrorTime
+        self._compress = compress
         if autoStart and (not self._host or not self._port):
             raise ValueError("Unless autoStart is set to False host and port need to be specified.")
         if verbose in [True, False]:
@@ -134,6 +136,8 @@ class PeriodicDownload(Observable):
 
     def _processOne(self):
         additionalHeaders = {'Host': self._host} if self._host else {}
+        if self._compress:
+            additionalHeaders['Accept-Encoding'] = ', '.join(sorted(SUPPORTED_COMPRESSION_CONTENT_ENCODINGS.keys()))
         request = self.call.buildRequest(additionalHeaders=additionalHeaders)
         proxyServer = None
         if type(request) is dict:
@@ -180,9 +184,19 @@ class PeriodicDownload(Observable):
 
         try:
             response = ''.join(responses)
-            headers, body = response.split(2 * CRLF, 1)
-            statusLine = headers.split(CRLF)[0]
-            if not statusLine.strip().lower().endswith('200 ok'):
+            _match = REGEXP.RESPONSE.match(response)
+            if not _match:
+                yield self._retryAfterError('Unexpected response (not a valid HTTP Response) first 200-bytes: ' + response[:200], request=requestString, retryAfter=self._retryAfterErrorTime)
+                return
+
+            body = response[_match.end():]  # Slice can result in an empty string
+
+            statusAndHeaders = _match.groupdict()
+            _headers = parseHeaders(statusAndHeaders['_headers'])
+            del statusAndHeaders['_headers']
+            statusAndHeaders['Headers'] = _headers
+
+            if statusAndHeaders['StatusCode'] != '200':
                 yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
