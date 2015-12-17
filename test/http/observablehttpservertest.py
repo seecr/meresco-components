@@ -31,11 +31,13 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.portnumbergenerator import PortNumberGenerator
+
 from weightless.core import compose
 
 from meresco.components.http import ObservableHttpServer
 from meresco.components.http.utils import CRLF
-from random import randint
+
 
 class ObservableHttpServerTest(SeecrTestCase):
     def testSimpleHandleRequest(self):
@@ -129,8 +131,7 @@ class ObservableHttpServerTest(SeecrTestCase):
 
     def testServerBindAddress(self):
         reactor = CallTrace()
-        port = randint(2**10, 2**16)
+        port = PortNumberGenerator.next()
         server = ObservableHttpServer(reactor, port, bindAddress='127.0.0.1')
         server.startServer()
         self.assertEquals(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
-

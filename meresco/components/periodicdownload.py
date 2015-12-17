@@ -28,18 +28,19 @@
 #
 ## end license ##
 
-from socket import socket, error as SocketError, SHUT_RDWR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
 from errno import EINPROGRESS, ECONNREFUSED
+from socket import socket, error as SocketError, SHUT_RDWR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
+from sys import stderr
 from traceback import format_exc
+from urlparse import urlsplit
+from warnings import warn
 
-from meresco.core import Observable
-from meresco.components.http.utils import CRLF
-from schedule import Schedule
 from weightless.core import compose, Yield
 
-from sys import stderr
-from warnings import warn
-from urlparse import urlsplit
+from meresco.core import Observable
+
+from .http.utils import CRLF
+from .schedule import Schedule
 
 
 class PeriodicDownload(Observable):
