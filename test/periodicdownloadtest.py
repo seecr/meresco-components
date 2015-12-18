@@ -124,7 +124,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertReactorStateClean(reactor)
 
     def testRequestContentEncoded_Compressed_Response_Succes_NotEmpty(self):
-        # TODO: Want some - get some.
         def test():
             ## Prepare
             text = 'Hello ' * 10
@@ -137,8 +136,6 @@ class PeriodicDownloadTest(SeecrTestCase):
                 def mockHandle(data):
                     return
                     yield
-                def mockBuildRequest(additionalHeaders):
-                    return 'GET / HTTP/1.0\r\n%s\r\n' % (''.join(('%s: %s\r\n' % (k, v)) for k, v in sorted(additionalHeaders.items())))
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                 top = be((Observable(),
                     (downloader,
@@ -165,19 +162,126 @@ class PeriodicDownloadTest(SeecrTestCase):
         asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_Succes_Empty(self):
-        # TODO: Want some - get n-length compressed; decompressed 0-bytes.
-        self.fail('#t')
+        def test():
+            ## Prepare
+            text = ''
+            compressor = deflateCompress()
+            compressedText = compressor.compress(text) + compressor.flush()
+            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
+            with server([response]) as (port, msgs):
+                yield Yield
+                downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
+                def mockHandle(data):
+                    return
+                    yield
+                observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                top = be((Observable(),
+                    (downloader,
+                        (observer,),
+                    ),
+                ))
+                consume(top.once.observer_init())
+
+                ## Test
+                yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                self.assertEquals(['observer_init', 'buildRequest', 'handle'], observer.calledMethodNames())
+                _, buildRequestMethod, handleMethod = observer.calledMethods
+                self.assertEquals(
+                    ((), {
+                        'additionalHeaders': {
+                            'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+                            'Host': '127.0.0.1',
+                        },
+                    }),
+                    (buildRequestMethod.args, buildRequestMethod.kwargs))
+                self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEquals(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
+
+        asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_NotHonored(self):
-        # TODO: refusing to compress it's response (whatever; uncompressed works too - to log or not to log, that is the FIXME).
-        self.fail('#t')
+        # Server refusing to compress it's response (whatever; uncompressed works too).
+        def test():
+            ## Prepare
+            text = 'Hello ' * 10
+            response = 'HTTP/1.0 200 OK\r\n\r\n' + text  # No Content-Encoding header sent back (means server said no-can-do).
+            with server([response]) as (port, msgs):
+                yield Yield
+                downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
+                def mockHandle(data):
+                    return
+                    yield
+                observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                top = be((Observable(),
+                    (downloader,
+                        (observer,),
+                    ),
+                ))
+                consume(top.once.observer_init())
+
+                ## Test
+                yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                self.assertEquals(['observer_init', 'buildRequest', 'handle'], observer.calledMethodNames())
+                _, buildRequestMethod, handleMethod = observer.calledMethods
+                self.assertEquals(
+                    ((), {
+                        'additionalHeaders': {
+                            'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+                            'Host': '127.0.0.1',
+                        },
+                    }),
+                    (buildRequestMethod.args, buildRequestMethod.kwargs))
+                self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEquals(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
+
+        asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_WrongContentEncoded(self):
         # TODO: weird, so give / log error (...).
-        self.fail('#t')
+        def test():
+            ## Prepare
+            text = 'Ignored In This Test.'
+            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: evilbadwrong\r\n\r\n' + text
+            with server([response]) as (port, msgs):
+                with stderr_replaced() as err:
+                    yield Yield
+                    downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
+                    def mockHandle(data):
+                        return
+                        yield
+                    observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                    top = be((Observable(),
+                        (downloader,
+                            (observer,),
+                        ),
+                    ))
+                    consume(top.once.observer_init())
+
+                    ## Test
+                    yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                    self.assertEquals(['observer_init', 'buildRequest'], observer.calledMethodNames())
+                    _, buildRequestMethod = observer.calledMethods
+                    self.assertEquals(
+                        ((), {
+                            'additionalHeaders': {
+                                'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+                                'Host': '127.0.0.1',
+                            },
+                        }),
+                        (buildRequestMethod.args, buildRequestMethod.kwargs))
+                    self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+
+                    self.assertTrue('Unexpected response (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
+                    self.assertTrue('\r\nContent-Encoding: evilbadwrong\r\n' in err.getvalue(), err.getvalue())
+
+        asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_MultipleContentEncoded(self):
         # TODO: Not supported - give / log error (...).
+        self.fail('#t')
+
+    def testRequestContentEncoded_Compressed_Response_MalformedBody(self):
+        # TODO: weird, log error.
         self.fail('#t')
 
     def testOneWithProxy(self):
@@ -1037,3 +1141,6 @@ def proxyServer(port, request):
     thread=Thread(None, lambda: server(httpd))
     thread.daemon = True
     thread.start()
+
+def mockBuildRequest(additionalHeaders):
+    return 'GET / HTTP/1.0\r\n%s\r\n' % (''.join(('%s: %s\r\n' % (k, v)) for k, v in sorted(additionalHeaders.items())))

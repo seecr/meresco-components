@@ -28,15 +28,15 @@
 #
 ## end license ##
 
+import sys
 from errno import EINPROGRESS, ECONNREFUSED
 from socket import socket, error as SocketError, SHUT_RDWR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
-from sys import stderr
 from traceback import format_exc
 from urlparse import urlsplit
 from warnings import warn
 
 from weightless.core import compose, Yield
-from weightless.http import parseHeaders, SUPPORTED_COMPRESSION_CONTENT_ENCODINGS, REGEXP
+from weightless.http import parseHeaders, parseContentEncoding, SUPPORTED_COMPRESSION_CONTENT_ENCODINGS, REGEXP
 
 from meresco.core import Observable
 
@@ -60,7 +60,7 @@ class PeriodicDownload(Observable):
         elif not period is None:
             raise ValueError("Using both schedule and period is invalid")
         self._prio = prio
-        self._err = err or stderr
+        self._err = err or sys.stderr
         self._paused = not autoStart
         self._currentTimer = None
         self._currentProcess = None
@@ -183,7 +183,8 @@ class PeriodicDownload(Observable):
             self._sok = None
 
         try:
-            response = ''.join(responses)
+            ### TODO: Extract this below into a function returning either: (body, None) or (None, {<_retryAfterError-dict>}) ###
+            response = ''.join(responses)  # FIXME: get used below in error msg !!!!
             _match = REGEXP.RESPONSE.match(response)
             if not _match:
                 yield self._retryAfterError('Unexpected response (not a valid HTTP Response) first 200-bytes: ' + response[:200], request=requestString, retryAfter=self._retryAfterErrorTime)
@@ -199,6 +200,18 @@ class PeriodicDownload(Observable):
             if statusAndHeaders['StatusCode'] != '200':
                 yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
+
+            contentEncoding = statusAndHeaders['Headers'].get('Content-Encoding')
+            if contentEncoding is not None:
+                contentEncoding = parseContentEncoding(contentEncoding)
+                if len(contentEncoding) != 1 or contentEncoding[0] not in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS:
+                    yield self._retryAfterError('Unexpected response (Bad Content-Encoding): ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
+                    return
+
+                contentEncoding = contentEncoding[0]
+                decodeRequestBody = SUPPORTED_COMPRESSION_CONTENT_ENCODINGS[contentEncoding]['decode']()
+                body = decodeRequestBody.decompress(body) + decodeRequestBody.flush()
+            ### END-OF-TODO ###
 
             self._reactor.addProcess(self._currentProcess.next)
             yield
