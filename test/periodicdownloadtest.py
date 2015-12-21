@@ -135,9 +135,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
-                def mockHandle(data):
-                    return
-                    yield
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                 top = be((Observable(),
                     (downloader,
@@ -172,9 +169,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
-                def mockHandle(data):
-                    return
-                    yield
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                 top = be((Observable(),
                     (downloader,
@@ -208,9 +202,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             response = 'HTTP/1.0 200 OK\r\n\r\n' + text  # No Content-Encoding header sent back (means server said no-can-do).
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
-                def mockHandle(data):
-                    return
-                    yield
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                 top = be((Observable(),
                     (downloader,
@@ -244,9 +235,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + text
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
-                def mockHandle(data):
-                    return
-                    yield
                 def mockBuildRequest(additionalHeaders):
                     self.assertEquals({'Host': '127.0.0.1'}, additionalHeaders)
                     return 'GET / HTTP/1.0\r\nAccept-Encoding: deflate\r\nHost: 127.0.0.1\r\n\r\n'
@@ -283,9 +271,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: what, ever\r\n\r\n' + text
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
-                def mockHandle(data):
-                    return
-                    yield
                 def mockBuildRequest(additionalHeaders):
                     self.assertEquals({'Host': '127.0.0.1'}, additionalHeaders)
                     return 'GET / HTTP/1.0\r\nAccept-Encoding: no, what, ever, idea\r\nHost: 127.0.0.1\r\n\r\n'
@@ -323,9 +308,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             with server([response]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
-                    def mockHandle(data):
-                        return
-                        yield
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                     top = be((Observable(),
                         (downloader,
@@ -353,6 +335,31 @@ class PeriodicDownloadTest(SeecrTestCase):
 
         asProcess(test())
 
+    def testRequestContentEncoded_Compressed_Response_NotHttp(self):
+        # weird, log error.
+        def test():
+            ## Prepare
+            response = 'NOT HTTP'
+            with server([response]) as (port, msgs):
+                with stderr_replaced() as err:
+                    downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
+                    observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                    top = be((Observable(),
+                        (downloader,
+                            (observer,),
+                        ),
+                    ))
+                    consume(top.once.observer_init())
+
+                    ## Test
+                    yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                    self.assertEquals(['observer_init', 'buildRequest'], observer.calledMethodNames())
+
+                    self.assertTrue('Unexpected response (not a valid HTTP Response)' in err.getvalue(), err.getvalue())
+                    self.assertTrue('NOT HTTP' in err.getvalue(), err.getvalue())
+
+        asProcess(test())
+
     def testRequestContentEncoded_Compressed_Response_MultipleContentEncoded(self):
         # Not supported, log error.
         def test():
@@ -362,9 +369,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             with server([response]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
-                    def mockHandle(data):
-                        return
-                        yield
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                     top = be((Observable(),
                         (downloader,
@@ -402,9 +406,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             with server([response]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
-                    def mockHandle(data):
-                        return
-                        yield
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
                     top = be((Observable(),
                         (downloader,
@@ -1295,3 +1296,7 @@ def proxyServer(port, request):
 
 def mockBuildRequest(additionalHeaders):
     return 'GET / HTTP/1.0\r\n%s\r\n' % (''.join(('%s: %s\r\n' % (k, v)) for k, v in sorted(additionalHeaders.items())))
+
+def mockHandle(data):
+    return
+    yield

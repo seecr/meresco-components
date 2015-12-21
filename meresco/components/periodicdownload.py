@@ -46,7 +46,7 @@ from .schedule import Schedule
 
 class PeriodicDownload(Observable):
     def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None, retryAfterErrorTime=30, compress=True):
-        super(PeriodicDownload, self).__init__(name=name)
+        Observable.__init__(self, name=name)
         self._reactor = reactor
         self._host = host
         self._port = port
@@ -185,22 +185,21 @@ class PeriodicDownload(Observable):
         try:
             ### TODO: Extract this below into a function returning either: (body, None) or (None, {<_retryAfterError-dict>}) ###
             response = ''.join(responses)  # FIXME: get used below in error msg !!!!
-            _match = REGEXP.RESPONSE.match(response)
-            if not _match:
-                yield self._retryAfterError('Unexpected response (not a valid HTTP Response) first 200-bytes: ' + response[:200], request=requestString, retryAfter=self._retryAfterErrorTime)
+            error, (statusAndHeaders, body) = parseHttpResponse(response=response)
+            if error:
+                yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
-            body = response[_match.end():]  # Slice can result in an empty string
-
-            statusAndHeaders = _match.groupdict()
-            _headers = parseHeaders(statusAndHeaders['_headers'])
-            del statusAndHeaders['_headers']
-            statusAndHeaders['Headers'] = _headers
 
             if statusAndHeaders['StatusCode'] != '200':
                 yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
+            # TODO/FIXME: create below from commented!
+            # error, body = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
+            #if error:
+            #    yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
+            #    return
             contentEncoding = statusAndHeaders['Headers'].get('Content-Encoding')
             if self._compress and contentEncoding is not None:
                 contentEncoding = parseContentEncoding(contentEncoding)
@@ -379,6 +378,22 @@ class PeriodicDownloadStateView(object):
     @property
     def errorState(self):
         return self._periodicDownload._errorState
+
+
+def parseHttpResponse(response):
+    # returns: error, <response>; where response is (statusAndHeaders, body).
+    _match = REGEXP.RESPONSE.match(response)
+    if not _match:
+        return ('Unexpected response (not a valid HTTP Response) first 200-bytes: ' + response[:200], (None, None))
+
+    body = response[_match.end():]  # Slice can result in an empty string
+
+    statusAndHeaders = _match.groupdict()
+    _headers = parseHeaders(statusAndHeaders['_headers'])
+    del statusAndHeaders['_headers']
+    statusAndHeaders['Headers'] = _headers
+    return (None, (statusAndHeaders, body))
+
 
 MAX_LENGTH=1500
 def _shorten(response):
