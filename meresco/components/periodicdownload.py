@@ -45,7 +45,7 @@ from .schedule import Schedule
 
 
 class PeriodicDownload(Observable):
-    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None, retryAfterErrorTime=30, compress=False):
+    def __init__(self, reactor, host=None, port=None, period=None, verbose=None, prio=None, name=None, err=None, autoStart=True, schedule=None, retryAfterErrorTime=30, compress=True):
         super(PeriodicDownload, self).__init__(name=name)
         self._reactor = reactor
         self._host = host

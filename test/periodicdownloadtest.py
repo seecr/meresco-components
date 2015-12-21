@@ -114,7 +114,10 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # sok.recv
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
-            self.assertEquals({'Host': 'localhost'}, observer.calledMethods[0].kwargs['additionalHeaders'])
+            self.assertEquals({
+                'Host': 'localhost',
+                'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+            }, observer.calledMethods[0].kwargs['additionalHeaders'])
             callback() # addProcess
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEquals(0, len(observer.calledMethods[1].args))
@@ -131,7 +134,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             compressedText = compressor.compress(text) + compressor.flush()
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
             with server([response]) as (port, msgs):
-                yield Yield
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                 def mockHandle(data):
                     return
@@ -169,7 +171,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             compressedText = compressor.compress(text) + compressor.flush()
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
             with server([response]) as (port, msgs):
-                yield Yield
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                 def mockHandle(data):
                     return
@@ -206,7 +207,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             text = 'Hello ' * 10
             response = 'HTTP/1.0 200 OK\r\n\r\n' + text  # No Content-Encoding header sent back (means server said no-can-do).
             with server([response]) as (port, msgs):
-                yield Yield
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                 def mockHandle(data):
                     return
@@ -243,7 +243,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             text = 'EncodedBody ' * 10
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + text
             with server([response]) as (port, msgs):
-                yield Yield
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
                 def mockHandle(data):
                     return
@@ -283,7 +282,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             text = 'EncodedBody ' * 10
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: what, ever\r\n\r\n' + text
             with server([response]) as (port, msgs):
-                yield Yield
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
                 def mockHandle(data):
                     return
@@ -317,14 +315,13 @@ class PeriodicDownloadTest(SeecrTestCase):
         asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_WrongContentEncoded(self):
-        # TODO: weird, so give / log error (...).
+        # weird, log error.
         def test():
             ## Prepare
             text = 'Ignored In This Test.'
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: evilbadwrong\r\n\r\n' + text
             with server([response]) as (port, msgs):
                 with stderr_replaced() as err:
-                    yield Yield
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     def mockHandle(data):
                         return
@@ -357,14 +354,13 @@ class PeriodicDownloadTest(SeecrTestCase):
         asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_MultipleContentEncoded(self):
-        # TODO: Not supported - give / log error (...).
+        # Not supported, log error.
         def test():
             ## Prepare
             text = 'Ignored In This Test.'
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: pixiedust, gzip\r\n\r\n' + text
             with server([response]) as (port, msgs):
                 with stderr_replaced() as err:
-                    yield Yield
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     def mockHandle(data):
                         return
@@ -397,7 +393,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_MalformedBody(self):
-        # TODO: weird, log error.
+        # weird, log error.
         def test():
             ## Prepare
             text = 'NOT_GZIPPED ' * 10
@@ -405,7 +401,6 @@ class PeriodicDownloadTest(SeecrTestCase):
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: gzip\r\n\r\n' + text
             with server([response]) as (port, msgs):
                 with stderr_replaced() as err:
-                    yield Yield
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     def mockHandle(data):
                         return
@@ -462,7 +457,10 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # sok.recv
             self.assertEquals("", downloader._err.getvalue())
             self.assertEquals('buildRequest', observer.calledMethods[0].name)
-            self.assertEquals({'Host': 'localhost'}, observer.calledMethods[0].kwargs['additionalHeaders'])
+            self.assertEquals({
+                'Host': 'localhost',
+                'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+            }, observer.calledMethods[0].kwargs['additionalHeaders'])
             callback() # addProcess
             self.assertEquals('handle', observer.calledMethods[1].name)
             self.assertEquals(0, len(observer.calledMethods[1].args))
