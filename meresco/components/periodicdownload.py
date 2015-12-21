@@ -202,7 +202,7 @@ class PeriodicDownload(Observable):
                 return
 
             contentEncoding = statusAndHeaders['Headers'].get('Content-Encoding')
-            if contentEncoding is not None:
+            if self._compress and contentEncoding is not None:
                 contentEncoding = parseContentEncoding(contentEncoding)
                 if len(contentEncoding) != 1 or contentEncoding[0] not in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS:
                     yield self._retryAfterError('Unexpected response (Bad Content-Encoding): ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)

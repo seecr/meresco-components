@@ -236,6 +236,86 @@ class PeriodicDownloadTest(SeecrTestCase):
 
         asProcess(test())
 
+    def testRequestNormal_ContentEncoded_Compressed_Response_NotProcessed(self):
+        # At buildRequest-time Accept-Encoding added (not requested by PeriodicDownload - compress=False) - so let it be interpreted & processed by someone else too.
+        def test():
+            ## Prepare
+            text = 'EncodedBody ' * 10
+            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + text
+            with server([response]) as (port, msgs):
+                yield Yield
+                downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
+                def mockHandle(data):
+                    return
+                    yield
+                def mockBuildRequest(additionalHeaders):
+                    self.assertEquals({'Host': '127.0.0.1'}, additionalHeaders)
+                    return 'GET / HTTP/1.0\r\nAccept-Encoding: deflate\r\nHost: 127.0.0.1\r\n\r\n'
+
+                observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                top = be((Observable(),
+                    (downloader,
+                        (observer,),
+                    ),
+                ))
+                consume(top.once.observer_init())
+
+                ## Test
+                yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                self.assertEquals(['observer_init', 'buildRequest', 'handle'], observer.calledMethodNames())
+                _, buildRequestMethod, handleMethod = observer.calledMethods
+                self.assertEquals(
+                    ((), {
+                        'additionalHeaders': {
+                            'Host': '127.0.0.1',
+                        },
+                    }),
+                    (buildRequestMethod.args, buildRequestMethod.kwargs))
+                self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEquals(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
+
+        asProcess(test())
+
+    def testRequestNormal_ContentEncoded_Otherwise_Response_NotProcessed(self):
+        # At buildRequest-time Accept-Encoding added (not requested by PeriodicDownload - compress=False) - so let it be interpreted & processed by someone else too.
+        def test():
+            ## Prepare
+            text = 'EncodedBody ' * 10
+            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: what, ever\r\n\r\n' + text
+            with server([response]) as (port, msgs):
+                yield Yield
+                downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
+                def mockHandle(data):
+                    return
+                    yield
+                def mockBuildRequest(additionalHeaders):
+                    self.assertEquals({'Host': '127.0.0.1'}, additionalHeaders)
+                    return 'GET / HTTP/1.0\r\nAccept-Encoding: no, what, ever, idea\r\nHost: 127.0.0.1\r\n\r\n'
+
+                observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                top = be((Observable(),
+                    (downloader,
+                        (observer,),
+                    ),
+                ))
+                consume(top.once.observer_init())
+
+                ## Test
+                yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                self.assertEquals(['observer_init', 'buildRequest', 'handle'], observer.calledMethodNames())
+                _, buildRequestMethod, handleMethod = observer.calledMethods
+                self.assertEquals(
+                    ((), {
+                        'additionalHeaders': {
+                            'Host': '127.0.0.1',
+                        },
+                    }),
+                    (buildRequestMethod.args, buildRequestMethod.kwargs))
+                self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: no, what, ever, idea\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEquals(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
+
+        asProcess(test())
+
     def testRequestContentEncoded_Compressed_Response_WrongContentEncoded(self):
         # TODO: weird, so give / log error (...).
         def test():
