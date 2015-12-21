@@ -278,11 +278,84 @@ class PeriodicDownloadTest(SeecrTestCase):
 
     def testRequestContentEncoded_Compressed_Response_MultipleContentEncoded(self):
         # TODO: Not supported - give / log error (...).
-        self.fail('#t')
+        def test():
+            ## Prepare
+            text = 'Ignored In This Test.'
+            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: pixiedust, gzip\r\n\r\n' + text
+            with server([response]) as (port, msgs):
+                with stderr_replaced() as err:
+                    yield Yield
+                    downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
+                    def mockHandle(data):
+                        return
+                        yield
+                    observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                    top = be((Observable(),
+                        (downloader,
+                            (observer,),
+                        ),
+                    ))
+                    consume(top.once.observer_init())
+
+                    ## Test
+                    yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                    self.assertEquals(['observer_init', 'buildRequest'], observer.calledMethodNames())
+                    _, buildRequestMethod = observer.calledMethods
+                    self.assertEquals(
+                        ((), {
+                            'additionalHeaders': {
+                                'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+                                'Host': '127.0.0.1',
+                            },
+                        }),
+                        (buildRequestMethod.args, buildRequestMethod.kwargs))
+                    self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+
+                    self.assertTrue('Unexpected response (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
+                    self.assertTrue('\r\nContent-Encoding: pixiedust, gzip\r\n' in err.getvalue(), err.getvalue())
+
+        asProcess(test())
 
     def testRequestContentEncoded_Compressed_Response_MalformedBody(self):
         # TODO: weird, log error.
-        self.fail('#t')
+        def test():
+            ## Prepare
+            text = 'NOT_GZIPPED ' * 10
+            compressor = deflateCompress()
+            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: gzip\r\n\r\n' + text
+            with server([response]) as (port, msgs):
+                with stderr_replaced() as err:
+                    yield Yield
+                    downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
+                    def mockHandle(data):
+                        return
+                        yield
+                    observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
+                    top = be((Observable(),
+                        (downloader,
+                            (observer,),
+                        ),
+                    ))
+                    consume(top.once.observer_init())
+
+                    ## Test
+                    yield zleep(0.14)  # Allow PeriodicDownload's schedule to fire once.
+                    self.assertEquals(['observer_init', 'buildRequest'], observer.calledMethodNames())
+                    _, buildRequestMethod = observer.calledMethods
+                    self.assertEquals(
+                        ((), {
+                            'additionalHeaders': {
+                                'Accept-Encoding': 'deflate, gzip, x-deflate, x-gzip',
+                                'Host': '127.0.0.1',
+                            },
+                        }),
+                        (buildRequestMethod.args, buildRequestMethod.kwargs))
+                    self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+
+                    self.assertTrue('Error while processing response:' in err.getvalue(), err.getvalue())
+                    self.assertTrue('NOT_GZIPPED' in err.getvalue(), err.getvalue())
+
+        asProcess(test())
 
     def testOneWithProxy(self):
         request = []
