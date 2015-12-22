@@ -41,6 +41,7 @@ from weightless.http import parseHeaders, parseContentEncoding, SUPPORTED_COMPRE
 from meresco.core import Observable
 
 from .http.utils import CRLF
+from .json import JsonDict
 from .schedule import Schedule
 
 
@@ -190,9 +191,9 @@ class PeriodicDownload(Observable):
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
-
-            if statusAndHeaders['StatusCode'] != '200':
-                yield self._retryAfterError('Unexpected response: ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
+            error = checkStatusCode200(statusAndHeaders=statusAndHeaders, body=body)
+            if error:
+                yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
             # TODO/FIXME: create below from commented!
@@ -384,7 +385,7 @@ def parseHttpResponse(response):
     # returns: error, <response>; where response is (statusAndHeaders, body).
     _match = REGEXP.RESPONSE.match(response)
     if not _match:
-        return ('Unexpected response (not a valid HTTP Response) first 200-bytes: ' + response[:200], (None, None))
+        return ('Unexpected response (not a valid HTTP Response): ' + _shorten(response), (None, None))
 
     body = response[_match.end():]  # Slice can result in an empty string
 
@@ -393,6 +394,12 @@ def parseHttpResponse(response):
     del statusAndHeaders['_headers']
     statusAndHeaders['Headers'] = _headers
     return (None, (statusAndHeaders, body))
+
+def checkStatusCode200(statusAndHeaders, body):
+    # returns: error
+    if statusAndHeaders['StatusCode'] != '200':
+        return 'Unexpected status code {0} instead of 200: \nStatus code and headers:\n{1}\nBody:\n{2}'.format(statusAndHeaders['StatusCode'], JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
+    return None
 
 
 MAX_LENGTH=1500
