@@ -102,7 +102,7 @@ class ObservableHttpServer(Observable):
             yield self.all.handleRequest(**requestArguments)
         except (AssertionError, SystemExit, KeyboardInterrupt):
             raise
-        except:
+        except Exception:
             print_exc()
             raise
 
