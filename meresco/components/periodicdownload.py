@@ -186,7 +186,7 @@ class PeriodicDownload(Observable):
         try:
             ### TODO: Extract this below into a function returning either: (body, None) or (None, {<_retryAfterError-dict>}) ###
             response = ''.join(responses)  # FIXME: get used below in error msg !!!!
-            error, (statusAndHeaders, body) = parseHttpResponse(response=response)
+            (statusAndHeaders, body), error = parseHttpResponse(response=response)
             if error:
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
@@ -197,7 +197,7 @@ class PeriodicDownload(Observable):
                 return
 
             # TODO/FIXME: create below from commented!
-            # error, body = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
+            # body, error = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
             #if error:
             #    yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
             #    return
@@ -385,7 +385,7 @@ def parseHttpResponse(response):
     # returns: error, <response>; where response is (statusAndHeaders, body).
     _match = REGEXP.RESPONSE.match(response)
     if not _match:
-        return ('Unexpected response (not a valid HTTP Response): ' + _shorten(response), (None, None))
+        return ((None, None), 'Unexpected response (not a valid HTTP Response): {0}'.format(_shorten(response)))
 
     body = response[_match.end():]  # Slice can result in an empty string
 
@@ -393,12 +393,12 @@ def parseHttpResponse(response):
     _headers = parseHeaders(statusAndHeaders['_headers'])
     del statusAndHeaders['_headers']
     statusAndHeaders['Headers'] = _headers
-    return (None, (statusAndHeaders, body))
+    return ((statusAndHeaders, body), None)
 
 def checkStatusCode200(statusAndHeaders, body):
     # returns: error
     if statusAndHeaders['StatusCode'] != '200':
-        return 'Unexpected status code {0} instead of 200: \nStatus code and headers:\n{1}\nBody:\n{2}'.format(statusAndHeaders['StatusCode'], JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
+        return 'Unexpected status code {0} instead of 200:\nStatus code and headers:\n{1}\nBody:\n{2}'.format(statusAndHeaders['StatusCode'], JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
     return None
 
 

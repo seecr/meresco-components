@@ -523,7 +523,7 @@ class PeriodicDownloadTest(SeecrTestCase):
 
             callback() # yield After Error
 
-            self.assertEquals('%s: Unexpected status code 400 instead of 200: \nStatus code and headers:\n{\n    "HTTPVersion": "1.0",\n    "Headers": {\n        "Content-Type": "text/plain"\n    },\n    "ReasonPhrase": "Error",\n    "StatusCode": "400"\n}\nBody:\nIllegal Request\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n' % repr(downloader), downloader._err.getvalue())
+            self.assertEquals('%s: Unexpected status code 400 instead of 200:\nStatus code and headers:\n{\n    "HTTPVersion": "1.0",\n    "Headers": {\n        "Content-Type": "text/plain"\n    },\n    "ReasonPhrase": "Error",\n    "StatusCode": "400"\n}\nBody:\nIllegal Request\nFor request: GET /path?argument=value HTTP/1.0\r\n\r\n' % repr(downloader), downloader._err.getvalue())
             self.assertEquals(['buildRequest'], [m.name for m in observer.calledMethods])
             self.assertReactorStateClean(reactor)
 
