@@ -44,7 +44,7 @@ from utils import serverUnavailableHtml
 
 
 class ObservableHttpServer(Observable):
-    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=False, bindAddress=None):
+    def __init__(self, reactor, port, timeout=1, prio=None, sok=None, maxConnections=None, compressResponse=True, bindAddress=None):
         Observable.__init__(self)
         self._port = port
         self._reactor = reactor

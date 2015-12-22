@@ -112,12 +112,17 @@ class ObservableHttpServerTest(SeecrTestCase):
     def testCompressResponseFlag(self):
         reactor = CallTrace('Reactor')
 
+        s = ObservableHttpServer(reactor, 0)
+        s.startServer()
+        httpserver = s._httpserver
+        self.assertEquals(True, httpserver._compressResponse)
+
         s = ObservableHttpServer(reactor, 0, compressResponse=True)
         s.startServer()
         httpserver = s._httpserver
         self.assertEquals(True, httpserver._compressResponse)
 
-        s = ObservableHttpServer(reactor, 0)
+        s = ObservableHttpServer(reactor, 0, compressResponse=False)
         s.startServer()
         httpserver = s._httpserver
         self.assertEquals(False, httpserver._compressResponse)
