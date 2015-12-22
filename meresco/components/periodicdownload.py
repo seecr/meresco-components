@@ -184,8 +184,8 @@ class PeriodicDownload(Observable):
             self._sok = None
 
         try:
-            response = ''.join(responses)
-            (statusAndHeaders, body), error = parseHttpResponse(response=response)
+            _response = topErrorResponse = ''.join(responses)
+            (statusAndHeaders, body), error = parseHttpResponse(response=_response)
             if error:
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
@@ -200,6 +200,7 @@ class PeriodicDownload(Observable):
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
+            topErrorResponse = _httpErrorStr(statusAndHeaders, body)
             self._reactor.addProcess(self._currentProcess.next)
             yield
             try:
@@ -217,7 +218,7 @@ class PeriodicDownload(Observable):
             raise
         except Exception:
             message = format_exc()
-            message += 'Error while processing response: ' + _shorten(response)
+            message += 'Error while processing response: ' + _shorten(topErrorResponse)
             self._logError(message, request=requestString)
         self._errorState = None
         self._startTimer()
@@ -383,7 +384,7 @@ def parseHttpResponse(response):
 
 def checkStatusCode200(statusAndHeaders, body):
     if statusAndHeaders['StatusCode'] != '200':
-        return 'Unexpected status code {0} instead of 200:\nStatus code and headers:\n{1}\nBody:\n{2}'.format(statusAndHeaders['StatusCode'], JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
+        return 'Unexpected status code {0} instead of 200:{1}'.format(statusAndHeaders['StatusCode'], _httpErrorStr(statusAndHeaders, body))
     return None
 
 def maybeDecompressBody(compress, statusAndHeaders, body):
@@ -391,13 +392,15 @@ def maybeDecompressBody(compress, statusAndHeaders, body):
     if compress and contentEncoding is not None:
         contentEncoding = parseContentEncoding(contentEncoding)
         if len(contentEncoding) != 1 or contentEncoding[0] not in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS:
-            return None, 'Unexpected header content (Bad Content-Encoding):\nStatus code and headers:\n{0}\nBody:\n{1}'.format(JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
+            return None, 'Unexpected header content (Bad Content-Encoding):{0}'.format(_httpErrorStr(statusAndHeaders, body))
 
         contentEncoding = contentEncoding[0]
         decodeRequestBody = SUPPORTED_COMPRESSION_CONTENT_ENCODINGS[contentEncoding]['decode']()
         body = decodeRequestBody.decompress(body) + decodeRequestBody.flush()
     return body, None
 
+def _httpErrorStr(statusAndHeaders, body):
+    return '\nStatus code and headers:\n{0}\nBody:\n{1}'.format(JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
 
 MAX_LENGTH=1500
 def _shorten(response):

@@ -638,9 +638,18 @@ class PeriodicDownloadTest(SeecrTestCase):
   File "%%(__file__)s", line 243, in handleGenerator
     raise Exception('xcptn')
 Exception: xcptn
-Error while processing response: HTTP/1.0 200 OK \r\n\r\n<aap:noot xmlns:aap="mies"><record>ignored</record></aap:noot>
+Error while processing response:
+Status code and headers:
+{
+    "HTTPVersion": "1.0",
+    "Headers": {},
+    "ReasonPhrase": "OK ",
+    "StatusCode": "200"
+}
+Body:
+<aap:noot xmlns:aap="mies"><record>ignored</record></aap:noot>
 For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % fileDict)
-            self.assertEquals(expected, ignoreLineNumbers(result))
+            self.assertEqualsWS(expected, ignoreLineNumbers(result))
 
             self.assertEquals('removeProcess', reactor.calledMethods[-2].name)
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
