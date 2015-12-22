@@ -184,8 +184,7 @@ class PeriodicDownload(Observable):
             self._sok = None
 
         try:
-            ### TODO: Extract this below into a function returning either: (body, None) or (None, {<_retryAfterError-dict>}) ###
-            response = ''.join(responses)  # FIXME: get used below in error msg !!!!
+            response = ''.join(responses)
             (statusAndHeaders, body), error = parseHttpResponse(response=response)
             if error:
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
@@ -196,22 +195,10 @@ class PeriodicDownload(Observable):
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
-            # TODO/FIXME: create below from commented!
-            # body, error = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
-            #if error:
-            #    yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
-            #    return
-            contentEncoding = statusAndHeaders['Headers'].get('Content-Encoding')
-            if self._compress and contentEncoding is not None:
-                contentEncoding = parseContentEncoding(contentEncoding)
-                if len(contentEncoding) != 1 or contentEncoding[0] not in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS:
-                    yield self._retryAfterError('Unexpected response (Bad Content-Encoding): ' + response, request=requestString, retryAfter=self._retryAfterErrorTime)
-                    return
-
-                contentEncoding = contentEncoding[0]
-                decodeRequestBody = SUPPORTED_COMPRESSION_CONTENT_ENCODINGS[contentEncoding]['decode']()
-                body = decodeRequestBody.decompress(body) + decodeRequestBody.flush()
-            ### END-OF-TODO ###
+            body, error = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
+            if error:
+                yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
+                return
 
             self._reactor.addProcess(self._currentProcess.next)
             yield
@@ -382,7 +369,6 @@ class PeriodicDownloadStateView(object):
 
 
 def parseHttpResponse(response):
-    # returns: error, <response>; where response is (statusAndHeaders, body).
     _match = REGEXP.RESPONSE.match(response)
     if not _match:
         return ((None, None), 'Unexpected response (not a valid HTTP Response): {0}'.format(_shorten(response)))
@@ -396,10 +382,21 @@ def parseHttpResponse(response):
     return ((statusAndHeaders, body), None)
 
 def checkStatusCode200(statusAndHeaders, body):
-    # returns: error
     if statusAndHeaders['StatusCode'] != '200':
         return 'Unexpected status code {0} instead of 200:\nStatus code and headers:\n{1}\nBody:\n{2}'.format(statusAndHeaders['StatusCode'], JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
     return None
+
+def maybeDecompressBody(compress, statusAndHeaders, body):
+    contentEncoding = statusAndHeaders['Headers'].get('Content-Encoding')
+    if compress and contentEncoding is not None:
+        contentEncoding = parseContentEncoding(contentEncoding)
+        if len(contentEncoding) != 1 or contentEncoding[0] not in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS:
+            return None, 'Unexpected header content (Bad Content-Encoding):\nStatus code and headers:\n{0}\nBody:\n{1}'.format(JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
+
+        contentEncoding = contentEncoding[0]
+        decodeRequestBody = SUPPORTED_COMPRESSION_CONTENT_ENCODINGS[contentEncoding]['decode']()
+        body = decodeRequestBody.decompress(body) + decodeRequestBody.flush()
+    return body, None
 
 
 MAX_LENGTH=1500

@@ -330,8 +330,8 @@ class PeriodicDownloadTest(SeecrTestCase):
                         (buildRequestMethod.args, buildRequestMethod.kwargs))
                     self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
 
-                    self.assertTrue('Unexpected response (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
-                    self.assertTrue('\r\nContent-Encoding: evilbadwrong\r\n' in err.getvalue(), err.getvalue())
+                    self.assertTrue('Unexpected header content (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
+                    self.assertTrue('"Content-Encoding": "evilbadwrong"' in err.getvalue(), err.getvalue())
 
         asProcess(test())
 
@@ -391,8 +391,8 @@ class PeriodicDownloadTest(SeecrTestCase):
                         (buildRequestMethod.args, buildRequestMethod.kwargs))
                     self.assertEquals(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
 
-                    self.assertTrue('Unexpected response (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
-                    self.assertTrue('\r\nContent-Encoding: pixiedust, gzip\r\n' in err.getvalue(), err.getvalue())
+                    self.assertTrue('Unexpected header content (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
+                    self.assertTrue('"Content-Encoding": "pixiedust, gzip"' in err.getvalue(), err.getvalue())
 
         asProcess(test())
 
