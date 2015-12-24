@@ -1042,6 +1042,13 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertEquals('addTimer', reactor.calledMethods[-1].name)
             self.assertEquals(42, reactor.calledMethods[-1].args[0])
 
+    def testSetRetryAfterErrorTime(self):
+        pd = PeriodicDownload(reactor='ignored', autoStart=False)
+        self.assertEquals(30, pd.getState().retryAfterErrorTime)
+
+        pd.setRetryAfterErrorTime(seconds=10)
+        self.assertEquals(10, pd.getState().retryAfterErrorTime)
+
     def testSendOnClosedSocketRetries(self):
         sok = socket()
         sok.close()

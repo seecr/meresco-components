@@ -92,6 +92,9 @@ class PeriodicDownload(Observable):
         warn("Please use setSchedule(...)", DeprecationWarning)
         self.setSchedule(Schedule(period=period))
 
+    def setRetryAfterErrorTime(self, seconds):
+        self._retryAfterErrorTime = seconds
+
     def pause(self):
         if self._paused:
             return
@@ -359,6 +362,10 @@ class PeriodicDownloadStateView(object):
     def period(self):
         warn("Please use schedule.", DeprecationWarning)
         return self.schedule.secondsFromNow()
+
+    @property
+    def retryAfterErrorTime(self):
+        return self._periodicDownload._retryAfterErrorTime
 
     @property
     def schedule(self):
