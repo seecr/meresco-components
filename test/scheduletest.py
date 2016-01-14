@@ -3,10 +3,11 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2013 Maastricht University Library http://www.maastrichtuniversity.nl/web/Library/home.htm
 # Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -50,17 +51,23 @@ class ScheduleTest(SeecrTestCase):
         s._utcnow = lambda: datetime.strptime("21:15", "%H:%M")
         self.assertEquals(22.75 * 60 * 60, s.secondsFromNow())
 
+        s._utcnow = lambda: datetime.strptime("20:00", "%H:%M")
+        self.assertEquals(24 * 60 * 60, s.secondsFromNow())
+
     def testDayOfWeekTimeOfDay(self):
         s = Schedule(dayOfWeek=5, timeOfDay='20:00')
         self.assertEquals(5, s.dayOfWeek)
         s._utcnow = lambda: datetime.strptime("15-11-2012 13:30", "%d-%m-%Y %H:%M") # This is a Thursday
         self.assertEquals(30.5 * 60 * 60, s.secondsFromNow())
 
-        s._utcnow = lambda: datetime.strptime("14-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
+        s._utcnow = lambda: datetime.strptime("14-11-2012 21:00", "%d-%m-%Y %H:%M")
         self.assertEquals(47 * 60 * 60, s.secondsFromNow())
 
-        s._utcnow = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M") # This is a Wednesday
+        s._utcnow = lambda: datetime.strptime("17-11-2012 21:00", "%d-%m-%Y %H:%M")
         self.assertEquals((5 * 24 + 23) * 60 * 60, s.secondsFromNow())
+
+        s._utcnow = lambda: datetime.strptime("16-11-2012 20:00", "%d-%m-%Y %H:%M")
+        self.assertEquals(7 * 24 * 60 * 60, s.secondsFromNow())
 
     def testSecondsSinceEpoch(self):
         s = Schedule(secondsSinceEpoch=123) # test with ints, but works with floats as well (much harder to test due to binary representation)
