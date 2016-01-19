@@ -3,9 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
+# Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -33,45 +33,41 @@ from meresco.components.drilldownqueries import DrilldownQueries
 
 
 class DrilldownQueriesTest(SeecrTestCase):
-    def testDrilldownQuery(self):
-        dbdq = DrilldownQueries()
-        observer = CallTrace(methods=dict(executeQuery=mockExecuteQuery))
-        dbdq.addObserver(observer)
+    def setUp(self):
+        SeecrTestCase.setUp(self)
+        self.dbdq = DrilldownQueries()
+        self.observer = CallTrace(methods=dict(executeQuery=mockExecuteQuery))
+        self.dbdq.addObserver(self.observer)
 
-        result = retval(dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a = b']}))
+
+    def testDrilldownQuery(self):
+        result = retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a = b']}))
         self.assertEquals('result', result)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        executeQueryMethod = observer.calledMethods[0]
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
 
-        observer.calledMethods.reset()
+        self.observer.calledMethods.reset()
 
-        result = retval(dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a exact b']}))
+        result = retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a exact b']}))
         self.assertEquals('result', result)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        executeQueryMethod = observer.calledMethods[0]
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
 
     def testErrorForInvalidFormatDrilldownQuery(self):
-        dbdq = DrilldownQueries()
-        observer = CallTrace(methods=dict(executeQuery=mockExecuteQuery))
-        dbdq.addObserver(observer)
-
         try:
-            retval(dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a']}))
+            retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a']}))
             self.fail()
         except ValueError, e:
             self.assertEquals('x-drilldown-query format should be field=value', str(e))
-        self.assertEquals([], observer.calledMethodNames())
+        self.assertEquals([], self.observer.calledMethodNames())
 
     def testNoDrilldownQuery(self):
-        dbdq = DrilldownQueries()
-        observer = CallTrace(methods=dict(executeQuery=mockExecuteQuery))
-        dbdq.addObserver(observer)
-        result = retval(dbdq.executeQuery(extraArguments={}, query='*'))
+        result = retval(self.dbdq.executeQuery(extraArguments={}, query='*'))
         self.assertEquals('result', result)
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        executeQueryMethod = observer.calledMethods[0]
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals([], executeQueryMethod.kwargs['drilldownQueries'])
         self.assertEquals("*", executeQueryMethod.kwargs['query'])
 
