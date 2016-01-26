@@ -41,8 +41,9 @@ class TimedMessageCacheTest(SeecrTestCase):
 
     def init(self, **kwargs):
         self.observer = CallTrace('observer')
+        self.cache = TimedMessageCache(**kwargs)
         self.dna = be((Observable(),
-            (TimedMessageCache(**kwargs),
+            (self.cache,
                 (self.observer,)
             )
         ))
@@ -79,6 +80,17 @@ class TimedMessageCacheTest(SeecrTestCase):
         self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
         result = retval(self.dna.any.someMessage('arg', kwarg='otherkwarg'))
         self.assertEquals(['someMessage', 'someMessage', 'someMessage'], self.observer.calledMethodNames())
+
+    def testClearCache(self):
+        def someMessage(*args, **kwargs):
+            generatorReturn('result')
+            yield
+        self.observer.methods['someMessage'] = someMessage
+        retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
+        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.cache.clear()
+        retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
+        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testKeepValueInCaseOfError(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True)

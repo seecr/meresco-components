@@ -41,6 +41,12 @@ class TimedMessageCache(Transparent):
         self._backoffTimeout = backoffTimeout
         self._backoffStarted = None
 
+    def clear(self):
+        self._cache.clear()
+
+    def setTimeout(self, timeout):
+        self._cache.setTimeout(timeout)
+
     def any_unknown(self, message, *args, **kwargs):
         found = False
         key = (message, repr(args), repr(kwargs))
