@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2011-2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -35,3 +35,4 @@ from apachelogwriter import ApacheLogWriter
 from handlerequestlog import HandleRequestLog
 from querylogwriter import QueryLogWriter
 from logkeyvalue import LogKeyValue
+from logline import LogLine

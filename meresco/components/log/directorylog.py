@@ -5,8 +5,8 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2006-2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2006-2012, 2014, 2016 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -31,38 +31,20 @@
 from time import strftime, gmtime
 from os.path import join, isdir, isfile
 from os import makedirs, listdir, remove
+from .logline import LogLine
 
 NR_OF_FILES_KEPT = 14
 
-# '2009-11-02T11:30:00Z 127.0.0.1 0.0K 1.000s #123 /sru query=query&operation=searchRetrieve&version=1.1\n'
-def _valueFromDict(aDict, key, template='%s', alt='-'):
-    try:
-        return template % aDict[key]
-    except (TypeError, KeyError):
-        return alt
-
-def logline(aDict):
-    line = []
-    line.append(strftime('%Y-%m-%dT%H:%M:%SZ', gmtime(aDict['timestamp'])))
-    line.append(aDict.get('ipAddress', '-'))
-    line.append(_valueFromDict(aDict, 'size', '%.1fK'))
-    line.append(_valueFromDict(aDict, 'duration', '%.3fs'))
-    line.append(_valueFromDict(aDict, 'numberOfRecords', '%dhits'))
-    line.append(aDict.get('path', '-'))
-    line.append('%s' % aDict.get('queryArguments', ''))
-    return '%s\n' % ' '.join(line)
-
-
-logtemplate = '%(strTimestamp)s %(ipAddress)s %(size).1fK %(duration).3fs %(path)s %(queryArguments)s\n'
 
 class DirectoryLog(object):
-    def __init__(self, logdir, extension='-query.log', nrOfFilesKept=NR_OF_FILES_KEPT):
+    def __init__(self, logdir, extension='-query.log', nrOfFilesKept=NR_OF_FILES_KEPT, logline=LogLine.createDefault()):
         self._previousLog = None
         self._logdir = logdir
         if not isdir(self._logdir):
             makedirs(self._logdir)
         self._filenameExtension = extension
         self._nrOfFilesKept = nrOfFilesKept
+        self._logline = logline
 
     def setNrOfFilesKept(self, value):
         if value > 0:
@@ -84,7 +66,7 @@ class DirectoryLog(object):
             self._previousLog = logFilename
 
         with open(logFilename, 'a') as f:
-            f.write(logline(kwargs))
+            f.write(self._logline(kwargs))
 
     def _logfiles(self):
         return sorted(f for f in listdir(self._logdir) if f.endswith(self._filenameExtension))

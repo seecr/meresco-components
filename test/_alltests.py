@@ -10,7 +10,7 @@
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2010-2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -125,6 +125,7 @@ from log.handlerequestlogtest import HandleRequestLogTest
 from log.logcollectortest import LogCollectorTest
 from log.logcomponenttest import LogComponentTest
 from log.logfileservertest import LogFileServerTest
+from log.loglinetest import LogLineTest
 from log.querylogtest import QueryLogTest
 from log.querylogwritertest import QueryLogWriterTest
 from log.srulogtest import SruLogTest
