@@ -47,6 +47,9 @@ class TimedMessageCache(Transparent):
     def setTimeout(self, timeout):
         self._cache.setTimeout(timeout)
 
+    def getSize(self):
+        return self._cache.size()
+
     def any_unknown(self, message, *args, **kwargs):
         found = False
         key = (message, repr(args), repr(kwargs))

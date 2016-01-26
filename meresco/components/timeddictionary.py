@@ -49,6 +49,9 @@ class TimedDictionary(object):
         self._dictionary.clear()
         del self._list[:]
 
+    def size(self):
+        return len(self._list)
+
     def purge(self):
         now = self._now()
         index = 0
