@@ -7,8 +7,9 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
+# Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -165,7 +166,7 @@ class FileServerTest(SeecrTestCase):
         fileServer = FileServer(self.directory)
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
         self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)
-        
+
         fileServer = FileServer(self.directory, allowDirectoryListing=True)
         with open(join(self.directory, "dummy.txt"), "w") as f:
             f.write("Dummy")
@@ -185,8 +186,7 @@ class FileServerTest(SeecrTestCase):
         self.assertTrue(links[1].startswith('<a href="dummy.txt">dummy.txt</a>'), links[1])
         self.assertTrue(links[1].endswith(' 5'), links[1])
         self.assertTrue(links[2].startswith('<a href="subdir/">subdir/</a>'), links[2])
-        self.assertTrue(links[2].endswith(' 60'), links[2])
-        
+
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir"))
         self.assertTrue(response.startswith("HTTP/1.0 301 Moved Permanently"), response)
 

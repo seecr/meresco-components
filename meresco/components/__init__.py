@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010, 2013, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2010, 2013, 2015-2016 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2013, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -63,6 +63,7 @@ from rss import Rss
 from rssitem import RssItem
 from schedule import Schedule
 from storagecomponent import StorageComponent, defaultSplit, defaultJoin
+from timedmessagecache import TimedMessageCache, BackoffException
 from venturi import Venturi
 from xml2fields import Xml2Fields
 from xmlxpath import XmlXPath
