@@ -3,9 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2014, 2016 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
@@ -57,7 +57,8 @@ class QueryLogWriter(Observable):
             size=getFirst(httpResponse, 'size', 0)/1024.0,
             duration=getFirst(httpResponse, 'duration'),
             numberOfRecords=getFirst(sru, 'numberOfRecords'),
-            queryArguments=self._queryArguments(collectedLog)
+            queryArguments=self._queryArguments(collectedLog),
+            status=getFirst(httpResponse, 'httpStatus', '0'),
         )
 
     def _queryArguments(self, collectedLog):

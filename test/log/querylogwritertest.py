@@ -3,9 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2014, 2016 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
@@ -91,6 +91,7 @@ class QueryLogWriterTest(SeecrTestCase):
         writer = QueryLogWriter(log=log)
         collectedLog = defaultCollectedLog()
         collectedLog['httpResponse']['size'] = [4096]
+        collectedLog['httpResponse']['httpStatus'] = ['200']
         writer.writeLog(collectedLog)
         self.assertEquals(['log'], log.calledMethodNames())
         self.assertEquals(dict(
@@ -101,6 +102,7 @@ class QueryLogWriterTest(SeecrTestCase):
                 duration=3.0,
                 queryArguments='version=1.2',
                 numberOfRecords=32,
+                status='200'
             ), log.calledMethods[0].kwargs)
 
     def testLogForArgumentsInsteadOfSruArguments(self):
