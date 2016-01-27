@@ -50,6 +50,7 @@ class TimedDictionary(object):
         del self._list[:]
 
     def size(self):
+        self.purge()
         return len(self._list)
 
     def purge(self):

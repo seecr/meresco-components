@@ -205,3 +205,5 @@ class TimedDictionaryTest(TestCase):
         self.assertEqual(1, timedDict.size())
         timedDict['key2'] = 'six'
         self.assertEqual(2, timedDict.size())
+        timedDict._now = lambda : time() + TWO_HOURS
+        self.assertEqual(0, timedDict.size())
