@@ -29,75 +29,25 @@
 ## end license ##
 
 from time import time
+from warnings import warn
+
+from pylru import lrucache
+
 
 class TimedDictionary(object):
-    def __init__(self, timeout):
+    def __init__(self, timeout, lruMaxSize=None):
         self._timeout = timeout
-        self._dictionary = {}
-        self._list = []
+        self._dictionary = {} if lruMaxSize is None else lrucache(lruMaxSize)
+        self._times = {}
+        self._expirationOrder = []
 
-    def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
-    def getTime(self, key):
-        return self._dictionary[key][0]
-
-    def clear(self):
-        self._dictionary.clear()
-        del self._list[:]
-
-    def size(self):
-        self.purge()
-        return len(self._list)
-
-    def purge(self):
-        now = self._now()
-        index = 0
-        for i, key in enumerate(self._list):
-            if self.hasExpired(key, now):
-                del self._dictionary[key]
-                index = i + 1
-            else:
-                break
-        if index > 0:
-            self._list = self._list[index:]
-
-    def touch(self, key):
-        self._dictionary[key] = (self._now(), self._dictionary[key][1])
-        self._list.remove(key)
-        self._list.append(key)
-
-    def hasExpired(self, key, time=None):
-        if not time:
-            time = self._now()
-        return time > self.getTime(key) + self._timeout
-
-    def setTimeout(self, timeout):
-        self._timeout = timeout
-
-    def _now(self):
-        return time()
+    def __len__(self):
+        return self.size()
 
     def __getitem__(self, key):
         if self.hasExpired(key):
             del self[key]
-        ignoredTime, value = self._dictionary[key]
-        return value
-
-    def peek(self, key):
-        """Provides a way to access values that might expire if accessed normally."""
-        ignoredTime, value = self._dictionary[key]
-        return value
-
-    def __setitem__(self, key, value):
-        self.purge()
-        if key in self:
-            self._list.remove(key)
-        self._dictionary[key] = (self._now(), value)
-        self._list.append(key)
+        return self._dictionary[key]
 
     def __contains__(self, key):
         try:
@@ -107,6 +57,75 @@ class TimedDictionary(object):
             return False
     has_key = __contains__
 
+    def __setitem__(self, key, value):
+        self.purge()
+        try:
+            self._expirationOrder.remove(key)
+        except ValueError:
+            pass
+        self._times[key] = self._now()
+        self._expirationOrder.append(key)
+        self._dictionary[key] = value
+
     def __delitem__(self, key):
         del self._dictionary[key]
-        self._list.remove(key)
+        del self._times[key]
+        self._expirationOrder.remove(key)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def keys(self):
+        return list(self._dictionary.keys())
+
+    def clear(self):
+        self._dictionary.clear()
+        self._times.clear()
+        del self._expirationOrder[:]
+
+
+    def size(self):
+        self.purge()
+        return len(self._dictionary)
+
+    def peek(self, key):
+        """Provides a way to access values that might expire if accessed normally."""
+        return self._dictionary[key]
+
+    def hasExpired(self, key, time=None):
+        if not time:
+            time = self._now()
+        return time > self._times[key] + self._timeout
+
+    def touch(self, key):
+        self[key] = self._dictionary[key]
+
+    def purge(self):
+        now = self._now()
+        index = 0
+        for i, key in enumerate(self._expirationOrder):
+            if self.hasExpired(key, now) or not key in self._dictionary:
+                try:
+                    del self._times[key]
+                    del self._dictionary[key]
+                except:
+                    pass
+                index = i + 1
+            else:
+                break
+        if index > 0:
+            self._expirationOrder = self._expirationOrder[index:]
+
+    def setTimeout(self, timeout):
+        self._timeout = timeout
+
+    def getTime(self, key):
+        warn('getTime is deprecated (why expose?)', DeprecationWarning)
+        _ = self._dictionary[key]  # forcing KeyError if no longer available
+        return self._times[key]
+
+    def _now(self):
+        return time()

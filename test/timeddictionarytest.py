@@ -28,23 +28,15 @@
 #
 ## end license ##
 
+from time import sleep
+
 from unittest import TestCase
+from seecr.test.io import stderr_replaced
 
 from meresco.components import TimedDictionary
 
-from seecr.test import CallTrace
+from time import time
 
-from time import time, sleep
-
-TWO_HOURS = 3600 * 2
-ONE_HOUR = 3600
-
-class SomeObject(object):
-    def __init__(self, id):
-        self.id = id
-
-    def _raise(self):
-        raise Exception("Should not happen in this testsituation")
 
 class TimedDictionaryTest(TestCase):
     def testBasicGetAndPut(self):
@@ -92,52 +84,53 @@ class TimedDictionaryTest(TestCase):
             self.fail("This shouldn't happen.")
         self.assertRaises(KeyError, timedDict.__delitem__, 'idontexist')
 
-    def testOrderIsKeptInternally(self):
+    def testExpirationOrderIsKeptInternally(self):
         timedDict = TimedDictionary(TWO_HOURS)
         timedDict[3] = SomeObject(1)
         timedDict[1] = SomeObject(10)
         timedDict[2] = SomeObject(20)
 
-        self.assertEquals([3, 1, 2], timedDict._list)
+        self.assertEquals([3, 1, 2], timedDict._expirationOrder)
 
         timedDict[1] = SomeObject(23)
-        self.assertEquals([3, 2, 1], timedDict._list)
+        self.assertEquals([3, 2, 1], timedDict._expirationOrder)
 
         timedDict[0] = SomeObject(23.01)
-        self.assertEquals([3, 2, 1, 0], timedDict._list)
+        self.assertEquals([3, 2, 1, 0], timedDict._expirationOrder)
 
         del timedDict[2]
-        self.assertEquals([3, 1, 0], timedDict._list)
+        self.assertEquals([3, 1, 0], timedDict._expirationOrder)
 
     def testGetTime(self):
         timedDict = TimedDictionary(TWO_HOURS)
         timedDict[1] = SomeObject('id1')
-        self.assertTrue(time() - timedDict.getTime(1) < 2.0)
+        with stderr_replaced():
+            self.assertTrue(time() - timedDict.getTime(1) < 2.0)
 
     def testTouch(self):
         timedDict = TimedDictionary(TWO_HOURS)
         timedDict[1] = SomeObject('id1')
         timedDict[2] = SomeObject('id2')
 
-        self.assertEquals([1, 2], timedDict._list)
+        self.assertEquals([1, 2], timedDict._expirationOrder)
         timedDict.touch(1)
-        self.assertEquals([2, 1], timedDict._list)
+        self.assertEquals([2, 1], timedDict._expirationOrder)
 
     def testPurge(self):
         timedDict = TimedDictionary(TWO_HOURS)
         timedDict[1] = SomeObject('id1')
         timedDict[2] = SomeObject('id2')
         timedDict._now = lambda : time() + ONE_HOUR
-        self.assertEquals([1, 2], timedDict._list)
+        self.assertEquals([1, 2], timedDict._expirationOrder)
 
         timedDict[3] = SomeObject('id3')
         timedDict.touch(2)
         timedDict._now = lambda : time() + TWO_HOURS
         timedDict.purge()
-        self.assertEquals([3, 2], timedDict._list)
+        self.assertEquals([3, 2], timedDict._expirationOrder)
         timedDict._now = lambda : time() + TWO_HOURS + TWO_HOURS
         timedDict.purge()
-        self.assertEquals([], timedDict._list)
+        self.assertEquals([], timedDict._expirationOrder)
 
     def testPurgeOnSetItem(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -145,7 +138,7 @@ class TimedDictionaryTest(TestCase):
         timedDict._now = lambda : time() + TWO_HOURS
         timedDict[2] = SomeObject('id2')
 
-        self.assertEquals([2], timedDict._list)
+        self.assertEquals([2], timedDict._expirationOrder)
 
     def testDeleteExpiredOnGetItem(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -153,7 +146,7 @@ class TimedDictionaryTest(TestCase):
         timedDict._now = lambda : time() + TWO_HOURS
 
         self.assertRaises(KeyError, timedDict.__getitem__, 1)
-        self.assertEquals([], timedDict._list)
+        self.assertEquals([], timedDict._expirationOrder)
 
     def testExpiredOnInShouldReturnDefaultOnGetWithoutAnException(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -173,7 +166,7 @@ class TimedDictionaryTest(TestCase):
 
         self.assertEquals(None, timedDict.get(1))
         self.assertEquals('a default', timedDict.get(1, 'a default'))
-        self.assertEquals([], timedDict._list)
+        self.assertEquals([], timedDict._expirationOrder)
 
     def testPeek(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -207,3 +200,39 @@ class TimedDictionaryTest(TestCase):
         self.assertEqual(2, timedDict.size())
         timedDict._now = lambda : time() + TWO_HOURS
         self.assertEqual(0, timedDict.size())
+
+    def testLruMaxSize(self):
+        timedDict = TimedDictionary(TWO_HOURS, lruMaxSize=2)
+        self.assertEqual(0, timedDict.size())
+        timedDict['key'] = 'five'
+        self.assertEqual(1, timedDict.size())
+        timedDict['key1'] = 'six'
+        self.assertEqual(2, timedDict.size())
+        self.assertEquals('five', timedDict['key'])
+        timedDict['key2'] = 'seven'
+        self.assertEqual(2, timedDict.size())
+        self.assertEquals(set(['key', 'key2']), set(timedDict.keys()))
+
+    def testExpiredLeastRecentlyUsedGracefullyDealtWith(self):
+        timedDict = TimedDictionary(TWO_HOURS, lruMaxSize=2)
+        timedDict['key1'] = 'five'
+        timedDict['key2'] = 'six'
+        timedDict['key3'] = 'seven'
+        self.assertEquals(set(['key2', 'key3']), set(timedDict.keys()), set(timedDict.keys()))
+        self.assertEquals(3, len(timedDict._times))
+        self.assertEquals(3, len(timedDict._expirationOrder))
+        timedDict.purge()
+        self.assertEquals(2, len(timedDict._times))
+        self.assertEquals(2, len(timedDict._expirationOrder))
+        timedDict._now = lambda : time() + TWO_HOURS
+        timedDict.purge()
+        self.assertEquals([], list(timedDict.keys()))
+        self.assertEquals(0, len(timedDict._times))
+        self.assertEquals(0, len(timedDict._expirationOrder))
+
+ONE_HOUR = 3600
+TWO_HOURS = ONE_HOUR * 2
+
+class SomeObject(object):
+    def __init__(self, id):
+        self.id = id
