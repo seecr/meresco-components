@@ -6,10 +6,10 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -46,11 +46,13 @@ class AutocompleteTest(SeecrTestCase):
     def _setUpAuto(self, prefixBasedSearchKwargs=None):
         prefixBasedSearchKwargs = {} if prefixBasedSearchKwargs is None else prefixBasedSearchKwargs
         queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
+        htmlQueryTemplate = '/demo?q={searchTerms}'
         self.auto = be((Autocomplete(
                 host='localhost',
                 port=8000,
                 path='/some/path',
                 templateQuery=queryTemplate,
+                htmlTemplateQuery=htmlQueryTemplate,
                 shortname="Web Search",
                 description="Use this web search to search something"),
             (PrefixBasedSuggest(
@@ -127,6 +129,19 @@ class AutocompleteTest(SeecrTestCase):
         self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
         self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
 
+        result = asString(self.auto.handleRequest(
+            path='/path/opensearchdescription.xml',
+            arguments={}))
+        header,body = result.split('\r\n'*2)
+
+        self.assertTrue("Content-Type: text/xml" in header, header)
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+    <ShortName>Web Search</ShortName>
+    <Description>Use this web search to search something</Description>
+    <Url type="text/xml" method="get" template="http://localhost:8000/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
+    <Url type="application/x-suggestions+json" template="http://localhost:8000/some/path?prefix={searchTerms}"/>
+</OpenSearchDescription>""", body)
 
     def testMinimumLength(self):
         self._setUpAuto(prefixBasedSearchKwargs=dict(minimumLength=5))
@@ -155,6 +170,7 @@ class AutocompleteTest(SeecrTestCase):
     <ShortName>Web Search</ShortName>
     <Description>Use this web search to search something</Description>
     <Url type="text/xml" method="get" template="http://localhost:8000/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
+    <Url type="text/html" method="get" template="http://localhost:8000/demo?q={searchTerms}"/>
     <Url type="application/x-suggestions+json" template="http://localhost:8000/some/path?prefix={searchTerms}"/>
 </OpenSearchDescription>""", body)
 

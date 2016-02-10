@@ -5,10 +5,10 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -39,12 +39,13 @@ filesDir = join(dirname(abspath(__file__)), 'files')
 
 
 class Autocomplete(Observable):
-    def __init__(self, host, port, path, templateQuery, shortname, description, name=None, **kwargs):
+    def __init__(self, host, port, path, templateQuery, shortname, description, htmlTemplateQuery=None, name=None, **kwargs):
         Observable.__init__(self, name=name)
         self._host = host
         self._port = port
         self._path = path
-        self._templateQuery = templateQuery
+        self._xmlTemplateQuery = templateQuery
+        self._htmlTemplateQuery = htmlTemplateQuery
         self._shortname = shortname
         self._description = description
         self._fileServer = FileServer(documentRoot=filesDir)
@@ -79,7 +80,8 @@ class Autocomplete(Observable):
         yield """<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>%(shortname)s</ShortName>
     <Description>%(description)s</Description>
-    <Url type="text/xml" method="get" template="http://%(host)s:%(port)s%(templateQuery)s"/>
+    <Url type="text/xml" method="get" template="http://%(host)s:%(port)s%(xmlTemplateQuery)s"/>
+    %(htmlUrl)s
     <Url type="%(contentTypeSuggest)s" template="http://%(host)s:%(port)s%(path)s?%(templateQueryForSuggest)s"/>
 </OpenSearchDescription>""" % {
             'contentTypeSuggest': CONTENT_TYPE_JSON_SUGGESTIONS,
@@ -88,7 +90,8 @@ class Autocomplete(Observable):
             'host': self._host,
             'port': self._port,
             'path': self._path,
-            'templateQuery': escapeXml(self._templateQuery),
+            'xmlTemplateQuery': escapeXml(self._xmlTemplateQuery),
+            'htmlUrl': '<Url type="text/html" method="get" template="http://{host}:{port}{template}"/>'.format(host=self._host, port=self._port, template=escapeXml(self._htmlTemplateQuery)) if self._htmlTemplateQuery else '',
             'templateQueryForSuggest': escapeXml(self._templateQueryForSuggest()),
         }
 
