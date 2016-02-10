@@ -75,23 +75,23 @@ class Autocomplete(Observable):
         return self.call.templateQueryForSuggest()
 
     def _openSearchDescription(self, **kwargs):
+        server = self._host if str(self._port) == "80" else "{}:{}".format(self._host, self._port)
         yield okXml
         yield """<?xml version="1.0" encoding="UTF-8"?>"""
         yield """<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>%(shortname)s</ShortName>
     <Description>%(description)s</Description>
-    <Url type="text/xml" method="get" template="http://%(host)s:%(port)s%(xmlTemplateQuery)s"/>
+    <Url type="text/xml" method="get" template="http://%(server)s%(xmlTemplateQuery)s"/>
     %(htmlUrl)s
-    <Url type="%(contentTypeSuggest)s" template="http://%(host)s:%(port)s%(path)s?%(templateQueryForSuggest)s"/>
+    <Url type="%(contentTypeSuggest)s" template="http://%(server)s%(path)s?%(templateQueryForSuggest)s"/>
 </OpenSearchDescription>""" % {
             'contentTypeSuggest': CONTENT_TYPE_JSON_SUGGESTIONS,
             'shortname': self._shortname,
             'description': self._description,
-            'host': self._host,
-            'port': self._port,
+            'server': server,
             'path': self._path,
             'xmlTemplateQuery': escapeXml(self._xmlTemplateQuery),
-            'htmlUrl': '<Url type="text/html" method="get" template="http://{host}:{port}{template}"/>'.format(host=self._host, port=self._port, template=escapeXml(self._htmlTemplateQuery)) if self._htmlTemplateQuery else '',
+            'htmlUrl': '<Url type="text/html" method="get" template="http://{server}{template}"/>'.format(server=server, template=escapeXml(self._htmlTemplateQuery)) if self._htmlTemplateQuery else '',
             'templateQueryForSuggest': escapeXml(self._templateQueryForSuggest()),
         }
 

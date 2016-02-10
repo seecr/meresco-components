@@ -174,6 +174,34 @@ class AutocompleteTest(SeecrTestCase):
     <Url type="application/x-suggestions+json" template="http://localhost:8000/some/path?prefix={searchTerms}"/>
 </OpenSearchDescription>""", body)
 
+    def testOpenSearchWithoutHtmlAndPort80(self):
+        queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
+        self.auto = be((Autocomplete(
+                host='localhost',
+                port=80,
+                path='/some/path',
+                templateQuery=queryTemplate,
+                shortname="Web Search",
+                description="Use this web search to search something",
+                defaultLimit=50,
+                defaultField='lom',
+            ),
+            (self.observer,),
+        ))
+        result = asString(self.auto.handleRequest(
+            path='/path/opensearchdescription.xml',
+            arguments={}))
+        header,body = result.split('\r\n'*2)
+
+        self.assertTrue("Content-Type: text/xml" in header, header)
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+    <ShortName>Web Search</ShortName>
+    <Description>Use this web search to search something</Description>
+    <Url type="text/xml" method="get" template="http://localhost/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
+    <Url type="application/x-suggestions+json" template="http://localhost/some/path?prefix={searchTerms}"/>
+</OpenSearchDescription>""", body)
+
     def testJQueryJS(self):
         result = asString(self.auto.handleRequest(
             path='/path/jquery.js',
