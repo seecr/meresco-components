@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -48,7 +48,7 @@ class ParseArguments(object):
             kwargs['help'] = kwargs['help'].format(default=kwargs['default'])
         option = Option(*args, **kwargs)
         if option.metavar is None:
-            option.metavar = repr(option.default) if 'default' in kwargs else '<{0}>'.format(option.type)
+            option.metavar = '<{0}>'.format(option.type) if kwargs.get('default') is None else repr(option.default)
         if mandatory:
             self._mandatoryKeys.append(option.dest)
         self._parser.add_option(option)

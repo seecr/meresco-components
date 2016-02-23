@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -64,6 +64,7 @@ class ParseArgumentsTest(TestCase):
         parser = ParseArguments()
         parser.addOption('', '--option')
         parser.addOption('', '--defaultValue', default='default')
+        parser.addOption('', '--noneValue', default=None)
         parser.addOption('', '--port', help='Port', type='int')
         parser.addOption('', '--otherPort', help='Port', type='int', default=10000)
         parser.addOption('', '--quiet', action='store_false', default=True, dest='verbose')
@@ -71,6 +72,7 @@ class ParseArgumentsTest(TestCase):
             parser.print_help()
             self.assertTrue("--option=<string>" in out.getvalue(), out.getvalue())
             self.assertTrue("--defaultValue='default'" in out.getvalue(), out.getvalue())
+            self.assertTrue("--noneValue=<string>" in out.getvalue(), out.getvalue())
             self.assertTrue("--port=<int>" in out.getvalue(), out.getvalue())
             self.assertTrue("--otherPort=10000" in out.getvalue(), out.getvalue())
 
