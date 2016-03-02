@@ -118,7 +118,7 @@ from http.observablehttpsservertest import ObservableHttpsServerTest
 from http.pathfiltertest import PathFilterTest
 from http.pathrenametest import PathRenameTest
 from http.sessionhandlertest import SessionHandlerTest
-from http.utilstest import UtilsTest
+from http.httputilstest import HttpUtilsTest
 
 from log.apachelogwritertest import ApacheLogWriterTest
 from log.directorylogtest import DirectoryLogTest
@@ -130,7 +130,7 @@ from log.loglinetest import LogLineTest
 from log.querylogtest import QueryLogTest
 from log.querylogwritertest import QueryLogWriterTest
 from log.srulogtest import SruLogTest
-from log.utilstest import UtilsTest
+from log.logutilstest import LogUtilsTest
 
 from numeric.converttest import ConvertTest
 

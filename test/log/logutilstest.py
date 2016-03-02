@@ -3,8 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
+# Copyright (C) 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2015 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -28,7 +28,7 @@ from seecr.test import SeecrTestCase
 from os.path import join
 from meresco.components.log.utils import LogParse
 
-class UtilsTest(SeecrTestCase):
+class LogUtilsTest(SeecrTestCase):
 
     def testParseLines(self):
         with open(join(self.tempdir, 'f'), 'w') as f:

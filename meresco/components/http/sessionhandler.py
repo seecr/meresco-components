@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 SURF http://www.surf.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -41,6 +41,7 @@ from UserDict import UserDict
 from string import ascii_letters
 from seecr.zulutime import ZuluTime
 from os.path import isfile
+from .utils import findCookies
 
 class Session(UserDict):
     def __init__(self, sessionId):
@@ -57,26 +58,23 @@ class SessionHandler(Observable):
     def __init__(self, secretSeed=None, nameSuffix='', timeout=3600*2):
         Observable.__init__(self)
         self._secretSeed = secretSeed or self.createSeed()
-        self._nameSuffix = nameSuffix
+        self._cookieName = 'session' + nameSuffix
         self._timeout = timeout
         self._sessions = TimedDictionary(timeout)
 
     def handleRequest(self, RequestURI='', Client=None, Headers={}, arguments = {}, *args, **kwargs):
-        sessioncookies = [cookie.strip() for cookie in Headers.get('Cookie','').split(';') if cookie.strip().startswith('session%s=' % self._nameSuffix)]
-        sessionid, session = None, None
-        if len(sessioncookies) >=1:
-            sessionid = sessioncookies[0].split('=')[1]
-            session = self._sessions.get(sessionid, None)
+        sessionIds = findCookies(Headers=Headers, name=self._cookieName)
+        session = None if len(sessionIds) <1 else self._sessions.get(sessionIds[0], None)
 
-        if session == None:
+        if session is None:
             clientaddress, ignoredPort = Client
             sessionid = md5('%s%s%s%s' % (time(), randint(0, 9999999999), clientaddress, self._secretSeed)).hexdigest()
             session = Session(sessionid)
-            self._sessions[sessionid] = session
+            self._sessions[session['id']] = session
         else:
-            self._sessions.touch(sessionid)
+            self._sessions.touch(session['id'])
 
-        extraHeader = 'Set-Cookie: session%s=%s; path=/; Expires=%s' % (self._nameSuffix, sessionid, self._zulutime().add(seconds=self._timeout).rfc1123())
+        extraHeader = 'Set-Cookie: %s=%s; path=/; Expires=%s' % (self._cookieName, session['id'], self._zulutime().add(seconds=self._timeout).rfc1123())
 
         result = compose(self.all.handleRequest(session=session, arguments=arguments, RequestURI=RequestURI, Client=Client, Headers=Headers, *args, **kwargs))
 
