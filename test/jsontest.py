@@ -3,9 +3,9 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -58,22 +58,25 @@ class JsonTest(SeecrTestCase):
     def testLoadFromFilename(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
-        open(tempfile, 'w').write(str(jd))
+        with open(tempfile, 'w') as fp:
+            fp.write(str(jd))
         jd2 = JsonDict.load(tempfile)
-        self.assertEquals(jd, jd2)
+        self.assertEqual(jd, jd2)
 
     def testDump(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
         with open(tempfile, 'w') as f:
             jd.dump(f)
-        self.assertEquals('{"hello": "world"}', open(tempfile).read())
+        with open(tempfile) as fp:
+            self.assertEqual('{"hello": "world"}', fp.read())
 
     def testDumpWithFilename(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
         jd.dump(tempfile)
-        self.assertEquals('{"hello": "world"}', open(tempfile).read())
+        with open(tempfile) as fp:
+            self.assertEqual('{"hello": "world"}', fp.read())
 
     def testStrList(self):
         jl = JsonList(['hello', 'world'])
@@ -103,6 +106,6 @@ class JsonTest(SeecrTestCase):
         tempfile = join(self.tempdir, 'json.json')
         open(tempfile, 'w').close()
         self.assertRaises(JSONDecodeError, lambda: JsonDict.load(tempfile))
-        self.assertEquals({}, JsonDict.load(tempfile, emptyOnError=True))
+        self.assertEqual({}, JsonDict.load(tempfile, emptyOnError=True))
         self.assertRaises(JSONDecodeError, lambda: JsonList.load(tempfile))
-        self.assertEquals([], JsonList.load(tempfile, emptyOnError=True))
+        self.assertEqual([], JsonList.load(tempfile, emptyOnError=True))

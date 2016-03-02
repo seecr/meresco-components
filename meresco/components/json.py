@@ -3,10 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -52,14 +52,19 @@ class _Json(object):
 
     @classmethod
     def load(clz, fp, emptyOnError=False, *args, **kwargs):
+        shouldClose = False
         if not hasattr(fp, 'read'):
             fp = open(fp)
+            shouldClose = True
         try:
             return clz(load(fp, *args, **kwargs))
         except JSONDecodeError:
             if emptyOnError:
                 return clz()
             raise
+        finally:
+            if shouldClose:
+                fp.close()
 
 class JsonDict(dict, _Json):
     pass
