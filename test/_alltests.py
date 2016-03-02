@@ -10,8 +10,9 @@
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2010-2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -108,7 +109,7 @@ from _http.pathfiltertest import PathFilterTest
 from _http.pathrenametest import PathRenameTest
 from _http.sessionhandlertest import SessionHandlerTest
 from _http.timeddictionarytest import TimedDictionaryTest
-from _http.utilstest import UtilsTest
+from _http.httputilstest import HttpUtilsTest
 
 from log.apachelogwritertest import ApacheLogWriterTest
 from log.directorylogtest import DirectoryLogTest

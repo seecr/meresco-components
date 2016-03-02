@@ -10,8 +10,9 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -125,3 +126,12 @@ def insertHeader(httpResponse, extraHeader):
                 yield remainder
         else:
             yield response
+
+def createHttpHeaders(additionalHeaders=None, userAgent=None):
+    headers = {} if additionalHeaders is None else dict(additionalHeaders)
+    if userAgent is not None:
+        headers['User-Agent'] = userAgent
+    return ''.join('\r\n{0}: {1}'.format(k, v) for k, v in sorted(headers.items()))
+
+def findCookies(Headers, name):
+    return [cookie.split('=',1)[-1].strip() for cookie in Headers.get('Cookie','').split(';') if cookie.strip().startswith('{}='.format(name))]
