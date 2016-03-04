@@ -43,64 +43,16 @@ from seecr.zulutime import ZuluTime
 from os.path import isfile
 from .utils import findCookies
 
-class Session(UserDict):
-    def __init__(self, sessionId):
-        d = {'id': sessionId}
-        UserDict.__init__(self, d)
-
-    def setLink(self, caption, key, value):
-        return '<a href="?%s">%s</a>' % (urlencode({key: '+' + repr(value)}), caption)
-
-    def unsetLink(self, caption, key, value):
-        return '<a href="?%s">%s</a>' % (urlencode({key: '-' + repr(value)}), caption)
-
 class SessionHandler(Observable):
-    def __init__(self, secretSeed=None, nameSuffix='', timeout=3600*2):
-        Observable.__init__(self)
-        self._secretSeed = secretSeed or self.createSeed()
-        self._cookieName = 'session' + nameSuffix
-        self._timeout = timeout
-        self._sessions = TimedDictionary(timeout)
+    def handleRequest(self, Headers, *args, **kwargs):
+        sessionIds = findCookies(Headers=Headers, name=self.call.cookieName())
+        cookieDict = None if len(sessionIds) <1 else self.call.validateCookie(sessionIds[0])
 
-    def handleRequest(self, RequestURI='', Client=None, Headers={}, arguments = {}, *args, **kwargs):
-        sessionIds = findCookies(Headers=Headers, name=self._cookieName)
-        session = None if len(sessionIds) <1 else self._sessions.get(sessionIds[0], None)
+        if cookieDict is None:
+            cookieDict = self.call.createCookie(dict())
 
-        if session is None:
-            clientaddress, ignoredPort = Client
-            sessionid = md5('%s%s%s%s' % (time(), randint(0, 9999999999), clientaddress, self._secretSeed)).hexdigest()
-            session = Session(sessionid)
-            self._sessions[session['id']] = session
-        else:
-            self._sessions.touch(session['id'])
+        yield insertHeader(
+            compose(self.all.handleRequest(session=cookieDict['value'], Headers=Headers, *args, **kwargs)),
+            cookieDict['header']
+        )
 
-        extraHeader = 'Set-Cookie: %s=%s; path=/; Expires=%s' % (self._cookieName, session['id'], self._zulutime().add(seconds=self._timeout).rfc1123())
-
-        result = compose(self.all.handleRequest(session=session, arguments=arguments, RequestURI=RequestURI, Client=Client, Headers=Headers, *args, **kwargs))
-
-        for response in insertHeader(result, extraHeader) :
-            yield response
-
-    def _zulutime(self):
-        return ZuluTime()
-
-    @staticmethod
-    def createSeed():
-        return ''.join(choice(ascii_letters) for i in xrange(20))
-
-    @classmethod
-    def seedFromFile(cls, filename):
-        if isfile(filename):
-            seed = open(filename).read().strip()
-            if seed:
-                return seed
-        seed = cls.createSeed()
-        with open(filename, 'w') as f:
-            f.write(seed)
-        return seed
-
-#steps:
-#Generate some kind of unique id. bijv. md5(time() + ip + secret_seed)
-#set the cookie name,value pairs
-    #some kind of escaping
-#request cookie must be taken into consideration (if existing, don't generate a new session)

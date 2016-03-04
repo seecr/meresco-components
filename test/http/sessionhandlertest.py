@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 SURF http://www.surf.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -31,8 +31,10 @@
 #
 ## end license ##
 
-from meresco.components.http import SessionHandler, utils
-from weightless.core import asString, consume
+from meresco.components.http import SessionHandler, utils, CookieMemoryStore
+from meresco.components.http.utils import CRLF, findCookies
+from weightless.core import asString, consume, asList
+from weightless.http import parseHeaders
 from seecr.test import CallTrace, SeecrTestCase
 from seecr.zulutime import ZuluTime
 from os.path import join
@@ -41,7 +43,9 @@ from os.path import join
 class SessionHandlerTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        self.handler = SessionHandler(secretSeed='SessionHandlerTest')
+        self.handler = SessionHandler()
+        self.cookiestore = CookieMemoryStore('session')
+        self.handler.addObserver(self.cookiestore)
         self.handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
         self.observer = CallTrace('Observer')
         self.handler.addObserver(self.observer)
@@ -58,7 +62,7 @@ class SessionHandlerTest(SeecrTestCase):
 
         self.assertEquals(1, len(called))
         session = called[0]['kwargs']['session']
-        self.assertTrue(session)
+        self.assertEqual({}, session)
         self.assertEquals({'a':'b'}, called[0]['kwargs']['Headers'])
         self.assertTrue(('127.0.0.1', 12345), called[0]['kwargs']['Client'])
         header, body = result.split(utils.CRLF*2,1)
@@ -67,25 +71,7 @@ class SessionHandlerTest(SeecrTestCase):
         headerParts = header.split(utils.CRLF)
         self.assertEquals("HTTP/1.0 200 OK", headerParts[0])
         sessionCookie = [p for p in headerParts[1:] if 'Set-Cookie' in p][0]
-        self.assertTrue(sessionCookie.startswith('Set-Cookie: session='))
-        self.assertTrue(sessionCookie.endswith('; path=/; Expires=Tue, 27 Jan 2015 15:34:45 GMT'))
-        self.assertEquals('Set-Cookie: session=%s; path=/; Expires=Tue, 27 Jan 2015 15:34:45 GMT' % session['id'], sessionCookie)
-
-    def testCreateSessionWithName(self):
-        self.handler = SessionHandler(secretSeed='SessionHandlerTest', nameSuffix='Mine')
-        self.observer = CallTrace('Observer')
-        self.handler.addObserver(self.observer)
-        def handleRequest(*args, **kwargs):
-            yield  utils.okHtml
-            yield '<html/>'
-        self.observer.handleRequest = handleRequest
-        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345)))
-        header, body = result.split(utils.CRLF*2,1)
-        self.assertTrue('Set-Cookie' in header, header)
-        headerParts = header.split(utils.CRLF)
-        self.assertEquals("HTTP/1.0 200 OK", headerParts[0])
-        sessionCookie = [p for p in headerParts[1:] if 'Set-Cookie' in p][0]
-        self.assertTrue(sessionCookie.startswith('Set-Cookie: sessionMine='), sessionCookie)
+        self.assertTrue(sessionCookie.startswith('Set-Cookie: session'))
 
     def testRetrieveCookie(self):
         sessions = []
@@ -93,8 +79,11 @@ class SessionHandlerTest(SeecrTestCase):
             sessions.append(session)
             yield  utils.okHtml + '<html/>'
         self.observer.handleRequest = handleRequest
-        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={}))
-        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % sessions[0]['id']}))
+        headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})).split(CRLF*2,1)[0]
+        headers = parseHeaders(headers)
+        self.assertTrue('Set-Cookie' in headers, headers)
+        cookie = findCookies(headers, self.cookiestore.cookieName(), 'Set-Cookie')[0]
+        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': '{0}={1}'.format(self.cookiestore.cookieName(), cookie)}))
         self.assertEquals(sessions[0], sessions[1])
         self.assertEquals(id(sessions[0]),id(sessions[1]))
 
@@ -104,63 +93,9 @@ class SessionHandlerTest(SeecrTestCase):
             sessions.append(session)
             yield  utils.okHtml + '<html/>'
         self.observer.handleRequest = handleRequest
-        consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % 'injected_id'}))
-        self.assertNotEqual('injected_id', sessions[0]['id'])
-
-    def testSetSessionVarsWithLink(self):
-        arguments = {}
-        def handleRequest(session=None, *args, **kwargs):
-            arguments.update(kwargs)
-            yield session.setLink('setvalue', 'key', 'value1')
-            yield session.unsetLink('unsetvalue', 'key', 'value2')
-        self.observer.handleRequest = handleRequest
-        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={}))
-        self.assertEquals(  '<a href="?key=%2B%27value1%27">setvalue</a>' +
-                            '<a href="?key=-%27value2%27">unsetvalue</a>', result)
-
-    def testSimpleDataTypeArgumentsViaURL(self):
-        def handleRequest(session=None, *args, **kwargs):
-            yield session.setLink('linktitle', 'key', ('a simple tuple',))
-        self.observer.handleRequest = handleRequest
-        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={}))
-        self.assertEquals("""<a href="?key=%2B%28%27a+simple+tuple%27%2C%29">linktitle</a>""", result)
-
-    def testCustomSessionTimeout(self):
-        HALF_AN_HOUR = 3600 / 2
-        currentTime = 123456789
-        sessions = []
-        def handleRequest(session=None, *args, **kwargs):
-            sessions.append(session)
-            yield  utils.okHtml + '<html/>'
-        handler = SessionHandler(secretSeed='SessionHandlerTest', timeout=HALF_AN_HOUR)
-        handler._sessions._now = lambda: currentTime
-        observer = CallTrace('Observer')
-        observer.handleRequest = handleRequest
-        handler.addObserver(observer)
-
-        result = asString(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345)))
-        firstSessionId = self.assertSessionCookie(result)
-        handler._sessions._now = lambda: currentTime + HALF_AN_HOUR - 1
-        result = asString(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId}))
-        sessionIdHalfAnHourMinusOne = self.assertSessionCookie(result)
-
-        self.assertEquals(firstSessionId, sessionIdHalfAnHourMinusOne)
-
-        handler._sessions._now = lambda: currentTime + HALF_AN_HOUR + 1
-        result = asString(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId}))
-        sessionIdHalfAnHourPlusOne = self.assertSessionCookie(result)
-
-        self.assertEquals(firstSessionId, sessionIdHalfAnHourPlusOne)
-
-        handler._sessions._now = lambda: currentTime + (HALF_AN_HOUR * 2) + 2
-        result = asString(handler.handleRequest(RequestURI='/path'    , Client=('127.0.0.1', 12345), Headers={'Cookie': 'session=%s' % firstSessionId}))
-        sessionIdJustExpired = self.assertSessionCookie(result)
-
-        self.assertNotEqual(firstSessionId, sessionIdJustExpired)
-
-    def testSecretSeed(self):
-        self.assertEquals(20, len(SessionHandler()._secretSeed))
-        self.assertNotEqual(SessionHandler()._secretSeed, SessionHandler()._secretSeed)
+        headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': '%s=%s' % (self.cookiestore.cookieName(), 'injected_id')})).split(CRLF*2,1)[0]
+        headers = parseHeaders(headers)
+        self.assertTrue('injected_id' not in headers['Set-Cookie'])
 
     def testPassThroughOfCallables(self):
         def callableMethod():
@@ -173,45 +108,10 @@ class SessionHandlerTest(SeecrTestCase):
             yield "THE END"
 
         self.observer.handleRequest = handleRequest
-        result = list(self.handler.handleRequest(Client=('127.0.0.1', 12345)))
+        result = asList(self.handler.handleRequest(Headers={}))
         self.assertEquals(callableMethod, result[0])
         self.assertEquals("HTTP/1.0 200 OK\r\n", result[1])
         self.assertEquals("\r\nBODY", result[3])
         self.assertEquals(callableMethod, result[4])
         self.assertTrue(result[2].startswith('Set-Cookie: session'), result[2])
         self.assertEquals("THE END", result[5])
-
-    def testSeedFromFile(self):
-        seedfile = join(self.tempdir, 'seed')
-        seed = SessionHandler.seedFromFile(seedfile)
-        self.assertEquals(20, len(seed))
-        seed2 = SessionHandler.seedFromFile(seedfile)
-        self.assertEquals(seed, seed2)
-        self.assertEquals(seed, open(seedfile).read())
-        with open(seedfile, 'w') as f:
-            f.write('123')
-        self.assertEquals('123', SessionHandler.seedFromFile(seedfile))
-        with open(seedfile, 'w') as f:
-            f.write('123\n')
-        self.assertEquals('123', SessionHandler.seedFromFile(seedfile))
-        with open(seedfile, 'w') as f:
-            f.write('') # empty files are regenerated
-        seed = SessionHandler.seedFromFile(seedfile)
-        self.assertEquals(20, len(seed))
-
-    def assertSessionCookie(self, handleRequestOutput, nameSuffix=''):
-        header, body = handleRequestOutput.split(utils.CRLF*2,1)
-        headerParts = header.split(utils.CRLF)
-        sessionCookie = [p for p in headerParts[1:] if 'Set-Cookie' in p][0]
-        cookieStartStr = 'Set-Cookie: session%s=' % nameSuffix
-        self.assertTrue(sessionCookie.startswith(cookieStartStr), sessionCookie)
-
-        sessionId = sessionCookie[len(cookieStartStr):sessionCookie.find(';')]
-        return sessionId if sessionId else self.fail('Cookie-header has no value', sessionCookie)
-
-# Cookie bevat:
-# - id (session)
-# - time/date
-# - expiration
-# - IPAdress (Client)
-# - MD5( bovenstaande + secret)

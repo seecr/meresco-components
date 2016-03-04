@@ -130,6 +130,9 @@ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
 
 
 def insertHeader(httpResponse, extraHeader):
+    if not extraHeader:
+        yield httpResponse
+        return
     alreadyDone = False
     for response in httpResponse:
         if response is Yield or callable(response):
@@ -152,5 +155,5 @@ def createHttpHeaders(additionalHeaders=None, userAgent=None):
         headers['User-Agent'] = userAgent
     return ''.join('\r\n{0}: {1}'.format(k, v) for k, v in sorted(headers.items()))
 
-def findCookies(Headers, name):
-    return [cookie.split('=',1)[-1].strip() for cookie in Headers.get('Cookie','').split(';') if cookie.strip().startswith('{}='.format(name))]
+def findCookies(Headers, name, CookieKey='Cookie'):
+    return [cookie.split('=',1)[-1].strip() for cookie in Headers.get(CookieKey,'').split(';') if cookie.strip().startswith('{}='.format(name))]
