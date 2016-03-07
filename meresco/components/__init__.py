@@ -54,7 +54,6 @@ from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownExceptio
 from parsearguments import ParseArguments
 from periodiccall import PeriodicCall
 from periodicdownload import PeriodicDownload
-from reindex import Reindex
 from renamecqlindex import RenameCqlIndex
 from renamefieldforexact import RenameFieldForExact
 from requestscope import RequestScope
@@ -62,7 +61,6 @@ from rewritepartname import RewritePartname
 from rss import Rss
 from rssitem import RssItem
 from schedule import Schedule
-from storagecomponent import StorageComponent, defaultSplit, defaultJoin
 from timedmessagecache import TimedMessageCache, BackoffException
 from venturi import Venturi
 from xml2fields import Xml2Fields

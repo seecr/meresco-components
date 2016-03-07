@@ -36,14 +36,10 @@
 from os import getuid
 assert getuid() != 0, "Do not run tests as 'root'"
 
-from os import system                             #DO_NOT_DISTRIBUTE
-from sys import path as sysPath                   #DO_NOT_DISTRIBUTE
-system('find .. -name "*.pyc" | xargs rm -f')     #DO_NOT_DISTRIBUTE
-                                                  #DO_NOT_DISTRIBUTE
-from glob import glob                             #DO_NOT_DISTRIBUTE
-for path in glob('../deps.d/*'):                  #DO_NOT_DISTRIBUTE
-    sysPath.insert(0, path)                       #DO_NOT_DISTRIBUTE
-sysPath.insert(0,'..')                            #DO_NOT_DISTRIBUTE
+from os import system                            #DO_NOT_DISTRIBUTE
+system('find .. -name "*.pyc" | xargs rm -f')    #DO_NOT_DISTRIBUTE
+from seecrdeps import includeParentAndDeps       #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__, scanForDeps=True) #DO_NOT_DISTRIBUTE
 
 import unittest
 from warnings import simplefilter
@@ -73,7 +69,6 @@ from parseargumentstest import ParseArgumentsTest
 from packetlistenertest import PacketListenerTest
 from periodiccalltest import PeriodicCallTest
 from periodicdownloadtest import PeriodicDownloadTest
-from reindextest import ReindexTest
 from renamecqlindextest import RenameCqlIndexTest
 from renamefieldforexacttest import RenameFieldForExactTest
 from requestscopetest import RequestScopeTest
@@ -82,7 +77,6 @@ from rssitemtest import RssItemTest
 from rsstest import RssTest
 from scheduletest import ScheduleTest
 from sorteditertoolstest import SortedItertoolsTest
-from storagecomponenttest import StorageComponentTest
 from timeddictionarytest import TimedDictionaryTest
 from timedmessagecachetest import TimedMessageCacheTest
 from tokenizefieldlettest import TokenizeFieldletTest
@@ -94,7 +88,6 @@ from xmlpumptest import XmlPumpTest
 from xmlxpathtest import XmlXPathTest
 from xpath2fieldtest import XPath2FieldTest
 from xsltcrosswalktest import XsltCrosswalkTest
-
 
 from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
 
