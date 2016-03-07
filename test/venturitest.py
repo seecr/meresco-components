@@ -72,8 +72,8 @@ class VenturiTest(SeecrTestCase):
         inputEvent = fromstring("""<document><part name="partone">&lt;some&gt;message&lt;/some&gt;</part><part name="parttwo"><second>message</second></part></document>""")
         interceptor = CallTrace('Interceptor', methods={'add': yieldNothing})
         v = createVenturiHelix(
-                [dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True), dict(partname='parttwo', xpath='/document/part/second')], 
-                [], 
+                [dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True), dict(partname='parttwo', xpath='/document/part/second')],
+                [],
                 interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add', 'add'], [m.name for m in interceptor.calledMethods])
@@ -96,32 +96,31 @@ class VenturiTest(SeecrTestCase):
 
     def testReadFromStorage(self):
         inputEvent = fromstring('<document/>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getData', 'all_unknown', 'any_unknown', 'call_unknown'])
         interceptor.methods['add'] = yieldNothing
         storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
-        storage.returnValues['isAvailable'] = (True, True)
-        storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')
+        storage.returnValues['getData'] = '<some>this is partone</some>'
         v = createVenturiHelix([{'partname': 'partone', 'xpath': '/document/part[@name="partone"]/text()'}], [], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
         self.assertEquals('<some>this is partone</some>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
-        self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
+        self.assertEquals(['begin', 'getData'], storage.calledMethodNames())
+        self.assertEquals(dict(identifier='identifier', name='partone'), storage.calledMethods[1].kwargs)
 
     def testReadFromStorageAsString(self):
         inputEvent = fromstring('<document/>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'call_unknown'], methods={'add': yieldNothing})
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getData', 'all_unknown', 'call_unknown'], methods={'add': yieldNothing})
         storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
-        storage.returnValues['isAvailable'] = (True, True)
-        storage.returnValues['getStream'] = StringIO('<some>this is partone</some>')
+        storage.returnValues['getData'] = '<some>this is partone</some>'
         v = createVenturiHelix([dict(partname='partone', xpath='/document/part[@name="partone"]/text()', asString=True)], [], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
         self.assertEquals('<some>this is partone</some>', interceptor.calledMethods[1].kwargs['data'])
-        self.assertEquals(('identifier', 'partone'), storage.calledMethods[1].args)
+        self.assertEquals(dict(identifier='identifier', name='partone'), storage.calledMethods[1].kwargs)
 
     def testCouldHave(self):
         inputEvent = fromstring('<document><one/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getData', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
         v = createVenturiHelix([], [{'partname': 'one', 'xpath': '/document/one'}], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
@@ -129,7 +128,7 @@ class VenturiTest(SeecrTestCase):
 
     def testCouldHaveAsString(self):
         inputEvent = fromstring('<document><one>some text</one></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['getStream', 'unknown'], methods={'add': yieldNothing})
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getData', 'unknown'], methods={'add': yieldNothing})
         v = createVenturiHelix([], [dict(partname='one', xpath='/document/one', asString=True)], interceptor)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
@@ -137,21 +136,20 @@ class VenturiTest(SeecrTestCase):
 
     def testCouldHaveInStorage(self):
         inputEvent = fromstring('<document><other/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getData', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
         storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
-        storage.returnValues['isAvailable'] = (True, True)
-        storage.returnValues['getStream'] = StringIO('<one/>')
+        storage.returnValues['getData'] = '<one/>'
         v = createVenturiHelix([], [{'partname': 'one', 'xpath': '/document/one'}], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
         self.assertEquals('<one/>', lxmltostring(interceptor.calledMethods[1].kwargs['lxmlNode']))
-        self.assertEquals(('identifier', 'one'), storage.calledMethods[1].args)
+        self.assertEquals(dict(identifier='identifier', name='one'), storage.calledMethods[1].kwargs)
 
     def testCouldHaveButDoesnot(self):
         inputEvent = fromstring('<document><other/></document>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['getData', 'all_unknown', 'any_unknown', 'call_unknown'], methods={'add': yieldNothing})
         storage = CallTrace('Storage', ignoredAttributes=['add', 'all_unknown'])
-        storage.exceptions['getStream'] = KeyError('Part not available')
+        storage.exceptions['getData'] = KeyError('Part not available')
         v = createVenturiHelix([{'partname': 'other', 'xpath': '/document/other'}], [{'partname': 'one', 'xpath': '/document/one'}], interceptor, storage)
         list(compose(v.all.add('identifier', 'document', inputEvent)))
         self.assertEquals(['begin', 'add'], [m.name for m in interceptor.calledMethods])
@@ -196,9 +194,9 @@ class VenturiTest(SeecrTestCase):
 
     def testPartInShouldDoesNotExist(self):
         inputEvent = fromstring('<document/>')
-        interceptor = CallTrace('Interceptor', ignoredAttributes=['begin', 'isAvailable', 'getStream', 'all_unknown', 'any_unknown', 'call_unknown'])
+        interceptor = CallTrace('Interceptor', ignoredAttributes=['begin', 'getData', 'all_unknown', 'any_unknown', 'call_unknown'])
         storage = CallTrace('Storage', ignoredAttributes=['begin', 'add'])
-        storage.returnValues['isAvailable'] = (False, False)
+        storage.exceptions['getData'] = KeyError('no')
         v = createVenturiHelix([{'partname': 'partone', 'xpath': '/document/part[@name="partone"]/text()'}], [], interceptor, storage)
         try:
             list(compose(v.all.add('identifier', 'document', inputEvent)))
@@ -206,7 +204,7 @@ class VenturiTest(SeecrTestCase):
         except VenturiException:
             pass
         self.assertEquals([], [m.name for m in interceptor.calledMethods])
-        self.assertEquals(['isAvailable'], [m.name for m in storage.calledMethods])
+        self.assertEquals(['getData'], [m.name for m in storage.calledMethods])
 
     def testDeleteIsAsynchronous(self):
         __callstack_var_tx__ = CallTrace('Transaction')

@@ -37,6 +37,6 @@ class RewritePartname(Transparent):
 
     def add(self, identifier, partname, **kwargs):
         yield self.all.add(identifier=identifier, partname=self._partname, **kwargs)
-    
-    def yieldRecord(self, identifier, partname):
-        yield self.all.yieldRecord(identifier=identifier, partname=self._partname)
+
+    def getData(self, identifier, name):
+        yield self.call.getData(identifier=identifier, name=self._partname)

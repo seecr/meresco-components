@@ -8,7 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -86,10 +86,11 @@ class Venturi(Observable):
             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
         if len(matches) == 1:
             return self._elementOrText2Text(matches[0]) if asString else self._nodeOrText2ElementTree(matches[0])
-        if self.call.isAvailable(identifier, partname) == (True, True):
-            stream = self.call.getStream(identifier, partname)
-            return stream.read() if asString else parse(stream)
-        return None
+        try:
+            data = self.call.getData(identifier=identifier, name=partname)
+            return data if asString else parse(StringIO(data))
+        except KeyError:
+            return None
 
     def _nodeOrText2ElementTree(self, nodeOrText):
         if type(nodeOrText) == _Element:

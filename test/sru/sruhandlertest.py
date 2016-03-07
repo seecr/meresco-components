@@ -8,7 +8,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2014 SURF http://www.surf.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
@@ -164,7 +164,7 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in 'record')
+        observer.returnValues['getData'] = 'record'
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -175,8 +175,8 @@ class SruHandlerTest(SeecrTestCase):
         queryArguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
         sruArguments = queryArguments
         sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
-        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
-        self.assertEquals(['executeQuery'] + ['yieldRecord', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        consume(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
+        self.assertEquals(['executeQuery'] + ['getData', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([
             dict(fieldname='field0', maxTerms=1, sortBy='somevalue'),
             dict(fieldname='fie:ld1', maxTerms=2, sortBy='somevalue'),
@@ -193,7 +193,7 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in "record")
+        observer.returnValues['getData'] = "record"
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -216,7 +216,7 @@ class SruHandlerTest(SeecrTestCase):
             raise StopIteration(response)
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['yieldRecord'] = lambda *a, **kw: (x for x in "record")
+        observer.returnValues['getData'] = "record"
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -239,11 +239,11 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        yieldRecordCalls = []
-        def yieldRecord(identifier, partname):
-            yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), partname)
-        observer.yieldRecord = yieldRecord
+        getDataCalls = []
+        def getData(identifier, name):
+            getDataCalls.append(1)
+            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+        observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -333,11 +333,11 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        yieldRecordCalls = []
-        def yieldRecord(identifier, partname):
-            yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), partname)
-        observer.yieldRecord = yieldRecord
+        getDataCalls = []
+        def getData(identifier, name):
+            getDataCalls.append(1)
+            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+        observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -358,7 +358,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals('<aap&noot>', extraRecordData1.kwargs['hit'].id)
         self.assertEquals('vuur', extraRecordData2.kwargs['hit'].id)
 
-        self.assertEquals(6, sum(yieldRecordCalls))
+        self.assertEquals(6, sum(getDataCalls))
 
         resultXml = parse(StringIO(result))
         ids = resultXml.xpath('//srw:recordIdentifier/text()', namespaces={'srw':"http://www.loc.gov/zing/srw/"})
@@ -450,11 +450,11 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        yieldRecordCalls = []
-        def yieldRecord(identifier, partname):
-            yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
-        observer.yieldRecord = yieldRecord
+        getDataCalls = []
+        def getData(identifier, name):
+            getDataCalls.append(1)
+            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name)
+        observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -494,11 +494,11 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        yieldRecordCalls = []
-        def yieldRecord(identifier, partname):
-            yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, partname)
-        observer.yieldRecord = yieldRecord
+        getDataCalls = []
+        def getData(identifier, name):
+            getDataCalls.append(1)
+            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name)
+        observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -520,29 +520,10 @@ class SruHandlerTest(SeecrTestCase):
             </srw:extraRecordData>
         </srw:record>""", strippedResult)
 
-    def testRecordPackingXmlAndSuspendObjects(self):
-        def Suspend():
-            pass
-        def yieldRecord(**kwargs):
-            yield '<tag>'
-            yield Suspend
-            yield '</tag>'
-        observer = CallTrace('observer')
-        observer.methods['yieldRecord'] = yieldRecord
-        component = SruHandler()
-        component.addObserver(observer)
-
-        result = list(compose(component._writeRecordData(recordSchema='schema', recordPacking='string', recordId='identifier')))
-        self.assertEquals(['<srw:recordData>',
-            '&lt;tag&gt;',
-            Suspend,
-            '&lt;/tag&gt;',
-            '</srw:recordData>'], result)
-
     @stderr_replaced
-    def testIOErrorInWriteRecordData(self):
+    def testKeyErrorInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
-        observer.exceptions["yieldRecord"] = IOError()
+        observer.exceptions["getData"] = KeyError()
         component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
@@ -553,7 +534,7 @@ class SruHandlerTest(SeecrTestCase):
     @stderr_replaced
     def testExceptionInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
-        observer.exceptions["yieldRecord"] = Exception("Test Exception")
+        observer.exceptions["getData"] = Exception("Test Exception")
         component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
@@ -599,11 +580,11 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        yieldRecordCalls = []
-        def yieldRecord(identifier, partname):
-            yieldRecordCalls.append(1)
-            yield "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), partname)
-        observer.yieldRecord = yieldRecord
+        getDataCalls = []
+        def getData(identifier, name):
+            getDataCalls.append(1)
+            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+        observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -737,7 +718,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
-        observer.methods['yieldRecord'] = lambda *args, **kwargs: (x for x in '<bike/>')
+        observer.returnValues['getData'] = '<bike/>'
 
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)

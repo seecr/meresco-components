@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -25,7 +25,6 @@
 ## end license ##
 
 from meresco.core import Transparent
-from weightless.core import compose
 from xml.sax.saxutils import escape as xmlEscape
 
 class CombineParts(Transparent):
@@ -33,29 +32,6 @@ class CombineParts(Transparent):
         Transparent.__init__(self)
         self._combinations = combinations
         self._allowMissingParts = allowMissingParts or []
-
-    def yieldRecord(self, identifier, partname):
-        if not partname in self._combinations.keys():
-            yield self.all.yieldRecord(identifier=identifier, partname=partname)
-            return
-
-        resultparts = []
-        for subpart in self._combinations[partname]:
-            subgenerator = compose(self.all.yieldRecord(identifier=identifier, partname=subpart))
-            try:
-                resultparts.append((subpart, subgenerator.next(), subgenerator))
-            except IOError:
-                if subpart not in self._allowMissingParts:
-                    raise
-
-        yield '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document">'
-        for subpart, firstResult, remaining in resultparts:
-            yield '<doc:part name="%s">' % xmlEscape(subpart)
-            yield firstResult
-            for data in remaining:
-                yield data
-            yield '</doc:part>'
-        yield '</doc:document>'
 
     def getData(self, identifier, name):
         if not name in self._combinations.keys():

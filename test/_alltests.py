@@ -51,7 +51,6 @@ from contextsettest import ContextSetTest
 from convertertest import ConverterTest
 from cqlconversiontest import CQLConversionTest
 from crosswalktest import CrosswalkTest
-from datapumptest import DataPumpTest
 from drilldownqueriestest import DrilldownQueriesTest
 from directorywatchertest import DirectoryWatcherTest
 from fieldletstest import FieldletsTest

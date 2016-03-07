@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -61,11 +61,11 @@ class SrwTest(SeecrTestCase):
             methods={
                 'executeQuery': executeQuery,
             },
+            returnValues={'getData': 'data'},
             emptyGeneratorMethods=[
                 'extraResponseData',
                 'echoedExtraRequestData',
                 'additionalDiagnosticDetails',
-                'yieldRecord',
                 'extraRecordData'
             ])
         self.sruHandler.addObserver(self.observer)
@@ -144,7 +144,8 @@ Content-Type: text/xml; charset=utf-8
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
         self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
-        self.observer.methods['yieldRecord'] = lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
+        del self.observer.returnValues['getData']
+        self.observer.methods['getData'] = lambda identifier, name: "<DATA>%s-%s</DATA>" % (identifier, name)
 
         result = "".join(compose(self.srw.handleRequest(Body=request)))
 
@@ -186,7 +187,8 @@ Content-Type: text/xml; charset=utf-8
 </SOAP:Envelope>"""
 
         self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
-        self.observer.methods['yieldRecord'] = lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)])
+        del self.observer.returnValues['getData']
+        self.observer.methods['getData'] = lambda identifier, name: "<DATA>%s-%s</DATA>" % (identifier, name)
         response = "".join(compose(self.srw.handleRequest(Body=request)))
 
         echoRequest = """<srw:echoedSearchRetrieveRequest>
@@ -218,7 +220,7 @@ Content-Type: text/xml; charset=utf-8
             pass
         observer = CallTrace(
             methods={
-                'yieldRecord': lambda identifier, partname: (g for g in ["<DATA>%s-%s</DATA>" % (identifier, partname)]),
+                'getData': lambda identifier, partname: "<DATA>%s-%s</DATA>" % (identifier, partname),
                 'executeQuery': executeQuery,
                 'extraResponseData': methodAsGenerator,
                 'echoedExtraRequestData': methodAsGenerator,

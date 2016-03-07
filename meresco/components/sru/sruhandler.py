@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011-2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
@@ -215,13 +215,13 @@ class SruHandler(Observable):
 
     def _writeRecordData(self, recordSchema=None, recordPacking=None, recordId=None):
         yield '<srw:recordData>'
-        yield self._catchErrors(self._yieldRecordForRecordPacking(recordId=recordId, recordSchema=recordSchema, recordPacking=recordPacking), recordSchema, recordId)
+        yield self._catchErrors(self._yieldData(identifier=recordId, recordSchema=recordSchema, recordPacking=recordPacking), recordSchema, recordId)
         yield '</srw:recordData>'
 
     def _catchErrors(self, dataGenerator, recordSchema, recordId):
         try:
             yield dataGenerator
-        except IOError, e:
+        except KeyError, e:
             print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
         except Exception, e:
@@ -230,7 +230,7 @@ class SruHandler(Observable):
 
     def _writeOldStyleExtraRecordData(self, schema, recordPacking, recordId):
         yield '<recordData recordSchema="%s">' % xmlEscape(schema)
-        yield self._catchErrors(self._yieldRecordForRecordPacking(recordId, schema, recordPacking), schema, recordId)
+        yield self._catchErrors(self._yieldData(identifier=recordId, recordSchema=schema, recordPacking=recordPacking), schema, recordId)
         yield '</recordData>'
 
     def _writeExtraRecordData(self, sruArguments=None, recordPacking=None, hit=None, **kwargs):
@@ -254,23 +254,18 @@ class SruHandler(Observable):
             yield '<srw:recordSchema>%s</srw:recordSchema>' % xmlEscape(schema)
             yield '<srw:recordPacking>%s</srw:recordPacking>' % recordPacking
             yield '<srw:recordData>'
-            yield self._catchErrors(self._yieldRecordForRecordPacking(hit.id, schema, recordPacking), schema, hit.id)
+            yield self._catchErrors(self._yieldData(identifier=hit.id, recordSchema=schema, recordPacking=recordPacking), schema, hit.id)
             yield '</srw:recordData>'
             yield '</srw:record>'
         if started:
             yield '</srw:extraRecordData>'
 
-    def _yieldRecordForRecordPacking(self, recordId=None, recordSchema=None, recordPacking=None):
-        generator = compose(self.all.yieldRecord(identifier=recordId, partname=recordSchema))
+    def _yieldData(self, identifier=None, recordSchema=None, recordPacking=None):
+        data = self.call.getData(identifier=identifier, name=recordSchema)
         if recordPacking == 'xml':
-            yield generator
-            return
-        if recordPacking == 'string':
-            for data in generator:
-                if data is Yield or callable(data):
-                    yield data
-                else:
-                    yield xmlEscape(data)
+            yield data
+        elif recordPacking == 'string':
+            yield xmlEscape(data)
         else:
             raise Exception("Unknown Record Packing: %s" % recordPacking)
 

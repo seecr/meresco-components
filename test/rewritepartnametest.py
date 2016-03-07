@@ -6,7 +6,7 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -50,18 +50,18 @@ class RewritePartnameTest(TestCase):
         self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
         self.assertEquals([], result)
 
-    def testYieldRecordPartname(self):
-        def yieldRecord(**kwargs):
-            yield 'data'
+    def testGetDataPartname(self):
+        def getData(**kwargs):
+            return 'data'
         observable = Observable()
-        observer = CallTrace('observer', methods={'yieldRecord': yieldRecord})
+        observer = CallTrace('observer', methods={'getData': getData})
         rewrite = RewritePartname('newPartname')
         rewrite.addObserver(observer)
         observable.addObserver(rewrite)
 
-        result = ''.join(compose(observable.all.yieldRecord(identifier='identifier', partname='oldPartname')))
+        result = ''.join(compose(observable.all.getData(identifier='identifier', name='oldPartname')))
 
-        self.assertEquals(['yieldRecord'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname'}, observer.calledMethods[0].kwargs)
+        self.assertEquals(['getData'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
         self.assertEquals('data', result)
 

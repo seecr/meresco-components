@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -26,7 +26,6 @@
 
 from seecr.test import CallTrace, SeecrTestCase
 from meresco.components import CombineParts
-from weightless.core import compose, asList, asString
 
 class CombinePartsTest(SeecrTestCase):
     def setUp(self):
@@ -34,68 +33,48 @@ class CombinePartsTest(SeecrTestCase):
         self.combine = CombineParts({'together':['one', 'two']})
         self.observer = CallTrace('observer')
         self.combine.addObserver(self.observer)
-        self.observer.methods['yieldRecord'] = lambda identifier, partname: (f for f in ['<%s/>' % partname])
         self.observer.methods['getData'] = lambda identifier, name: '<%s/>' % name
 
     def testPassThroughOtherStuff(self):
-        result = asList(self.combine.yieldRecord(identifier='identifier', partname='partname'))
-        self.assertEquals(['<partname/>'], result)
-        self.assertEquals(['yieldRecord'], self.observer.calledMethodNames())
-        self.assertEquals([dict(identifier='identifier', partname='partname')], [m.kwargs for m in self.observer.calledMethods])
-        self.observer.calledMethods.reset()
-
         result = self.combine.getData(identifier='identifier', name='name')
         self.assertEquals('<name/>', result)
         self.assertEquals(['getData'], self.observer.calledMethodNames())
         self.assertEquals([dict(identifier='identifier', name='name')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogether(self):
-        result = asString(self.combine.yieldRecord(identifier='identifier', partname='together'))
+        result = self.combine.getData(identifier='identifier', name='together')
         expected = '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part><doc:part name="two"><two/></doc:part></doc:document>'
         self.assertEquals(expected, result)
 
-        self.assertEquals(['yieldRecord', 'yieldRecord'], self.observer.calledMethodNames())
-        self.assertEquals([dict(identifier='identifier', partname='one'), dict(identifier='identifier', partname='two')], [m.kwargs for m in self.observer.calledMethods])
-
-        self.observer.calledMethods.reset()
-        result = self.combine.getData(identifier='identifier', name='together')
-        self.assertEquals(expected, result)
+        self.assertEquals(['getData', 'getData'], self.observer.calledMethodNames())
+        self.assertEquals([dict(identifier='identifier', name='one'), dict(identifier='identifier', name='two')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogetherWithOnePartMissingAllowed(self):
         self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
         self.combine.addObserver(self.observer)
-        def yieldRecord(identifier, partname):
-            if partname == 'two':
-                raise IOError('two')
-            yield '<%s/>' % partname
-        self.observer.methods['yieldRecord'] = yieldRecord
-        self.observer.methods['getData'] = lambda identifier, name: asString(yieldRecord(identifier, name))
-        result = asString(self.combine.yieldRecord(identifier='identifier', partname='together'))
-        self.assertEquals('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
+        def getData(identifier, name):
+            if name == 'two':
+                raise KeyError('two')
+            return '<%s/>' % name
+        self.observer.methods['getData'] = getData
         result = self.combine.getData(identifier='identifier', name='together')
         self.assertEquals('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
 
     def testTogetherWithOnePartMissingNotAllowed(self):
-        def yieldRecord(identifier, partname):
-            if partname == 'two':
-                raise IOError('two')
-            yield '<%s/>' % partname
-        self.observer.methods['yieldRecord'] = yieldRecord
-        self.observer.methods['getData'] = lambda identifier, name: asString(yieldRecord(identifier, name))
-        generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
-        self.assertRaises(IOError, generator.next)
-        self.assertRaises(IOError, lambda: self.combine.getData(identifier='identifier', name='together'))
+        def getData(identifier, name):
+            if name == 'two':
+                raise KeyError('two')
+            return '<%s/>' % name
+        self.observer.methods['getData'] = getData
+        self.assertRaises(KeyError, lambda: self.combine.getData(identifier='identifier', name='together'))
 
     def testTogetherWithGivenMissingPartsAllowed(self):
         self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
         self.combine.addObserver(self.observer)
-        def yieldRecord(identifier, partname):
-            if partname == 'one':
-                raise IOError('one')
-            yield '<%s/>' % partname
-        self.observer.methods['yieldRecord'] = yieldRecord
-        self.observer.methods['getData'] = lambda identifier, name: asString(yieldRecord(identifier, name))
-        generator = compose(self.combine.yieldRecord(identifier='identifier', partname='together'))
-        self.assertRaises(IOError, generator.next)
-        self.assertRaises(IOError, lambda: self.combine.getData(identifier='identifier', name='together'))
+        def getData(identifier, name):
+            if name == 'one':
+                raise KeyError('one')
+            return '<%s/>' % name
+        self.observer.methods['getData'] = getData
+        self.assertRaises(KeyError, lambda: self.combine.getData(identifier='identifier', name='together'))
 

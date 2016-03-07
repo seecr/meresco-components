@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2006-2012, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -27,7 +27,6 @@
 
 from meresco.core import Observable
 from weightless.core import DeclineMessage
-from warnings import warn
 
 class FilterDataByName(Observable):
     def __init__(self, included=None, excluded=None):
@@ -43,16 +42,3 @@ class FilterDataByName(Observable):
         if not self._allowed(name):
             raise DeclineMessage()
         return self.call.getData(identifier=identifier, name=name)
-
-class FilterPartByName(FilterDataByName):
-    def __init__(self, *args, **kwargs):
-        FilterDataByName.__init__(self, *args, **kwargs)
-        warn(DeprecationWarning(), "Old FilterPartByName, will be deleted in future version.")
-
-    def yieldRecord(self, identifier, partname):
-        if self._allowed(partname):
-            yield self.all.yieldRecord(identifier=identifier, partname=partname)
-
-    def add(self, partname, **kwargs):
-        if self._allowed(partname):
-            yield self.all.add(partname=partname, **kwargs)
