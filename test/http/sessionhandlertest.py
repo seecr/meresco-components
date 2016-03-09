@@ -44,7 +44,7 @@ class SessionHandlerTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.handler = SessionHandler()
-        self.cookiestore = CookieMemoryStore('session')
+        self.cookiestore = CookieMemoryStore(name='session', timeout=10)
         self.handler.addObserver(self.cookiestore)
         self.handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
         self.observer = CallTrace('Observer')

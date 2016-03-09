@@ -31,7 +31,7 @@ from rfc822 import formatdate
 TWO_WEEKS = 2*7*24*60*60
 
 class CookieMemoryStore(object):
-    def __init__(self, name=None, timeout=TWO_WEEKS):
+    def __init__(self, timeout, name=None):
         self._timeout = timeout
         self._store = TimedDictionary(self._timeout)
         self._name = '{0}{1}'.format('' if name is None else '%s-' % name, uuid4())

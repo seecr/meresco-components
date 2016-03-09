@@ -37,7 +37,7 @@ class CookieMemoryStoreTest(SeecrTestCase):
         name = self.d.cookieName()
         self.assertTrue(name.startswith('name'))
         self.assertEquals(name, self.d.cookieName())
-        self.assertNotEqual(name, CookieMemoryStore().cookieName())
+        self.assertNotEqual(name, CookieMemoryStore(timeout=0.1).cookieName())
 
     def testCreateCookie(self):
         result = self.d.createCookie('username')
