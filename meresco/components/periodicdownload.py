@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2013-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -193,15 +193,16 @@ class PeriodicDownload(Observable):
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
-            error = checkStatusCode200(statusAndHeaders=statusAndHeaders, body=body)
+            decompressedBody, decompressError = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
+            error = checkStatusCode200(statusAndHeaders=statusAndHeaders, body=decompressedBody or body)
             if error:
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
 
-            body, error = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
-            if error:
-                yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
+            if decompressError:
+                yield self._retryAfterError(message=decompressError, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
+            body = decompressedBody
 
             topErrorResponse = _httpErrorStr(statusAndHeaders, body)
             self._reactor.addProcess(self._currentProcess.next)
