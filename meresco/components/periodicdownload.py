@@ -194,7 +194,7 @@ class PeriodicDownload(Observable):
                 return
 
             decompressedBody, decompressError = maybeDecompressBody(compress=self._compress, statusAndHeaders=statusAndHeaders, body=body)
-            error = checkStatusCode200(statusAndHeaders=statusAndHeaders, body=decompressedBody or body)
+            error = checkStatusCode200(statusAndHeaders=statusAndHeaders, body=body if decompressedBody is None else decompressedBody)
             if error:
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
                 return
