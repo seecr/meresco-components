@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -39,4 +39,4 @@ class RewritePartname(Transparent):
         yield self.all.add(identifier=identifier, partname=self._partname, **kwargs)
 
     def getData(self, identifier, name):
-        yield self.call.getData(identifier=identifier, name=self._partname)
+        return self.call.getData(identifier=identifier, name=self._partname)

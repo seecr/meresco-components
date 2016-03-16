@@ -59,7 +59,7 @@ class RewritePartnameTest(TestCase):
         rewrite.addObserver(observer)
         observable.addObserver(rewrite)
 
-        result = ''.join(compose(observable.all.getData(identifier='identifier', name='oldPartname')))
+        result = observable.call.getData(identifier='identifier', name='oldPartname')
 
         self.assertEquals(['getData'], [m.name for m in observer.calledMethods])
         self.assertEquals({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
