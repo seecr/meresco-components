@@ -28,8 +28,6 @@
 #
 ## end license ##
 
-from time import sleep
-
 from unittest import TestCase
 from seecr.test.io import stderr_replaced
 
@@ -229,6 +227,16 @@ class TimedDictionaryTest(TestCase):
         self.assertEquals([], list(timedDict.keys()))
         self.assertEquals(0, len(timedDict._times))
         self.assertEquals(0, len(timedDict._expirationOrder))
+
+    # def testSpeed(self):
+    #     timedDict = TimedDictionary(TWO_HOURS)
+    #     total = 50000
+    #     t0 = time()
+    #     for i in xrange(total):
+    #         timedDict[i] = i + 1
+    #     t1 = time()
+    #     print 'Took per set:', ((t1 - t0) / total)
+
 
 ONE_HOUR = 3600
 TWO_HOURS = ONE_HOUR * 2

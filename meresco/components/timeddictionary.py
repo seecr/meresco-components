@@ -59,10 +59,8 @@ class TimedDictionary(object):
 
     def __setitem__(self, key, value):
         self.purge()
-        try:
+        if key in self._times:
             self._expirationOrder.remove(key)
-        except ValueError:
-            pass
         self._times[key] = self._now()
         self._expirationOrder.append(key)
         self._dictionary[key] = value
@@ -85,7 +83,6 @@ class TimedDictionary(object):
         self._dictionary.clear()
         self._times.clear()
         del self._expirationOrder[:]
-
 
     def size(self):
         self.purge()
