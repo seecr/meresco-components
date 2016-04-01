@@ -30,42 +30,29 @@
 ## end license ##
 
 from handlerequestfilter import HandleRequestFilter
+from netaddr import IPAddress, IPRange, IPNetwork
 
 class IpFilter(HandleRequestFilter):
-
     def __init__(self, name=None, allowedIps=None, allowedIpRanges=None):
         super(IpFilter, self).__init__(name=name, filterMethod=self._filter)
-        self._allowedIps = set(allowedIps) if allowedIps else set()
-        self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
-            for start,end in allowedIpRanges]) if allowedIpRanges else set()
+        self.updateIps(ipAddresses=allowedIps, ipRanges=allowedIpRanges)
 
     def _filter(self, Client, Headers, **kwargs):
-        ipaddress = Client[0] if Client != None else '0.0.0.0'
-        return self.filterIpAddress(ipaddress, Headers)
+        return self.filterIpAddress(Client[0] if Client != None else '0.0.0.0', Headers)
 
     def filterIpAddress(self, ipaddress, Headers=None):
-        if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
-            ipaddress = Headers['X-Meresco-Ipfilter-Fake-Ip']
-
+        ipaddress = IPAddress(Headers['X-Meresco-Ipfilter-Fake-Ip'] 
+            if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress in ['127.0.0.1', '::1'] 
+            else ipaddress)
+        
         if ipaddress in self._allowedIps:
             return True
 
-        ipNumber = self.convertToNumber(ipaddress)
-        for (start, end) in self._allowedIpRanges:
-            if start <= ipNumber <= end:
+        for allowedRange in self._allowedIpRanges:
+            if ipaddress in allowedRange:
                 return True
-
         return False
 
     def updateIps(self, ipAddresses=None, ipRanges=None):
-        if ipAddresses is not None:
-            self._allowedIps = set(ipAddresses)
-        if ipRanges is not None:
-            self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
-                for start,end in ipRanges])
-
-    @staticmethod
-    def convertToNumber(ip):
-        a,b,c,d = [int(x) for x in ip.split('.')]
-        return pow(256,3)*a + pow(256,2)*b + pow(256, 1)*c + d
-
+        self._allowedIps = set(IPAddress(allowedIp) for allowedIp in ipAddresses) if ipAddresses else set()
+        self._allowedIpRanges = set(IPRange(*each) if type(each) is tuple else IPNetwork(each) for each in ipRanges) if ipRanges else set()
