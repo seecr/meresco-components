@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011, 2013-2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -537,7 +537,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         callback() # _processOne.next
         self.assertEquals("removeWriter", reactor.calledMethods[2].name)
         self.assertEquals("addTimer", reactor.calledMethods[3].name)
-        self.assertEquals("%s: Connection refused.\n" % downloader, downloader._err.getvalue())
+        self.assertEquals("%s: Connection to localhost:88 refused.\n" % downloader, downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
     def testInvalidHost(self):
@@ -558,7 +558,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEquals("addWriter", reactor.calledMethods[1].name)
         callback = reactor.calledMethods[1].args[1]
         callback() # _processOne.next
-        self.assertEquals("%s: Connection refused.\n" % downloader, downloader._err.getvalue())
+        self.assertEquals("%s: Connection to 127.0.0.255:9876 refused.\n" % downloader, downloader._err.getvalue())
         self.assertEquals("removeWriter", reactor.calledMethods[2].name)
         self.assertEquals("addTimer", reactor.calledMethods[3].name)
         self.assertReactorStateClean(reactor)
@@ -942,7 +942,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader._err.truncate(0)
         callback()
         self.assertEquals('removeWriter', reactor.calledMethods[-1].name)
-        self.assertEquals("%s: Connection refused.\n" % repr(downloader), downloader._err.getvalue())
+        self.assertEquals("%s: Connection to localhost:11111 refused.\n" % repr(downloader), downloader._err.getvalue())
 
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader.setDownloadAddress('localhost', port)
