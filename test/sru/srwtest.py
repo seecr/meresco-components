@@ -57,11 +57,14 @@ class SrwTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise self.response
             yield
+        def getData(**kwargs):
+            raise StopIteration('data')
+            yield
         self.observer = CallTrace(
             methods={
                 'executeQuery': executeQuery,
+                'getData': getData
             },
-            returnValues={'getData': 'data'},
             emptyGeneratorMethods=[
                 'extraResponseData',
                 'echoedExtraRequestData',
@@ -144,8 +147,11 @@ Content-Type: text/xml; charset=utf-8
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
         self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
-        del self.observer.returnValues['getData']
-        self.observer.methods['getData'] = lambda identifier, name: "<DATA>%s-%s</DATA>" % (identifier, name)
+        del self.observer.methods['getData']
+        def getData(identifier, name):
+            raise StopIteration("<DATA>%s-%s</DATA>" % (identifier, name))
+            yield
+        self.observer.methods['getData'] = getData
 
         result = "".join(compose(self.srw.handleRequest(Body=request)))
 
@@ -187,8 +193,11 @@ Content-Type: text/xml; charset=utf-8
 </SOAP:Envelope>"""
 
         self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
-        del self.observer.returnValues['getData']
-        self.observer.methods['getData'] = lambda identifier, name: "<DATA>%s-%s</DATA>" % (identifier, name)
+        del self.observer.methods['getData']
+        def getData(identifier, name):
+            raise StopIteration("<DATA>%s-%s</DATA>" % (identifier, name))
+            yield
+        self.observer.methods['getData'] = getData
         response = "".join(compose(self.srw.handleRequest(Body=request)))
 
         echoRequest = """<srw:echoedSearchRetrieveRequest>

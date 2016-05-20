@@ -28,19 +28,25 @@ from seecr.test import CallTrace
 from unittest import TestCase
 from meresco.components import FilterDataByName
 from meresco.core import Observable
-from weightless.core import be
+from weightless.core import be, retval
 
 class FilterDataByNameTest(TestCase):
 
     def testFilterOnGetData(self):
-
+        def that(**kwargs):
+            raise StopIteration('<THAT/>')
+            yield
+        def this(**kwargs):
+            raise StopIteration('<THIS/>')
+            yield
         top = be((Observable(),
             (FilterDataByName(included=['thispart']),
-                (CallTrace(returnValues=dict(getData='<THIS/>')),)
+                (CallTrace(methods=dict(getData=this)),)
             ),
             (FilterDataByName(excluded=['thispart']),
-                (CallTrace(returnValues=dict(getData='<THAT/>')),)
+                (CallTrace(methods=dict(getData=that)),)
             )
         ))
-        self.assertEqual('<THIS/>', top.call.getData(identifier='identifier', name='thispart'))
-        self.assertEqual('<THAT/>', top.call.getData(identifier='identifier', name='thatpart'))
+        self.assertEqual('<THIS/>', retval(top.any.getData(identifier='identifier', name='thispart')))
+        self.assertEqual('<THAT/>', retval(top.any.getData(identifier='identifier', name='thatpart')))
+

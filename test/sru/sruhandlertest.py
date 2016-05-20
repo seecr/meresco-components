@@ -163,8 +163,11 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
+        def getData(**kwargs):
+            raise StopIteration('record')
+            yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['getData'] = 'record'
+        observer.methods['getData'] = getData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -192,8 +195,11 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
+        def getData(**kwargs):
+            raise StopIteration('record')
+            yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['getData'] = "record"
+        observer.methods['getData'] = getData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -215,8 +221,11 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
+        def getData(**kwargs):
+            raise StopIteration('record')
+            yield
         observer.methods['executeQuery'] = executeQuery
-        observer.returnValues['getData'] = "record"
+        observer.methods['getData'] = getData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -242,7 +251,8 @@ class SruHandlerTest(SeecrTestCase):
         getDataCalls = []
         def getData(identifier, name):
             getDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+            raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name))
+            yield
         observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
@@ -336,7 +346,8 @@ class SruHandlerTest(SeecrTestCase):
         getDataCalls = []
         def getData(identifier, name):
             getDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+            raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name))
+            yield
         observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
@@ -453,7 +464,8 @@ class SruHandlerTest(SeecrTestCase):
         getDataCalls = []
         def getData(identifier, name):
             getDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name)
+            raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name))
+            yield
         observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
@@ -497,7 +509,8 @@ class SruHandlerTest(SeecrTestCase):
         getDataCalls = []
         def getData(identifier, name):
             getDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name)
+            raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name))
+            yield
         observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
@@ -583,7 +596,8 @@ class SruHandlerTest(SeecrTestCase):
         getDataCalls = []
         def getData(identifier, name):
             getDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+            raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name))
+            yield
         observer.getData = getData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
@@ -714,11 +728,14 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
+        def getData(**kwargs):
+            raise StopIteration('<bike/>')
+            yield
         observer.methods['executeQuery'] = executeQuery
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
-        observer.returnValues['getData'] = '<bike/>'
+        observer.methods['getData'] = getData
 
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
