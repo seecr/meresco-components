@@ -45,11 +45,11 @@ from lxml.etree import parse
 
 from cqlparser import cqlToExpression
 
-from weightless.core import compose, be, consume
+from weightless.core import compose, be, consume, asString
 from meresco.core import Observable
 from meresco.xml import namespaces
 
-from meresco.components import lxmltostring
+from meresco.components import lxmltostring, SequentialStoreAdapter
 from meresco.components.sru.sruparser import SruException
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
@@ -163,11 +163,11 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        def getData(**kwargs):
+        def retrieveData(**kwargs):
             raise StopIteration('record')
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['getData'] = getData
+        observer.methods['retrieveData'] = retrieveData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -179,7 +179,7 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = queryArguments
         sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
         consume(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
-        self.assertEquals(['executeQuery'] + ['getData', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['executeQuery'] + ['retrieveData', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         self.assertEquals([
             dict(fieldname='field0', maxTerms=1, sortBy='somevalue'),
             dict(fieldname='fie:ld1', maxTerms=2, sortBy='somevalue'),
@@ -195,11 +195,11 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        def getData(**kwargs):
+        def retrieveData(**kwargs):
             raise StopIteration('record')
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['getData'] = getData
+        observer.methods['retrieveData'] = retrieveData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -221,11 +221,11 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        def getData(**kwargs):
+        def retrieveData(**kwargs):
             raise StopIteration('record')
             yield
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['getData'] = getData
+        observer.methods['retrieveData'] = retrieveData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
@@ -248,12 +248,12 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        getDataCalls = []
-        def getData(identifier, name):
-            getDataCalls.append(1)
+        retrieveDataCalls = []
+        def retrieveData(identifier, name):
+            retrieveDataCalls.append(1)
             raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name))
             yield
-        observer.getData = getData
+        observer.retrieveData = retrieveData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -343,12 +343,12 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        getDataCalls = []
-        def getData(identifier, name):
-            getDataCalls.append(1)
+        retrieveDataCalls = []
+        def retrieveData(identifier, name):
+            retrieveDataCalls.append(1)
             raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name))
             yield
-        observer.getData = getData
+        observer.retrieveData = retrieveData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -369,7 +369,7 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals('<aap&noot>', extraRecordData1.kwargs['hit'].id)
         self.assertEquals('vuur', extraRecordData2.kwargs['hit'].id)
 
-        self.assertEquals(6, sum(getDataCalls))
+        self.assertEquals(6, sum(retrieveDataCalls))
 
         resultXml = parse(StringIO(result))
         ids = resultXml.xpath('//srw:recordIdentifier/text()', namespaces={'srw':"http://www.loc.gov/zing/srw/"})
@@ -461,12 +461,12 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        getDataCalls = []
-        def getData(identifier, name):
-            getDataCalls.append(1)
+        retrieveDataCalls = []
+        def retrieveData(identifier, name):
+            retrieveDataCalls.append(1)
             raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name))
             yield
-        observer.getData = getData
+        observer.retrieveData = retrieveData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -506,12 +506,12 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        getDataCalls = []
-        def getData(identifier, name):
-            getDataCalls.append(1)
+        retrieveDataCalls = []
+        def retrieveData(identifier, name):
+            retrieveDataCalls.append(1)
             raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name))
             yield
-        observer.getData = getData
+        observer.retrieveData = retrieveData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -536,7 +536,10 @@ class SruHandlerTest(SeecrTestCase):
     @stderr_replaced
     def testKeyErrorInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
-        observer.exceptions["getData"] = KeyError()
+        def retrieveData(**kwargs):
+            raise KeyError()
+            yield
+        observer.methods["retrieveData"] = retrieveData
         component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
@@ -547,7 +550,10 @@ class SruHandlerTest(SeecrTestCase):
     @stderr_replaced
     def testExceptionInWriteRecordData(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
-        observer.exceptions["getData"] = Exception("Test Exception")
+        def retrieveData(**kwargs):
+            raise Exception("Test Exception")
+            yield
+        observer.methods["retrieveData"] = retrieveData
         component = SruHandler()
         component.addObserver(observer)
         result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
@@ -593,12 +599,12 @@ class SruHandlerTest(SeecrTestCase):
             yield
         observer.methods['executeQuery'] = executeQuery
 
-        getDataCalls = []
-        def getData(identifier, name):
-            getDataCalls.append(1)
+        retrieveDataCalls = []
+        def retrieveData(identifier, name):
+            retrieveDataCalls.append(1)
             raise StopIteration("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name))
             yield
-        observer.getData = getData
+        observer.retrieveData = retrieveData
 
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
@@ -728,14 +734,14 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        def getData(**kwargs):
+        def retrieveData(**kwargs):
             raise StopIteration('<bike/>')
             yield
         observer.methods['executeQuery'] = executeQuery
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
         observer.returnValues['extraResponseData'] = (f for f in [])
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
-        observer.methods['getData'] = getData
+        observer.methods['retrieveData'] = retrieveData
 
         result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
         header, body = result.split('\r\n'*2)
@@ -874,6 +880,29 @@ class SruHandlerTest(SeecrTestCase):
             response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
             self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
             self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
+
+    def testGetDataWithAdapter(self):
+        observer = CallTrace(returnValues=dict(getData='<record/>'))
+        adapter = SequentialStoreAdapter()
+        handler = SruHandler()
+        handler.addObserver(adapter)
+        adapter.addObserver(observer)
+        response = Response(total=100, hits=hitsRange(1, 3))
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        def getData(**kwargs):
+            return 'record'
+        observer.methods['executeQuery'] = executeQuery
+        observer.methods['getData'] = getData
+        observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
+        observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
+        observer.methods['extraRecordData'] = lambda hit: (f for f in [])
+        response = asString(handler.searchRetrieve(query="word", recordSchema='schema', recordPacking='string', maximumRecords=2, sruArguments={}))
+        self.assertEquals(['getData', 'getData'], observer.calledMethodNames()[1:4:2])
+        self.assertTrue('<srw:recordData>&lt;record/&gt;</srw:recordData>' in response, response)
+        self.assertEquals({'identifier': '1', 'name': 'schema'}, observer.calledMethods[1].kwargs)
+        self.assertEquals({'identifier': '2', 'name': 'schema'}, observer.calledMethods[3].kwargs)
 
     def testParseDrilldownArguments(self):
         handler = SruHandler(drilldownSortBy='count')

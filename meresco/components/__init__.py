@@ -69,4 +69,5 @@ from xpath2field import XPath2Field
 from xsltcrosswalk import XsltCrosswalk
 from url import parseAbsoluteUrl
 from onlyadddeleteifchanged import OnlyAddDeleteIfChanged
+from sequentialstoreadapter import SequentialStoreAdapter
 

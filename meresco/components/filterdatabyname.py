@@ -41,5 +41,10 @@ class FilterDataByName(Observable):
     def getData(self, identifier, name):
         if not self._allowed(name):
             raise DeclineMessage()
-        result = yield self.any.getData(identifier=identifier, name=name)
+        return self.call.getData(identifier=identifier, name=name)
+
+    def retrieveData(self, identifier, name):
+        if not self._allowed(name):
+            raise DeclineMessage()
+        result = yield self.any.retrieveData(identifier=identifier, name=name)
         raise StopIteration(result)

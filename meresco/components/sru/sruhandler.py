@@ -261,7 +261,7 @@ class SruHandler(Observable):
             yield '</srw:extraRecordData>'
 
     def _yieldData(self, identifier=None, recordSchema=None, recordPacking=None):
-        data = yield self.any.getData(identifier=identifier, name=recordSchema)
+        data = yield self.any.retrieveData(identifier=identifier, name=recordSchema)
         if recordPacking == 'xml':
             yield data
         elif recordPacking == 'string':
