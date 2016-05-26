@@ -33,20 +33,26 @@ from weightless.core import be, retval
 class FilterDataByNameTest(TestCase):
 
     def testFilterOnGetData(self):
-        def that(**kwargs):
-            raise StopIteration('<THAT/>')
+        def retrieveThat(**kwargs):
+            raise StopIteration('<RETRIEVE_THAT/>')
             yield
-        def this(**kwargs):
-            raise StopIteration('<THIS/>')
+        def retrieveThis(**kwargs):
+            raise StopIteration('<RETRIEVE_THIS/>')
             yield
+        def getThat(**kwargs):
+            return '<GET_THAT/>'
+        def getThis(**kwargs):
+            return '<GET_THIS/>'
         top = be((Observable(),
             (FilterDataByName(included=['thispart']),
-                (CallTrace(methods=dict(getData=this)),)
+                (CallTrace(methods=dict(getData=getThis, retrieveData=retrieveThis)),)
             ),
             (FilterDataByName(excluded=['thispart']),
-                (CallTrace(methods=dict(getData=that)),)
+                (CallTrace(methods=dict(getData=getThat, retrieveData=retrieveThat)),)
             )
         ))
-        self.assertEqual('<THIS/>', retval(top.any.getData(identifier='identifier', name='thispart')))
-        self.assertEqual('<THAT/>', retval(top.any.getData(identifier='identifier', name='thatpart')))
+        self.assertEqual('<RETRIEVE_THIS/>', retval(top.any.retrieveData(identifier='identifier', name='thispart')))
+        self.assertEqual('<RETRIEVE_THAT/>', retval(top.any.retrieveData(identifier='identifier', name='thatpart')))
+        self.assertEqual('<GET_THIS/>', top.call.getData(identifier='identifier', name='thispart'))
+        self.assertEqual('<GET_THAT/>', top.call.getData(identifier='identifier', name='thatpart'))
 
