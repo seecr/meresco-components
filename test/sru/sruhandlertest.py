@@ -49,7 +49,7 @@ from weightless.core import compose, be, consume, asString
 from meresco.core import Observable
 from meresco.xml import namespaces
 
-from meresco.components import lxmltostring, SequentialStoreAdapter
+from meresco.components import lxmltostring, RetrieveToGetDataAdapter
 from meresco.components.sru.sruparser import SruException
 from meresco.components.sru import SruHandler, SruParser
 from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
@@ -883,7 +883,7 @@ class SruHandlerTest(SeecrTestCase):
 
     def testGetDataWithAdapter(self):
         observer = CallTrace(returnValues=dict(getData='<record/>'))
-        adapter = SequentialStoreAdapter()
+        adapter = RetrieveToGetDataAdapter()
         handler = SruHandler()
         handler.addObserver(adapter)
         adapter.addObserver(observer)
@@ -891,10 +891,7 @@ class SruHandlerTest(SeecrTestCase):
         def executeQuery(**kwargs):
             raise StopIteration(response)
             yield
-        def getData(**kwargs):
-            return 'record'
         observer.methods['executeQuery'] = executeQuery
-        observer.methods['getData'] = getData
         observer.methods['extraResponseData'] = lambda *a, **kw: (x for x in 'extraResponseData')
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])

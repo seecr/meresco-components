@@ -28,7 +28,6 @@
 
 from meresco.core import Transparent
 from meresco.components import TimedDictionary
-from seecr.utils.generatorutils import generatorReturn
 from weightless.io import TimeoutException
 from time import time as now
 
@@ -60,12 +59,12 @@ class TimedMessageCache(Transparent):
         else:
             found = True
             if not self._cache.hasExpired(key):
-                generatorReturn(value)
+                raise StopIteration(value)
         if self._backoffStarted:
             if self._backoffStarted + self._backoffTimeout < now():
                 self._backoffStarted = None
             elif found:
-                generatorReturn(value)
+                raise StopIteration(value)
             else:
                 raise BackoffException()
         try:
@@ -80,7 +79,8 @@ class TimedMessageCache(Transparent):
                     raise BackoffException()
             if not (self._returnCachedValueInCaseOfException and found):
                 raise
-        generatorReturn(value)
+        raise StopIteration(value)
+        yield
 
 class BackoffException(Exception):
     pass

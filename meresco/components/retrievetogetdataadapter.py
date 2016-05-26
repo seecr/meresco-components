@@ -25,7 +25,7 @@
 
 from meresco.core import Transparent
 
-class SequentialStoreAdapter(Transparent):
+class RetrieveToGetDataAdapter(Transparent):
     def retrieveData(self, identifier, name):
         raise StopIteration(self.call.getData(identifier=identifier, name=name))
         yield

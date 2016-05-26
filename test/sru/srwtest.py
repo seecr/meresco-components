@@ -229,7 +229,6 @@ Content-Type: text/xml; charset=utf-8
             pass
         observer = CallTrace(
             methods={
-                'getData': lambda identifier, partname: "<DATA>%s-%s</DATA>" % (identifier, partname),
                 'executeQuery': executeQuery,
                 'extraResponseData': methodAsGenerator,
                 'echoedExtraRequestData': methodAsGenerator,

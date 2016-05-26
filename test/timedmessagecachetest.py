@@ -28,10 +28,9 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.core import Observable
-from weightless.core import be, retval
+from weightless.core import be, retval, asString
 from weightless.io import TimeoutException
 from meresco.components import TimedMessageCache, BackoffException
-from seecr.utils.generatorutils import asString, generatorReturn
 from time import sleep
 
 class TimedMessageCacheTest(SeecrTestCase):
@@ -66,7 +65,7 @@ class TimedMessageCacheTest(SeecrTestCase):
 
     def testCacheAny(self):
         def someMessage(*args, **kwargs):
-            generatorReturn('result')
+            raise StopIteration('result')
             yield
         self.observer.methods['someMessage'] = someMessage
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
@@ -83,7 +82,7 @@ class TimedMessageCacheTest(SeecrTestCase):
 
     def testClearCache(self):
         def someMessage(*args, **kwargs):
-            generatorReturn('result')
+            raise StopIteration('result')
             yield
         self.observer.methods['someMessage'] = someMessage
         retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
@@ -95,7 +94,7 @@ class TimedMessageCacheTest(SeecrTestCase):
     def testKeepValueInCaseOfError(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True)
         def someMessageResult(*args, **kwargs):
-            generatorReturn('result')
+            raise StopIteration('result')
             yield
         def someMessageError(*args, **kwargs):
             raise RuntimeError("could be any exception")
@@ -124,7 +123,7 @@ class TimedMessageCacheTest(SeecrTestCase):
     def testTimeoutExceptionNotHandledSpecially(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True)
         def someMessageResult(*args, **kwargs):
-            generatorReturn('result')
+            raise StopIteration('result')
             yield
         def someMessageTimeout(*args, **kwargs):
             raise TimeoutException()
@@ -142,7 +141,7 @@ class TimedMessageCacheTest(SeecrTestCase):
     def testTimeoutExceptionTriggersBackoff(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True, backoffTimeout=0.1)
         def someMessageResult(*args, **kwargs):
-            generatorReturn('result')
+            raise StopIteration('result')
             yield
         def someMessageTimeout(*args, **kwargs):
             raise TimeoutException()

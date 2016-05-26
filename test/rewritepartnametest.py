@@ -31,7 +31,7 @@ from unittest import TestCase
 from meresco.core import Observable, asyncnoreturnvalue
 
 from meresco.components import RewritePartname
-from weightless.core import compose
+from weightless.core import compose, retval
 
 class RewritePartnameTest(TestCase):
     def testAddPartname(self):
@@ -62,6 +62,22 @@ class RewritePartnameTest(TestCase):
         result = observable.call.getData(identifier='identifier', name='oldPartname')
 
         self.assertEquals(['getData'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
+        self.assertEquals('data', result)
+
+    def testRetrieveDataPartname(self):
+        def retrieveData(**kwargs):
+            raise StopIteration('data')
+            yield
+        observable = Observable()
+        observer = CallTrace('observer', methods={'retrieveData': retrieveData})
+        rewrite = RewritePartname('newPartname')
+        rewrite.addObserver(observer)
+        observable.addObserver(rewrite)
+
+        result = retval(observable.any.retrieveData(identifier='identifier', name='oldPartname'))
+
+        self.assertEquals(['retrieveData'], [m.name for m in observer.calledMethods])
         self.assertEquals({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
         self.assertEquals('data', result)
 
