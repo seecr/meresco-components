@@ -32,11 +32,11 @@ from xml.sax.saxutils import escape as escapeXml
 from meresco.core import Observable
 from meresco.components.http.utils import okXml
 from meresco.components.http import FileServer
-from os.path import join, dirname, abspath
+from os.path import join
 from warnings import warn
+from meresco.components import usrSharePath
 
-filesDir = join(dirname(abspath(__file__)), 'files')
-
+filesDir = join(usrSharePath, 'autocomplete')
 
 class Autocomplete(Observable):
     def __init__(self, host, port, path, templateQuery, shortname, description, htmlTemplateQuery=None, name=None, **kwargs):

@@ -31,6 +31,11 @@
 #
 ## end license ##
 
+usrSharePath = '/usr/share/meresco-components'
+from os.path import dirname, abspath, join                #DO_NOT_DISTRIBUTE
+mydir = dirname(abspath(__file__))                        #DO_NOT_DISTRIBUTE
+usrSharePath = join(dirname(dirname(mydir)), 'usr-share') #DO_NOT_DISTRIBUTE
+
 from converter import Converter
 from timeddictionary import TimedDictionary
 from xmlcompose import XmlCompose
@@ -41,7 +46,6 @@ from combineparts import CombineParts
 from configuration import Configuration, readConfig
 from contextset import ContextSetList, ContextSet
 from cqlconversion import CqlSearchClauseConversion, CqlMultiSearchClauseConversion
-from crosswalk import Crosswalk
 from directorywatcher import DirectoryWatcher, DirectoryWatcherException
 from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
 from fields2xml import Fields2Xml
@@ -70,4 +74,5 @@ from xsltcrosswalk import XsltCrosswalk
 from url import parseAbsoluteUrl
 from onlyadddeleteifchanged import OnlyAddDeleteIfChanged
 from retrievetogetdataadapter import RetrieveToGetDataAdapter
+
 
