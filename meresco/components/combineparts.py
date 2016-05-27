@@ -33,6 +33,10 @@ class CombineParts(Transparent):
         self._combinations = combinations
         self._allowMissingParts = allowMissingParts or []
 
+    def retrieveData(self, identifier, name):
+        raise StopIteration(self.getData(identifier=identifier, name=name))
+        yield
+
     def getData(self, identifier, name):
         if not name in self._combinations.keys():
             return self.call.getData(identifier=identifier, name=name)
