@@ -10,7 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009-2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -34,6 +34,11 @@
 
 from distutils.core import setup
 from os import walk
+from os.path import join
+
+data_files = []
+for path, dirs, files in walk('usr-share'):
+    data_files.append((path.replace('usr-share', '/usr/share/meresco-components', 1), [join(path, f) for f in files]))
 
 packages = []
 for path, dirs, files in walk('meresco'):
@@ -45,19 +50,7 @@ setup(
     packages = [
         'meresco',                          #DO_NOT_DISTRIBUTE
     ] + packages,
-    package_data={
-        'meresco.components': ['rules/*.rules'],
-        'meresco.components.autocomplete': ['files/*.js', 'files/*.css'],
-        'meresco.components.xml_generic': [
-            'schemas/*',
-            'schemas-lom/*.xsd',
-            'schemas-lom/common/*',
-            'schemas-lom/examples/*',
-            'schemas-lom/extend/*',
-            'schemas-lom/unique/*',
-            'schemas-lom/vocab/*'
-        ]
-    },
+    data_files=data_files,
     version = '%VERSION%',
     url = 'http://seecr.nl',
     author = 'Seecr (Seek You Too B.V.)',
