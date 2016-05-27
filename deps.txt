@@ -8,7 +8,7 @@ python-netaddr
 python-meresco-core (>= 4.0.8)
 python-meresco-core (<< 4.1)
 python-meresco-xml (>= 4.1.7)
-python-meresco-xml (<< 4.3)
+python-meresco-xml (<< 4.4)
 python-pylru (>= 1.0.6)
 python-pylru (<< 1.1)
 python-weightless-core (>= 0.10.6)
