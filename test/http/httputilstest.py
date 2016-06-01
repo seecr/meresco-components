@@ -31,7 +31,7 @@
 ## end license ##
 
 import meresco.components.http.utils as utils
-from meresco.components.http.utils import redirectHttp
+from meresco.components.http.utils import redirectHttp, parseRequestHeaders, parseResponseHeaders
 
 from unittest import TestCase
 
@@ -71,3 +71,21 @@ class HttpUtilsTest(TestCase):
             'Accept': 'gzip',
             }, name='cookiename')
         self.assertEquals(['value'], cookies)
+
+    def testParseRequestHeaders(self):
+        headers = parseRequestHeaders('''GET /path?argument=value HTTP/1.0\r\nAccept: something\r\n\r\nBody data ignored''')
+        self.assertEquals({
+                'HTTPVersion': '1.0',
+                'Headers': {'Accept': 'something'},
+                'Method': 'GET',
+                'RequestURI': '/path?argument=value'
+            }, headers)
+
+    def testParseResponseHeaders(self):
+        headers = parseResponseHeaders('''HTTP/1.0 200 Ok\r\nAccept: something\r\n\r\nBody data ignored''')
+        self.assertEquals({
+                'HTTPVersion': '1.0',
+                'Headers': {'Accept': 'something'},
+                'ReasonPhrase': 'Ok',
+                'StatusCode': '200'
+            }, headers)

@@ -34,6 +34,7 @@
 ## end license ##
 
 from weightless.core import Yield
+from weightless.http import REGEXP, parseHeaders
 
 
 CRLF = "\r\n"
@@ -157,3 +158,14 @@ def createHttpHeaders(additionalHeaders=None, userAgent=None):
 
 def findCookies(Headers, name, CookieKey='Cookie'):
     return [cookie.split('=',1)[-1].strip() for cookie in Headers.get(CookieKey,'').split(';') if cookie.strip().startswith('{}='.format(name))]
+
+def _parseHeaders(regexp, header):
+    headers = regexp.match(header).groupdict()
+    headers['Headers'] = parseHeaders(headers.pop('_headers'))
+    return headers
+
+def parseRequestHeaders(header):
+    return _parseHeaders(REGEXP.REQUEST, header)
+
+def parseResponseHeaders(header):
+    return _parseHeaders(REGEXP.RESPONSE, header)
