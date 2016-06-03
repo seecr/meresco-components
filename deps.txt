@@ -24,4 +24,6 @@ python-pyinotify (<< 0.10)
 python-simplejson (>= 2.0)
 python-seecr-zulutime (>= 0.2.6)
 python-seecr-zulutime (<< 0.3)
+python-seecr-utils (>= 1.0.11)
+python-seecr-utils (<< 1.1)
 lsof
