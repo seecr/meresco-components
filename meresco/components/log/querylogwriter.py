@@ -33,19 +33,20 @@ from meresco.core import Observable
 from weightless.core import NoneOfTheObserversRespond
 
 class QueryLogWriter(Observable):
-    def __init__(self, log=None, scopeNames=None, argumentsSelection=dict(scope='sru', key='arguments'), **kwargs):
+    def __init__(self, log=None, scopeNames=None, argumentsSelection=None, numberOfRecordsSelection=None, **kwargs):
         Observable.__init__(self, **kwargs)
         self._log = self.call if log is None else log
         self._scopeNames = () if scopeNames is None else scopeNames
-        self._argumentSelectionScope = argumentsSelection['scope']
-        self._argumentSelectionKey = argumentsSelection['key']
+        self._argumentSelectionScope = 'sru' if argumentsSelection is None else argumentsSelection['scope']
+        self._argumentSelectionKey = 'arguments' if argumentsSelection is None else argumentsSelection['key']
+        self._numberOfRecordsSelectionScope = 'sru' if numberOfRecordsSelection is None else numberOfRecordsSelection['scope']
+        self._numberOfRecordsSelectionKey = 'numberOfRecords' if numberOfRecordsSelection is None else numberOfRecordsSelection['key']
 
     def writeLog(self, collectedLog):
         if not scopePresent(collectedLog, self._scopeNames):
             return
         httpRequest = getScoped(collectedLog, scopeNames=self._scopeNames, key='httpRequest')
         httpResponse = getScoped(collectedLog, scopeNames=self._scopeNames, key='httpResponse')
-        sru = getScoped(collectedLog, scopeNames=self._scopeNames, key='sru')
         if not 'Client' in httpRequest:
             return
 
@@ -56,7 +57,7 @@ class QueryLogWriter(Observable):
             ipAddress=getFirst(httpRequest, 'Client')[0],
             size=getFirst(httpResponse, 'size', 0)/1024.0,
             duration=getFirst(httpResponse, 'duration'),
-            numberOfRecords=getFirst(sru, 'numberOfRecords'),
+            numberOfRecords=self._numberOfRecords(collectedLog),
             queryArguments=self._queryArguments(collectedLog),
             status=getFirst(httpResponse, 'httpStatus', '0'),
         )
@@ -76,6 +77,9 @@ class QueryLogWriter(Observable):
         except NoneOfTheObserversRespond:
             pass
         return sortedUrlEncode(args)
+
+    def _numberOfRecords(self, collectedLog):
+        return getFirst(getScoped(collectedLog, scopeNames=self._scopeNames, key=self._numberOfRecordsSelectionScope), self._numberOfRecordsSelectionKey)
 
     @classmethod
     def forHttpArguments(cls, log=None, **kwargs):

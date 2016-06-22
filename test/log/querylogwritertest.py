@@ -114,6 +114,15 @@ class QueryLogWriterTest(SeecrTestCase):
         self.assertEquals(['log'], log.calledMethodNames())
         self.assertEquals(['metadataPrefix=rdf&verb=ListRecords'], [m.kwargs['queryArguments'] for m in log.calledMethods])
 
+    def testLogForNumberOfRecordsSelection(self):
+        log = CallTrace('log')
+        writer = QueryLogWriter(log=log, numberOfRecordsSelection=dict(scope='myscope', key='total'))
+        collectedLog = defaultCollectedLog()
+        collectedLog['myscope'] = {'total': [100]}
+        writer.writeLog(collectedLog)
+        self.assertEquals(['log'], log.calledMethodNames())
+        self.assertEquals([100], [m.kwargs['numberOfRecords'] for m in log.calledMethods])
+
     def testLogLiveExample(self):
         collectedLog = {
             'httpRequest': {
