@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -24,9 +24,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 from time import gmtime, strftime
 from urlparse import urlsplit
 from utils import getFirst, getScoped
+
 
 class ApacheLogWriter(object):
     def __init__(self, outputStream=None):
@@ -40,18 +42,23 @@ class ApacheLogWriter(object):
         if not 'Client' in httpRequest:
             return
         headers = getFirst(httpRequest, 'Headers', {})
-        self._out.write(APACHE_LOGLINE.format(
-                ipaddress=getFirst(httpRequest, key='Client', default=('-', 0))[0],
-                user='-',
-                timestamp=strftime('%d/%b/%Y:%H:%M:%S +0000', gmtime(getFirst(httpRequest, 'timestamp'))),
-                Method=getFirst(httpRequest, 'Method', '-'),
-                pathAndQuery=stripToPathAndQuery(getFirst(httpRequest, 'RequestURI', '')),
-                status=getFirst(httpResponse, 'httpStatus', '0'),
-                responseSize=getFirst(httpResponse, 'size') or '-',
-                Referer=headers.get('Referer', '-'),
-                UserAgent=headers.get('User-Agent', '-'),
-                HTTPVersion=getFirst(httpRequest, 'HTTPVersion', '1.0'),
-            ))
+        template = APACHE_LOGLINE
+        exception = getFirst(httpResponse, 'exception')
+        if exception:
+            template = ERROR_LOGLINE
+        self._out.write(template.format(
+            ipaddress=getFirst(httpRequest, key='Client', default=('-', 0))[0],
+            user='-',
+            timestamp=strftime('%d/%b/%Y:%H:%M:%S +0000', gmtime(getFirst(httpRequest, 'timestamp'))),
+            Method=getFirst(httpRequest, 'Method', '-'),
+            pathAndQuery=stripToPathAndQuery(getFirst(httpRequest, 'RequestURI', '')),
+            status=getFirst(httpResponse, 'httpStatus', '0'),
+            responseSize=getFirst(httpResponse, 'size') or '-',
+            Referer=headers.get('Referer', '-'),
+            UserAgent=headers.get('User-Agent', '-'),
+            HTTPVersion=getFirst(httpRequest, 'HTTPVersion', '1.0'),
+            Exception=None if not exception else repr(exception)
+        ))
         self._out.flush()
 
 def stripToPathAndQuery(requestUri):
@@ -62,4 +69,6 @@ def stripToPathAndQuery(requestUri):
     return result
 
 
-APACHE_LOGLINE = '{ipaddress} - {user} [{timestamp}] "{Method} {pathAndQuery} HTTP/{HTTPVersion}" {status} {responseSize} "{Referer}" "{UserAgent}"\n'
+LOGLINE = '{ipaddress} - {user} [{timestamp}] "{Method} {pathAndQuery} HTTP/{HTTPVersion}" {status} {responseSize} "{Referer}" "{UserAgent}"'
+APACHE_LOGLINE = LOGLINE + '\n'
+ERROR_LOGLINE = LOGLINE + " Exception raised:\n    {Exception}\n"

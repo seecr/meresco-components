@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -25,11 +25,52 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase
 from StringIO import StringIO
+
+from seecr.test import SeecrTestCase
+
 from meresco.components.log import ApacheLogWriter
 
+
 class ApacheLogWriterTest(SeecrTestCase):
+    def testNormalLog(self):
+        stream = StringIO()
+        writer = ApacheLogWriter(stream)
+        writer.writeLog(
+            collectedLog={
+                'httpRequest': {
+                    'Headers': [{}],
+                    'Client': [('10.11.12.13', 12345)],
+                    'timestamp': [1468845136.824253],
+                    'Method': ['GET'],
+                    'RequestURI': ['/abc'],
+                },
+                'httpResponse': {
+                    'httpStatus': ['200'],
+                }
+            }
+        )
+        self.assertEquals('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-"\n', stream.getvalue())
+
+    def testLogWithException(self):
+        stream = StringIO()
+        writer = ApacheLogWriter(stream)
+        writer.writeLog(
+            collectedLog={
+                'httpRequest': {
+                    'Headers': [{}],
+                    'Client': [('10.11.12.13', 12345)],
+                    'timestamp': [1468845136.824253],
+                    'Method': ['GET'],
+                    'RequestURI': ['/abc'],
+                },
+                'httpResponse': {
+                    'httpStatus': ['200'],
+                    'exception': [ValueError('xyz')]
+                }
+            }
+        )
+        self.assertEquals('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-" Exception raised:\n    ValueError(\'xyz\',)\n', stream.getvalue())
 
     def testWriteLogWithoutSensibleData(self):
         stream = StringIO()

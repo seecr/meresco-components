@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -24,10 +24,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 from meresco.core import Transparent
 from meresco.components.log import collectLogForScope
 from weightless.core import compose, Yield
 from time import time
+from sys import exc_info
 
 class HandleRequestLog(Transparent):
     def handleRequest(self, **kwargs):
@@ -43,15 +45,27 @@ class HandleRequestLog(Transparent):
             requestLogDict['bodySize'] = len(body)
         sizeInBytes = 0
         httpStatus = ""
-        for response in compose(self.all.handleRequest(**kwargs)):
-            if response is Yield or callable(response):
+
+        try:
+            for response in compose(self.all.handleRequest(**kwargs)):
+                if response is Yield or callable(response):
+                    yield response
+                    continue
+                if hasattr(response, '__len__'):
+                    sizeInBytes += len(response)
+                    if not httpStatus and response.startswith('HTTP/1'):
+                        httpStatus = response[len('HTTP/1.0 '):][:3]
                 yield response
-                continue
-            if hasattr(response, '__len__'):
-                sizeInBytes += len(response)
-                if not httpStatus and response.startswith('HTTP/1'):
-                    httpStatus = response[len('HTTP/1.0 '):][:3]
-            yield response
+        except (SystemExit, KeyboardInterrupt, AssertionError):
+            raise
+        except:
+            _, errorValue, _  = exc_info()
+            responseLogDict['size'] = sizeInBytes or '-'
+            responseLogDict['httpStatus'] = httpStatus or '500'  # assuming this is what HttpServer will make of it
+            responseLogDict['duration'] = self._time() - timestamp
+            responseLogDict['exception'] = errorValue
+            collectLogForScope(httpRequest=requestLogDict, httpResponse=responseLogDict)
+            raise
 
         responseLogDict['size'] = sizeInBytes
         if httpStatus:

@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -25,17 +25,20 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase, CallTrace
-from meresco.components.http.utils import okPlainText
-from weightless.core import be, Yield, consume
-from meresco.core import Observable
-from meresco.components.log import LogCollector, HandleRequestLog, ApacheLogWriter
-from StringIO import StringIO
 from time import time
+from StringIO import StringIO
+
+from seecr.test import SeecrTestCase, CallTrace
+
+from weightless.core import be, Yield, consume, compose
 from weightless.core.utils import asList
 
-class HandleRequestLogTest(SeecrTestCase):
+from meresco.core import Observable
+from meresco.components.log import LogCollector, HandleRequestLog, ApacheLogWriter
+from meresco.components.http.utils import okPlainText
 
+
+class HandleRequestLogTest(SeecrTestCase):
     def testApacheLog(self):
         requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
         requestHandler.returnValues['handleRequest'] = (f for f in [Yield, okPlainText, 'te', callable, 'xt'])
@@ -94,5 +97,69 @@ class HandleRequestLogTest(SeecrTestCase):
 
         self.assertEquals(5, __callstack_var_logCollector__['httpRequest']['bodySize'][0])
 
+    def testLogRequestInCaseOfExceptionBeforeStatusCode(self):
+        requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
+        def handleRequestRaisesException(**kwargs):
+            raise ValueError('doesntreallymatter')
+            yield
+        requestHandler.methods['handleRequest'] = handleRequestRaisesException
+        stream = StringIO()
+        handleRequestLog = HandleRequestLog()
+        handleRequestLog._time = lambda: 1395409143.0
 
+        observable = be((Observable(),
+            (LogCollector(),
+                (handleRequestLog,
+                    (requestHandler,)
+                ),
+                (ApacheLogWriter(stream),),
+            )
+        ))
 
+        result = []
+        g = compose(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={'Referer': 'http://meresco.org', 'User-Agent': 'Meresco-Components Test'}, otherKwarg='value'))
+        try:
+            for x in g:
+                result.append(x)
+        except Exception:
+            pass
+
+        self.assertEquals([], result)
+        self.assertEquals(['handleRequest'], requestHandler.calledMethodNames())
+        logline = stream.getvalue()
+        self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 500 - "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\',)\n', logline)
+
+    def testLogRequestInCaseOfExceptionAfterStatusCode(self):
+        requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
+        def handleRequestRaisesException(**kwargs):
+            yield Yield
+            yield okPlainText
+            yield 'text'
+            raise ValueError('doesntreallymatter')
+            yield
+        requestHandler.methods['handleRequest'] = handleRequestRaisesException
+        stream = StringIO()
+        handleRequestLog = HandleRequestLog()
+        handleRequestLog._time = lambda: 1395409143.0
+
+        observable = be((Observable(),
+            (LogCollector(),
+                (handleRequestLog,
+                    (requestHandler,)
+                ),
+                (ApacheLogWriter(stream),),
+            )
+        ))
+
+        result = []
+        g = compose(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={'Referer': 'http://meresco.org', 'User-Agent': 'Meresco-Components Test'}, otherKwarg='value'))
+        try:
+            for x in g:
+                result.append(x)
+        except Exception:
+            pass
+
+        self.assertEquals([Yield, okPlainText, 'text'], result)
+        self.assertEquals(['handleRequest'], requestHandler.calledMethodNames())
+        logline = stream.getvalue()
+        self.assertEquals('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\',)\n', logline)
