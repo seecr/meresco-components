@@ -98,13 +98,7 @@ class ObservableHttpServer(Observable):
             'arguments': arguments,
             'RequestURI': RequestURI}
         requestArguments.update(kwargs)
-        try:
-            yield self.all.handleRequest(**requestArguments)
-        except (AssertionError, SystemExit, KeyboardInterrupt):
-            raise
-        except Exception:
-            print_exc()
-            raise
+        yield self.all.handleRequest(**requestArguments)
 
     def setMaxConnections(self, m):
         self._httpserver.setMaxConnections(m)
