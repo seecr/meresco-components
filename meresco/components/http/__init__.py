@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -41,6 +42,6 @@ from argumentsinsession import ArgumentsInSession
 from apachelogger import ApacheLogger
 from utils import insertHeader
 from handlerequestfilter import HandleRequestFilter
-from deproxy import Deproxy
+from deproxy import Deproxy, OnlyDeproxied
 from httpclient import HttpClient
 from cookiememorystore import CookieMemoryStore

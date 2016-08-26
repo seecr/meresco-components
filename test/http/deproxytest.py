@@ -6,9 +6,10 @@
 #
 # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010-2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -34,7 +35,7 @@ from meresco.core import Observable
 
 from seecr.test import CallTrace
 
-from meresco.components.http import Deproxy
+from meresco.components.http import Deproxy, OnlyDeproxied
 
 from weightless.core import compose, be, consume
 
@@ -65,6 +66,7 @@ class DeproxyTest(TestCase):
                 Headers={'H': 'eaders'},
                 port=80,
                 other='item',
+                OriginalClient=None,
             ), handleRequest.kwargs)
 
     def testClientInCaseNoXForwardedForHeader(self):
@@ -83,6 +85,7 @@ class DeproxyTest(TestCase):
         self.assertEquals(1, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
+        self.assertEquals("1.1.1.1", handleRequestCallKwargs['OriginalClient'][0])
         self.assertEquals({"X-Forwarded-For": "2.2.2.2"}, handleRequestCallKwargs['Headers'])
 
     def testClientFromMulitpleXForwardedForEntries(self):
@@ -162,5 +165,16 @@ class DeproxyTest(TestCase):
         self.assertEquals(1, len(self.observer.calledMethods))
         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
         self.assertEquals("2.2.2.2", handleRequestCallKwargs['Client'][0])
+        self.assertEquals('192.168.96.96', handleRequestCallKwargs['OriginalClient'][0])
         self.assertEquals({"X-Forwarded-For": "2.2.2.2", "X-Forwarded-Host": "example.org", "Host": "example.org"}, handleRequestCallKwargs['Headers'])
+
+    def testOnlyDeproxied(self):
+        odp = OnlyDeproxied()
+        odp.addObserver(self.observer)
+        consume(odp.handleRequest(path='/path'))
+        self.assertEquals([], self.observer.calledMethodNames())
+
+        consume(odp.handleRequest(path='/path', OriginalClient=('1.2.3.4', 1234)))
+        self.assertEquals(['handleRequest'], self.observer.calledMethodNames())
+        self.assertEquals(dict(path='/path', OriginalClient=('1.2.3.4', 1234)), self.observer.calledMethods[0].kwargs)
 
