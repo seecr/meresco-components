@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Netherlands Institute for Sound and Vision http://instituut.beeldengeluid.nl/
+# Copyright (C) 2016 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -58,15 +59,15 @@ class BasicHttpHandlerTest(SeecrTestCase):
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
 
     def testAlternativeMethod(self):
-        handler = BasicHttpHandler(notFoundMethod=lambda : 'HTTP/1.0 404\r\n\r\n')
+        handler = BasicHttpHandler(notFoundMethod=lambda path, **kwargs: 'HTTP/1.0 404\r\n\r\n%s' % path)
         observer = CallTrace('HttpComponent', emptyGeneratorMethods=['handleRequest'])
         observable = Observable()
         observable.addObserver(handler)
         handler.addObserver(observer)
 
-        response = ''.join(compose(observable.all.handleRequest(RequestURI="/")))
+        response = ''.join(compose(observable.all.handleRequest(RequestURI="/", path='/')))
 
-        self.assertEquals('HTTP/1.0 404\r\n\r\n', response)
+        self.assertEquals('HTTP/1.0 404\r\n\r\n/', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
 
     def testRedirect(self):
