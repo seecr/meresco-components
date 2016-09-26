@@ -14,6 +14,7 @@
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2015 SURF http://www.surf.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -96,7 +97,9 @@ forbiddenHtml = "HTTP/1.0 403 Forbidden" + CRLF + \
     CRLF
 
 #404
-notFoundHtml = "HTTP/1.0 404 Not Found" + CRLF + \
+NotFound = "HTTP/1.0 404 Not Found" + CRLF
+
+notFoundHtml = NotFound + \
     ContentTypeHeader + ContentTypeHtml + CRLF + \
     CRLF
 
