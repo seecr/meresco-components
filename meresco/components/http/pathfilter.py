@@ -9,7 +9,8 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -33,12 +34,9 @@ from handlerequestfilter import HandleRequestFilter
 
 class PathFilter(HandleRequestFilter):
 
-    def __init__(self, subPaths, excluding=[]):
+    def __init__(self, subPaths, excluding=None):
         HandleRequestFilter.__init__(self, self._filter)
-        self._subPaths = subPaths
-        if type(subPaths) == str:
-            self._subPaths = [subPaths]
-        self._excluding = excluding
+        self.updatePaths(subPaths, excluding)
 
     def _filter(self, path, **kwargs):
         matchesSubPath = [subPath for subPath in self._subPaths if path.startswith(subPath)]
@@ -46,3 +44,9 @@ class PathFilter(HandleRequestFilter):
         if matchesSubPath and not matchesExcludedPath:
             return True
         return False
+
+    def updatePaths(self, subPaths, excluding=None):
+        self._subPaths = subPaths
+        if type(subPaths) == str:
+            self._subPaths = [subPaths]
+        self._excluding = excluding or []
