@@ -31,7 +31,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.http import PathFilter
-from weightless.core import compose, consume
+from weightless.core import consume
 
 class PathFilterTest(SeecrTestCase):
     def setUp(self):
