@@ -79,9 +79,10 @@ redirectHttp = "HTTP/1.0 302 Found" + CRLF + \
     "Location: %s" + CRLF + \
     CRLF
 
+BadRequest = "HTTP/1.0 400 Bad Request" + CRLF
 #400
 badRequestHtml = \
-    "HTTP/1.0 400 Bad Request" + CRLF + \
+    BadRequest + \
     ContentTypeHeader + ContentTypeHtml + CRLF + \
     CRLF
 
@@ -172,3 +173,8 @@ def parseRequestHeaders(header):
 
 def parseResponseHeaders(header):
     return _parseHeaders(REGEXP.RESPONSE, header)
+
+def parseResponse(data):
+    headers = parseResponseHeaders(data)
+    body = data.split(CRLF*2,1)[-1]
+    return headers, body
