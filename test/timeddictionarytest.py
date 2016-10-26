@@ -8,6 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 # Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -165,6 +166,21 @@ class TimedDictionaryTest(TestCase):
         self.assertEquals(None, timedDict.get(1))
         self.assertEquals('a default', timedDict.get(1, 'a default'))
         self.assertEquals([], timedDict._expirationOrder)
+
+    def testPop(self):
+        timedDict = TimedDictionary(TWO_HOURS)
+        setTime = time()
+        timedDict[1] = "Now you see me, now you don't."
+        self.assertEqual("Now you see me, now you don't.", timedDict.pop(1))
+        self.assertRaises(KeyError, lambda: timedDict.pop(1))
+        self.assertEqual("default", timedDict.pop(1, 'default'))
+        self.assertEqual(None, timedDict.pop(1, None))
+        self.assertEqual("default", timedDict.pop(1, default='default'))
+        self.assertEqual(None, timedDict.pop(1, default=None))
+        timedDict[1] = "Now you see me, now you don't."
+        setTime = time()
+        timedDict._now = lambda : setTime + TWO_HOURS + 0.000001
+        self.assertRaises(KeyError, lambda: timedDict.pop(1))
 
     def testPeek(self):
         timedDict = TimedDictionary(TWO_HOURS)

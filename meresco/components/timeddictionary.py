@@ -8,6 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 # Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -75,6 +76,18 @@ class TimedDictionary(object):
             return self[key]
         except KeyError:
             return default
+
+    def pop(self, key, *args, **kwargs):
+        try:
+            result = self[key]
+            del self[key]
+            return result
+        except KeyError:
+            if len(args) == 1:
+                return args[0]
+            if 'default' in kwargs:
+                return kwargs['default']
+            raise
 
     def keys(self):
         return list(self._dictionary.keys())
