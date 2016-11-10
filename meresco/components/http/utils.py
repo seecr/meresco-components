@@ -86,9 +86,10 @@ badRequestHtml = \
     ContentTypeHeader + ContentTypeHtml + CRLF + \
     CRLF
 
+Unauthorized = "HTTP/1.0 401 Unauthorized" + CRLF
 #401
 unauthorizedHtml = \
-    "HTTP/1.0 401 Unauthorized" + CRLF + \
+    Unauthorized + \
     ContentTypeHeader + ContentTypeHtml + CRLF + \
     CRLF
 
