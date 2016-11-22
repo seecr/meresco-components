@@ -7,9 +7,10 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2016 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -30,42 +31,39 @@
 ## end license ##
 
 from handlerequestfilter import HandleRequestFilter
+from netaddr import IPAddress, IPRange, IPNetwork
+import os
 
 class IpFilter(HandleRequestFilter):
-
     def __init__(self, name=None, allowedIps=None, allowedIpRanges=None):
         super(IpFilter, self).__init__(name=name, filterMethod=self._filter)
-        self._allowedIps = set(allowedIps) if allowedIps else set()
-        self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
-            for start,end in allowedIpRanges]) if allowedIpRanges else set()
+        self.updateIps(ipAddresses=allowedIps, ipRanges=allowedIpRanges)
+        self._ipaddress = self._defaultIpaddress
+        if os.environ.get('TESTMODE', '').upper() == 'TRUE':
+            self._ipaddress = self._fakeIpaddress
 
     def _filter(self, Client, Headers, **kwargs):
-        ipaddress = Client[0] if Client != None else '0.0.0.0'
-        return self.filterIpAddress(ipaddress, Headers)
+        return self.filterIpAddress(Client[0] if Client != None else '0.0.0.0', Headers)
 
     def filterIpAddress(self, ipaddress, Headers=None):
-        if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress == '127.0.0.1':
-            ipaddress = Headers['X-Meresco-Ipfilter-Fake-Ip']
+        ipaddress = IPAddress(self._ipaddress(ipaddress, Headers))
 
         if ipaddress in self._allowedIps:
             return True
 
-        ipNumber = self.convertToNumber(ipaddress)
-        for (start, end) in self._allowedIpRanges:
-            if start <= ipNumber <= end:
+        for allowedRange in self._allowedIpRanges:
+            if ipaddress in allowedRange:
                 return True
-
         return False
 
+    def _defaultIpaddress(self, ipaddress, Headers):
+        return ipaddress
+
+    def _fakeIpaddress(self, ipaddress, Headers):
+        if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress in ['127.0.0.1', '::1']:
+            return Headers['X-Meresco-Ipfilter-Fake-Ip']
+        return ipaddress
+
     def updateIps(self, ipAddresses=None, ipRanges=None):
-        if ipAddresses is not None:
-            self._allowedIps = set(ipAddresses)
-        if ipRanges is not None:
-            self._allowedIpRanges = set([(self.convertToNumber(start), self.convertToNumber(end))
-                for start,end in ipRanges])
-
-    @staticmethod
-    def convertToNumber(ip):
-        a,b,c,d = [int(x) for x in ip.split('.')]
-        return pow(256,3)*a + pow(256,2)*b + pow(256, 1)*c + d
-
+        self._allowedIps = set(IPAddress(allowedIp) for allowedIp in ipAddresses) if ipAddresses else set()
+        self._allowedIpRanges = set(IPRange(*each) if type(each) is tuple else IPNetwork(each) for each in ipRanges) if ipRanges else set()
