@@ -111,6 +111,7 @@ from http.pathrenametest import PathRenameTest
 from http.sessionhandlertest import SessionHandlerTest
 from http.httputilstest import HttpUtilsTest
 from http.cookiememorystoretest import CookieMemoryStoreTest
+from http.staticfilestest import StaticFilesTest
 
 from log.apachelogwritertest import ApacheLogWriterTest
 from log.directorylogtest import DirectoryLogTest

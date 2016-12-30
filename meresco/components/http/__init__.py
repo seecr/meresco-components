@@ -45,3 +45,4 @@ from handlerequestfilter import HandleRequestFilter
 from deproxy import Deproxy, OnlyDeproxied
 from httpclient import HttpClient
 from cookiememorystore import CookieMemoryStore
+from staticfiles import StaticFiles
