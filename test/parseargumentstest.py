@@ -76,6 +76,15 @@ class ParseArgumentsTest(TestCase):
             self.assertTrue("--port=<int>" in out.getvalue(), out.getvalue())
             self.assertTrue("--otherPort=10000" in out.getvalue(), out.getvalue())
 
+    def testDescription(self):
+        description = "Very nice program."
+        parser = ParseArguments(description=description)
+        parser.addOption('', '--option')
+        with stdout_replaced() as out:
+            parser.print_help()
+            s = out.getvalue()
+            self.assertEquals(['Usage: _alltests.py [options]', '', description, '', 'Options:'], s.splitlines()[:5])
+
     def testEpilog(self):
         epilog = 'And this is how they lived happily ever after.'
         parser = ParseArguments(epilog=epilog)

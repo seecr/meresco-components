@@ -30,8 +30,10 @@ from optparse import OptionParser, Option
 from sys import exit
 
 class ParseArguments(object):
-    def __init__(self, usage=None, epilog=None):
+    def __init__(self, usage=None, description=None, epilog=None):
         optKwargs = {}
+        if description:
+            optKwargs['description'] = description
         if epilog:
             optKwargs['epilog'] = epilog
         if usage:
