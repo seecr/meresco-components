@@ -76,3 +76,35 @@ class ParseArgumentsTest(TestCase):
             self.assertTrue("--port=<int>" in out.getvalue(), out.getvalue())
             self.assertTrue("--otherPort=10000" in out.getvalue(), out.getvalue())
 
+    def testEpilog(self):
+        epilog = 'And this is how they lived happily ever after.'
+        parser = ParseArguments(epilog=epilog)
+        parser.addOption('', '--option')
+        with stdout_replaced() as out:
+            parser.print_help()
+            s = out.getvalue()
+            self.assertTrue(s.endswith('--option=<string>  \n\n{}\n'.format(epilog)), s)
+
+    def testUsage(self):
+        # default
+        parser = ParseArguments()
+        with stdout_replaced() as out:
+            parser.print_help()
+            s = out.getvalue()
+            self.assertEquals(['Usage: _alltests.py [options]', ''], s.splitlines()[:2])
+
+        # explicit default: "%prog [options]"
+        usage = "%prog [options]"
+        parser = ParseArguments(usage=usage)
+        with stdout_replaced() as out:
+            parser.print_help()
+            s = out.getvalue()
+            self.assertEquals(['Usage: _alltests.py [options]', ''], s.splitlines()[:2])
+
+        # decidedly different
+        usage = "|before| %prog [options] [more-stuff]"
+        parser = ParseArguments(usage=usage)
+        with stdout_replaced() as out:
+            parser.print_help()
+            s = out.getvalue()
+            self.assertEquals(['Usage: |before| _alltests.py [options] [more-stuff]', ''], s.splitlines()[:2])
