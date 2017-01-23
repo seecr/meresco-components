@@ -10,7 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2015 SURF http://www.surf.nl
@@ -106,10 +106,12 @@ notFoundHtml = NotFound + \
     CRLF
 
 #405
-methodNotAllowedHtml = lambda allowed: "HTTP/1.0 405 Method Not Allowed" + CRLF + \
-    ContentTypeHeader + ContentTypeHtml + CRLF + \
+methodNotAllowed = lambda allowed, contentType: "HTTP/1.0 405 Method Not Allowed" + CRLF + \
+    ContentTypeHeader + contentType + CRLF + \
     "Allow: " + ', '.join(allowed) + CRLF + \
     CRLF
+
+methodNotAllowedHtml = lambda allowed: methodNotAllowed(allowed, ContentTypeHtml)
 
 #500
 serverErrorXml = "HTTP/1.0 500 Internal Server Error" + CRLF +\
