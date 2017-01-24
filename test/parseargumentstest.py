@@ -27,7 +27,7 @@
 
 from unittest import TestCase
 from meresco.components import ParseArguments
-from seecr.test.io import stdout_replaced
+from seecr.test.io import stdout_replaced, stderr_replaced
 
 class ParseArgumentsTest(TestCase):
     def testMandatoryKey(self):
@@ -117,3 +117,20 @@ class ParseArgumentsTest(TestCase):
             parser.print_help()
             s = out.getvalue()
             self.assertEquals(['Usage: |before| _alltests.py [options] [more-stuff]', ''], s.splitlines()[:2])
+
+    def testError(self):
+        parser = ParseArguments()
+        parser.addOption('', '--option')
+        with stderr_replaced() as err:
+            try:
+                parser.error('error msg.')
+                self.fail()
+            except SystemExit, e:
+                self.assertEquals(2, e.code)
+            lines = err.getvalue().split('\n')
+
+        self.assertEquals(4, len(lines))
+        self.assertTrue(lines[0].startswith('Usage: '))
+        self.assertEquals('', lines[1])
+        self.assertTrue(lines[2].endswith(': error: error msg.'))
+        self.assertEquals('', lines[3])

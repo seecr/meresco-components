@@ -41,6 +41,7 @@ class ParseArguments(object):
         self._parser = OptionParser(**optKwargs)
         self._mandatoryKeys = []
         self.print_help = self._parser.print_help
+        self.error = self._parser.error
 
     def _parse(self, args=None):
         options, arguments = self._parser.parse_args(args)
