@@ -31,6 +31,7 @@
 #
 ## end license ##
 
+from meresco.core import Observable
 from meresco.components.http import SessionHandler, utils, CookieMemoryStore
 from meresco.components.http.utils import CRLF, findCookies
 from weightless.core import asString, consume, asList
@@ -47,20 +48,21 @@ class SessionHandlerTest(SeecrTestCase):
         self.cookiestore = CookieMemoryStore(name='session', timeout=10)
         self.handler.addObserver(self.cookiestore)
         self.handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
-        self.observer = CallTrace('Observer')
-        self.handler.addObserver(self.observer)
 
     def testCreateSession(self):
         called = []
-        def handleRequest(*args, **kwargs):
-            called.append({'args':args, 'kwargs':kwargs})
-            yield  utils.okHtml
-            yield '<ht'
-            yield 'ml/>'
-        self.observer.handleRequest = handleRequest
+        class MyObserver(Observable):
+            def handleRequest(self, *args, **kwargs):
+                session = self.ctx.session
+                called.append({'args':args, 'kwargs':kwargs, 'session': session})
+                yield  utils.okHtml
+                yield '<ht'
+                yield 'ml/>'
+        self.handler.addObserver(MyObserver())
         result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
 
         self.assertEquals(1, len(called))
+        self.assertEqual({}, called[0]['session'])
         session = called[0]['kwargs']['session']
         self.assertEqual({}, session)
         self.assertEquals({'a':'b'}, called[0]['kwargs']['Headers'])
@@ -75,10 +77,12 @@ class SessionHandlerTest(SeecrTestCase):
 
     def testRetrieveCookie(self):
         sessions = []
-        def handleRequest(session=None, *args, **kwargs):
-            sessions.append(session)
-            yield  utils.okHtml + '<html/>'
-        self.observer.handleRequest = handleRequest
+        class MyObserver(Observable):
+            def handleRequest(self, *args, **kwargs):
+                session = self.ctx.session
+                sessions.append(session)
+                yield  utils.okHtml + '<html/>'
+        self.handler.addObserver(MyObserver())
         headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})).split(CRLF*2,1)[0]
         headers = parseHeaders(headers)
         self.assertTrue('Set-Cookie' in headers, headers)
@@ -89,10 +93,11 @@ class SessionHandlerTest(SeecrTestCase):
 
     def testInjectAnyCookie(self):
         sessions = []
-        def handleRequest(session=None, *args, **kwargs):
-            sessions.append(session)
-            yield  utils.okHtml + '<html/>'
-        self.observer.handleRequest = handleRequest
+        class MyObserver(Observable):
+            def handleRequest(self, session=None, *args, **kwargs):
+                sessions.append(session)
+                yield  utils.okHtml + '<html/>'
+        self.handler.addObserver(MyObserver())
         headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': '%s=%s' % (self.cookiestore.cookieName(), 'injected_id')})).split(CRLF*2,1)[0]
         headers = parseHeaders(headers)
         self.assertTrue('injected_id' not in headers['Set-Cookie'])
@@ -100,14 +105,14 @@ class SessionHandlerTest(SeecrTestCase):
     def testPassThroughOfCallables(self):
         def callableMethod():
             pass
+        class MyObserver(Observable):
+            def handleRequest(*args, **kwargs):
+                yield callableMethod
+                yield "HTTP/1.0 200 OK\r\n\r\nBODY"
+                yield callableMethod
+                yield "THE END"
 
-        def handleRequest(*args, **kwargs):
-            yield callableMethod
-            yield "HTTP/1.0 200 OK\r\n\r\nBODY"
-            yield callableMethod
-            yield "THE END"
-
-        self.observer.handleRequest = handleRequest
+        self.handler.addObserver(MyObserver())
         result = asList(self.handler.handleRequest(Headers={}))
         self.assertEquals(callableMethod, result[0])
         self.assertEquals("HTTP/1.0 200 OK\r\n", result[1])

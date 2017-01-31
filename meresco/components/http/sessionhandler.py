@@ -30,17 +30,8 @@
 ## end license ##
 
 from meresco.core import Observable
-from meresco.components import TimedDictionary
 from weightless.core import compose
 from utils import insertHeader
-from hashlib import md5
-from time import time
-from random import randint, choice
-from urllib import urlencode
-from UserDict import UserDict
-from string import ascii_letters
-from seecr.zulutime import ZuluTime
-from os.path import isfile
 from .utils import findCookies
 
 class SessionHandler(Observable):
@@ -51,8 +42,10 @@ class SessionHandler(Observable):
         if cookieDict is None:
             cookieDict = self.call.createCookie(dict())
 
+        __callstack_var_session__ = cookieDict['value']
+
         yield insertHeader(
-            compose(self.all.handleRequest(session=cookieDict['value'], Headers=Headers, *args, **kwargs)),
+            compose(self.all.handleRequest(session=__callstack_var_session__, Headers=Headers, *args, **kwargs)),
             cookieDict['header']
         )
 
