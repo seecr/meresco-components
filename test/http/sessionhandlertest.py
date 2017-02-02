@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014-2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 SURF http://www.surf.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
