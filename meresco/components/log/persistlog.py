@@ -35,7 +35,7 @@ from meresco.core import Observable
 from meresco.components.json import JsonDict
 
 
-TEN_MB = 10 * 1024
+TEN_MB = 10 * 1024 * 1024
 MAX_FILES = 50
 MIN_FILES = 3
 
