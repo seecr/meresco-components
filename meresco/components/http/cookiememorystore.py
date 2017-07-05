@@ -34,16 +34,18 @@ SECURE = "Secure"
 HTTPONLY = "HttpOnly"
 
 class CookieMemoryStore(object):
-    def __init__(self, timeout, name=None):
+    def __init__(self, timeout, name=None, secure=False, httpOnly=False):
         self._timeout = timeout
         self._store = TimedDictionary(self._timeout)
         self._name = '{0}{1}'.format('' if name is None else '%s-' % name, uuid4())
+        self._secure = secure
+        self._httpOnly = httpOnly
 
-    def createCookie(self, anObject, secure=False, httpOnly=False):
+    def createCookie(self, anObject):
         cookie = str(uuid4())
         cookieValues = dict(value=anObject)
-        cookieValues[SECURE] = secure
-        cookieValues[HTTPONLY] = httpOnly
+        cookieValues[SECURE] = self._secure
+        cookieValues[HTTPONLY] = self._httpOnly
         self._store[cookie] = cookieValues
         return self._result(cookie)
 

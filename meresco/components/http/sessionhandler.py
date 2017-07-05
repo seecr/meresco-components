@@ -35,20 +35,12 @@ from utils import insertHeader
 from .utils import findCookies
 
 class SessionHandler(Observable):
-    def __init__(self, secure=False, httpOnly=False, *args, **kwargs):
-        Observable.__init__(self, *args, **kwargs)
-        self._secureCookies = secure
-        self._httpOnlyCookies = httpOnly
-
     def handleRequest(self, Headers, *args, **kwargs):
         sessionIds = findCookies(Headers=Headers, name=self.call.cookieName())
         cookieDict = None if len(sessionIds) <1 else self.call.validateCookie(sessionIds[0])
 
         if cookieDict is None:
-            cookieDict = self.call.createCookie(
-                dict(), 
-                secure=self._secureCookies,
-                httpOnly=self._httpOnlyCookies)
+            cookieDict = self.call.createCookie(dict())
 
         __callstack_var_session__ = cookieDict['value']
 
