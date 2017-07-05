@@ -49,6 +49,36 @@ class SessionHandlerTest(SeecrTestCase):
         self.handler.addObserver(self.cookiestore)
         self.handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
 
+    def testPassSecure(self):
+        handler = SessionHandler(secure=True)
+        handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
+        cookiestore = CookieMemoryStore(name='session', timeout=10)
+        handler.addObserver(cookiestore)
+        def handleRequest(*args, **kwargs):
+            yield utils.okHtml
+        handler.addObserver(CallTrace(methods=dict(handleRequest=handleRequest)))
+
+        result = asString(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
+        headers, body = result.split(utils.CRLF*2,1)
+        headers = parseHeaders(headers)
+        self.assertTrue('Set-Cookie' in headers, headers)
+        self.assertTrue('Secure' in headers['Set-Cookie'].split("; "), headers)
+    
+    def testPassHttpOnly(self):
+        handler = SessionHandler(httpOnly=True)
+        handler._zulutime = lambda: ZuluTime('2015-01-27T13:34:45Z')
+        cookiestore = CookieMemoryStore(name='session', timeout=10)
+        handler.addObserver(cookiestore)
+        def handleRequest(*args, **kwargs):
+            yield utils.okHtml
+        handler.addObserver(CallTrace(methods=dict(handleRequest=handleRequest)))
+
+        result = asString(handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
+        headers, body = result.split(utils.CRLF*2,1)
+        headers = parseHeaders(headers)
+        self.assertTrue('Set-Cookie' in headers, headers)
+        self.assertTrue('HttpOnly' in headers['Set-Cookie'].split("; "), headers)
+
     def testCreateSession(self):
         called = []
         class MyObserver(Observable):

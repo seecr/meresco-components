@@ -548,7 +548,9 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEquals('addTimer', reactor.calledMethods[-1].name)
         nameOrServiceNotKnown = ("%s: -2: Name or service not known\n" % downloader ==  downloader._err.getvalue())
         noAddressAssociatedWithHost = ("%s: -5: No address associated with hostname\n" % downloader == downloader._err.getvalue())
-        self.assertTrue(nameOrServiceNotKnown or noAddressAssociatedWithHost, downloader._err.getvalue())
+        temporaryFailureInNameResolution = ("%s: -3: Temporary failure in name resolution\n" % downloader == downloader._err.getvalue())
+
+        self.assertTrue(nameOrServiceNotKnown or noAddressAssociatedWithHost or temporaryFailureInNameResolution, downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
     def testInvalidHostConnectionRefused(self):

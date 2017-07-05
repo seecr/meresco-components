@@ -30,16 +30,22 @@ from rfc822 import formatdate
 
 TWO_WEEKS = 2*7*24*60*60
 
+SECURE = "Secure"
+HTTPONLY = "HttpOnly"
+
 class CookieMemoryStore(object):
     def __init__(self, timeout, name=None):
         self._timeout = timeout
         self._store = TimedDictionary(self._timeout)
         self._name = '{0}{1}'.format('' if name is None else '%s-' % name, uuid4())
 
-    def createCookie(self, anObject):
+    def createCookie(self, anObject, secure=False, httpOnly=False):
         cookie = str(uuid4())
-        self._store[cookie] = anObject
-        return self._result(cookie, anObject)
+        cookieValues = dict(value=anObject)
+        cookieValues[SECURE] = secure
+        cookieValues[HTTPONLY] = httpOnly
+        self._store[cookie] = cookieValues
+        return self._result(cookie)
 
     def removeCookie(self, cookie):
         try:
@@ -50,29 +56,33 @@ class CookieMemoryStore(object):
     def removeCookies(self, filter):
         for k in self._store.keys():
             try:
-                if filter(self._store.peek(k)):
+                if filter(self._store.peek(k)['value']):
                     del self._store[k]
             except (AttributeError, KeyError):
                 pass
 
     def validateCookie(self, cookie):
-        anObject = self._store.get(cookie)
-        if anObject is not None:
+        cookieInfo = self._store.get(cookie)
+        if cookieInfo is not None and cookieInfo['value'] is not None:
             self._store.touch(cookie)
-            return self._result(cookie, anObject)
+            return self._result(cookie)
         return None
 
     def cookieName(self):
         return self._name
 
-    def _result(self, cookie, anObject):
+    def _result(self, cookie):
+        cookieInfo = self._store.get(cookie)
+        values = ["{0}={1}".format(*i) for i in [
+            (self._name, cookie), 
+            ('path', '/'), 
+            ('expires', formatdate(self._now() + self._timeout))]]
+        values.extend(k for k in [SECURE, HTTPONLY] if cookieInfo.get(k) == True)
+
         return dict(
             cookie=cookie,
-            value=anObject,
-            header='Set-Cookie: {0}={1}; path=/; expires={2}'.format(
-                self._name,
-                cookie,
-                formatdate(self._now() + self._timeout)))
+            value=cookieInfo['value'],
+            header='Set-Cookie: {0}'.format('; '.join(values)))
 
 
     def _now(self):

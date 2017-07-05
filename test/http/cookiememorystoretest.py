@@ -51,6 +51,17 @@ class CookieMemoryStoreTest(SeecrTestCase):
         self.assertEquals('username', self.d.validateCookie(result['cookie'])['value'])
         sleep(0.12)
         self.assertEquals(None, self.d.validateCookie(result['cookie']))
+    
+    def testCreateCookieSecure(self):
+        result = self.d.createCookie('username', secure=True)
+        self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT; Secure'.format(
+            self.d.cookieName(), result['cookie']), result['header'])
+
+    def testCreateCookieHttpOnly(self):
+        result = self.d.createCookie('username', httpOnly=True)
+        self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT; HttpOnly'.format(
+            self.d.cookieName(), result['cookie']), result['header'])
+
 
     def testCreateCookieForAnyObject(self):
         o = object()
