@@ -8,7 +8,8 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010-2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -31,7 +32,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components import CqlSearchClauseConversion, CqlMultiSearchClauseConversion
 from meresco.core import Observable
-from weightless.core import be
+from weightless.core import be, consume
 from cqlparser import cqlToExpression
 
 
@@ -121,4 +122,21 @@ class CQLConversionTest(SeecrTestCase):
                 ], fromKwarg="thisQuery")
         result = conversion._convert(q)
         self.assertEqual(cqlToExpression('aa OR B'), result)
+
+    def testIgnoreOtherMethodsWithQueryArgument(self):
+        def canModify(expression):
+            return expression.term == 'term'
+        def modify(expression):
+            expression.term = 'changed'
+        observer = CallTrace(emptyGeneratorMethods=['method'])
+        top = be((Observable(),
+            (CqlMultiSearchClauseConversion([(canModify, modify)], fromKwarg='query'),
+                (observer,)
+            )
+        ))
+        consume(top.any.method(query='index = term'))
+        self.assertEqual({'query': 'index = term'}, observer.calledMethods[0].kwargs)
+        observer.calledMethods.reset()
+        consume(top.any.method(query=cqlToExpression('index = term')))
+        self.assertEqual({'query': cqlToExpression('index = changed')}, observer.calledMethods[0].kwargs)
 

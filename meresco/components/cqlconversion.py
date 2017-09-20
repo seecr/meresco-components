@@ -9,7 +9,8 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 SURFmarket https://surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -30,6 +31,7 @@
 ## end license ##
 
 from converter import Converter
+from cqlparser.cqltoexpression import QueryExpression
 
 class CqlMultiSearchClauseConversion(Converter):
     def __init__(self, filtersAndModifiers, fromKwarg, toKwarg=None, name=None):
@@ -37,6 +39,8 @@ class CqlMultiSearchClauseConversion(Converter):
         self._filtersAndModifiers = filtersAndModifiers
 
     def _convert(self, query):
+        if not isinstance(query, QueryExpression):
+            return query
         for expression in query.iter():
             for searchClauseFilter, searchClauseModifier in self._filtersAndModifiers:
                 if expression.isSearchterm() and searchClauseFilter(expression):
