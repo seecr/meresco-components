@@ -4,9 +4,10 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2012-2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2017 SURFmarket http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -27,7 +28,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from weightless.core import be, compose
+from weightless.core import be, compose, consume
 from meresco.core import Observable
 from testhelpers import Response
 from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_INDEX
@@ -49,7 +50,7 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                         self.response.drilldownData.append({'fieldname': facet['fieldname'], 'terms':[{'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2}]})
             raise StopIteration(self.response)
             yield
-        self.observer = CallTrace('observer', methods={'executeQuery': executeQuery})
+        self.observer = CallTrace('observer', methods={'executeQuery': executeQuery}, emptyGeneratorMethods=['someMethod'])
 
     def testTranslate(self):
         names = {
@@ -274,4 +275,15 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
             compose(observable.any.executeQuery(**queryKwargs)).next()
         except StopIteration, e:
             return e.args[0]
+
+    def testPassThrough(self):
+        observable = be(
+            (Observable(),
+                (TranslateDrilldownFieldnames(translate=lambda:'ignore'),
+                    (self.observer,)
+                )
+            )
+        )
+        consume(observable.any.someMethod(field='whatever'))
+        self.assertEqual(['someMethod'], self.observer.calledMethodNames())
 
