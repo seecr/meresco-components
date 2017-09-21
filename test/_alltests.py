@@ -60,7 +60,6 @@ from filterdatabynametest import FilterDataByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
 from jsontest import JsonTest
-from jsonsearchtest import JsonSearchTest
 from messagerewritetest import MessageRewriteTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from onlyadddeleteifchangedtest import OnlyAddDeleteIfChangedTest
@@ -129,6 +128,8 @@ from log.querylogwritertest import QueryLogWriterTest
 from log.srulogtest import SruLogTest
 
 from numeric.converttest import ConvertTest
+
+from search.jsonsearchtest import JsonSearchTest
 
 from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest
