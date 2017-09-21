@@ -59,19 +59,24 @@ class JsonSearch(Observable):
 
             jsonResult.setdefault('request', dict(request.queryDict))
 
-            jsonResponse = yield self.jsonResponse(**request.queryKwargs)
-            if request.pageSize and jsonResponse["total"] > request.stop:
-                jsonResponse['next'] = self.pageDict(1, request, path=path)
-            if request.pageSize and request.start > 0:
-                jsonResponse['previous'] = self.pageDict(-1, request, path=path)
+            try:
+                jsonResponse = yield self.jsonResponse(**request.queryKwargs)
+                if request.pageSize and jsonResponse["total"] > request.stop:
+                    jsonResponse['next'] = self.pageDict(1, request, path=path)
+                if request.pageSize and request.start > 0:
+                    jsonResponse['previous'] = self.pageDict(-1, request, path=path)
 
-            for fieldname, terms in jsonResponse.get('facets', {}).items():
-                fieldList = [
-                    self.facetDict(path, request, fieldname=fieldname, term=term)
-                    for term in terms
-                ]
-                jsonResponse['facets'][fieldname] = fieldList
-            jsonResult['response'] = jsonResponse
+                for fieldname, terms in jsonResponse.get('facets', {}).items():
+                    fieldList = [
+                        self.facetDict(path, request, fieldname=fieldname, term=term)
+                        for term in terms
+                    ]
+                    jsonResponse['facets'][fieldname] = fieldList
+                jsonResult['response'] = jsonResponse
+            except ValueError, e:
+                jsonResponse['error'] = {
+                        'message': 'Error occured: ' + str(e)
+                    }
 
             yield "HTTP/1.0 200 OK" + CRLF
             yield "Content-type: application/json" + CRLF

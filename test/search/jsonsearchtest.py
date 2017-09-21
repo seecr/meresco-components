@@ -37,7 +37,7 @@ from meresco.xml.utils import createElement, createSubElement
 from simplejson import loads
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from cqlparser import cqlToExpression
 from cqlparser.cqltoexpression import QueryExpression
 
@@ -90,7 +90,7 @@ class JsonSearchTest(SeecrTestCase):
     def testRecords(self):
         json = self.request()
         self.assertEquals(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
-        self.assertEquals(['version', 'request', 'response'], json.keys())
+        self.assertEquals(['request', 'response', 'version'], json.keys())
         self.assertEquals(2, len(json['response']['items']))
         self.assertEquals(2, json['response']['total'])
 
@@ -396,6 +396,22 @@ class JsonSearchTest(SeecrTestCase):
         # maximum number of records.
         # ERROR query geen CQL query
 
+    def testSequenceOfKeys(self):
+        self.total = 500
+        self.hits = xrange(10)
+        self.drilldownData = [
+            {   "fieldname": "field",
+                "path": [],
+                "terms": [{
+                        "count": 23,
+                        "term": "value0"
+                    },]
+            }
+        ]
+        json = self.request(page=2, facet='field', **{'facet-filter': 'field=value0'})
+        self.assertEqual(['request', 'response', 'version'], json.keys())
+        self.assertEqual(['total', 'items', 'facets', 'querytimes', 'next', 'previous'], json['response'].keys())
+
     ## hellpers
 
     def request(self, **kwargs):
@@ -406,7 +422,7 @@ class JsonSearchTest(SeecrTestCase):
         arguments.update(kwargs)
         arguments = parse_qs(urlencode(arguments, doseq=True))
         header, body = asString(self.dna.all.handleRequest(path=path, arguments=arguments)).split(CRLF*2,1)
-        json = loads(body)
+        json = loads(body, object_pairs_hook=OrderedDict)
         return json
 
     def parseLink(self, aLink):
