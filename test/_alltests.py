@@ -60,6 +60,7 @@ from filterdatabynametest import FilterDataByNameTest
 from inboxtest import InboxTest
 from iteratorasstreamtest import IteratorAsStreamTest
 from jsontest import JsonTest
+from jsonsearchtest import JsonSearchTest
 from messagerewritetest import MessageRewriteTest
 from multileveldrilldowntest import MultiLevelDrilldownTest
 from onlyadddeleteifchangedtest import OnlyAddDeleteIfChangedTest
