@@ -40,11 +40,6 @@ from decimal import Decimal
 from time import time
 from simplejson import dumps
 
-first={key:nr for nr, key in enumerate(reversed(['total', 'items']), start=1)}
-last={key:nr for nr, key in enumerate(['next', 'previous', 'version'], start=1)}
-def item_sort_key((k,v)):
-    return ' '*first.get(k,0) + chr(127)*last.get(k,0) + k
-
 class JsonSearch(Observable):
     VERSION = 0.1
 
@@ -57,9 +52,9 @@ class JsonSearch(Observable):
     def handleRequest(self, path, arguments, *args, **kwargs):
         logDict = dict()
         try:
-            jsonResult = JsonDict({
+            jsonResult = {
                 'version': self.VERSION,
-            })
+            }
             request = self.parseArgs(path, arguments)
 
             jsonResult.setdefault('request', dict(request.queryDict))
@@ -81,7 +76,7 @@ class JsonSearch(Observable):
             yield "HTTP/1.0 200 OK" + CRLF
             yield "Content-type: application/json" + CRLF
             yield CRLF
-            yield dumps(jsonResult, item_sort_key=item_sort_key, indent=2)
+            yield dumps(jsonResult, item_sort_key=_item_sort_key, indent=2)
         finally:
             collectLogForScope(search=logDict)
 
@@ -211,3 +206,9 @@ RESOURCE_RELATIONS = set([
 
 TYPES_TO_IGNORE = set(['oa:Annotation'])
 MILLIS = Decimal('0.001')
+
+_first={key:nr for nr, key in enumerate(reversed(['total', 'items']), start=1)}
+_last={key:nr for nr, key in enumerate(['next', 'previous', 'version'], start=1)}
+def _item_sort_key((k,v)):
+    return ' ' * _first.get(k,0) + chr(127) * _last.get(k,0) + k
+
