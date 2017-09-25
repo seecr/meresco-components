@@ -49,6 +49,7 @@ class JsonSearchTest(SeecrTestCase):
         ts = [(1 + i*0.1) for i in xrange(100)]
         def timeNow():
             return ts.pop(0)
+        self._timeNow = timeNow
         class MockHit(object):
             def __init__(self, id):
                 self.id = id
@@ -74,8 +75,11 @@ class JsonSearchTest(SeecrTestCase):
         self.observer = CallTrace(methods=dict(
             executeQuery=executeQuery,
             retrieveData=retrieveData))
-        jsonSearch = JsonSearch(defaultRecordSchema="rdf")
-        jsonSearch._timeNow = timeNow
+        self._buildDna()
+
+    def _buildDna(self, defaultRecordSchema="rdf", **kwargs):
+        jsonSearch = JsonSearch(defaultRecordSchema=defaultRecordSchema, **kwargs)
+        jsonSearch._timeNow = self._timeNow
 
         self.dna = be(
             (Observable(),
@@ -90,7 +94,7 @@ class JsonSearchTest(SeecrTestCase):
     def testRecords(self):
         json = self.request()
         self.assertEquals(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
-        self.assertEquals(['request', 'response', 'version'], json.keys())
+        self.assertEquals(['response', 'request', 'version'], json.keys())
         self.assertEquals(2, len(json['response']['items']))
         self.assertEquals(2, json['response']['total'])
 
@@ -355,7 +359,7 @@ class JsonSearchTest(SeecrTestCase):
         ]
         json = self.request(facet='field', **{'facet-filter': 'field=somevalue'})
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(['field=somevalue'], executeQueryMethod.kwargs['extraArguments']['x-drilldown-query'])
+        self.assertEqual(cqlToExpression('* AND field exact somevalue'), executeQueryMethod.kwargs['query'])
         facets = json['response']['facets']
         link = self.parseLink(facets['field'][0]['link'])
         self.assertEquals(['field=somevalue', 'field=value0'], link.query['facet-filter'])
@@ -388,13 +392,32 @@ class JsonSearchTest(SeecrTestCase):
     def testFacetFilters(self):
         self.request(facet='field', **{'facet-filter': ['field0=value0', 'field1=value1']})
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(['field0=value0', 'field1=value1'], executeQueryMethod.kwargs['extraArguments']['x-drilldown-query'])
+        self.assertEquals(cqlToExpression('* AND field0 exact value0 AND field1 exact value1'), executeQueryMethod.kwargs['query'])
+
+    def testLinksWithOtherPath(self):
+        self._buildDna(useOriginalPath=True)
+        self.total = 500
+        self.drilldownData = [
+            {   "fieldname": "field",
+                "path": [],
+                "terms": [{
+                        "count": 23,
+                        "term": "value0"
+                    },]
+            }
+        ]
+        response = self.request(originalPath='/path/to/search', path='/search', query='*', page=2, facet='field')
+        self.assertEqual('/path/to/search', self.parseLink(response['response']['previous']['link']).path)
+        self.assertEqual('/path/to/search', self.parseLink(response['response']['next']['link']).path)
+        self.assertEqual('/path/to/search', self.parseLink(response['response']['facets']['field'][0]['link']).path)
+
 
     def testTODO(self):
         pass
         # ERROR tests op verschillende stukken.
         # maximum number of records.
         # ERROR query geen CQL query
+        # use full path for link etc.
 
     def testSequenceOfKeys(self):
         self.total = 500
@@ -409,19 +432,23 @@ class JsonSearchTest(SeecrTestCase):
             }
         ]
         json = self.request(page=2, facet='field', **{'facet-filter': 'field=value0'})
-        self.assertEqual(['request', 'response', 'version'], json.keys())
+        self.assertEqual(['response', 'request', 'version'], json.keys())
         self.assertEqual(['total', 'items', 'facets', 'querytimes', 'next', 'previous'], json['response'].keys())
 
     ## hellpers
 
     def request(self, **kwargs):
-        path = kwargs.pop('path', '/search')
+        requestDict=dict(path=kwargs.pop('path', '/search'))
+        originalPath = kwargs.pop('originalPath', None)
+        if originalPath is not None:
+            requestDict["originalPath"]=originalPath
         arguments = {
             'query': kwargs.pop('query', '*')
         }
         arguments.update(kwargs)
         arguments = parse_qs(urlencode(arguments, doseq=True))
-        header, body = asString(self.dna.all.handleRequest(path=path, arguments=arguments)).split(CRLF*2,1)
+        requestDict['arguments'] = arguments
+        header, body = asString(self.dna.all.handleRequest(**requestDict)).split(CRLF*2,1)
         json = loads(body, object_pairs_hook=OrderedDict)
         return json
 
@@ -429,6 +456,7 @@ class JsonSearchTest(SeecrTestCase):
         Link = namedtuple('Link', ['path', 'query'])
         r = urlparse(aLink)
         return Link(r.path, parse_qs(r.query))
+
 class LuceneResponse(object):
     def __init__(self, **attrs):
         for k,v in attrs.items():

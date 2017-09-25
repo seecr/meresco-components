@@ -6,6 +6,7 @@
 #
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -31,6 +32,7 @@ from meresco.components.sru.sruhandler import DRILLDOWN_SORTBY_COUNT
 from meresco.components.web import WebQuery
 from meresco.core import Observable
 from cqlparser import cqlToExpression
+from cqlparser.cqltoexpression import QueryExpression
 from simplejson import dumps
 from urllib import urlencode as _urlencode
 
@@ -43,19 +45,23 @@ from simplejson import dumps
 class JsonSearch(Observable):
     VERSION = 0.1
 
-    def __init__(self, defaultRecordSchema, pageSize=10, maximumRecordNumber=1000, **kwargs):
+    def __init__(self, defaultRecordSchema, pageSize=10, maximumRecordNumber=1000, useOriginalPath=False, **kwargs):
         Observable.__init__(self, **kwargs)
         self._defaultRecordSchema = defaultRecordSchema
         self._pageSize = pageSize
         self._maximumRecordNumber = maximumRecordNumber
+        self._determinePath = lambda **kwargs:kwargs['path']
+        if useOriginalPath:
+            self._determinePath = lambda **kwargs:kwargs.get('originalPath', kwargs['path'])
 
-    def handleRequest(self, path, arguments, *args, **kwargs):
+    def handleRequest(self, arguments, *args, **kwargs):
+        path = self._determinePath(**kwargs)
         logDict = dict()
         try:
             jsonResult = {
                 'version': self.VERSION,
             }
-            request = self.parseArgs(path, arguments)
+            request = self.parseArgs(arguments)
 
             jsonResult.setdefault('request', dict(request.queryDict))
 
@@ -99,7 +105,7 @@ class JsonSearch(Observable):
             else:
                 jsonResponse['items'] = []
                 for hit in hits:
-                    jsonResponse['items'].append((yield self.any.retrieveData(hit.id, self._defaultRecordSchema)))
+                    jsonResponse['items'].append((yield self.any.retrieveData(identifier=hit.id, name=self._defaultRecordSchema)))
 
         drilldownData = getattr(result, 'drilldownData', None)
         if drilldownData is not None:
@@ -133,7 +139,7 @@ class JsonSearch(Observable):
                 result['displayValue'] = displayValue
         return result
 
-    def parseArgs(self, path, arguments):
+    def parseArgs(self, arguments):
         query = arguments['query'][0]
         query = WebQuery(query).asString()
         page = int(arguments.get('page', ["1"])[0])
@@ -171,7 +177,12 @@ class JsonSearch(Observable):
             queryDict['facet'] = [qf["fieldname"] for qf in queryFacets]
         if facetFilters:
             queryDict['facet-filter'] = facetFilters
-            queryKwargs['extraArguments']['x-drilldown-query'] = facetFilters
+            q = QueryExpression.nested('AND')
+            q.operands.append(queryKwargs['query'])
+            for facetFilter in facetFilters:
+                index, term = facetFilter.split('=', 1)
+                q.operands.append(QueryExpression.searchterm(index=index, relation='exact', term=term))
+            queryKwargs['query'] = q
         return MyDict(
             page=page,
             pageSize=pageSize,
@@ -204,15 +215,9 @@ class MyDict(dict):
 
 urlencode = lambda arg: _urlencode(arg, doseq=True)
 
-RESOURCE_RELATIONS = set([
-    'edm:isShownAt',
-    'edm:isShownBy',
-])
-
-TYPES_TO_IGNORE = set(['oa:Annotation'])
 MILLIS = Decimal('0.001')
 
-_first={key:nr for nr, key in enumerate(reversed(['total', 'items']), start=1)}
+_first={key:nr for nr, key in enumerate(reversed(['total', 'items', 'response', 'request']), start=1)}
 _last={key:nr for nr, key in enumerate(['next', 'previous', 'version'], start=1)}
 def _item_sort_key((k,v)):
     return ' ' * _first.get(k,0) + chr(127) * _last.get(k,0) + k
