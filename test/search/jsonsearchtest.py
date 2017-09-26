@@ -115,13 +115,11 @@ class JsonSearchTest(SeecrTestCase):
         self.request()
         executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals(QueryExpression.searchterm(term='*'), executeQueryMethod.kwargs['query'])
-        self.assertEquals({'original': {'query': '*'}}, executeQueryMethod.kwargs['extraArguments'])
 
     def testQueryNotCQLButWebQueryStyle(self):
         self.request(query="fiets water")
         executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals(cqlToExpression("fiets AND water"), executeQueryMethod.kwargs['query'])
-        self.assertEquals({'original': {'query': 'fiets AND water'}}, executeQueryMethod.kwargs['extraArguments'])
 
     def testPage0(self):
         json = self.request()
@@ -176,7 +174,7 @@ class JsonSearchTest(SeecrTestCase):
 
     def testPageSize0(self):
         del self.hits[:]
-        json = self.request(pageSize="0")
+        json = self.request(**{'page-size':"0"})
         self.assertEquals(2, json['response']['total'])
         executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals(0, executeQueryMethod.kwargs['start'])
@@ -186,26 +184,26 @@ class JsonSearchTest(SeecrTestCase):
         self.assertFalse('previous' in json['response'])
 
     def testPageSize1(self):
-        json = self.request(pageSize="1")
+        json = self.request(**{'page-size':"1"})
         self.assertEquals(2, json['response']['total'])
         executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals(0, executeQueryMethod.kwargs['start'])
         self.assertEquals(1, executeQueryMethod.kwargs['stop'])
         self.assertEquals({
-                'link': '/search?page=2&pageSize=1&query=%2A',
+                'link': '/search?page=2&page-size=1&query=%2A',
                 'page': 2,
             }, json['response']['next'])
         self.assertFalse('previous' in json['response'])
-        self.assertEquals(1, json['request']['pageSize'])
+        self.assertEquals(1, json['request']['page-size'])
 
     def testPageSize2(self):
-        json = self.request(pageSize="1", page="2")
+        json = self.request(page="2", **{'page-size':'1'})
         self.assertEquals(2, json['response']['total'])
         executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals(1, executeQueryMethod.kwargs['start'])
         self.assertEquals(2, executeQueryMethod.kwargs['stop'])
         self.assertEquals({
-                'link': '/search?page=1&pageSize=1&query=%2A',
+                'link': '/search?page=1&page-size=1&query=%2A',
                 'page': 1,
             }, json['response']['previous'])
         self.assertFalse('next' in json['response'])
@@ -240,17 +238,17 @@ class JsonSearchTest(SeecrTestCase):
                 'field': [
                     {   "count": 23,
                         "value": "value0",
-                        "link": "/search?facet=field&facet-filter=field%3Dvalue0&query=%2A",
+                        "link": "/search?facet=field%3A100&facet-filter=field%3Dvalue0&query=%2A",
                     },
                     {   "count": 4,
                         "value": "value1",
-                        "link": "/search?facet=field&facet-filter=field%3Dvalue1&query=%2A",
+                        "link": "/search?facet=field%3A100&facet-filter=field%3Dvalue1&query=%2A",
                     },
                 ]
             }, json['response']['facets'])
         nextLink = self.parseLink(json['response']['next']['link'])
-        self.assertEquals(['field'], nextLink.query['facet'])
-        self.assertEquals(['field'], json['request']['facet'])
+        self.assertEquals(['field:100'], nextLink.query['facet'])
+        self.assertEquals([{'index':'field', 'max-terms':100}], json['request']['facet'])
 
     def testFacetDisplayValue(self):
         self.total = 30
@@ -286,6 +284,8 @@ class JsonSearchTest(SeecrTestCase):
                     },
                 ]
             }, json['response']['facets'])
+        executeQueryMethod = self.observer.calledMethods[0]
+        self.assertEqual([{'fieldname': 'field:test.uri', 'maxTerms': 10, 'sortBy': 'count'}], executeQueryMethod.kwargs['facets'])
 
 
     def testMultipleFacets(self):
@@ -306,10 +306,10 @@ class JsonSearchTest(SeecrTestCase):
                     },]
             },
         ]
-        json = self.request(facet=['field0', 'field1'])
+        json = self.request(facet=['field0', 'field1:3'])
         nextLink = self.parseLink(json['response']['next']['link'])
-        self.assertEquals(['field0', 'field1'], nextLink.query['facet'])
-        self.assertEquals(['field0', 'field1'], json['request']['facet'])
+        self.assertEquals(['field0', 'field1:3'], nextLink.query['facet'])
+        self.assertEquals([{'index':'field0', 'max-terms':10}, {'index':'field1', 'max-terms':3}], json['request']['facet'])
         self.assertEquals(set(['field0', 'field1']),
             set(json['response']['facets'].keys()))
 
@@ -365,13 +365,22 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEquals(['field=somevalue', 'field=value0'], link.query['facet-filter'])
 
     def testPassXArguments(self):
-        self.request(**{'x-disable-filter': 'encyclopedie', 'x-something-else': 'important'})
+        self.total = 100
+        response = self.request(**{'x-disable-filter': 'encyclopedie', 'x-something-else': 'important'})
         executeQueryMethod = self.observer.calledMethods[0]
         self.assertEquals({
-                'original': {'query': '*'},
                 'x-disable-filter': ['encyclopedie'],
                 'x-something-else': ['important'],
             }, executeQueryMethod.kwargs['extraArguments'])
+        self.assertEqual({'query':['*'],
+                'page': ['2'],
+                'x-disable-filter': ['encyclopedie'],
+                'x-something-else': ['important'],
+            }, self.parseLink(response['response']['next']['link']).query)
+        self.assertEqual({'query':'*',
+                'x-disable-filter': ['encyclopedie'],
+                'x-something-else': ['important'],
+            }, response['request'])
 
 
     def testFacetFilterDoesNotRepeat(self):
@@ -411,13 +420,66 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual('/path/to/search', self.parseLink(response['response']['next']['link']).path)
         self.assertEqual('/path/to/search', self.parseLink(response['response']['facets']['field'][0]['link']).path)
 
+    def testParameterQueryOmitted(self):
+        response = self.request(facet='field', query=None)
+        self.assertEqual(dict(type="MissingArgument", message="Missing required argument: 'query'"), response['error'])
+    
+    def testParameterQueryWebQuery(self):
+        response = self.request(query='value1 value2')
+        executeQueryMethod = self.observer.calledMethods[0]
+        self.assertEqual(cqlToExpression('value1 AND value2'), executeQueryMethod.kwargs['query'])
+        self.assertEqual('value1 value2', response['request']['query'])
+        self.observer.calledMethods.reset()
 
-    def testTODO(self):
-        pass
-        # ERROR tests op verschillende stukken.
-        # maximum number of records.
-        # ERROR query geen CQL query
-        # use full path for link etc.
+        response = self.request(query='-value')
+        executeQueryMethod = self.observer.calledMethods[0]
+        self.assertEqual(cqlToExpression('* NOT value'), executeQueryMethod.kwargs['query'])
+        self.assertEqual('-value', response['request']['query'])
+
+    def testParameterErrorsInPage(self):
+        response = self.request(page='0')
+        self.assertEqual({
+                'type':'InvalidArgument',
+                'message':"Invalid argument: 'page', expected value > 0",
+            }, response['error'])
+        self.assertFalse('response' in response)
+
+        response = self.request(page='q')
+        self.assertFalse('response' in response)
+        self.assertEqual({
+                'type':'InvalidArgument',
+                'message':"Invalid argument: 'page', expected integer",
+            }, response['error'])
+
+    def testParameterErrorsInPageSize(self):
+        response = self.request(**{'page-size':'-1'})
+        self.assertEqual({
+                'type':'InvalidArgument',
+                'message':"Invalid argument: 'page-size', expected value >= 0",
+            }, response['error'])
+        self.assertFalse('response' in response)
+
+        response = self.request(**{'page-size':'page'})
+        self.assertEqual({
+                'type':'InvalidArgument',
+                'message':"Invalid argument: 'page-size', expected integer",
+            }, response['error'])
+        self.assertFalse('response' in response)
+
+    def testMaximumNrOfRecords(self):
+        response = self.request(**{'page-size': '521', 'page': 3})
+        self.assertFalse('response' in response)
+        self.assertEqual({
+                'type':'InvalidArgument',
+                'message':"Invalid argument: 'page', expected value <= 2",
+            }, response['error'])
+        self.observer.calledMethods.reset()
+        response = self.request(**{'page-size': '521', 'page': 2})
+        self.assertEqual(1000, self.observer.calledMethods[0].kwargs['stop'])
+
+    def testBadArguments(self):
+        response = self.request(unkown_parameter='value')
+        self.assertEqual({'type':'BadArgument', 'message':"Bad argument: 'unkown_parameter' is an illegal parameter"}, response['error'])
 
     def testSequenceOfKeys(self):
         self.total = 500
@@ -435,6 +497,13 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual(['response', 'request', 'version'], json.keys())
         self.assertEqual(['total', 'items', 'facets', 'querytimes', 'next', 'previous'], json['response'].keys())
 
+    def testBadFacetFilter(self):
+        response = self.request(**{'facet-filter':'field'})
+        self.assertEqual({
+                'message': "Invalid argument: 'facet-filter', expected <field>=<value> as a filter",
+                'type': 'InvalidArgument',
+            }, response['error'])
+
     ## hellpers
 
     def request(self, **kwargs):
@@ -446,7 +515,7 @@ class JsonSearchTest(SeecrTestCase):
             'query': kwargs.pop('query', '*')
         }
         arguments.update(kwargs)
-        arguments = parse_qs(urlencode(arguments, doseq=True))
+        arguments = parse_qs(urlencode({k:v for k,v in arguments.items() if v is not None}, doseq=True))
         requestDict['arguments'] = arguments
         header, body = asString(self.dna.all.handleRequest(**requestDict)).split(CRLF*2,1)
         json = loads(body, object_pairs_hook=OrderedDict)

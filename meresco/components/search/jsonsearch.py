@@ -45,11 +45,24 @@ from simplejson import dumps
 class JsonSearch(Observable):
     VERSION = 0.1
 
-    def __init__(self, defaultRecordSchema, pageSize=10, maximumRecordNumber=1000, useOriginalPath=False, **kwargs):
+    def __init__(self,
+            defaultRecordSchema,
+            pageSize=10,
+            maximumRecordNumber=1000,
+            defaultMaxTermsFacet=10,
+            useOriginalPath=False,
+            **kwargs
+        ):
         Observable.__init__(self, **kwargs)
         self._defaultRecordSchema = defaultRecordSchema
         self._pageSize = pageSize
         self._maximumRecordNumber = maximumRecordNumber
+        self._defaultMaxTermsFacet = defaultMaxTermsFacet
+        self._argumentLimits=dict(
+                page_size=pageSize,
+                maximum_record_number=maximumRecordNumber,
+                default_facet_terms_count=defaultMaxTermsFacet,
+            )
         self._determinePath = lambda **kwargs:kwargs['path']
         if useOriginalPath:
             self._determinePath = lambda **kwargs:kwargs.get('originalPath', kwargs['path'])
@@ -57,33 +70,38 @@ class JsonSearch(Observable):
     def handleRequest(self, arguments, *args, **kwargs):
         path = self._determinePath(**kwargs)
         logDict = dict()
+        jsonResult = {
+            'version': self.VERSION,
+        }
         try:
-            jsonResult = {
-                'version': self.VERSION,
-            }
-            request = self.parseArgs(arguments)
-
-            jsonResult.setdefault('request', dict(request.queryDict))
-
             try:
-                jsonResponse = yield self.jsonResponse(**request.queryKwargs)
-                if request.pageSize and jsonResponse["total"] > request.stop:
-                    jsonResponse['next'] = self.pageDict(1, request, path=path)
-                if request.pageSize and request.start > 0:
-                    jsonResponse['previous'] = self.pageDict(-1, request, path=path)
+                args = _Arguments(arguments, **self._argumentLimits)
+
+                jsonResult.setdefault('request', args.request)
+
+                jsonResponse = yield self.jsonResponse(**args.queryKwargs)
+                if args.stop - args.start and jsonResponse["total"] > args.stop:
+                    jsonResponse['next'] = args.pageDict(1, path=path)
+                if args.stop - args.start and args.start > 0:
+                    jsonResponse['previous'] = args.pageDict(-1, path=path)
 
                 for fieldname, terms in jsonResponse.get('facets', {}).items():
+                    if fieldname.endswith('.uri'):
+                        def displayValue(term):
+                            return term['displayTerm'] if 'displayTerm' in term else self.call.labelForUri(uri=term['term'])
+                    else:
+                        displayValue = lambda term: None
                     fieldList = [
-                        self.facetDict(path, request, fieldname=fieldname, term=term)
+                        args.facetDict(path, fieldname=fieldname, term=term, displayValue=displayValue(term))
                         for term in terms
                     ]
                     jsonResponse['facets'][fieldname] = fieldList
                 jsonResult['response'] = jsonResponse
             except ValueError, e:
-                jsonResponse['error'] = {
-                        'message': 'Error occured: ' + str(e)
+                jsonResult['error'] = {
+                        'type': type(e).__name__,
+                        'message': str(e),
                     }
-
             yield "HTTP/1.0 200 OK" + CRLF
             yield "Content-type: application/json" + CRLF
             yield CRLF
@@ -123,8 +141,101 @@ class JsonSearch(Observable):
 
         raise StopIteration(jsonResponse)
 
-    def facetDict(self, path, request, fieldname, term):
-        termDict = dict(request.queryDict)
+    def _timeNow(self):
+        return time()
+
+    def _querytime(self, t):
+        return Decimal(t).quantize(MILLIS)
+
+class _Arguments(object):
+    def __init__(self, arguments, default_facet_terms_count, maximum_record_number, page_size):
+        query = arguments.pop('query', [None])[0]
+        if query is None:
+            raise MissingArgument('query')
+        self._request = dict(query=query)
+        self._next_request = dict(query=query)
+        self.query_expression = WebQuery(query, antiUnaryClause="*").query
+        page = getInt(arguments, 'page', 1)
+        if page <= 0:
+            raise InvalidArgument('page', 'expected value > 0')
+        if 'page' in arguments:
+            self._request['page'] = page
+            self._next_request['page'] = page
+            arguments.pop('page')
+        pageSize = getInt(arguments, 'page-size', page_size)
+        if pageSize < 0:
+            raise InvalidArgument('page-size', 'expected value >= 0')
+        if 'page-size' in arguments:
+            self._request['page-size'] = pageSize
+            self._next_request['page-size'] = pageSize
+            arguments.pop('page-size')
+        self.start = (page - 1) * pageSize
+        if self.start > maximum_record_number:
+            raise InvalidArgument('page', 'expected value <= {}'.format((maximum_record_number + pageSize -1)//pageSize))
+        self.stop = min(self.start + pageSize, maximum_record_number)
+        facets = arguments.pop('facet', [])
+        queryFacets = []
+        for facet in facets:
+            fieldname = facet
+            maxTerms = default_facet_terms_count
+            splitted = facet.rsplit(':', 1)
+            try:
+                maxTerms = int(splitted[1]) if len(splitted) > 1 else default_facet_terms_count
+                fieldname = splitted[0]
+            except ValueError:
+                pass
+            queryFacets.append(dict(fieldname=fieldname, maxTerms=maxTerms, sortBy=DRILLDOWN_SORTBY_COUNT))
+            self._request.setdefault('facet',[]).append({'index': fieldname, 'max-terms': maxTerms})
+            facet_term_count = ':{0}'.format(maxTerms) if maxTerms != default_facet_terms_count else ''
+            self._next_request.setdefault('facet',[]).append(fieldname + facet_term_count)
+        facetFilters = arguments.pop('facet-filter', [])
+        if facetFilters:
+            self._request['facet-filter'] = []
+            self._next_request['facet-filter'] = []
+            q = QueryExpression.nested('AND')
+            q.operands.append(self.query_expression)
+            for facetFilter in facetFilters:
+                if '=' not in facetFilter:
+                    raise InvalidArgument('facet-filter', "expected <field>=<value> as a filter") 
+                index, term = facetFilter.split('=', 1)
+                q.operands.append(QueryExpression.searchterm(index=index, relation='exact', term=term))
+                self._request['facet-filter'].append({'index':index, 'term':term})
+                self._next_request['facet-filter'].append('{}={}'.format(index, term))
+            self.query_expression = q
+        self.queryKwargs=dict(
+                start=self.start,
+                stop=self.stop,
+                query=self.query_expression,
+                facets=queryFacets or None,
+            )
+        extra_arguments = {}
+        for k, v in arguments.items():
+            if k.startswith('x-'):
+                extra_arguments[k] = v
+            else:
+                raise BadArgument(k)
+        if extra_arguments:
+            self._request.update(extra_arguments)
+            self._next_request.update(extra_arguments)
+            self.queryKwargs['extraArguments'] = extra_arguments
+
+    @property
+    def request(self):
+        return dict(self._request)
+
+
+    def pageDict(self, pageAddition, path):
+        page = self._next_request.get('page', 1) + pageAddition
+        return dict(
+                page=page,
+                link='{0}?{1}'.format(
+                    path,
+                    urlencode(sorted(dict(self._next_request, page=page).items()))
+                ),
+            )
+
+    def facetDict(self, path, fieldname, term, displayValue):
+        termDict = dict(self._next_request)
         facetFilter = set(termDict.get('facet-filter', []))
         facetFilter.add("{0}={1}".format(fieldname, term['term']))
         termDict['facet-filter'] = list(facetFilter)
@@ -133,81 +244,9 @@ class JsonSearch(Observable):
             value=term['term'],
             link="{0}?{1}".format(path, urlencode(sorted(termDict.items())))
         )
-        if fieldname.endswith('.uri'):
-            displayValue = term['displayTerm'] if 'displayTerm' in term else self.call.labelForUri(uri=term['term'])
-            if displayValue:
-                result['displayValue'] = displayValue
+        if displayValue is not None:
+            result['displayValue'] = displayValue
         return result
-
-    def parseArgs(self, arguments):
-        query = arguments['query'][0]
-        query = WebQuery(query).asString()
-        page = int(arguments.get('page', ["1"])[0])
-        pageSize = int(arguments.get('pageSize', [self._pageSize])[0])
-        start = (page - 1) * pageSize
-        stop = start + pageSize
-        facets = arguments.get('facet', [])
-        facetFilters = arguments.get('facet-filter', [])
-        queryFacets = []
-        for facet in facets:
-            fieldname, maxTerms = facet, 30
-            splitted = facet.rsplit(':', 1)
-            try:
-                maxTerms = int(splitted[1]) if len(splitted) > 1 else 10
-                fieldname = splitted[0]
-            except ValueError:
-                pass
-            queryFacets.append(dict(fieldname=fieldname, maxTerms=maxTerms, sortBy=DRILLDOWN_SORTBY_COUNT))
-        queryKwargs=dict(
-                start=start,
-                stop=stop,
-                query=cqlToExpression(query),
-                extraArguments={"original":{'query':query}},
-                facets=queryFacets or None,
-            )
-        for k, v in arguments.items():
-            if k.startswith('x-'):
-                queryKwargs['extraArguments'][k] = v
-        queryDict=dict(query=query)
-        if page != 1:
-            queryDict['page'] = page
-        if pageSize != self._pageSize:
-            queryDict['pageSize'] = pageSize
-        if facets:
-            queryDict['facet'] = [qf["fieldname"] for qf in queryFacets]
-        if facetFilters:
-            queryDict['facet-filter'] = facetFilters
-            q = QueryExpression.nested('AND')
-            q.operands.append(queryKwargs['query'])
-            for facetFilter in facetFilters:
-                index, term = facetFilter.split('=', 1)
-                q.operands.append(QueryExpression.searchterm(index=index, relation='exact', term=term))
-            queryKwargs['query'] = q
-        return MyDict(
-            page=page,
-            pageSize=pageSize,
-            query=query,
-            stop=stop,
-            start=start,
-            queryKwargs=queryKwargs,
-            queryDict=queryDict,
-        )
-
-    def pageDict(self, pageAdditon, request, path):
-        linkDict = dict(request.queryDict)
-        response = {'page': request.page + pageAdditon}
-        linkDict.update(response)
-        response['link'] = '{0}?{1}'.format(
-                path,
-                urlencode(sorted(linkDict.items()))
-            )
-        return response
-
-    def _timeNow(self):
-        return time()
-
-    def _querytime(self, t):
-        return Decimal(t).quantize(MILLIS)
 
 class MyDict(dict):
     def __getattr__(self, key):
@@ -216,6 +255,24 @@ class MyDict(dict):
 urlencode = lambda arg: _urlencode(arg, doseq=True)
 
 MILLIS = Decimal('0.001')
+
+class MissingArgument(ValueError):
+    def __init__(self, argument):
+        ValueError.__init__(self, "Missing required argument: {}".format(repr(argument)))
+
+class InvalidArgument(ValueError):
+    def __init__(self, argument, message):
+        ValueError.__init__(self, "Invalid argument: {}, {}".format(repr(argument), message))
+
+class BadArgument(ValueError):
+    def __init__(self, argument):
+        ValueError.__init__(self, "Bad argument: {} is an illegal parameter".format(repr(argument)))
+
+def getInt(arguments, key, default):
+    try:
+        return int(arguments.get(key, [default])[0])
+    except ValueError:
+        raise InvalidArgument(key, 'expected integer')
 
 _first={key:nr for nr, key in enumerate(reversed(['total', 'items', 'response', 'request']), start=1)}
 _last={key:nr for nr, key in enumerate(['next', 'previous', 'version'], start=1)}
