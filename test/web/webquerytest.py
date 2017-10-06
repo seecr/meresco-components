@@ -9,8 +9,9 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -46,6 +47,14 @@ class WebQueryTest(TestCase):
         self.assertFalse(wq.needsBooleanHelp())
         self.assertEquals(parseCql('cats'), wq.ast)
 
+    def testCqlQuery(self):
+        self.assertEqual(cqlToExpression('field = value'), WebQuery('field=value').query)
+        self.assertTrue(WebQuery('field = value').isDefaultQuery())
+        self.assertFalse(WebQuery('field = value').isBooleanQuery())
+        self.assertFalse(WebQuery('field = value').isPlusMinusQuery())
+        self.assertEqual(cqlToExpression('field = value'), WebQuery('field = value').query)
+        self.assertEqual(cqlToExpression('field exact value'), WebQuery('field exact value').query)
+
     def testPlusMinusQuery(self):
         self.assertPlusMinusQuery('cats', '+cats')
         self.assertPlusMinusQuery('antiunary exact true NOT cats', '-cats')
@@ -66,7 +75,7 @@ class WebQueryTest(TestCase):
         self.assertDefaultQuery('"-cats"', asString='-cats')
         self.assertDefaultQuery('cats AND dogs', 'cats dogs')
         self.assertDefaultQuery('cats AND OR AND dogs AND -fish', 'cats OR dogs -fish', needsBooleanHelp=True)
-        self.assertDefaultQuery('"-cats" AND "AND" AND "dogs"', '-cats AND dogs', needsBooleanHelp=True, asString='-cats AND AND AND dogs')
+        self.assertDefaultQuery('-cats AND dogs', '-cats AND dogs', needsBooleanHelp=True, asString='-cats AND dogs')
         self.assertDefaultQuery('cheese AND "("', 'cheese (', needsBooleanHelp=True)
         self.assertDefaultQuery('antiunary exact true', '')
         self.assertDefaultQuery('label=value')

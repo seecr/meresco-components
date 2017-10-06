@@ -10,7 +10,8 @@
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -201,7 +202,11 @@ def _default2CqlWithQuotes(aString, antiUnaryClause="ignored"):
 def _default2Cql(aString, antiUnaryClause="ignored"):
     if aString.strip() == '':
         return antiUnaryClause
-    return ' AND '.join(_valueFromGroupdict(match.groupdict()) for match in SPLITTED_STRINGS.finditer(aString))
+    try:
+        cqlToExpression(aString)
+        return aString
+    except CQLParseException:
+        return ' AND '.join(_valueFromGroupdict(match.groupdict()) for match in SPLITTED_STRINGS.finditer(aString))
 
 def quot(aString):
     if aString[-1] == '"' == aString[0]:
