@@ -7,9 +7,10 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -92,9 +93,10 @@ class File(object):
         return formatdate(time() + offset)
 
 class Directory(object):
-    def __init__(self, path, documentRoot):
+    def __init__(self, path, documentRoot, basePath):
         self._path = path
         self._documentRoot = documentRoot
+        self._basePath = basePath[:-1] if basePath.endswith('/') else basePath
 
     def getHeaders(self):
         return {}
@@ -108,12 +110,15 @@ class Directory(object):
             yield self._permanentRedirect(strippedPath)
             return
 
-        yield 'HTTP/1.0 200 OK' + CRLF
-        for item in self.getHeaders().items():
+        yield httputils.Ok
+        headers = {'Content-Type': httputils.ContentTypeHtml}
+        headers.update(self.getHeaders())
+        for item in headers.items():
             yield "%s: %s" % item + CRLF
         yield CRLF
+        totalPath = self._basePath + ('' if strippedPath.startswith('/') else '/') + strippedPath
 
-        title = 'Index of %(path)s' % dict(path=strippedPath)
+        title = escapeHtml('Index of %(path)s' % dict(path=totalPath[:-1] or '/'))
         yield """<html>
     <head>
         <title>%(title)s</title>
@@ -122,8 +127,9 @@ class Directory(object):
         <h1>%(title)s</h1>
         <hr>
         <pre>
-<a href="../">../</a>
 """ % locals()
+        if strippedPath != '/':
+            yield '<a href="../">../</a>\n'
         files = sorted(listdir(self._path))
         if len(files) > 0:
             longest = max(map(str.__len__, files)) + 2
@@ -147,11 +153,12 @@ class Directory(object):
         yield "Location: %s/\r\n\r\n" % path
 
 class FileServer(object):
-    def __init__(self, documentRoot, allowDirectoryListing=False):
+    def __init__(self, documentRoot, allowDirectoryListing=False, basePath=''):
         self._documentRoots = [abspath(d) for d in (documentRoot if type(documentRoot) is list else [documentRoot])]
         if not type(allowDirectoryListing) is bool:
             raise TypeError("allowDirectoryListing should be a boolean")
         self._allowDirectoryListing = allowDirectoryListing
+        self._basePath = basePath
 
     def handleRequest(self, path, port=None, Client=None, Method=None, Headers=None, **kwargs):
         resolvedFileOrDir = self._findFile(path)
@@ -178,7 +185,7 @@ class FileServer(object):
                 resolvedPath, documentRoot = dirs[0]
                 if filename[-1] == '/':
                     resolvedPath += "/"
-                return Directory(resolvedPath, documentRoot) if len(dirs) > 0 else None
+                return Directory(resolvedPath, documentRoot, basePath=self._basePath)
 
     def _resolvePaths(self, filename):
         possibleFilenames = unquoteFilename(filename)

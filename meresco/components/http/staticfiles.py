@@ -3,7 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -29,13 +30,13 @@ from pathrename import PathRename
 from pathfilter import PathFilter
 
 class StaticFiles(object):
-    def __init__(self, libdir, path):
+    def __init__(self, libdir, path, allowDirectoryListing=False):
         self.path = path
         if not self.path.endswith('/'):
             self.path += '/'
         self._top = be((PathFilter(self.path),
-            (PathRename(lambda path:path[len(self.path):]),
-                (FileServer(libdir),)
+            (PathRename(lambda path:path[len(self.path):] or '/'),
+                (FileServer(libdir, allowDirectoryListing=allowDirectoryListing, basePath=self.path),)
             )
         ))
 

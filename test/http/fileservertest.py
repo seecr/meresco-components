@@ -7,9 +7,10 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016-2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -180,18 +181,17 @@ class FileServerTest(SeecrTestCase):
         self.assertTrue("<title>Index of /</title>" in response, response)
 
         links = [line for line in response.split("\n") if line.startswith("<a href")]
-        self.assertEqual(3, len(links))
+        self.assertEqual(2, len(links))
 
-        self.assertEquals('<a href="../">../</a>', links[0])
-        self.assertTrue(links[1].startswith('<a href="dummy.txt">dummy.txt</a>'), links[1])
-        self.assertTrue(links[1].endswith(' 5'), links[1])
-        self.assertTrue(links[2].startswith('<a href="subdir/">subdir/</a>'), links[2])
+        self.assertTrue(links[0].startswith('<a href="dummy.txt">dummy.txt</a>'), links[0])
+        self.assertTrue(links[0].endswith(' 5'), links[0])
+        self.assertTrue(links[1].startswith('<a href="subdir/">subdir/</a>'), links[1])
 
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir"))
         self.assertTrue(response.startswith("HTTP/1.0 301 Moved Permanently"), response)
 
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir/"))
-        self.assertTrue("<title>Index of /subdir/</title>" in response, response)
+        self.assertTrue("<title>Index of /subdir</title>" in response, response)
         links = [line for line in response.split("\n") if line.startswith("<a href")]
         self.assertEquals('<a href="../">../</a>', links[0])
         self.assertTrue(links[1].startswith('''<a href='The "real" &lt;deal&gt;.txt'>The "real" &lt;deal&gt;.txt</a>'''), links[1])
@@ -199,7 +199,7 @@ class FileServerTest(SeecrTestCase):
 
         subdir = mkdir(self.directory, "subdir2")
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir2/"))
-        self.assertTrue("<title>Index of /subdir2/</title>" in response, response)
+        self.assertTrue("<title>Index of /subdir2</title>" in response, response)
         links = [line for line in response.split("\n") if line.startswith("<a href")]
         self.assertTrue(1, len(links))
         hrs = [line for line in response.split("\n") if line.strip() == "<hr>"]
@@ -207,3 +207,21 @@ class FileServerTest(SeecrTestCase):
 
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/does_not_exist/"))
         self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)
+
+    def testListDirectoryBasePath(self):
+        fileServer = FileServer(self.directory, allowDirectoryListing=True, basePath='/webpath/')
+        with open(join(self.directory, "dummy.txt"), "w") as f:
+            f.write("Dummy")
+        mkdir(self.directory, "subdir")
+
+        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
+        self.assertTrue(response.startswith("HTTP/1.0 200 OK"), response)
+        self.assertTrue("<title>Index of /webpath</title>" in response, response)
+
+        links = [line for line in response.split("\n") if line.startswith("<a href")]
+        self.assertEqual(2, len(links))
+
+        self.assertTrue(links[0].startswith('<a href="dummy.txt">dummy.txt</a>'), links[0])
+        self.assertTrue(links[0].endswith(' 5'), links[0])
+        self.assertTrue(links[1].startswith('<a href="subdir/">subdir/</a>'), links[1])
+
