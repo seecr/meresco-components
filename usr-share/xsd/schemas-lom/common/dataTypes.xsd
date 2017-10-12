@@ -25,6 +25,19 @@
 
    <!-- Data type declarations -->
 
+   <xs:simpleType name="xsLanguage">
+       <xs:annotation>
+         <xs:documentation>
+            Seecr replaced the xs:language definition to work around libxslt
+            problem. See https://bugzilla.gnome.org/show_bug.cgi?id=666920
+         </xs:documentation>
+       </xs:annotation>
+      <xs:restriction base="xs:string">
+          <xs:pattern value="[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+
    <!-- CharacterString -->
    <xs:simpleType name="CharacterString">
       <xs:restriction base="xs:string"/>
@@ -33,7 +46,7 @@
    <!-- LanguageId -->
    <xs:complexType name="LanguageId">
        <xs:simpleContent>
-         <xs:extension base="xs:language">
+         <xs:extension base="xsLanguage">
             <xs:attributeGroup ref="ex:customAttributes"/>
          </xs:extension>
       </xs:simpleContent>
@@ -70,7 +83,7 @@
    <xs:complexType name="LangString">
       <xs:simpleContent>
          <xs:extension base="CharacterString">
-            <xs:attribute name="language" type="xs:language"/>
+            <xs:attribute name="language" type="xsLanguage"/>
             <xs:attributeGroup ref="ex:customAttributes"/>
          </xs:extension>
       </xs:simpleContent>
@@ -94,10 +107,12 @@
       </xs:simpleContent>
    </xs:complexType>
 
-   <!-- Regular expresion from Christian Klaue -->
+   <!-- Regular expresion from Christian Klaue,
+   modified by Seek You Too B.V. for timezones without seconds. according to specification: 
+     http://www.w3.org/TR/xmlschema-2/#dateTime -->
    <xs:simpleType name="DateTimeString">
       <xs:restriction base="CharacterString">
-         <xs:pattern value="([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]|[0-9][1-9][0-9]{2}|[1-9][0-9]{3})(\-(0[1-9]|1[0-2])(\-(0[1-9]|[1-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3])(:[0-5][0-9](:[0-5][0-9](\.[0-9]{1,}(Z|((\+|\-)([0-1][0-9]|2[0-3]):[0-5][0-9]))?)?)?)?)?)?)?"/>
+         <xs:pattern value="([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]|[0-9][1-9][0-9]{2}|[1-9][0-9]{3})(\-(0[1-9]|1[0-2])(\-(0[1-9]|[1-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3])(:[0-5][0-9](:[0-5][0-9](\.[0-9]{1,})?)?(Z|((\+|\-)([0-1][0-9]|2[0-3]):[0-5][0-9]))?)?)?)?)?"/>
       </xs:restriction>
    </xs:simpleType>
 
