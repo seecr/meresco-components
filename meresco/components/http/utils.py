@@ -44,6 +44,7 @@ ContentTypeRss = "application/rss+xml; charset=utf-8"
 ContentTypeHtml = "text/html; charset=utf-8"
 ContentTypePlainText = "text/plain; charset=utf-8"
 ContentTypeJson = "application/json"
+ContentTypeYaml = "text/x-yaml"
 ContentTypeHeader = "Content-Type: "
 
 Ok = "HTTP/1.0 200 OK" + CRLF
@@ -67,6 +68,10 @@ okPlainText = Ok + \
 
 okJson = Ok + \
     ContentTypeHeader + ContentTypeJson + CRLF + \
+    CRLF
+
+okYaml = Ok + \
+    ContentTypeHeader + ContentTypeYaml + CRLF + \
     CRLF
 
 #204
