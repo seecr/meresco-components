@@ -4,7 +4,7 @@
  * and archives, based on "Meresco Core".
  *
  * Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
- * Copyright (C) 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+ * Copyright (C) 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
  *
  * This file is part of "Meresco Components"
  *
@@ -441,10 +441,10 @@ $.fn.autocomplete = function(options){ return this.each(function(){
     else if (key == ARRUP)
       n = current_highlight - 1;
 
-    if (n > $(suggestions_list).children().size())
+    if (n > $(suggestions_list).children().length)
       n = 1;
     if (n < 1)
-      n = $(suggestions_list).children().size();
+      n = $(suggestions_list).children().length;
     setHighlight(n);
   };
   // change highlight
