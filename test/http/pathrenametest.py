@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011, 2017 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
 #
@@ -57,4 +57,14 @@ class PathRenameTest(TestCase):
 
         self.assertEquals(1, len(interceptor.calledMethods))
         self.assertEquals("otherMethod('attribute')", str(interceptor.calledMethods[0]))
+
+    def testOriginalPathAlreadyUsed(self):
+        rename = PathRename(lambda path: '/new'+path)
+        interceptor = CallTrace('interceptor', methods={'handleRequest': lambda *args, **kwargs: (x for x in [])})
+        rename.addObserver(interceptor)
+
+        list(compose(rename.handleRequest(path='/mypath', originalPath='/original/path')))
+
+        self.assertEquals(['handleRequest'], interceptor.calledMethodNames())
+        self.assertEquals(dict(originalPath='/original/path', path='/new/mypath'), interceptor.calledMethods[0].kwargs)
 

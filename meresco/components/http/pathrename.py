@@ -9,6 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
+# Copyright (C) 2017 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -36,5 +37,6 @@ class PathRename(Transparent):
         self._rename = rename
 
     def handleRequest(self, path, *args, **kwargs):
-        yield self.all.handleRequest(path=self._rename(path), originalPath=path, *args, **kwargs)
+        originalPath = kwargs.pop('originalPath', path)
+        yield self.all.handleRequest(path=self._rename(path), originalPath=originalPath, *args, **kwargs)
 
