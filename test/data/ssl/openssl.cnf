@@ -1,0 +1,10 @@
+distinguished_name      = req_distinguished_name
+[ req_distinguished_name ]
+countryName                     = Country Name (2 letter code)
+countryName_default             = NL
+0.organizationName                = Organization name
+0.organizationName_default        = Seecr (Seek You Too B.V.)
+commonName                      = CN
+commonName_default              = meresco.example.org
+emailAddress                    = Email Address
+emailAddress_default            = info@seecr.nl
