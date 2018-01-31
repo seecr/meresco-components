@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -39,8 +39,8 @@ class ObservableHttpsServerTest(SeecrTestCase):
     def testCompressResponseFlag(self):
         reactor = CallTrace('Reactor')
 
-        keyfile = join(testDataDir, 'server.pkey')
-        certfile = join(testDataDir, 'server.cert')
+        keyfile = join(testDataDir, 'server.key')
+        certfile = join(testDataDir, 'server.crt')
         mockSok = object()
 
         s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, compressResponse=True)
