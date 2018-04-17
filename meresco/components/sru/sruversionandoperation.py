@@ -3,12 +3,8 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
-# Copyright (C) 2007 SURFnet. http://www.surfnet.nl
-# Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2014, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2017 SURFmarket https://surf.nl
+# Copyright (C) 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -28,11 +24,17 @@
 #
 ## end license ##
 
-from .sruhandler import SruHandler
-from .sruparser import SruParser, SruException
-from .srurecordupdate import SruRecordUpdate, SRURecordUpdate
-from .sruupdateclient import SruUpdateClient, SruUpdateException
-from .srw import Srw
-from .srulimitstartrecord import SruLimitStartRecord
-from .sruduplicatecount import SruDuplicateCount
-from .sruversionandoperation import SruVersionAndOperation
+from meresco.core import Transparent
+
+class SruVersionAndOperation(Transparent):
+    def __init__(self, operation='searchRetrieve', version='1.2', recordSchema=None, **kwargs):
+        Transparent.__init__(self, **kwargs)
+        self._defaults = dict(operation=[operation], version=[version])
+        if recordSchema:
+            self._defaults['recordSchema'] = [recordSchema]
+
+    def handleRequest(self, arguments, **kwargs):
+        if 'query' in arguments:
+            for k,v in self._defaults.items():
+                arguments.setdefault(k, v)
+        yield self.all.handleRequest(arguments=arguments, **kwargs)
