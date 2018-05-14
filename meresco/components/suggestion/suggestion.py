@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -38,14 +38,17 @@ class Suggestion(Observable):
         self._allowOverrideField = allowOverrideField
         self._maximumCount = maximumCount
 
-    def executeQuery(self, extraArguments, **kwargs):
+    def executeQuery(self, **kwargs):
         suggestionRequest = None
-        if 'x-suggestionsQuery' in extraArguments and extraArguments['x-suggestionsQuery'][0]:
-            suggestionRequest = dict(
-                count=self._getCount(extraArguments),
-                field=self._getField(extraArguments),
-                suggests=extraArguments['x-suggestionsQuery'][0].split())
-        response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, extraArguments=extraArguments, **kwargs)
+        extraArguments = kwargs.get('extraArguments')
+        if not extraArguments is None:
+            xSuggestionsQuery = extraArguments.get('x-suggestionsQuery', [None])[0]
+            if xSuggestionsQuery:
+                suggestionRequest = dict(
+                    count=self._getCount(extraArguments),
+                    field=self._getField(extraArguments),
+                    suggests=xSuggestionsQuery.split())
+        response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, **kwargs)
         raise StopIteration(response)
 
     def extraResponseData(self, response, sruArguments, **kwargs):

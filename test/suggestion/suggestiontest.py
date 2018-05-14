@@ -119,6 +119,13 @@ class SuggestionTest(SeecrTestCase):
                 <field>field</field>
             </suggestions>""", result)
 
+    def testExecuteQueryWithoutExtraArguments(self):
+        suggestion = Suggestion(count=10, field='dcterms:title')
+        suggestion.addObserver(self.observer)
+        result = retval(suggestion.executeQuery(kwarg='value'))
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertTrue(result == self.response)
+
     def testXSuggestionQueryToSuggestionRequest(self):
         extraArguments = {'x-suggestionsQuery': ['query']}
         suggestion = Suggestion(count=10, field='dcterms:title')
