@@ -31,10 +31,11 @@ from meresco.core import Observable
 
 
 class Suggestion(Observable):
-    def __init__(self, count, field, allowOverrideField=False, maximumCount=None):
+    def __init__(self, count, field, allowOverrideField=False, maximumCount=None, suggestMode=None):
         Observable.__init__(self)
         self._count = count
         self._field = field
+        self._suggestMode = suggestMode
         self._allowOverrideField = allowOverrideField
         self._maximumCount = maximumCount
 
@@ -48,6 +49,9 @@ class Suggestion(Observable):
                     count=self._getCount(extraArguments),
                     field=self._getField(extraArguments),
                     suggests=xSuggestionsQuery.split())
+                suggestMode = self._getSuggestMode(extraArguments)
+                if suggestMode:
+                    suggestionRequest['mode'] = suggestMode
         response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, **kwargs)
         raise StopIteration(response)
 
@@ -75,15 +79,21 @@ class Suggestion(Observable):
         yield '<query>%s</query>' % xmlEscape(sruArguments['x-suggestionsQuery'][0])
         yield '<count>%s</count>' % self._getCount(sruArguments)
         yield '<field>%s</field>' % xmlEscape(self._getField(sruArguments))
+        suggestMode = self._getSuggestMode(sruArguments)
+        if suggestMode:
+            yield '<mode>%s</mode>' % xmlEscape(suggestMode)
         yield '</suggestions>'
 
     def _getField(self, arguments):
         if not self._allowOverrideField:
             return self._field
-        return arguments.get('x-suggestionsField',[self._field])[0]
+        return arguments.get('x-suggestionsField', [self._field])[0]
 
     def _getCount(self, arguments):
-        count = max(1, int(arguments.get('x-suggestionsCount',[self._count])[0]))
+        count = max(1, int(arguments.get('x-suggestionsCount', [self._count])[0]))
         if self._maximumCount:
             count = min(count, self._maximumCount)
         return count
+
+    def _getSuggestMode(self, arguments):
+        return arguments.get('x-suggestMode', [self._suggestMode])[0]

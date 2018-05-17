@@ -98,13 +98,14 @@ class SuggestionTest(SeecrTestCase):
     def testEchoedExtraRequestData(self):
         suggestion = Suggestion(count=1, field='afi>eld')
 
-        result = "".join(list(suggestion.echoedExtraRequestData(sruArguments={'x-suggestionsQuery': ['que<ry']})))
+        result = "".join(list(suggestion.echoedExtraRequestData(sruArguments={'x-suggestionsQuery': ['que<ry'], 'x-suggestMode': ['SUGGEST_MORE_POPULAR']})))
 
         self.assertEqualsWS("""
             <suggestions xmlns="http://meresco.org/namespace/suggestions">
                 <query>que&lt;ry</query>
                 <count>1</count>
                 <field>afi&gt;eld</field>
+                <mode>SUGGEST_MORE_POPULAR</mode>
             </suggestions>""", result)
 
     def testEchoedExtraRequestDataOtherCountField(self):
@@ -137,14 +138,14 @@ class SuggestionTest(SeecrTestCase):
         self.assertEquals(dict(count=10, field='dcterms:title', suggests=['query']), methodKwargs['suggestionRequest'])
 
     def testXSuggestionQueryCountAndFieldToSuggestionRequest(self):
-        extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5']}
+        extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsField': ['fieldname'], 'x-suggestionsCount': ['5'], 'x-suggestMode': ['SUGGEST_MORE_POPULAR']}
         suggestion = Suggestion(count=10, field='dcterms:title', allowOverrideField=True)
         suggestion.addObserver(self.observer)
         result = retval(suggestion.executeQuery(kwarg='value', extraArguments=extraArguments))
         self.assertTrue(result == self.response)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         methodKwargs = self.observer.calledMethods[0].kwargs
-        self.assertEquals(dict(count=5, field='fieldname', suggests=['query']), methodKwargs['suggestionRequest'])
+        self.assertEquals(dict(count=5, field='fieldname', mode='SUGGEST_MORE_POPULAR', suggests=['query']), methodKwargs['suggestionRequest'])
 
     def testXSuggestionCountMaximized(self):
         extraArguments = {'x-suggestionsQuery': ['query'], 'x-suggestionsCount': ['50']}
