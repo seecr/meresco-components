@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2015, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -99,6 +99,15 @@ class DirectoryLogTest(SeecrTestCase):
         kwargs['timestamp'] += 3600*24
         log.log(**kwargs)
         self.assertEquals(5+10, len(listdir(self.tempdir)))
+
+    def testAsStream(self):
+        times = [1257161136.0]
+        d = DirectoryLog(self.tempdir)
+        d._now = lambda: times[0]
+        d.write('my line\n')
+        d.flush()
+        self.assertEqual(['2009-11-02-query.log'], listdir(self.tempdir))
+        self.assertEqual('my line\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
 DEFAULT_KWARGS = lambda: dict(
         timestamp=1257161136.0,

@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -31,11 +31,14 @@ from utils import getFirst, getScoped
 
 
 class ApacheLogWriter(object):
-    def __init__(self, outputStream=None):
+    def __init__(self, outputStream=None, rejectLog=None):
         self._out = outputStream
+        self._rejectLog = (lambda collectedLog: False) if rejectLog is None else rejectLog
 
     def writeLog(self, collectedLog):
         if self._out is None:
+            return
+        if self._rejectLog(collectedLog):
             return
         httpRequest = getScoped(collectedLog, scopeNames=(), key='httpRequest')
         httpResponse = getScoped(collectedLog, scopeNames=(), key='httpResponse')

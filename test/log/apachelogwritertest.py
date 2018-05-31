@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -30,6 +30,7 @@ from StringIO import StringIO
 from seecr.test import SeecrTestCase
 
 from meresco.components.log import ApacheLogWriter
+from meresco.components.log.utils import getScoped
 
 
 class ApacheLogWriterTest(SeecrTestCase):
@@ -77,3 +78,24 @@ class ApacheLogWriterTest(SeecrTestCase):
         writer = ApacheLogWriter(stream)
         writer.writeLog(collectedLog={'key':['value']})
         self.assertEquals("", stream.getvalue())
+
+    def testRejectLog(self):
+        stream = StringIO()
+        writer = ApacheLogWriter(stream, rejectLog=lambda collectedLog: getScoped(collectedLog, scopeNames=(), key='httpRequest').get('RequestURI') == ['/abc'])
+        collectedLog={
+            'httpRequest': {
+                'Headers': [{}],
+                'Client': [('10.11.12.13', 12345)],
+                'timestamp': [1468845136.824253],
+                'Method': ['GET'],
+                'RequestURI': ['/abc'],
+            },
+            'httpResponse': {
+                'httpStatus': ['200'],
+            }
+        }
+        writer.writeLog(collectedLog)
+        self.assertEquals('', stream.getvalue())
+        collectedLog['httpRequest']['RequestURI'] = ['/abcd']
+        writer.writeLog(collectedLog)
+        self.assertEquals('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abcd HTTP/1.0" 200 - "-" "-"\n', stream.getvalue())

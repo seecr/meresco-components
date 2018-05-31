@@ -6,7 +6,7 @@
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2006-2012, 2014, 2016 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -28,15 +28,14 @@
 #
 ## end license ##
 
-from time import strftime, gmtime
+from time import strftime, gmtime, time
 from os.path import join, isdir, isfile
 from os import makedirs, listdir, remove
 from .logline import LogLine
 
 NR_OF_FILES_KEPT = 14
 
-
-class DirectoryLog(object):
+class DirectoryLogRotate(object):
     def __init__(self, logdir, extension='-query.log', nrOfFilesKept=NR_OF_FILES_KEPT, logline=LogLine.createDefault()):
         self._previousLog = None
         self._logdir = logdir
@@ -45,6 +44,7 @@ class DirectoryLog(object):
         self._filenameExtension = extension
         self._nrOfFilesKept = nrOfFilesKept
         self._logline = logline
+        self._now = time
 
     def setNrOfFilesKept(self, value):
         if value > 0:
@@ -53,20 +53,6 @@ class DirectoryLog(object):
     def _filename(self, timestamp):
         date = strftime('%Y-%m-%d', gmtime(timestamp))
         return join(self._logdir, '%s%s' % (date, self._filenameExtension))
-
-    def log(self, **kwargs):
-        timestamp = kwargs['timestamp']
-        logFilename = self._filename(timestamp)
-
-        if logFilename != self._previousLog:
-            logs = self._logfiles()
-            while len(logs) >= self._nrOfFilesKept:
-                remove(join(self._logdir, logs[0]))
-                logs = self._logfiles()
-            self._previousLog = logFilename
-
-        with open(logFilename, 'a') as f:
-            f.write(self._logline(kwargs))
 
     def _logfiles(self):
         return sorted(f for f in listdir(self._logdir) if f.endswith(self._filenameExtension))
@@ -82,5 +68,31 @@ class DirectoryLog(object):
         with open(logFilename) as f:
             for line in f:
                 yield line
+
+    def write(self, line, **kwargs):
+        timestamp = kwargs.pop('timestamp', self._now())
+        logFilename = self._filename(timestamp)
+
+        if logFilename != self._previousLog:
+            logs = self._logfiles()
+            while len(logs) >= self._nrOfFilesKept:
+                remove(join(self._logdir, logs[0]))
+                logs = self._logfiles()
+            self._previousLog = logFilename
+
+        with open(logFilename, 'a') as f:
+            f.write(line)
+
+    def flush(self):
+        pass
+
+class DirectoryLog(DirectoryLogRotate):
+    def __init__(self, *args, **kwargs):
+        self._logline = kwargs.pop('logline', LogLine.createDefault())
+        DirectoryLogRotate.__init__(self, *args, **kwargs)
+
+    def log(self, **kwargs):
+        self.write(self._logline(kwargs), timestamp=kwargs['timestamp'])
+
 
 
