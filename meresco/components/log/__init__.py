@@ -30,7 +30,7 @@ from logcomponent import LogComponent
 from logfileserver import LogFileServer
 from logcollector import LogCollector, collectLog, LogCollectorScope, collectLogForScope
 from querylog import QueryLog, QueryLogHelperForSru, QueryLogHelper, QueryLogHelperForExecuteCQL
-from directorylog import DirectoryLog
+from directorylog import DirectoryLog, DirectoryLogRotate
 from apachelogwriter import ApacheLogWriter
 from handlerequestlog import HandleRequestLog
 from querylogwriter import QueryLogWriter
