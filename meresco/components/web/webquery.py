@@ -10,7 +10,7 @@
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2011, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
@@ -39,7 +39,7 @@ STRINGS = [QUOTED_LABEL_STRING ,QUOTED_STRING, UNQUOTED_STRING]
 
 SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 
-from cqlparser import parseString, CQLParseException, cql2string, CqlIdentityVisitor, cqlToExpression
+from cqlparser import parseString, CQLParseException, cql2string, CqlIdentityVisitor, cqlToExpression, CQLTokenizerException, quotTerm
 from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, SEARCH_TERM, TERM, BOOLEAN, INDEX, RELATION, COMPARITOR
 
 DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = range(3)
@@ -48,27 +48,30 @@ class WebQuery(object):
 
     def __init__(self, aString, antiUnaryClause=""):
         self.original = aString
-        plusminus = _feelsLikePlusMinusQuery(aString)
-        boolean = _feelsLikeBooleanQuery(aString)
-        self._needsHelp = boolean and plusminus
-        if plusminus and not boolean:
-            self._kind = PLUSMINUS_KIND
-            self.ast = parseString(_plusminus2Cql(aString, antiUnaryClause))
-        elif boolean and not plusminus:
-            try:
-                self._kind = BOOLEAN_KIND
-                self.ast = parseString(_boolean2Cql(aString, antiUnaryClause))
-            except CQLParseException:
-                self._needsHelp = True
+        try:
+            plusminus = _feelsLikePlusMinusQuery(aString)
+            boolean = _feelsLikeBooleanQuery(aString)
+            self._needsHelp = boolean and plusminus
+            if plusminus and not boolean:
+                self._kind = PLUSMINUS_KIND
+                self.ast = parseString(_plusminus2Cql(aString, antiUnaryClause))
+            elif boolean and not plusminus:
+                try:
+                    self._kind = BOOLEAN_KIND
+                    self.ast = parseString(_boolean2Cql(aString, antiUnaryClause))
+                except CQLParseException:
+                    self._needsHelp = True
+                    self._kind = DEFAULT_KIND
+                    self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
+            else:
                 self._kind = DEFAULT_KIND
-                self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
-        else:
-            self._kind = DEFAULT_KIND
-            try:
-                self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
-            except CQLParseException:
-                self._needsHelp = True
-                self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
+                try:
+                    self.ast = parseString(_default2Cql(aString, antiUnaryClause=antiUnaryClause))
+                except CQLParseException:
+                    self._needsHelp = True
+                    self.ast = parseString(_default2CqlWithQuotes(aString, antiUnaryClause=antiUnaryClause))
+        except (CQLParseException, CQLTokenizerException):
+            self.ast = parseString(quotTerm(self.original))
         self.originalAst = self.ast
         self._filters = []
 
@@ -205,7 +208,7 @@ def _default2Cql(aString, antiUnaryClause="ignored"):
     try:
         cqlToExpression(aString)
         return aString
-    except CQLParseException:
+    except (CQLParseException, CQLTokenizerException):
         return ' AND '.join(_valueFromGroupdict(match.groupdict()) for match in SPLITTED_STRINGS.finditer(aString))
 
 def quot(aString):

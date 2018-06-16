@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2012, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2015, 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
 #
@@ -238,3 +238,9 @@ class WebQueryTest(TestCase):
 
     def assertCql(self, expected, input):
         self.assertEquals(expected, input, '%s != %s' %(expected.prettyPrint(), input.prettyPrint()))
+
+    def testError(self):
+        wq = WebQuery('\'"a')
+        self.assertCql(parseCql('"\'" AND "a"'), wq.ast)
+        wq = WebQuery('<?xml version="1.0" encoding="ISO-8859-1"?>\n<!DOCTYPE foo [\n<!ELEMENT foo ANY >\n<!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>')
+        self.assertCql(parseCql('"<?xml version=\\"1.0\\" encoding=\\"ISO-8859-1\\"?>\n<!DOCTYPE foo [\n<!ELEMENT foo ANY >\n<!ENTITY xxe SYSTEM \\"file:///etc/passwd\\" >]><foo>&xxe;</foo>"'), wq.ast)
