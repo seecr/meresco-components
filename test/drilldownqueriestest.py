@@ -45,7 +45,7 @@ class DrilldownQueriesTest(SeecrTestCase):
         self.assertEquals('result', result)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
+        self.assertEquals([('a', [['b']])], executeQueryMethod.kwargs['drilldownQueries'])
 
         self.observer.calledMethods.reset()
 
@@ -53,7 +53,15 @@ class DrilldownQueriesTest(SeecrTestCase):
         self.assertEquals('result', result)
         self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
+        self.assertEquals([('a', [['b']])], executeQueryMethod.kwargs['drilldownQueries'])
+
+
+    def testDrilldownORQuery(self):
+        result = retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a = b|c']}))
+        self.assertEquals('result', result)
+        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        executeQueryMethod = self.observer.calledMethods[0]
+        self.assertEquals([('a', [['b'], ['c']])], executeQueryMethod.kwargs['drilldownQueries'])
 
     def testErrorForInvalidFormatDrilldownQuery(self):
         try:

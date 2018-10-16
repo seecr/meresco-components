@@ -39,6 +39,9 @@ class DrilldownQueries(Observable):
                     field, value = q.split(' exact ', 1)
                 else:
                     raise ValueError("x-drilldown-query format should be field=value")
-                drilldownQueries.append((field.strip(), [value.strip()]))
+                values = []
+                for val in value.split('|'):
+                    values.append([val.strip()])
+                drilldownQueries.append((field.strip(), values))
         response = yield self.any.executeQuery(extraArguments=extraArguments, drilldownQueries=drilldownQueries, **kwargs)
         raise StopIteration(response)
