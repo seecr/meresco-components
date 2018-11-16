@@ -9,8 +9,8 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2010-2016 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2010-2016, 2018 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011-2018 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -75,6 +75,7 @@ from rssitemtest import RssItemTest
 from rsstest import RssTest
 from scheduletest import ScheduleTest
 from sorteditertoolstest import SortedItertoolsTest
+from sortkeysrenametest import SortKeysRenameTest
 from timeddictionarytest import TimedDictionaryTest
 from timedmessagecachetest import TimedMessageCacheTest
 from tokenizefieldlettest import TokenizeFieldletTest
