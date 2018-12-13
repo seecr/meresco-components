@@ -8,8 +8,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011-2015, 2018 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012, 2014 SURF http://www.surf.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -910,6 +910,28 @@ class SruHandlerTest(SeecrTestCase):
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20,field2']))
         self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
+
+
+    def testExecuteQueryGetsRecordSchemaAsOnOfTheKwargs(self):
+        sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, 'x-recordSchema':['extra', 'evenmore'], 'x-extra-key': 'extraValue'}
+        queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
+
+        observer = CallTrace(emptyGeneratorMethods=['echoedExtraRequestData', 'extraResponseData'])
+        response = Response(total=0, hits=[])
+        def executeQuery(**kwargs):
+            raise StopIteration(response)
+            yield
+        observer.methods['executeQuery'] = executeQuery
+
+        component = SruHandler()
+        component.addObserver(observer)
+
+        consume(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
+
+        self.assertEqual(['executeQuery', 'echoedExtraRequestData', 'extraResponseData'], observer.calledMethodNames())
+        queryKwargs = observer.calledMethods[0].kwargs
+        self.assertEqual('schema', queryKwargs['recordSchema'])
+        self.assertEqual(['extra', 'evenmore'], queryKwargs['extraArguments']['x-recordSchema'])
 
 
 MOCKDATA = dict(startTime=0, queryTime=0, response=Response(total=0), localLogCollector=dict())

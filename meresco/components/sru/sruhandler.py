@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2011-2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011-2015, 2018 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -67,7 +67,7 @@ class SruHandler(Observable):
         self._drilldownMaximumTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
         self._collectLogForScope = collectLogForScope if enableCollectLog else lambda **kwargs: None
 
-    def searchRetrieve(self, version=None, recordSchema=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
+    def searchRetrieve(self, version=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
 
         limitBeyond = kwargs.get('limitBeyond', None)
@@ -109,7 +109,7 @@ class SruHandler(Observable):
             for hit in hits:
                 if not recordsWritten:
                     yield '<srw:records>'
-                yield self._writeResult(recordSchema=recordSchema, recordPacking=recordPacking, hit=hit, version=version, sruArguments=sruArguments, **kwargs)
+                yield self._writeResult(recordPacking=recordPacking, hit=hit, version=version, sruArguments=sruArguments, **kwargs)
                 recordsWritten += 1
 
             if recordsWritten:
@@ -120,7 +120,7 @@ class SruHandler(Observable):
 
             yield self._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)
             yield self._writeDiagnostics(diagnostics=diagnostics)
-            yield self._writeExtraResponseData(version=version, recordSchema=recordSchema, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, localLogCollector=localLogCollector, **kwargs)
+            yield self._writeExtraResponseData(version=version, recordPacking=recordPacking, startRecord=startRecord, maximumRecords=maximumRecords, query=query, drilldownData=drilldownData, response=response, queryTime=queryTime, startTime=t0, sruArguments=sruArguments, localLogCollector=localLogCollector, **kwargs)
             yield self._endResults()
         finally:
             self._collectLogForScope(sru=localLogCollector)

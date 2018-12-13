@@ -8,8 +8,8 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Seecr http://seecr.nl
-# Copyright (C) 2011-2012, 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2014, 2018 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012-2014, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -83,6 +83,7 @@ class SruMandatoryParameterNotSuppliedException(SruException):
             details="MANDATORY parameter '%s' not supplied or empty" % parameterName)
 
 class SruParser(Observable):
+    CHANGEABLE_ATTRIBUTES = {'defaultRecordSchema', 'defaultRecordPacking', 'host', 'port', 'description', 'database', 'modifiedDate', 'maximumMaximumRecords'}
 
     def __init__(self, host=None, port=None, description='Meresco SRU', modifiedDate=None, database=None, defaultRecordSchema="dc", defaultRecordPacking="xml", maximumMaximumRecords=None, wsdl=None, oldAndWrongStyleSortKeys=False):
         Observable.__init__(self)
@@ -96,6 +97,11 @@ class SruParser(Observable):
         self._maximumMaximumRecords = maximumMaximumRecords
         self._wsdl = wsdl
         self._oldAndWrongStyleSortKeys = oldAndWrongStyleSortKeys
+
+
+    def setAttribute(self, key, value):
+        if key in self.CHANGEABLE_ATTRIBUTES:
+            setattr(self, '_'+key, value)
 
     def handleRequest(self, arguments, **kwargs):
         yield httputils.okXml

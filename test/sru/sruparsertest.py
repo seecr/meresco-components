@@ -1,32 +1,32 @@
 ## begin license ##
-# 
+#
 # "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core". 
-# 
+# and archives, based on "Meresco Core".
+#
 # Copyright (C) 2007-2009 SURF Foundation. http://www.surf.nl
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Seecr http://seecr.nl
-# Copyright (C) 2011-2012 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
+# Copyright (C) 2011-2012, 2018 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+#
 # This file is part of "Meresco Components"
-# 
+#
 # "Meresco Components" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Meresco Components" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Meresco Components"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from meresco.components.sru.sruparser import MANDATORY_PARAMETER_NOT_SUPPLIED, UNSUPPORTED_PARAMETER, UNSUPPORTED_VERSION, UNSUPPORTED_OPERATION, UNSUPPORTED_PARAMETER_VALUE, QUERY_FEATURE_UNSUPPORTED, SruException, XML_HEADER
@@ -36,7 +36,7 @@ from meresco.core import Observable
 from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse
 from StringIO import StringIO
-from weightless.core import compose, be
+from weightless.core import compose, be, consume
 
 SUCCESS = "SUCCESS"
 
@@ -206,9 +206,9 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
             sruHandler = CallTrace('SRUHandler', emptyGeneratorMethods=['searchRetrieve'])
             component.addObserver(sruHandler)
             response = "".join(compose(component.handleRequest(arguments=dict(
-                version=['1.1'], 
-                query= ['aQuery'], 
-                operation=['searchRetrieve'], 
+                version=['1.1'],
+                query= ['aQuery'],
+                operation=['searchRetrieve'],
                 sortKeys=[sortKeys]))))
             kwargs = sruHandler.calledMethods[0].kwargs
             self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
@@ -217,7 +217,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         assertSortKeys(False, 'aField,,1', False)
         assertSortKeys(False, 'aField,,0', True)
         assertSortKeys(True, 'aField,,1', True)
-        
+
     def testSearchRetrieveWithXParameter(self):
         component = SruParser()
         sruHandler = CallTrace('SRUHandler')
@@ -243,8 +243,29 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
                 )
             )
         )
-    
+
         response = ''.join(compose(dna.all.handleRequest(arguments={'startRecord': ['aap']})))
         self.assertEquals(['additionalDiagnosticDetails'], observer.calledMethodNames())
         self.assertTrue("<details>operation - additional details</details>" in response, response)
 
+
+    def testSetAttribute(self):
+        parser = SruParser(defaultRecordSchema='default')
+        sruHandler = CallTrace('SRUHandler')
+        def searchRetrieve(**kwargs):
+            yield '<mockresult/>'
+        sruHandler.methods['searchRetrieve'] = searchRetrieve
+        parser.addObserver(sruHandler)
+
+        consume(parser.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']}))
+
+        self.assertEqual(['searchRetrieve'], sruHandler.calledMethodNames())
+        self.assertEqual('default', sruHandler.calledMethods[0].kwargs['recordSchema'])
+        self.assertEqual('xml', sruHandler.calledMethods[0].kwargs['recordPacking'])
+        sruHandler.calledMethods.reset()
+
+        parser.setAttribute('defaultRecordSchema', 'newDefault')
+        parser.setAttribute('defaultRecordPacking', 'string')
+        consume(parser.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']}))
+        self.assertEqual('newDefault', sruHandler.calledMethods[0].kwargs['recordSchema'])
+        self.assertEqual('string', sruHandler.calledMethods[0].kwargs['recordPacking'])
