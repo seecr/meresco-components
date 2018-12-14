@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010-2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2010-2011, 2014, 2018 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012-2014, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -46,11 +46,12 @@ from meresco.components.http.utils import okXml
 from meresco.components.log import collectLogForScope
 
 class SruRecordUpdate(Observable):
-    def __init__(self, name=None, stderr=stderr, sendRecordData=True, logErrors=True, enableCollectLog=False):
+    def __init__(self, name=None, stderr=stderr, sendRecordData=True, logErrors=True, enableCollectLog=False, supportDeleteRecord=False):
         Observable.__init__(self, name=name)
         self._stderr = stderr
         self._logErrors = logErrors
         self._sendRecordData = sendRecordData
+        self._supportDeleteRecord = supportDeleteRecord
         self._collectLogForScope = lambda **kwargs: None
         if enableCollectLog:
             self._collectLogForScope = collectLogForScope
@@ -92,7 +93,10 @@ class SruRecordUpdate(Observable):
                     )
             elif action == 'delete':
                 localLogCollector['delete'] = recordId
-                yield self.all.delete(identifier=recordId)
+                if self._supportDeleteRecord:
+                    yield self.all.deleteRecord(identifier=recordId, record=xpathFirst(updateRequest, 'srw:record'))
+                else:
+                    yield self.all.delete(identifier=recordId)
             else:
                 raise ValueError("action value should refer to either 'create', 'replace' or 'delete'.")
             yield self._respond()

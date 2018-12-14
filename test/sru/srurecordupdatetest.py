@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2010-2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2014, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2010-2011, 2014, 2018 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012-2014, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -32,6 +32,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.components.sru.srurecordupdate import SruRecordUpdate
+from meresco.components import lxmltostring
 from lxml.etree import parse, XML, _ElementTree as ElementTreeType
 from meresco.xml.namespaces import xpathFirst
 from StringIO import StringIO
@@ -69,11 +70,11 @@ class SruRecordUpdateTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.stderr = StringIO()
-        self.sruRecordUpdate = SruRecordUpdate(stderr=self.stderr, logErrors=True, enableCollectLog=True)
-        @asyncnoreturnvalue
-        def addOrDelete(*args, **kwargs):
-            pass
-        self.observer = CallTrace("Observer", methods={'add': addOrDelete, 'delete': addOrDelete})
+        self.initSruRecordUpdate(stderr=self.stderr, logErrors=True, enableCollectLog=True)
+
+    def initSruRecordUpdate(self, **kwargs):
+        self.sruRecordUpdate = SruRecordUpdate(**kwargs)
+        self.observer = CallTrace("Observer", emptyGeneratorMethods=['add', 'delete', 'deleteRecord'])
         self.sruRecordUpdate.addObserver(self.observer)
 
     def createRequestBody(self, action=CREATE, recordIdentifier="123", recordData="<dc>empty</dc>"):
@@ -145,6 +146,26 @@ class SruRecordUpdateTest(SeecrTestCase):
 
         method = self.observer.calledMethods[0]
         self.assertEquals("add", method.name)
+
+    def testDeleteRecord(self):
+        self.initSruRecordUpdate(stderr=self.stderr, logErrors=True, enableCollectLog=True, supportDeleteRecord=True)
+        requestBody = self.createRequestBody(action=DELETE)
+        headers, result = self.performRequest(requestBody)
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+<srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+    <srw:version>1.0</srw:version>
+    <ucp:operationStatus>success</ucp:operationStatus>
+</srw:updateResponse>""", result)
+        self.assertEquals(1, len(self.observer.calledMethods))
+
+        method = self.observer.calledMethods[0]
+        self.assertEquals("deleteRecord", method.name)
+        self.assertEqual('123', method.kwargs['identifier'])
+        self.assertEqualsWS('''<srw:record xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+        <srw:recordPacking>text/xml</srw:recordPacking>
+        <srw:recordSchema>irrelevantXML</srw:recordSchema>
+        <srw:recordData><dc>empty</dc></srw:recordData>
+</srw:record>''', lxmltostring(method.kwargs['record']))
 
     def testAddXMLWithUcpUpdateRequest(self):
         """It is not entirely sure if updateRequest is in the 'srw' or 'ucp' namespace.
