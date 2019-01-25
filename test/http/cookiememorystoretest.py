@@ -30,7 +30,7 @@ from time import sleep
 class CookieMemoryStoreTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        self.d = CookieMemoryStore(name='name', timeout=0.1)
+        self.d = CookieMemoryStore(name='name', timeout=0.1, httpOnly=False)
         self.d._now = lambda: 123456789.0
 
     def testCookieName(self):
@@ -51,19 +51,31 @@ class CookieMemoryStoreTest(SeecrTestCase):
         self.assertEquals('username', self.d.validateCookie(result['cookie'])['value'])
         sleep(0.12)
         self.assertEquals(None, self.d.validateCookie(result['cookie']))
-    
+
     def testCreateCookieSecure(self):
-        d = CookieMemoryStore(name='name', timeout=0.1, secure=True)
+        d = CookieMemoryStore(name='name', timeout=0.1, secure=True, httpOnly=False)
         d._now = lambda: 123456789.0
         result = d.createCookie('username')
         self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT; Secure'.format(
             d.cookieName(), result['cookie']), result['header'])
 
     def testCreateCookieHttpOnly(self):
+        d = CookieMemoryStore(name='name', timeout=0.1)
+        d._now = lambda: 123456789.0
+        result = d.createCookie('username')
+        self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT; HttpOnly'.format(
+            d.cookieName(), result['cookie']), result['header'])
+
         d = CookieMemoryStore(name='name', timeout=0.1, httpOnly=True)
         d._now = lambda: 123456789.0
         result = d.createCookie('username')
         self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT; HttpOnly'.format(
+            d.cookieName(), result['cookie']), result['header'])
+        
+        d = CookieMemoryStore(name='name', timeout=0.1, httpOnly=False)
+        d._now = lambda: 123456789.0
+        result = d.createCookie('username')
+        self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT'.format(
             d.cookieName(), result['cookie']), result['header'])
 
     def testCreateCookieForAnyObject(self):
