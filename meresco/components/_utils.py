@@ -23,6 +23,8 @@
 #
 ## end license ##
 
+from contextlib import contextmanager
+
 class Bucket(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -42,4 +44,11 @@ class Bucket(object):
 def simplerepr(o):
     return '%s(%s)' % (o.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in o.__dict__.items()))
 
-__all__ = ['simplerepr', 'Bucket']
+@contextmanager
+def atomic_write(filename, mode="w", tmpPostfix=".tmp"):
+    tmp_filename = "{}{}".format(filename, tmpPostfix)
+    with open(tmp_filename, mode) as fp:
+        yield fp
+    rename(tmp_filename, filename)
+
+__all__ = ['simplerepr', 'Bucket', 'atomic_write']
