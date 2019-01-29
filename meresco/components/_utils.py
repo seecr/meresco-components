@@ -24,6 +24,7 @@
 ## end license ##
 
 from contextlib import contextmanager
+from os import rename
 
 class Bucket(object):
     def __init__(self, **kwargs):
