@@ -29,24 +29,39 @@
 #
 ## end license ##
 
-from utils import notFoundHtml, redirectHttp
+from utils import notFoundHtml, redirectHttp, CRLF
 
 from meresco.core import Transparent
 from weightless.core import compose, Yield
 from warnings import warn
 
 class BasicHttpHandler(Transparent):
-    def __init__(self, notFoundMethod=None):
+    def __init__(self, notFoundMethod=None, additionalHeaders=None):
         Transparent.__init__(self)
         self.notFound = self._notFound if notFoundMethod is None else notFoundMethod
+        self._additionalHeaders = {} if additionalHeaders is None else additionalHeaders
 
     def handleRequest(self, **kwargs):
         yielded = False
         stuff = compose(self.all.handleRequest(**kwargs))
         for x in stuff:
-            if x is not Yield and not callable(x):
+            if x is Yield or callable(x):
+                yield x
+                continue
+
+            if not yielded and CRLF in x:
+                statusline, remainder = x.split(CRLF, 1)
+                yield statusline + CRLF
+                for key in self._additionalHeaders:
+                    yield '{}: {}'.format(key, self._additionalHeaders[key]) + CRLF
+                if remainder != '':
+                    yield remainder
                 yielded = True
-            yield x
+            else:
+                yield x
+
+
+
         if not yielded:
             try:
                 result = self.notFound(**kwargs)

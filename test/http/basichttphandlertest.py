@@ -27,7 +27,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase,CallTrace
-from weightless.core import compose
+from weightless.core import compose, be
 from meresco.core import Observable
 
 from meresco.components.http import BasicHttpHandler
@@ -81,3 +81,38 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: http://example.org/here\r\n\r\n', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
+
+    def testAddHeader(self):
+        handler = BasicHttpHandler(additionalHeaders={'Aap': "Noot Mies"})
+        observer = CallTrace('HttpComponent')
+        observer.returnValues['handleRequest'] = (f for f in ['HT','TP/1.0 200 OK\r\n\r\n', 'Body'])
+        dna = be(
+            (Observable(),
+                (handler,
+                    (observer, )
+                )
+            )
+        )
+
+        response = ''.join(compose(dna.all.handleRequest(RequestURI="/")))
+
+        self.assertEquals('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\n\r\nBody', response)
+        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+
+    def testAddHeaders(self):
+        handler = BasicHttpHandler(additionalHeaders={'Aap': "Noot Mies", "Boom": "Vis"})
+        observer = CallTrace('HttpComponent')
+        observer.returnValues['handleRequest'] = (f for f in ['HT','TP/1.0 200 OK\r\n\r\n', 'Body'])
+        dna = be(
+            (Observable(),
+                (handler,
+                    (observer, )
+                )
+            )
+        )
+
+        response = ''.join(compose(dna.all.handleRequest(RequestURI="/")))
+
+        self.assertEquals('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\nBoom: Vis\r\n\r\nBody', response)
+        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+
