@@ -10,7 +10,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2010 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2017, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2015 SURF http://www.surf.nl
@@ -142,8 +142,9 @@ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
     CRLF
 
 
-def insertHeader(httpResponse, extraHeader):
-    if not extraHeader:
+def insertHeaders(httpResponse, *extraHeaders):
+    addedHeaders = CRLF.join(extraHeaders)
+    if not addedHeaders:
         yield httpResponse
         return
     alreadyDone = False
@@ -156,11 +157,14 @@ def insertHeader(httpResponse, extraHeader):
             alreadyDone = True
             statusLine, remainder = response.split(CRLF, 1)
             yield statusLine + CRLF
-            yield extraHeader + CRLF
+            yield addedHeaders + CRLF
             if remainder != '':
                 yield remainder
         else:
             yield response
+
+def insertHeader(httpResponse, extraHeader):
+    return insertHeaders(httpResponse, extraHeader)
 
 def createHttpHeaders(additionalHeaders=None, userAgent=None):
     headers = {} if additionalHeaders is None else dict(additionalHeaders)

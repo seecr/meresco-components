@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2016 SURFmarket https://surf.nl
 #
@@ -29,7 +29,7 @@
 #
 ## end license ##
 
-from utils import notFoundHtml, redirectHttp, CRLF
+from .utils import notFoundHtml, redirectHttp, CRLF, insertHeaders
 
 from meresco.core import Transparent
 from weightless.core import compose, Yield
@@ -42,26 +42,18 @@ class BasicHttpHandler(Transparent):
         self._additionalHeaders = {} if additionalHeaders is None else additionalHeaders
 
     def handleRequest(self, **kwargs):
+        additionalHeaders = ['{}: {}'.format(key, value) for key, value in sorted(self._additionalHeaders.items())]
+        yield insertHeaders(
+            compose(self._handleRequest(**kwargs)),
+            *additionalHeaders
+        )
+
+    def _handleRequest(self, **kwargs):
         yielded = False
-        stuff = compose(self.all.handleRequest(**kwargs))
-        for x in stuff:
-            if x is Yield or callable(x):
-                yield x
-                continue
-
-            if not yielded and CRLF in x:
-                statusline, remainder = x.split(CRLF, 1)
-                yield statusline + CRLF
-                for key in self._additionalHeaders:
-                    yield '{}: {}'.format(key, self._additionalHeaders[key]) + CRLF
-                if remainder != '':
-                    yield remainder
+        for x in compose(self.all.handleRequest(**kwargs)):
+            if x is not Yield or not callable(x):
                 yielded = True
-            else:
-                yield x
-
-
-
+            yield x
         if not yielded:
             try:
                 result = self.notFound(**kwargs)

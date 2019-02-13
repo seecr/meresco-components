@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2017, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 SURF http://www.surf.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -31,8 +31,7 @@
 
 from meresco.core import Observable
 from weightless.core import compose
-from utils import insertHeader
-from .utils import findCookies
+from .utils import findCookies, insertHeaders
 
 class SessionHandler(Observable):
     def handleRequest(self, Headers, *args, **kwargs):
@@ -44,7 +43,7 @@ class SessionHandler(Observable):
 
         __callstack_var_session__ = cookieDict['value']
 
-        yield insertHeader(
+        yield insertHeaders(
             compose(self.all.handleRequest(session=__callstack_var_session__, Headers=Headers, *args, **kwargs)),
             cookieDict['header']
         )
