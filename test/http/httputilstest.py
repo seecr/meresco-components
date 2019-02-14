@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012, 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014, 2016, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Netherlands Institute for Sound and Vision http://instituut.beeldengeluid.nl/
 #
 # This file is part of "Meresco Components"
@@ -32,6 +32,7 @@
 
 import meresco.components.http.utils as utils
 from meresco.components.http.utils import redirectHttp, parseRequestHeaders, parseResponseHeaders
+from weightless.core import asString
 
 from unittest import TestCase
 
@@ -61,6 +62,15 @@ class HttpUtilsTest(TestCase):
 
         result = list(utils.insertHeader(handleRequest(), 'Set-Cookie: session=dummySessionId1234; path=/'))
         self.assertFalse('' in result, result)
+
+    def testInsertHeaderNone(self):
+        def handleRequest(*args, **kwargs):
+            yield "HTTP/1.0 200 OK\r\n"
+            yield "Header: value\r\n\r\n"
+            yield '<ht'
+            yield 'ml/>'
+        self.assertEqual('HTTP/1.0 200 OK\r\nHeader: value\r\n\r\n<html/>', asString(utils.insertHeader(handleRequest(), None)))
+
 
     def testRedirect(self):
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")

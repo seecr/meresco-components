@@ -143,7 +143,7 @@ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
 
 
 def insertHeaders(httpResponse, *extraHeaders):
-    addedHeaders = CRLF.join(extraHeaders)
+    addedHeaders = CRLF.join(h for h in extraHeaders if h)
     if not addedHeaders:
         yield httpResponse
         return
