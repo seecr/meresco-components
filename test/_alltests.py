@@ -139,6 +139,7 @@ from sru.sruupdateclienttest import SruUpdateClientTest
 from sru.srulimitstartrecordtest import SruLimitStartRecordTest
 from sru.sruversionandoperationtest import SruVersionAndOperationTest
 from sru.srwtest import SrwTest
+from sru.sruiteratetest import SruIterateTest
 
 from suggestion.suggestiontest import SuggestionTest
 
