@@ -99,10 +99,15 @@ class SruRecord(object):
         else:
             raise TypeError("Unknown recordPacking '{}'".format(self.recordPacking))
 
-
-
 def iterateSruQuery(*args, **kwargs):
-    sruQuery = SruQuery(*args, **kwargs)
+    for record in _iterateSruQuery(SruQuery(*args, **kwargs)):
+        yield record
+
+def iterateSruQueryFromUrl(url, **kwargs):
+    for record in _iterateSruQuery(SruQuery.fromUrl(url, **kwargs)):
+        yield record
+
+def _iterateSruQuery(sruQuery):
     sruResponse = sruQuery.searchRetrieve()
     while sruResponse:
         for record in sruResponse:
