@@ -27,10 +27,10 @@ from seecr.test import SeecrTestCase
 from StringIO import StringIO
 from urlparse import urlparse, parse_qs
 
-from meresco.components.sru.sruiterate import iterateSruQuery
+from meresco.components.sru.sruiterate import iterateSruQuery, SruQuery
 
 class SruIterateTest(SeecrTestCase):
-    def testOne(self):
+    def testIterate(self):
         responses = [
             response(
                 numberOfRecords=2,
@@ -61,7 +61,36 @@ class SruIterateTest(SeecrTestCase):
         self.assertEqual(['ID-1', 'ID-2'], [each.identifier for each in sruResult])
         self.assertTrue(2, parse_qs(urlparse(requestedUrls[1]).query)['startRecord'][0])
 
+    def testFromUrl(self):
+        sruQuery = SruQuery.fromUrl("https://hostname:port/path?query=aap&recordSchema=something")
+        self.assertEqual("https://hostname:port/path", sruQuery._baseUrl)
+        self.assertEqual("aap", sruQuery._query)
+        self.assertEqual("something", sruQuery._recordSchema)
+        self.assertEqual("xml", sruQuery._recordPacking)
 
+        sruQuery = SruQuery.fromUrl("https://hostname:port/path?query=aap", recordSchema="something")
+        self.assertEqual("https://hostname:port/path", sruQuery._baseUrl)
+        self.assertEqual("aap", sruQuery._query)
+        self.assertEqual("something", sruQuery._recordSchema)
+        self.assertEqual("xml", sruQuery._recordPacking)
+
+        sruQuery = SruQuery.fromUrl("https://hostname:port/path?query=aap", recordSchema="something", recordPacking="json")
+        self.assertEqual("https://hostname:port/path", sruQuery._baseUrl)
+        self.assertEqual("aap", sruQuery._query)
+        self.assertEqual("something", sruQuery._recordSchema)
+        self.assertEqual("json", sruQuery._recordPacking)
+
+        try:
+            sruQuery = SruQuery.fromUrl("https://hostname:port/path")
+            self.fail()
+        except ValueError, e:
+            self.assertEquals("No query specified", str(e))
+
+        try:
+            sruQuery = SruQuery.fromUrl("https://hostname:port/path?query=aap")
+            self.fail()
+        except ValueError, e:
+            self.assertEquals("No recordSchema specified", str(e))
 
 def response(numberOfRecords, records, nextRecordPosition=None):
 

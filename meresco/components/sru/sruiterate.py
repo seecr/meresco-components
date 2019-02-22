@@ -1,34 +1,14 @@
-## begin license ##
-#
-# "Meresco Components" are components to build searchengines, repositories
-# and archives, based on "Meresco Core".
-#
-# Copyright (C) 2019 Seecr (Seek You Too B.V.) https://seecr.nl
-#
-# This file is part of "Meresco Components"
-#
-# "Meresco Components" is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# "Meresco Components" is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with "Meresco Components"; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
-## end license ##
-
 from urllib2 import urlopen
 from urllib import urlencode
+from urlparse import urlsplit, parse_qs
 
 from meresco.xml.namespaces import xpath, xpathFirst
 from lxml.etree import parse, tostring, cleanup_namespaces
 from StringIO import StringIO
+
+def _first(collection, element, default=None):
+    value = collection.get(element, [])
+    return default if len(value) == 0 else value[0]
 
 class SruQuery(object):
     def __init__(self, baseUrl, query, recordSchema, recordPacking="xml", maximumRecords=50, _urlopen=None):
@@ -38,6 +18,22 @@ class SruQuery(object):
         self._recordPacking = recordPacking
         self._maximumRecords = maximumRecords
         self._urlopen = _urlopen or urlopen
+        if self._query is None:
+            raise ValueError("No query specified")
+        if self._recordSchema is None:
+            raise ValueError("No recordSchema specified")
+
+    @classmethod
+    def fromUrl(clazz, url, **kwargs):
+        scheme, netloc, path, query, fragment = urlsplit(url)
+        arguments = parse_qs(query)
+        sruQueryKwargs = dict(
+            query=_first(arguments, 'query'),
+            recordSchema=_first(arguments, "recordSchema", kwargs.get("recordSchema")))
+        recordPacking=_first(arguments, "recordPacking", kwargs.get("recordPacking"))
+        if recordPacking:
+            sruQueryKwargs['recordPacking'] = recordPacking
+        return clazz("{}://{}{}".format(scheme, netloc, path), **sruQueryKwargs)
 
     def searchRetrieve(self, startRecord=None):
         url = '{}?{}'.format(
