@@ -1,3 +1,28 @@
+## begin license ##
+#
+# "Meresco Components" are components to build searchengines, repositories
+# and archives, based on "Meresco Core".
+#
+# Copyright (C) 2019 Seecr (Seek You Too B.V.) https://seecr.nl
+#
+# This file is part of "Meresco Components"
+#
+# "Meresco Components" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# "Meresco Components" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "Meresco Components"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+## end license ##
+
 from urllib2 import urlopen
 from urllib import urlencode
 
@@ -6,12 +31,13 @@ from lxml.etree import parse, tostring, cleanup_namespaces
 from StringIO import StringIO
 
 class SruQuery(object):
-    def __init__(self, baseUrl, query, recordSchema, recordPacking="xml", maximumRecords=50):
+    def __init__(self, baseUrl, query, recordSchema, recordPacking="xml", maximumRecords=50, _urlopen=None):
         self._baseUrl = baseUrl
         self._query = query
         self._recordSchema = recordSchema
         self._recordPacking = recordPacking
         self._maximumRecords = maximumRecords
+        self._urlopen = _urlopen or urlopen
 
     def searchRetrieve(self, startRecord=None):
         url = '{}?{}'.format(
@@ -31,9 +57,6 @@ class SruQuery(object):
         except:
             print url
             raise
-
-    def _urlopen(self, url):
-        return urlopen(url)
 
 class SearchRetrieveResponse(object):
     def __init__(self, sruQuery, response):
