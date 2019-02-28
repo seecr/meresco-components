@@ -36,14 +36,13 @@ from .logline import LogLine
 NR_OF_FILES_KEPT = 14
 
 class DirectoryLogRotate(object):
-    def __init__(self, logdir, extension='-query.log', nrOfFilesKept=NR_OF_FILES_KEPT, logline=LogLine.createDefault()):
+    def __init__(self, logdir, extension='-query.log', nrOfFilesKept=NR_OF_FILES_KEPT):
         self._previousLog = None
         self._logdir = logdir
         if not isdir(self._logdir):
             makedirs(self._logdir)
         self._filenameExtension = extension
         self._nrOfFilesKept = nrOfFilesKept
-        self._logline = logline
         self._now = time
 
     def setNrOfFilesKept(self, value):
