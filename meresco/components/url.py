@@ -4,7 +4,7 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
-# Copyright (C) 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -33,7 +33,7 @@ def parseAbsoluteUrl(url):
     if host is None:
         return None
 
-    port = int(parsedUrl.port) if parsedUrl.port else {'https': 443, 'ftp': 21, 'http': 80}[parsedUrl.scheme]
+    port = int(parsedUrl.port) if parsedUrl.port else {'https': 443, 'ftp': 21, 'http': 80}.get(parsedUrl.scheme, 80)
     return _dict(
         scheme=scheme,
         host=host,

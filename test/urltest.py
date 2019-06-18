@@ -92,3 +92,15 @@ class UrlTest(SeecrTestCase):
                 'scheme': 'udp',
                 'port': 1234
             }, parseAbsoluteUrl('udp://example.org:1234/'))
+
+
+        self.assertEquals({
+                'username': None,
+                'password': None,
+                'fragment': '',
+                'host': 'example.org',
+                'path': '/',
+                'query': '',
+                'scheme': 'unknown',
+                'port': 80
+            }, parseAbsoluteUrl('unknown://example.org/'))
