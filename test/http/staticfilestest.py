@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2016-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016-2017, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
@@ -25,9 +25,10 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from meresco.components.http import StaticFiles
+from meresco.components.http import StaticFiles, libdirForPrefix
 from meresco.components.http.utils import parseResponse
 from os.path import join
+from os import makedirs
 from weightless.core import asString
 
 class StaticFilesTest(SeecrTestCase):
@@ -57,3 +58,27 @@ class StaticFilesTest(SeecrTestCase):
         sf = StaticFiles(libdir=self.tempdir, path='/path', allowDirectoryListing=True)
         headers, body = parseResponse(asString(sf.handleRequest(path='/path/')))
         self.assertTrue('<a href="data.txt"' in body, body)
+
+    def testPrefix(self):
+        fullLibDir = join(self.tempdir, 'library-3.4.5')
+        makedirs(fullLibDir)
+        self.assertEqual(fullLibDir, libdirForPrefix(self.tempdir, 'library-3'))
+        self.assertEqual(fullLibDir, libdirForPrefix(self.tempdir, 'libra'))
+        self.assertRaises(ValueError, lambda: libdirForPrefix(self.tempdir, 'doesnotexist'))
+        makedirs(join(self.tempdir, 'prefix-same-1'))
+        makedirs(join(self.tempdir, 'prefix-same-2'))
+        self.assertRaises(ValueError, lambda: libdirForPrefix(self.tempdir, 'prefix-same-'))
+
+    def testPrefixStaticFiles(self):
+        fullLibDir = join(self.tempdir, 'library-3.4.5')
+        makedirs(fullLibDir)
+        with open(join(fullLibDir, 'data.txt'), 'w') as f:
+            f.write('DATA')
+        prefixDir = join(self.tempdir, 'librar*')
+
+        sf = StaticFiles(libdir=prefixDir, path='/jquery')
+
+        headers, body = parseResponse(asString(sf.handleRequest(path='/jquery/data.txt')))
+        self.assertEqual('200', headers['StatusCode'])
+        self.assertEqual('text/plain', headers['Headers']['Content-Type'])
+        self.assertEqual('DATA', body)

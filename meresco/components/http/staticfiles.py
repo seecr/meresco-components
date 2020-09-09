@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2016-2017, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2016-2017, 2019-2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"
@@ -28,14 +28,24 @@ from weightless.core import be
 from fileserver import FileServer
 from pathrename import PathRename
 from pathfilter import PathFilter
-from os.path import join, isdir
+from os.path import join, isdir, sep
 from os import listdir
+
+def libdirForPrefix(basedir, prefix):
+    matches = [d for d in listdir(basedir) if d.startswith(prefix) and isdir(join(basedir, d))]
+    if len(matches) == 1:
+        return join(basedir, matches[0])
+    errormessage = 'No match found for {} in {}' if len(matches) == 0 else 'Too many matches found for {} in {}'
+    raise ValueError(errormessage.format(repr(prefix), repr(basedir)))
 
 class StaticFiles(object):
     def __init__(self, libdir, path, allowDirectoryListing=False):
         self.path = path
         if not self.path.endswith('/'):
             self.path += '/'
+        if libdir.endswith('*'):
+            basedir, _, prefix = libdir[:-1].rpartition(sep)
+            libdir = libdirForPrefix(basedir, prefix)
         self._top = be((PathFilter(self.path),
             (PathRename(lambda path:path[len(self.path):] or '/'),
                 (FileServer(libdir, allowDirectoryListing=allowDirectoryListing, basePath=self.path),)
@@ -45,9 +55,3 @@ class StaticFiles(object):
     def handleRequest(self, **kwargs):
         yield self._top.handleRequest(**kwargs)
 
-def libdirForPrefix(basedir, prefix):
-    matches = [d for d in listdir(basedir) if d.startswith(prefix) and isdir(join(basedir, d))]
-    if len(matches) == 1:
-        return join(basedir, matches[0])
-    errormessage = 'No match found for {} in {}' if len(matches) == 0 else 'Too many matches found for {} in {}'
-    raise ValueError(errormessage.format(repr(prefix), repr(basedir)))
