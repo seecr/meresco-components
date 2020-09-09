@@ -854,7 +854,7 @@ class SruHandlerTest(SeecrTestCase):
     def testTestXsdEqualsPublishedXsd(self):
         xsd = urlopen("http://meresco.org/files/xsd/timing-20120827.xsd").read()
         localxsd = open(join(schemasPath, 'timing-20120827.xsd')).read()
-        self.assertEqualsWS(xsd, localxsd)
+        self.assertEqual(xsd, localxsd, "URL 'http://meresco.org/files/xsd/timing-20120827.xsd' does not provide the same as the XSD.")
 
     def testDiagnosticGetHandledByObserver(self):
         def mockAdditionalDiagnosticDetails(**kwargs):
