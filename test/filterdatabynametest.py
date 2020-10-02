@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2011-2012, 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
@@ -34,10 +34,10 @@ class FilterDataByNameTest(TestCase):
 
     def testFilterOnGetData(self):
         def retrieveThat(**kwargs):
-            raise StopIteration('<RETRIEVE_THAT/>')
+            return '<RETRIEVE_THAT/>'
             yield
         def retrieveThis(**kwargs):
-            raise StopIteration('<RETRIEVE_THIS/>')
+            return '<RETRIEVE_THIS/>'
             yield
         def getThat(**kwargs):
             return '<GET_THAT/>'

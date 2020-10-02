@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012, 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012, 2014, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Netherlands Institute for Sound and Vision http://instituut.beeldengeluid.nl/
 #
 # This file is part of "Meresco Components"
@@ -46,7 +46,7 @@ class FilterMessages(Observable):
         if self._allowedMessage(message):
             try:
                 response = yield self.any.unknown(message, *args, **kwargs)
-                raise StopIteration(response)
+                return response
             except NoneOfTheObserversRespond:
                 pass
         raise DeclineMessage

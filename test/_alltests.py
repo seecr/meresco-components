@@ -55,9 +55,9 @@ from directorywatchertest import DirectoryWatcherTest
 from fieldletstest import FieldletsTest
 from fields2xmlfieldstest import Fields2XmlFieldsTest
 from fields2xmltest import Fields2XmlTest
-#from filtermessagestest import FilterMessagesTest
-#from filterdatabynametest import FilterDataByNameTest
-#from inboxtest import InboxTest
+from filtermessagestest import FilterMessagesTest
+from filterdatabynametest import FilterDataByNameTest
+from inboxtest import InboxTest
 #from iteratorasstreamtest import IteratorAsStreamTest
 #from jsontest import JsonTest
 #from messagerewritetest import MessageRewriteTest

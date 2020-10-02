@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2006-2012, 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2011-2012, 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2012, 2015-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -47,4 +47,4 @@ class FilterDataByName(Observable):
         if not self._allowed(name):
             raise DeclineMessage()
         result = yield self.any.retrieveData(identifier=identifier, name=name)
-        raise StopIteration(result)
+        return result

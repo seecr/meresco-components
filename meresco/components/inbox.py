@@ -7,7 +7,7 @@
 # Copyright (C) 2008-2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2011 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -100,7 +100,8 @@ class Inbox(Observable):
     def processFile(self, filename):
         errorFilename = join(self._doneDirectory, filename + ".error")
         try:
-            lxmlNode = parse(open(join(self._inboxDirectory, filename)))
+            with open(join(self._inboxDirectory, filename)) as fp:
+                lxmlNode = parse(fp)
             composed = compose(self.all.add(identifier=filename, lxmlNode=lxmlNode))
             try:
                 while True:
@@ -108,9 +109,11 @@ class Inbox(Observable):
             except StopIteration as e:
                 pass
         except Exception as e:
-            open(errorFilename, 'w').write(format_exc())
+            with open(errorFilename, 'w') as fp:
+                fp.write(format_exc())
 
         try:
             rename(join(self._inboxDirectory, filename), join(self._doneDirectory, filename))
         except Exception as e:
-            open(errorFilename, 'a').write(format_exc())
+            with open(errorFilename, 'a') as fp:
+                fp.write(format_exc())
