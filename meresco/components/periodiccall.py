@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -179,7 +179,7 @@ MAX_LENGTH=1500
 def shorten(response):
     if len(response) < MAX_LENGTH:
         return response
-    headLength = 2*MAX_LENGTH/3
+    headLength = 2 * MAX_LENGTH // 3
     tailLength = MAX_LENGTH - headLength
     return "%s ... %s" % (response[:headLength], response[-tailLength:])
 

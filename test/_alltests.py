@@ -65,8 +65,8 @@ from multileveldrilldowntest import MultiLevelDrilldownTest
 from onlyadddeleteifchangedtest import OnlyAddDeleteIfChangedTest
 from parseargumentstest import ParseArgumentsTest
 from packetlistenertest import PacketListenerTest
-#from periodiccalltest import PeriodicCallTest
-#from periodicdownloadtest import PeriodicDownloadTest
+from periodiccalltest import PeriodicCallTest
+from periodicdownloadtest import PeriodicDownloadTest
 #from renamecqlindextest import RenameCqlIndexTest
 #from renamefieldforexacttest import RenameFieldForExactTest
 #from requestscopetest import RequestScopeTest
