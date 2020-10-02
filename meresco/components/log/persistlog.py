@@ -112,7 +112,7 @@ class PersistLog(Observable):
         f.close()
 
     def handleShutdown(self):
-        print 'handle shutdown: saving PersistLog %s' % self._directory
+        print('handle shutdown: saving PersistLog %s' % self._directory)
         from sys import stdout; stdout.flush()
         self.close()
 

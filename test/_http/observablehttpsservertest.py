@@ -47,11 +47,11 @@ class ObservableHttpsServerTest(SeecrTestCase):
         s.startServer()
         httpsserver_acceptor = s._httpsserver._acceptor
         httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
-        self.assertEquals(True, httpHandler._compressResponse)
+        self.assertEqual(True, httpHandler._compressResponse)
 
         s = ObservableHttpsServer(reactor, 0, keyfile=keyfile, certfile=certfile, bindAddress='127.0.0.1')
         s.startServer()
         httpsserver_acceptor = s._httpsserver._acceptor
         httpHandler = httpsserver_acceptor._sinkFactory(mockSok)
-        self.assertEquals(True, httpHandler._compressResponse)
-        self.assertEquals('127.0.0.1', httpsserver_acceptor._sok.getsockname()[0])
+        self.assertEqual(True, httpHandler._compressResponse)
+        self.assertEqual('127.0.0.1', httpsserver_acceptor._sok.getsockname()[0])

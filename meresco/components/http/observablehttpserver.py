@@ -32,15 +32,15 @@
 ## end license ##
 
 from traceback import print_exc
-from urlparse import parse_qs, urlsplit
-from StringIO import StringIO
+from urllib.parse import parse_qs, urlsplit
+from io import StringIO
 
 from weightless.core import compose
 from weightless.http import HttpServer
 
 from meresco.core import Observable
 
-from utils import serverUnavailableHtml
+from .utils import serverUnavailableHtml
 
 
 class ObservableHttpServer(Observable):

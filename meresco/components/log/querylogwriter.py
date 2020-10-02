@@ -26,8 +26,8 @@
 #
 ## end license ##
 
-from utils import getFirst, getScoped, scopePresent
-from urllib import urlencode
+from .utils import getFirst, getScoped, scopePresent
+from urllib.parse import urlencode
 from time import time
 from meresco.core import Observable
 from weightless.core import NoneOfTheObserversRespond

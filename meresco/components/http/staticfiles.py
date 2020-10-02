@@ -25,9 +25,9 @@
 ## end license ##
 
 from weightless.core import be
-from fileserver import FileServer
-from pathrename import PathRename
-from pathfilter import PathFilter
+from .fileserver import FileServer
+from .pathrename import PathRename
+from .pathfilter import PathFilter
 from os.path import join, isdir, sep
 from os import listdir
 

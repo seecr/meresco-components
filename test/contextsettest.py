@@ -31,7 +31,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from os.path import join
 
 from meresco.components.contextset import ContextSet, ContextSetException, ContextSetList
-from StringIO import StringIO
+from io import StringIO
 
 class ContextSetTest(SeecrTestCase):
     def setUp(self):
@@ -47,21 +47,21 @@ field2    actualotherfield2
         self.set = ContextSet('test', stream)
 
     def testLookup(self):
-        self.assertEquals('test', self.set.name)
-        self.assertEquals('actualfield1', self.set.lookup('test.query.field1'))
-        self.assertEquals('actualfield1', self.set.lookup('test.field1'))
-        self.assertEquals('actualfield2', self.set.lookup('test.field2'))
-        self.assertEquals('nosuchfield', self.set.lookup('nosuchfield'))
-        self.assertEquals('test.nosuchfield', self.set.lookup('test.nosuchfield'))
-        self.assertEquals('otherset.field', self.set.lookup('otherset.field'))
+        self.assertEqual('test', self.set.name)
+        self.assertEqual('actualfield1', self.set.lookup('test.query.field1'))
+        self.assertEqual('actualfield1', self.set.lookup('test.field1'))
+        self.assertEqual('actualfield2', self.set.lookup('test.field2'))
+        self.assertEqual('nosuchfield', self.set.lookup('nosuchfield'))
+        self.assertEqual('test.nosuchfield', self.set.lookup('test.nosuchfield'))
+        self.assertEqual('otherset.field', self.set.lookup('otherset.field'))
 
     def testLookupInList(self):
         setlist = ContextSetList()
         setlist.add(ContextSet('set1', StringIO("field\tactualfield\nfield1\tactualfield1")))
         setlist.add(ContextSet('set2', StringIO("field\tactualfield\nfield2\tactualfield2")))
-        self.assertEquals('actualfield', setlist.lookup('set1.field'))
-        self.assertEquals('actualfield', setlist.lookup('set2.field'))
-        self.assertEquals('actualfield2', setlist.lookup('set2.field2'))
-        self.assertEquals('unsupportedset.field3', setlist.lookup('unsupportedset.field3'))
+        self.assertEqual('actualfield', setlist.lookup('set1.field'))
+        self.assertEqual('actualfield', setlist.lookup('set2.field'))
+        self.assertEqual('actualfield2', setlist.lookup('set2.field2'))
+        self.assertEqual('unsupportedset.field3', setlist.lookup('unsupportedset.field3'))
 
 

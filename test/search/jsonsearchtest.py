@@ -35,8 +35,8 @@ from meresco.core import Observable
 from meresco.xml.namespaces import namespaces
 from meresco.xml.utils import createElement, createSubElement
 from simplejson import loads
-from urlparse import urlparse, parse_qs
-from urllib import urlencode
+from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlencode
 from collections import namedtuple, OrderedDict
 from cqlparser import cqlToExpression
 from cqlparser.cqltoexpression import QueryExpression
@@ -46,7 +46,7 @@ from meresco.components.search import JsonSearch
 class JsonSearchTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        ts = [(1 + i*0.1) for i in xrange(100)]
+        ts = [(1 + i*0.1) for i in range(100)]
         def timeNow():
             return ts.pop(0)
         self._timeNow = timeNow
@@ -93,19 +93,19 @@ class JsonSearchTest(SeecrTestCase):
 
     def testRecords(self):
         json = self.request()
-        self.assertEquals(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
-        self.assertEquals(['response', 'request', 'version'], json.keys())
-        self.assertEquals(2, len(json['response']['items']))
-        self.assertEquals(2, json['response']['total'])
+        self.assertEqual(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
+        self.assertEqual(['response', 'request', 'version'], list(json.keys()))
+        self.assertEqual(2, len(json['response']['items']))
+        self.assertEqual(2, json['response']['total'])
 
         record_1 = json['response']['items'][0]
-        self.assertEquals({'identifier': 'id:1', 'name': 'rdf'}, record_1)
+        self.assertEqual({'identifier': 'id:1', 'name': 'rdf'}, record_1)
         record_2 = json['response']['items'][1]
-        self.assertEquals({'identifier': 'id:2', 'name': 'rdf'}, record_2)
+        self.assertEqual({'identifier': 'id:2', 'name': 'rdf'}, record_2)
 
     def testTimes(self):
         json = self.request()
-        self.assertEquals({
+        self.assertEqual({
             'handlingTime': 0.2,
             'indexTime': 0.03,
             'queryTime': 0.1
@@ -114,95 +114,95 @@ class JsonSearchTest(SeecrTestCase):
     def testQuery(self):
         self.request()
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(QueryExpression.searchterm(term='*'), executeQueryMethod.kwargs['query'])
+        self.assertEqual(QueryExpression.searchterm(term='*'), executeQueryMethod.kwargs['query'])
 
     def testQueryNotCQLButWebQueryStyle(self):
         self.request(query="fiets water")
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(cqlToExpression("fiets AND water"), executeQueryMethod.kwargs['query'])
+        self.assertEqual(cqlToExpression("fiets AND water"), executeQueryMethod.kwargs['query'])
 
     def testPage0(self):
         json = self.request()
-        self.assertEquals(2, json['response']['total'])
-        self.assertEquals(2, len(json['response']['items']))
+        self.assertEqual(2, json['response']['total'])
+        self.assertEqual(2, len(json['response']['items']))
         self.assertFalse('next' in json['response'])
         self.assertFalse('previous' in json['response'])
 
     def testPage1(self):
-        self.hits.extend(range(3,11))
+        self.hits.extend(list(range(3,11)))
         self.total = 30
         json = self.request()
-        self.assertEquals(30, json['response']['total'])
-        self.assertEquals(10, len(json['response']['items']))
+        self.assertEqual(30, json['response']['total'])
+        self.assertEqual(10, len(json['response']['items']))
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(0, executeQueryMethod.kwargs['start'])
-        self.assertEquals(10, executeQueryMethod.kwargs['stop'])
-        self.assertEquals(2, json['response']['next']['page'])
+        self.assertEqual(0, executeQueryMethod.kwargs['start'])
+        self.assertEqual(10, executeQueryMethod.kwargs['stop'])
+        self.assertEqual(2, json['response']['next']['page'])
         self.assertFalse('previous' in json['response'])
 
     def testPage2(self):
         del self.hits[:]
-        self.hits.extend(range(11,21))
+        self.hits.extend(list(range(11,21)))
         self.total = 30
         json = self.request(page="2")
-        self.assertEquals(30, json['response']['total'])
-        self.assertEquals(10, len(json['response']['items']))
-        self.assertEquals("id:11", json['response']['items'][0]['identifier'])
-        self.assertEquals(2, json['request']['page'])
+        self.assertEqual(30, json['response']['total'])
+        self.assertEqual(10, len(json['response']['items']))
+        self.assertEqual("id:11", json['response']['items'][0]['identifier'])
+        self.assertEqual(2, json['request']['page'])
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(10, executeQueryMethod.kwargs['start'])
-        self.assertEquals(20, executeQueryMethod.kwargs['stop'])
+        self.assertEqual(10, executeQueryMethod.kwargs['start'])
+        self.assertEqual(20, executeQueryMethod.kwargs['stop'])
         nextLink = self.parseLink(json['response']['next']['link'])
-        self.assertEquals(3, json['response']['next']['page'])
-        self.assertEquals({'page': ['3'], 'query': ['*']}, nextLink.query)
-        self.assertEquals(1, json['response']['previous']['page'])
+        self.assertEqual(3, json['response']['next']['page'])
+        self.assertEqual({'page': ['3'], 'query': ['*']}, nextLink.query)
+        self.assertEqual(1, json['response']['previous']['page'])
 
     def testPage3(self):
         del self.hits[:]
-        self.hits.extend(range(21,31))
+        self.hits.extend(list(range(21,31)))
         self.total = 30
         json = self.request(page="3")
-        self.assertEquals(30, json['response']['total'])
-        self.assertEquals(10, len(json['response']['items']))
-        self.assertEquals("id:21", json['response']['items'][0]['identifier'])
-        self.assertEquals(3, json['request']['page'])
+        self.assertEqual(30, json['response']['total'])
+        self.assertEqual(10, len(json['response']['items']))
+        self.assertEqual("id:21", json['response']['items'][0]['identifier'])
+        self.assertEqual(3, json['request']['page'])
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(20, executeQueryMethod.kwargs['start'])
-        self.assertEquals(30, executeQueryMethod.kwargs['stop'])
+        self.assertEqual(20, executeQueryMethod.kwargs['start'])
+        self.assertEqual(30, executeQueryMethod.kwargs['stop'])
         self.assertFalse('next' in json['response'])
-        self.assertEquals(2, json['response']['previous']['page'])
+        self.assertEqual(2, json['response']['previous']['page'])
 
     def testPageSize0(self):
         del self.hits[:]
         json = self.request(**{'page-size':"0"})
-        self.assertEquals(2, json['response']['total'])
+        self.assertEqual(2, json['response']['total'])
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(0, executeQueryMethod.kwargs['start'])
-        self.assertEquals(0, executeQueryMethod.kwargs['stop'])
+        self.assertEqual(0, executeQueryMethod.kwargs['start'])
+        self.assertEqual(0, executeQueryMethod.kwargs['stop'])
         self.assertFalse('items' in json['response'])
         self.assertFalse('next' in json['response'])
         self.assertFalse('previous' in json['response'])
 
     def testPageSize1(self):
         json = self.request(**{'page-size':"1"})
-        self.assertEquals(2, json['response']['total'])
+        self.assertEqual(2, json['response']['total'])
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(0, executeQueryMethod.kwargs['start'])
-        self.assertEquals(1, executeQueryMethod.kwargs['stop'])
-        self.assertEquals({
+        self.assertEqual(0, executeQueryMethod.kwargs['start'])
+        self.assertEqual(1, executeQueryMethod.kwargs['stop'])
+        self.assertEqual({
                 'link': '/search?page=2&page-size=1&query=%2A',
                 'page': 2,
             }, json['response']['next'])
         self.assertFalse('previous' in json['response'])
-        self.assertEquals(1, json['request']['page-size'])
+        self.assertEqual(1, json['request']['page-size'])
 
     def testPageSize2(self):
         json = self.request(page="2", **{'page-size':'1'})
-        self.assertEquals(2, json['response']['total'])
+        self.assertEqual(2, json['response']['total'])
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(1, executeQueryMethod.kwargs['start'])
-        self.assertEquals(2, executeQueryMethod.kwargs['stop'])
-        self.assertEquals({
+        self.assertEqual(1, executeQueryMethod.kwargs['start'])
+        self.assertEqual(2, executeQueryMethod.kwargs['stop'])
+        self.assertEqual({
                 'link': '/search?page=1&page-size=1&query=%2A',
                 'page': 1,
             }, json['response']['previous'])
@@ -229,12 +229,12 @@ class JsonSearchTest(SeecrTestCase):
         ]
         json = self.request(facet='field:100')
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals([{
+        self.assertEqual([{
                 'fieldname': 'field',
                 'maxTerms': 100,
                 'sortBy': 'count',
             }], executeQueryMethod.kwargs['facets'])
-        self.assertEquals({
+        self.assertEqual({
                 'field': [
                     {   "count": 23,
                         "value": "value0",
@@ -247,8 +247,8 @@ class JsonSearchTest(SeecrTestCase):
                 ]
             }, json['response']['facets'])
         nextLink = self.parseLink(json['response']['next']['link'])
-        self.assertEquals(['field:100'], nextLink.query['facet'])
-        self.assertEquals([{'index':'field', 'max-terms':100}], json['request']['facet'])
+        self.assertEqual(['field:100'], nextLink.query['facet'])
+        self.assertEqual([{'index':'field', 'max-terms':100}], json['request']['facet'])
 
     def testFacetDisplayValue(self):
         self.total = 30
@@ -269,8 +269,8 @@ class JsonSearchTest(SeecrTestCase):
             return {'value0':'Waarde 0', 'value1': 'Waarde 1'}[uri]
         self.observer.methods['labelForUri'] = labelForUri
         json = self.request(facet='field:test.uri')
-        self.assertEquals(['executeQuery', 'retrieveData', 'retrieveData', 'labelForUri', 'labelForUri'], self.observer.calledMethodNames())
-        self.assertEquals({
+        self.assertEqual(['executeQuery', 'retrieveData', 'retrieveData', 'labelForUri', 'labelForUri'], self.observer.calledMethodNames())
+        self.assertEqual({
                 'field:test.uri': [
                     {   "count": 23,
                         "value": "value0",
@@ -308,9 +308,9 @@ class JsonSearchTest(SeecrTestCase):
         ]
         json = self.request(facet=['field0', 'field1:3'])
         nextLink = self.parseLink(json['response']['next']['link'])
-        self.assertEquals(['field0', 'field1:3'], nextLink.query['facet'])
-        self.assertEquals([{'index':'field0', 'max-terms':10}, {'index':'field1', 'max-terms':3}], json['request']['facet'])
-        self.assertEquals(set(['field0', 'field1']),
+        self.assertEqual(['field0', 'field1:3'], nextLink.query['facet'])
+        self.assertEqual([{'index':'field0', 'max-terms':10}, {'index':'field1', 'max-terms':3}], json['request']['facet'])
+        self.assertEqual(set(['field0', 'field1']),
             set(json['response']['facets'].keys()))
 
     def testDisplayValueForDisplayTerm(self):
@@ -331,8 +331,8 @@ class JsonSearchTest(SeecrTestCase):
             },
         ]
         json = self.request(facet='field:test.uri')
-        self.assertEquals(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
-        self.assertEquals({
+        self.assertEqual(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
+        self.assertEqual({
                 'field:test.uri': [
                     {   "count": 23,
                         "value": "value0",
@@ -362,13 +362,13 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual(cqlToExpression('* AND field exact somevalue'), executeQueryMethod.kwargs['query'])
         facets = json['response']['facets']
         link = self.parseLink(facets['field'][0]['link'])
-        self.assertEquals(['field=somevalue', 'field=value0'], link.query['facet-filter'])
+        self.assertEqual(['field=somevalue', 'field=value0'], link.query['facet-filter'])
 
     def testPassXArguments(self):
         self.total = 100
         response = self.request(**{'x-disable-filter': 'encyclopedie', 'x-something-else': 'important'})
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals({
+        self.assertEqual({
                 'x-disable-filter': ['encyclopedie'],
                 'x-something-else': ['important'],
             }, executeQueryMethod.kwargs['extraArguments'])
@@ -396,12 +396,12 @@ class JsonSearchTest(SeecrTestCase):
         json = self.request(facet='field', **{'facet-filter': 'field=value0'})
         facets = json['response']['facets']
         link = self.parseLink(facets['field'][0]['link'])
-        self.assertEquals(['field=value0'], link.query['facet-filter'])
+        self.assertEqual(['field=value0'], link.query['facet-filter'])
 
     def testFacetFilters(self):
         self.request(facet='field', **{'facet-filter': ['field0=value0', 'field1=value1']})
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals(cqlToExpression('* AND field0 exact value0 AND field1 exact value1'), executeQueryMethod.kwargs['query'])
+        self.assertEqual(cqlToExpression('* AND field0 exact value0 AND field1 exact value1'), executeQueryMethod.kwargs['query'])
 
     def testLinksWithOtherPath(self):
         self._buildDna(useOriginalPath=True)
@@ -483,7 +483,7 @@ class JsonSearchTest(SeecrTestCase):
 
     def testSequenceOfKeys(self):
         self.total = 500
-        self.hits = xrange(10)
+        self.hits = range(10)
         self.drilldownData = [
             {   "fieldname": "field",
                 "path": [],
@@ -494,8 +494,8 @@ class JsonSearchTest(SeecrTestCase):
             }
         ]
         json = self.request(page=2, facet='field', **{'facet-filter': 'field=value0'})
-        self.assertEqual(['response', 'request', 'version'], json.keys())
-        self.assertEqual(['total', 'items', 'facets', 'querytimes', 'next', 'previous'], json['response'].keys())
+        self.assertEqual(['response', 'request', 'version'], list(json.keys()))
+        self.assertEqual(['total', 'items', 'facets', 'querytimes', 'next', 'previous'], list(json['response'].keys()))
 
     def testBadFacetFilter(self):
         response = self.request(**{'facet-filter':'field'})
@@ -515,7 +515,7 @@ class JsonSearchTest(SeecrTestCase):
             'query': kwargs.pop('query', '*')
         }
         arguments.update(kwargs)
-        arguments = parse_qs(urlencode({k:v for k,v in arguments.items() if v is not None}, doseq=True))
+        arguments = parse_qs(urlencode({k:v for k,v in list(arguments.items()) if v is not None}, doseq=True))
         requestDict['arguments'] = arguments
         header, body = asString(self.dna.all.handleRequest(**requestDict)).split(CRLF*2,1)
         json = loads(body, object_pairs_hook=OrderedDict)
@@ -528,5 +528,5 @@ class JsonSearchTest(SeecrTestCase):
 
 class LuceneResponse(object):
     def __init__(self, **attrs):
-        for k,v in attrs.items():
+        for k,v in list(attrs.items()):
             setattr(self, k, v)

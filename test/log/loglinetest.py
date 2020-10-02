@@ -33,7 +33,7 @@ class LogLineTest(SeecrTestCase):
         self.default = LogLine.createDefault()
 
     def testDefault(self):
-        self.assertEquals('2009-11-02T11:25:36Z 11.22.33.44 1.1K 1.300s 42hits /path query=arguments\n',
+        self.assertEqual('2009-11-02T11:25:36Z 11.22.33.44 1.1K 1.300s 42hits /path query=arguments\n',
             self.default(dict(
                 timestamp=1257161136.0,
                 size=1.1,
@@ -47,14 +47,14 @@ class LogLineTest(SeecrTestCase):
         )
 
     def testLogWithLessArguments(self):
-        self.assertEquals('2009-11-02T11:25:36Z - - - - - \n',
+        self.assertEqual('2009-11-02T11:25:36Z - - - - - \n',
             self.default(dict(
                 timestamp=1257161136.0,
             ))
         )
 
     def testLogMethod(self):
-        self.assertEquals('2009-11-02T11:25:36Z - - - - - \n',
+        self.assertEqual('2009-11-02T11:25:36Z - - - - - \n',
             self.default.log(dict(
                 timestamp=1257161136.0,
             ))
@@ -62,7 +62,7 @@ class LogLineTest(SeecrTestCase):
 
     def testCustom(self):
         logline = LogLine('duration', 'timestamp', 'status')
-        self.assertEquals('1.300s 2009-11-02T11:25:36Z 200\n',
+        self.assertEqual('1.300s 2009-11-02T11:25:36Z 200\n',
             logline(dict(
                 timestamp=1257161136.0,
                 size=1.1,

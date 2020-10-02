@@ -59,7 +59,7 @@ class SruLimitStartRecordTest(SeecrTestCase):
             sruArguments=sruArguments,
             otherKwarg="otherKwarg",
             **sruArguments))
-        self.assertEquals(['searchRetrieve'], self.observer.calledMethodNames())
+        self.assertEqual(['searchRetrieve'], self.observer.calledMethodNames())
         self.assertDictEquals({
                 'sruArguments': {
                     'recordSchema': 'schema',
@@ -86,10 +86,10 @@ class SruLimitStartRecordTest(SeecrTestCase):
         try:
             consume(self.dna.all.searchRetrieve(sruArguments=sruArguments, **sruArguments))
             self.fail()
-        except SruException, e:
-            self.assertEquals(UNSUPPORTED_PARAMETER_VALUE[0], e.code)
-            self.assertEquals(UNSUPPORTED_PARAMETER_VALUE[1], e.message)
-            self.assertEquals("Argument 'startRecord' and 'maximumRecords' too high, maximum: 1000", e.details)
+        except SruException as e:
+            self.assertEqual(UNSUPPORTED_PARAMETER_VALUE[0], e.code)
+            self.assertEqual(UNSUPPORTED_PARAMETER_VALUE[1], e.message)
+            self.assertEqual("Argument 'startRecord' and 'maximumRecords' too high, maximum: 1000", e.details)
 
 
     def testShouldRewriteRequestOnStartRecordMoreThan1000(self):
@@ -99,7 +99,7 @@ class SruLimitStartRecordTest(SeecrTestCase):
         try:
             consume(self.dna.all.searchRetrieve(sruArguments=sruArguments, **sruArguments))
             self.fail()
-        except SruException, e:
-            self.assertEquals(UNSUPPORTED_PARAMETER_VALUE[0], e.code)
-            self.assertEquals(UNSUPPORTED_PARAMETER_VALUE[1], e.message)
-            self.assertEquals("Argument 'startRecord' too high, maximum: 1000", e.details)
+        except SruException as e:
+            self.assertEqual(UNSUPPORTED_PARAMETER_VALUE[0], e.code)
+            self.assertEqual(UNSUPPORTED_PARAMETER_VALUE[1], e.message)
+            self.assertEqual("Argument 'startRecord' too high, maximum: 1000", e.details)

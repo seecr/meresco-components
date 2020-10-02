@@ -30,8 +30,8 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from urllib import urlencode
-from StringIO import StringIO
+from urllib.parse import urlencode
+from io import StringIO
 from lxml.etree import parse
 
 from testhelpers import Response, Hit
@@ -123,8 +123,8 @@ class RssTest(SeecrTestCase):
         result = asString(rss.handleRequest(RequestURI='/?query=aQuery%29')) #%29 == ')'
 
         xml = parse(StringIO(result[result.index("<?xml"):]))
-        self.assertEquals(['Test title'], xml.xpath('/rss/channel/title/text()'))
-        self.assertEquals(['Test description'], xml.xpath('/rss/channel/description/text()'))
+        self.assertEqual(['Test title'], xml.xpath('/rss/channel/title/text()'))
+        self.assertEqual(['Test description'], xml.xpath('/rss/channel/description/text()'))
 
     def testErrorNoQuery(self):
         rss = Rss(
@@ -135,8 +135,8 @@ class RssTest(SeecrTestCase):
         result = asString(rss.handleRequest(RequestURI='/'))
 
         xml = parse(StringIO(result[result.index("<?xml"):]))
-        self.assertEquals(['ERROR Test title'], xml.xpath('/rss/channel/title/text()'))
-        self.assertEquals(["An error occurred 'MANDATORY parameter 'query' not supplied or empty'"], xml.xpath('/rss/channel/description/text()'))
+        self.assertEqual(['ERROR Test title'], xml.xpath('/rss/channel/title/text()'))
+        self.assertEqual(["An error occurred 'MANDATORY parameter 'query' not supplied or empty'"], xml.xpath('/rss/channel/description/text()'))
 
 
     def assertMaxAndSort(self, maximumRecords, sortKey, sortDirection, rssArgs, sruArgs):
@@ -166,12 +166,12 @@ class RssTest(SeecrTestCase):
         consume(rss.handleRequest(RequestURI='/?query=aQuery&' + urlencode(sruArgs)))
 
         method = observer.calledMethods[0]
-        self.assertEquals('executeQuery', method.name)
+        self.assertEqual('executeQuery', method.name)
         if sortKey is not None:
-            self.assertEquals([{'sortBy': sortKey, 'sortDescending': sortDirection}], method.kwargs['sortKeys'])
+            self.assertEqual([{'sortBy': sortKey, 'sortDescending': sortDirection}], method.kwargs['sortKeys'])
         else:
-            self.assertEquals(None, method.kwargs['sortKeys'])
-        self.assertEquals(maximumRecords, len(recordIds))
+            self.assertEqual(None, method.kwargs['sortKeys'])
+        self.assertEqual(maximumRecords, len(recordIds))
 
     def testMaxAndSort(self):
         self.assertMaxAndSort(10, None, None, rssArgs={}, sruArgs={})
@@ -204,10 +204,10 @@ class RssTest(SeecrTestCase):
         rss.addObserver(observer)
 
         consume(rss.handleRequest(RequestURI='/?query=one+two'))
-        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
-        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
-        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
+        self.assertEqual(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEqual(None, observer.calledMethods[0].kwargs['sortKeys'])
+        self.assertEqual(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEqual(10, observer.calledMethods[0].kwargs['stop'])
 
     def testAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
@@ -221,11 +221,11 @@ class RssTest(SeecrTestCase):
 
         consume(rss.handleRequest(RequestURI='/?query=not+fiets'))
 
-        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
-        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
-        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
-        self.assertEquals(cqlToExpression("antiunary NOT fiets"), observer.calledMethods[0].kwargs['query'])
+        self.assertEqual(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEqual(None, observer.calledMethods[0].kwargs['sortKeys'])
+        self.assertEqual(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEqual(10, observer.calledMethods[0].kwargs['stop'])
+        self.assertEqual(cqlToExpression("antiunary NOT fiets"), observer.calledMethods[0].kwargs['query'])
 
     def testEmptyQueryWithAntiUnaryClauseIsPassedToWebQuery(self):
         observer = CallTrace(
@@ -239,11 +239,11 @@ class RssTest(SeecrTestCase):
 
         consume(rss.handleRequest(RequestURI='/?query='))
 
-        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
-        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
-        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
-        self.assertEquals(cqlToExpression("antiunary"), observer.calledMethods[0].kwargs['query'])
+        self.assertEqual(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEqual(None, observer.calledMethods[0].kwargs['sortKeys'])
+        self.assertEqual(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEqual(10, observer.calledMethods[0].kwargs['stop'])
+        self.assertEqual(cqlToExpression("antiunary"), observer.calledMethods[0].kwargs['query'])
 
     def testWebQueryUsesFilters(self):
         observer = CallTrace(
@@ -256,11 +256,11 @@ class RssTest(SeecrTestCase):
         rss.addObserver(observer)
 
         consume(rss.handleRequest(RequestURI='/?query=one+two&filter=field1:value1&filter=field2:value2'))
-        self.assertEquals(['executeQuery'], [m.name for m in observer.calledMethods])
-        self.assertEquals(None, observer.calledMethods[0].kwargs['sortKeys'])
-        self.assertEquals(0, observer.calledMethods[0].kwargs['start'])
-        self.assertEquals(10, observer.calledMethods[0].kwargs['stop'])
-        self.assertEquals(cqlToExpression("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['query'])
+        self.assertEqual(['executeQuery'], [m.name for m in observer.calledMethods])
+        self.assertEqual(None, observer.calledMethods[0].kwargs['sortKeys'])
+        self.assertEqual(0, observer.calledMethods[0].kwargs['start'])
+        self.assertEqual(10, observer.calledMethods[0].kwargs['stop'])
+        self.assertEqual(cqlToExpression("(one AND two) AND field1 exact value1 AND field2 exact value2"), observer.calledMethods[0].kwargs['query'])
 
     def testWebQueryIgnoresWrongFilters(self):
         observer = CallTrace(

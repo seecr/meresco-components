@@ -36,7 +36,7 @@ from meresco.components import lxmltostring
 class LogComponent(Observable):
     def _log(self, message, *args, **kwargs):
         printKwargs = dict(kwargs)
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if type(value) == ElementTreeType:
                 printKwargs[key] = "%s(%s)" % (value.__class__.__name__, lxmltostring(value))
         sys.stdout.write("[%s] %s(*%s, **%s)\n" % (self.observable_name(), message, args, printKwargs))

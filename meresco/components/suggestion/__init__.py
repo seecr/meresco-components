@@ -24,4 +24,4 @@
 #
 ## end license ##
 
-from suggestion import Suggestion
+from .suggestion import Suggestion

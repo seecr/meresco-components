@@ -30,7 +30,7 @@
 #
 ## end license ##
 
-from converter import Converter
+from .converter import Converter
 from cqlparser.cqltoexpression import QueryExpression
 
 class CqlMultiSearchClauseConversion(Converter):

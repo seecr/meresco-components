@@ -30,8 +30,8 @@
 
 from xml.sax.saxutils import escape as xmlEscape
 
-from urlparse import parse_qs
-from urlparse import urlsplit
+from urllib.parse import parse_qs
+from urllib.parse import urlsplit
 
 from meresco.core import Observable
 from meresco.components.sru.sruparser import SruMandatoryParameterNotSuppliedException
@@ -82,7 +82,7 @@ class Rss(Observable):
                 webquery.addFilter(field, term)
 
             ast = webquery.ast
-        except (SruMandatoryParameterNotSuppliedException, BadRequestException, CQLParseException), e:
+        except (SruMandatoryParameterNotSuppliedException, BadRequestException, CQLParseException) as e:
             yield '<title>ERROR %s</title>' % xmlEscape(self._title)
             yield '<link>%s</link>' % xmlEscape(self._link)
             yield "<description>An error occurred '%s'</description>" % xmlEscape(str(e))

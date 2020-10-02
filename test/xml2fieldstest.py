@@ -36,7 +36,7 @@ from meresco.core import Observable
 from meresco.components import Xml2Fields
 
 from lxml.etree import parse
-from StringIO import StringIO
+from io import StringIO
 
 
 def parselxml(aString):
@@ -53,14 +53,14 @@ class Xml2FieldsTest(TestCase):
 
     def testOneField(self):
         result = list(compose(self.observable.all.add('id0','partName', parselxml('<fields><tag>value</tag></fields>'))))
-        self.assertEquals([], result)
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals("addField(name='fields.tag', value='value')", str(self.observer.calledMethods[0]))
+        self.assertEqual([], result)
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual("addField(name='fields.tag', value='value')", str(self.observer.calledMethods[0]))
 
     def testDoNotIncludeNamespaces(self):
         list(compose(self.observable.all.add('id0','partName', parselxml('<fields xmlns="aap"><tag>value</tag></fields>'))))
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals("addField(name='fields.tag', value='value')", str(self.observer.calledMethods[0]))
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual("addField(name='fields.tag', value='value')", str(self.observer.calledMethods[0]))
 
     def testMultiLevel(self):
         node = parselxml("""<lom>
@@ -69,7 +69,7 @@ class Xml2FieldsTest(TestCase):
             </general>
         </lom>""")
         list(compose(self.observable.all.add('id', 'legacy partname', node)))
-        self.assertEquals("addField(name='lom.general.title', value='The title')", str(self.observer.calledMethods[0]))
+        self.assertEqual("addField(name='lom.general.title', value='The title')", str(self.observer.calledMethods[0]))
 
     def testMultipleValuesForField(self):
         node = parselxml("""<tag>
@@ -77,9 +77,9 @@ class Xml2FieldsTest(TestCase):
             <name>Name Two</name>
         </tag>""")
         list(compose(self.observable.all.add('id', 'legacy partname', node)))
-        self.assertEquals(2, len(self.observer.calledMethods))
-        self.assertEquals("addField(name='tag.name', value='Name One')", str(self.observer.calledMethods[0]))
-        self.assertEquals("addField(name='tag.name', value='Name Two')", str(self.observer.calledMethods[1]))
+        self.assertEqual(2, len(self.observer.calledMethods))
+        self.assertEqual("addField(name='tag.name', value='Name One')", str(self.observer.calledMethods[0]))
+        self.assertEqual("addField(name='tag.name', value='Name Two')", str(self.observer.calledMethods[1]))
 
     def testIgnoreCommentsAndEmptyTags(self):
         node = parselxml("""<tag>
@@ -90,7 +90,7 @@ class Xml2FieldsTest(TestCase):
             </name>
         </tag>""")
         list(compose(self.observable.all.add('id', 'legacy partname', node)))
-        self.assertEquals(2, len(self.observer.calledMethods))
-        self.assertEquals("addField(name='tag.name', value='Name One')", str(self.observer.calledMethods[0]))
-        self.assertEquals("addField(name='tag.name', value='Name Two')", str(self.observer.calledMethods[1]))
+        self.assertEqual(2, len(self.observer.calledMethods))
+        self.assertEqual("addField(name='tag.name', value='Name One')", str(self.observer.calledMethods[0]))
+        self.assertEqual("addField(name='tag.name', value='Name Two')", str(self.observer.calledMethods[1]))
 

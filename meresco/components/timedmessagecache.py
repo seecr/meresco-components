@@ -72,7 +72,7 @@ class TimedMessageCache(Transparent):
             self._cache[key] = value
         except (SystemExit, KeyboardInterrupt, AssertionError):
             raise
-        except Exception, e:
+        except Exception as e:
             if self._backoffTimeout and isinstance(e, TimeoutException):
                 self._backoffStarted = now()
                 if not (self._returnCachedValueInCaseOfException and found):

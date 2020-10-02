@@ -65,7 +65,7 @@ class Suggestion(Observable):
         yield '<suggestions xmlns="http://meresco.org/namespace/suggestions">\n'
         shortest = min([len(suggestions) for word, suggestions in sortedSuggestions])
         for i in range(shortest):
-            suggestionWords = unicode(sruArguments['x-suggestionsQuery'][0]).split()
+            suggestionWords = str(sruArguments['x-suggestionsQuery'][0]).split()
             for word, suggestions in reversed(sortedSuggestions):
                 replaceWord = suggestions[i]
                 suggestionWords[suggestionWords.index(word)] = replaceWord

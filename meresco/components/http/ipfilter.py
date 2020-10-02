@@ -30,7 +30,7 @@
 #
 ## end license ##
 
-from handlerequestfilter import HandleRequestFilter
+from .handlerequestfilter import HandleRequestFilter
 from netaddr import IPAddress, IPRange, IPNetwork
 import os
 

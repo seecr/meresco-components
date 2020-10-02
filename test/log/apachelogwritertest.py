@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from StringIO import StringIO
+from io import StringIO
 
 from seecr.test import SeecrTestCase
 
@@ -51,7 +51,7 @@ class ApacheLogWriterTest(SeecrTestCase):
                 }
             }
         )
-        self.assertEquals('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-"\n', stream.getvalue())
+        self.assertEqual('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-"\n', stream.getvalue())
 
     def testLogWithException(self):
         stream = StringIO()
@@ -71,13 +71,13 @@ class ApacheLogWriterTest(SeecrTestCase):
                 }
             }
         )
-        self.assertEquals('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-" Exception raised:\n    ValueError(\'xyz\',)\n', stream.getvalue())
+        self.assertEqual('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-" Exception raised:\n    ValueError(\'xyz\',)\n', stream.getvalue())
 
     def testWriteLogWithoutSensibleData(self):
         stream = StringIO()
         writer = ApacheLogWriter(stream)
         writer.writeLog(collectedLog={'key':['value']})
-        self.assertEquals("", stream.getvalue())
+        self.assertEqual("", stream.getvalue())
 
     def testRejectLog(self):
         stream = StringIO()
@@ -95,7 +95,7 @@ class ApacheLogWriterTest(SeecrTestCase):
             }
         }
         writer.writeLog(collectedLog)
-        self.assertEquals('', stream.getvalue())
+        self.assertEqual('', stream.getvalue())
         collectedLog['httpRequest']['RequestURI'] = ['/abcd']
         writer.writeLog(collectedLog)
-        self.assertEquals('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abcd HTTP/1.0" 200 - "-" "-"\n', stream.getvalue())
+        self.assertEqual('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abcd HTTP/1.0" 200 - "-" "-"\n', stream.getvalue())

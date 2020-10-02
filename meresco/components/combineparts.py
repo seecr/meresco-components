@@ -38,7 +38,7 @@ class CombineParts(Transparent):
         yield
 
     def getData(self, identifier, name):
-        if not name in self._combinations.keys():
+        if not name in list(self._combinations.keys()):
             return self.call.getData(identifier=identifier, name=name)
 
         resultparts = []

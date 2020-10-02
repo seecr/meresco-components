@@ -24,7 +24,7 @@
 #
 ## end license ##
 
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 
 def parseAbsoluteUrl(url):
     parsedUrl = urlsplit(url)

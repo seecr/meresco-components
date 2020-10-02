@@ -57,12 +57,12 @@ class QueryLogTest(SeecrTestCase):
         self.queryLog.addObserver(observer)
         result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')))
 
-        self.assertEquals('123', result)
-        self.assertEquals(['handleRequest'], [m.name for m in observer.calledMethods])
-        self.assertEquals([dict(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
+        self.assertEqual('123', result)
+        self.assertEqual(['handleRequest'], [m.name for m in observer.calledMethods])
+        self.assertEqual([dict(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')], [m.kwargs for m in observer.calledMethods])
 
         self.assertTrue(isfile(join(self.tempdir, '2009-11-02-query.log')))
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru \n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testLogCanReturnCallables(self):
         observer= CallTrace('observer')
@@ -70,7 +70,7 @@ class QueryLogTest(SeecrTestCase):
         self.queryLog.addObserver(observer)
         list(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')))
 
-        self.assertEquals(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
+        self.assertEqual(1, len(open(join(self.tempdir, '2009-11-02-query.log')).readlines()))
 
     def testIncludedPathsOnly(self):
         observer = CallTrace('observer')
@@ -78,8 +78,8 @@ class QueryLogTest(SeecrTestCase):
         self.queryLog.addObserver(observer)
         result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/not/included', otherArg='value')))
 
-        self.assertEquals('123', result)
-        self.assertEquals(0, len(listdir(self.tempdir)))
+        self.assertEqual('123', result)
+        self.assertEqual(0, len(listdir(self.tempdir)))
 
 
     def testLoggedPathsIsStartOfAcceptedPath(self):
@@ -87,7 +87,7 @@ class QueryLogTest(SeecrTestCase):
         observer.returnValues['handleRequest'] = (line for line in ['1','2','3'])
         self.queryLog.addObserver(observer)
         ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru/extended/path', otherArg='value')))
-        self.assertEquals(1, len(listdir(self.tempdir)))
+        self.assertEqual(1, len(listdir(self.tempdir)))
 
     def testLogQueryParameters(self):
         class HandleRequestObserver(Observable):
@@ -96,8 +96,8 @@ class QueryLogTest(SeecrTestCase):
                 yield 'result'
         self.queryLog.addObserver(HandleRequestObserver())
         result = ''.join(compose(self.queryLog.handleRequest(Client=('127.0.0.1', 47785), path='/path/sru', otherArg='value')))
-        self.assertEquals('result', result)
-        self.assertEquals('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual('result', result)
+        self.assertEqual('2009-11-02T11:25:37Z 127.0.0.1 0.0K 1.000s - /path/sru a=A&b=B&c=C&d=D&d=DD\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 
     def testQueryLogHelperForSru(self):
         __callstack_var_queryLogValues__ = {'queryArguments':{}}
@@ -108,7 +108,7 @@ class QueryLogTest(SeecrTestCase):
             yield 'result'
         observer.methods['searchRetrieve'] = searchRetrieve
         list(compose(helper.searchRetrieve(query=['query'], sortKeys=[dict(sortBy='field', sortDescending=False)], sruArguments={'x-term-drilldown':'drilldown', 'under_score':'value', 'sortKeys':'field,,0', 'query': ['query']})))
-        self.assertEquals({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
+        self.assertEqual({'query': ['query'], 'x-term-drilldown': 'drilldown', 'under_score': 'value', 'sortKeys':'field,,0'}, __callstack_var_queryLogValues__['queryArguments'])
 
     def testQueryLogHelper(self):
         __callstack_var_queryLogValues__ = {'queryArguments':{}}
@@ -119,9 +119,9 @@ class QueryLogTest(SeecrTestCase):
             yield 'result'
         observer.methods['handleRequest'] = handleRequest
         result = list(compose(helper.handleRequest(arguments={'key':['value'], 'key2':['value1', 'value2']}, path='path')))
-        self.assertEquals(['result'], result)
-        self.assertEquals({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryLogValues__['queryArguments'])
-        self.assertEquals([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])
+        self.assertEqual(['result'], result)
+        self.assertEqual({'key':['value'], 'key2':['value1', 'value2']}, __callstack_var_queryLogValues__['queryArguments'])
+        self.assertEqual([{'arguments': {'key':['value'], 'key2':['value1', 'value2']}, 'path':'path'}], [m.kwargs for m in observer.calledMethods])
 
     def testAllQueryHelpersForSRU(self):
         index = CallTrace('index')
@@ -154,5 +154,5 @@ class QueryLogTest(SeecrTestCase):
                     'query': ['field=value'],
                     },
             )))
-        self.assertEquals('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201hits /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
+        self.assertEqual('2009-11-02T11:25:37Z 11.22.33.44 0.7K 1.000s 3201hits /path/sru maximumRecords=0&operation=searchRetrieve&query=field%3Dvalue&recordPacking=xml&recordSchema=dc&startRecord=1&version=1.2\n', open(join(self.tempdir, '2009-11-02-query.log')).read())
 

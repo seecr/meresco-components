@@ -39,13 +39,13 @@ class PacketToLogTest(SeecrTestCase):
 
     def testAdd(self):
         consume(self.packetToLog.add(data=LOGDATA))
-        self.assertEquals(['logData'], self.observer.calledMethodNames())
-        self.assertEquals({'dataDict': RESULTDATA}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual(['logData'], self.observer.calledMethodNames())
+        self.assertEqual({'dataDict': RESULTDATA}, self.observer.calledMethods[0].kwargs)
 
 
 LOGDATA='1257161136 11.12.13.14 4.0K 12.340 0 /path key=value'
 RESULTDATA={
-    'timestamp': 1257161136L,
+    'timestamp': 1257161136,
     'ipAddress': '11.12.13.14',
     'size': 4096,
     'duration': 12340,

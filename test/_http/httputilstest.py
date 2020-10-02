@@ -47,9 +47,9 @@ class HttpUtilsTest(TestCase):
         newHeader = 'Set-Cookie: session=dummySessionId1234; path=/'
         result = ''.join(utils.insertHeader(handleRequest(), newHeader))
         header, body = result.split(utils.CRLF*2, 1)
-        self.assertEquals('<html/>', body)
+        self.assertEqual('<html/>', body)
         headerParts = header.split(utils.CRLF)
-        self.assertEquals("HTTP/1.0 200 OK", headerParts[0])
+        self.assertEqual("HTTP/1.0 200 OK", headerParts[0])
         self.assertTrue(newHeader in headerParts)
         self.assertTrue(utils.ContentTypeHeader + utils.ContentTypeHtml in headerParts)
 
@@ -73,18 +73,18 @@ class HttpUtilsTest(TestCase):
 
 
     def testRedirect(self):
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")
+        self.assertEqual("HTTP/1.0 302 Found\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")
 
     def testFindCookies(self):
         cookies = utils.findCookies(Headers={
             'Cookie':'acookie=somevalue; cookiename=value; othercookie=iets',
             'Accept': 'gzip',
             }, name='cookiename')
-        self.assertEquals(['value'], cookies)
+        self.assertEqual(['value'], cookies)
 
     def testParseRequestHeaders(self):
         headers = parseRequestHeaders('''GET /path?argument=value HTTP/1.0\r\nAccept: something\r\n\r\nBody data ignored''')
-        self.assertEquals({
+        self.assertEqual({
                 'HTTPVersion': '1.0',
                 'Headers': {'Accept': 'something'},
                 'Method': 'GET',
@@ -93,7 +93,7 @@ class HttpUtilsTest(TestCase):
 
     def testParseResponseHeaders(self):
         headers = parseResponseHeaders('''HTTP/1.0 200 Ok\r\nAccept: something\r\n\r\nBody data ignored''')
-        self.assertEquals({
+        self.assertEqual({
                 'HTTPVersion': '1.0',
                 'Headers': {'Accept': 'something'},
                 'ReasonPhrase': 'Ok',

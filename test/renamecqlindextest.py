@@ -36,4 +36,4 @@ from cqlparser import cqlToExpression
 class RenameCqlIndexTest(SeecrTestCase):
     def testConvert(self):
         rename = RenameCqlIndex(lambda name: 'other'+name)
-        self.assertEquals(cqlToExpression('otherfield = value'), rename(cqlToExpression('field = value')))
+        self.assertEqual(cqlToExpression('otherfield = value'), rename(cqlToExpression('field = value')))

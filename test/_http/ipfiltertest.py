@@ -62,11 +62,11 @@ class IpFilterTest(SeecrTestCase):
 
         list(compose(dna.all.handleRequest(Client=(address,), Headers=headers)))
         if passed:
-            self.assertEquals(1, len(self.observer.calledMethods))
-            self.assertEquals('handleRequest', self.observer.calledMethods[0].name)
-            self.assertEquals((address,), self.observer.calledMethods[0].kwargs['Client'])
+            self.assertEqual(1, len(self.observer.calledMethods))
+            self.assertEqual('handleRequest', self.observer.calledMethods[0].name)
+            self.assertEqual((address,), self.observer.calledMethods[0].kwargs['Client'])
         else:
-            self.assertEquals(0, len(self.observer.calledMethods))
+            self.assertEqual(0, len(self.observer.calledMethods))
 
     def testIpfilterFakeIpHeaderForIntegrationTesting(self):
         self.assertInvalidIp('127.0.0.1', ips=['192.168.1.1'])
@@ -90,9 +90,9 @@ class IpFilterTest(SeecrTestCase):
 
         list(compose(dna.all.handleRequest(Client=('127.0.0.1',), Headers={'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'})))
 
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals((), observer.calledMethods[0].args)
-        self.assertEquals({
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual((), observer.calledMethods[0].args)
+        self.assertEqual({
             'Client': ('127.0.0.1',),
             'Headers': {'X-Meresco-Ipfilter-Fake-Ip': '192.168.1.1'}
         }, observer.calledMethods[0].kwargs)
@@ -128,29 +128,29 @@ class IpFilterTest(SeecrTestCase):
 
     def testFilterIpAddress(self):
         ipf = IpFilter(allowedIps=['10.0.0.1'])
-        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1'))
-        self.assertEquals(True, ipf.filterIpAddress(ipaddress='10.0.0.1'))
+        self.assertEqual(False, ipf.filterIpAddress(ipaddress='127.0.0.1'))
+        self.assertEqual(True, ipf.filterIpAddress(ipaddress='10.0.0.1'))
 
         Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.99.99.99'}
-        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
+        self.assertEqual(False, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
         Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.0.0.1'}
-        self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.99.99.99', Headers=Headers))
+        self.assertEqual(False, ipf.filterIpAddress(ipaddress='127.99.99.99', Headers=Headers))
 
-        self.assertEquals(True, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
+        self.assertEqual(True, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
 
         ipf = IpFilter(allowedIps=['2001:41c8:10:7b:aa:6:0:1'])
-        self.assertEquals(False, ipf.filterIpAddress(ipaddress='::1'))
-        self.assertEquals(True, ipf.filterIpAddress(ipaddress='2001:41c8:10:7b:aa:6:0:1'))
+        self.assertEqual(False, ipf.filterIpAddress(ipaddress='::1'))
+        self.assertEqual(True, ipf.filterIpAddress(ipaddress='2001:41c8:10:7b:aa:6:0:1'))
 
     def testFilterIpAddressDoesNotWorkIfNotInTestmode(self):
         ipf = IpFilter(allowedIps=['10.0.0.1'])
         Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.0.0.1'}
-        self.assertEquals(True, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
+        self.assertEqual(True, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
         try:
             os.environ['TESTMODE'] = 'FALSE'
             ipf = IpFilter(allowedIps=['10.0.0.1'])
             Headers = {'X-Meresco-Ipfilter-Fake-Ip': '10.0.0.1'}
-            self.assertEquals(False, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
+            self.assertEqual(False, ipf.filterIpAddress(ipaddress='127.0.0.1', Headers=Headers))
         finally:
             os.environ['TESTMODE'] = 'TRUE'
 
@@ -168,24 +168,24 @@ class IpFilterTest(SeecrTestCase):
 
         list(compose(dna.all.handleRequest(Client=('127.0.0.1',), Headers={})))
         list(compose(dna.all.handleRequest(Client=('10.0.0.10',), Headers={})))
-        self.assertEquals(0, len(observer.calledMethods))
+        self.assertEqual(0, len(observer.calledMethods))
         list(compose(dna.all.handleRequest(Client=('192.168.1.1',), Headers={})))
-        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEqual(1, len(observer.calledMethods))
         del observer.calledMethods[:]
 
         list(compose(dna.all.handleRequest(Client=('2001:41c8:10:7b:aa:6:0:2', ), Headers={})))
-        self.assertEquals(1, len(observer.calledMethods))
+        self.assertEqual(1, len(observer.calledMethods))
         del observer.calledMethods[:]
 
         ipf.updateIps(ipAddresses=['127.0.0.1'], ipRanges=[('10.0.0.1', '10.0.0.255'), '2001:41c8:10:7c::/64'])
         list(compose(dna.all.handleRequest(Client=('192.168.1.1',), Headers={})))
-        self.assertEquals(0, len(observer.calledMethods))
+        self.assertEqual(0, len(observer.calledMethods))
         list(compose(dna.all.handleRequest(Client=('127.0.0.1',), Headers={})))
         list(compose(dna.all.handleRequest(Client=('10.0.0.10',), Headers={})))
-        self.assertEquals(2, len(observer.calledMethods))
+        self.assertEqual(2, len(observer.calledMethods))
 
         list(compose(dna.all.handleRequest(Client=('2001:41c8:10:7b:aa:6:0:2', ), Headers={})))
-        self.assertEquals(2, len(observer.calledMethods))
+        self.assertEqual(2, len(observer.calledMethods))
         list(compose(dna.all.handleRequest(Client=('2001:41c8:10:7c:aa:6:0:2', ), Headers={})))
-        self.assertEquals(3, len(observer.calledMethods))
+        self.assertEqual(3, len(observer.calledMethods))
 

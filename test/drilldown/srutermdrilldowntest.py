@@ -33,7 +33,7 @@
 from seecr.test import SeecrTestCase
 from weightless.core import compose
 from lxml.etree import parse, XML
-from StringIO import StringIO
+from io import StringIO
 from simplejson import loads
 from os.path import join, dirname, basename
 
@@ -151,7 +151,7 @@ class SruTermDrilldownTest(SeecrTestCase):
             ]
 
         response = ''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={'x-drilldown-format': ['json']})))
-        self.assertEquals(drilldownData, loads(xpathFirst(XML(response), '//drilldown:term-drilldown/drilldown:json/text()')))
+        self.assertEqual(drilldownData, loads(xpathFirst(XML(response), '//drilldown:term-drilldown/drilldown:json/text()')))
 
         xsdFilename = self._getXsdFilename(response)
         assertValid(response, join(schemasPath, xsdFilename))
@@ -189,7 +189,7 @@ class SruTermDrilldownTest(SeecrTestCase):
 
         response = parse(StringIO(''.join(compose(sruTermDrilldown.extraResponseData(drilldownData, sruArguments={})))))
 
-        self.assertEquals(drilldownData, loads(xpathFirst(response, '//drilldown:term-drilldown/drilldown:json/text()')))
+        self.assertEqual(drilldownData, loads(xpathFirst(response, '//drilldown:term-drilldown/drilldown:json/text()')))
 
     @stderr_replaced
     def testWrongFormat(self):
@@ -248,7 +248,7 @@ class SruTermDrilldownTest(SeecrTestCase):
     def _getXsdFilename(self, response):
         schemaLocation = xpathFirst(XML(response), '/drilldown:drilldown/@xsi:schemaLocation')
         namespace, xsd = schemaLocation.split()
-        self.assertEquals(namespaces['drilldown'], namespace)
-        self.assertEquals('http://meresco.org/files/xsd', dirname(xsd))
+        self.assertEqual(namespaces['drilldown'], namespace)
+        self.assertEqual('http://meresco.org/files/xsd', dirname(xsd))
         return basename(xsd)
 

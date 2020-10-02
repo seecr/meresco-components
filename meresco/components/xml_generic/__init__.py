@@ -27,7 +27,7 @@
 #
 ## end license ##
 
-from validate import Validate, ValidateException, assertValid
+from .validate import Validate, ValidateException, assertValid
 from meresco.components import usrSharePath
 from os.path import dirname, abspath, join
 schemasPath = join(usrSharePath, 'xsd', 'schemas')

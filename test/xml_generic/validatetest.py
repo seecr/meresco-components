@@ -30,7 +30,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from os.path import join
-from cStringIO import StringIO
+from io import StringIO
 from lxml.etree import parse
 
 from weightless.core import compose, be
@@ -57,15 +57,15 @@ class ValidateTest(SeecrTestCase):
 
     def testValid(self):
         validXml = '<lom xmlns="http://ltsc.ieee.org/xsd/LOM"/>'
-        self.assertEquals(['done'], list(compose(self.observable.all.someMethod(parse(StringIO(validXml))))))
-        self.assertEquals(['done'], list(compose(self.observable.any.someMethod(parse(StringIO(validXml))))))
+        self.assertEqual(['done'], list(compose(self.observable.all.someMethod(parse(StringIO(validXml))))))
+        self.assertEqual(['done'], list(compose(self.observable.any.someMethod(parse(StringIO(validXml))))))
 
         self.interceptor.calledMethods.reset()
         self.observable.do.someMethod(parse(StringIO(validXml)))
-        self.assertEquals(['do_unknown'], [m.name for m in self.interceptor.calledMethods])
+        self.assertEqual(['do_unknown'], [m.name for m in self.interceptor.calledMethods])
 
         self.interceptor.calledMethods.reset()
-        self.assertEquals('done', self.observable.call.someMethod(parse(StringIO(validXml))))
+        self.assertEqual('done', self.observable.call.someMethod(parse(StringIO(validXml))))
 
     def testInvalid(self):
         invalidXml = '<lom xmlns="http://ltsc.ieee.org/xsd/LOM_this_should_not_work"/>'
@@ -74,7 +74,7 @@ class ValidateTest(SeecrTestCase):
             self.fail('must raise exception')
         except ValidateException:
             pass
-        self.assertEquals(['logException'], [m.name for m in self.interceptor.calledMethods])
+        self.assertEqual(['logException'], [m.name for m in self.interceptor.calledMethods])
         exception = self.interceptor.calledMethods[0].args[0]
         self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element '{http://ltsc.ieee.org/xsd/LOM_this_should_not_work}lom': No matching global declaration available for the validation root." in str(exception), str(exception))
         self.assertTrue("1 %s" % invalidXml in str(exception), str(exception))
@@ -88,9 +88,9 @@ class ValidateTest(SeecrTestCase):
         try:
             list(compose(self.observable.any.message(parse(StringIO(invalid)))))
             self.fail('must raise exception')
-        except ValidateException, e:
+        except ValidateException as e:
             pass
-        self.assertEquals(['logException'], [m.name for m in self.interceptor.calledMethods])
+        self.assertEqual(['logException'], [m.name for m in self.interceptor.calledMethods])
         exception = self.interceptor.calledMethods[0].args[0]
         self.assertTrue("ERROR:SCHEMASV:SCHEMAV_CVC_ELT_1: Element 'OAI-PMH': No matching global declaration available for the validation root." in str(exception), str(exception))
         self.assertTrue("1 <OAI-PMH/>" in str(exception), str(exception))
@@ -105,6 +105,6 @@ class ValidateTest(SeecrTestCase):
             (observer,)
         ))
 
-        self.assertEquals([42], list(compose(root.any.f())))
-        self.assertEquals(42, root.call.g())
+        self.assertEqual([42], list(compose(root.any.f())))
+        self.assertEqual(42, root.call.g())
 

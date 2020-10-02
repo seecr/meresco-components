@@ -50,31 +50,31 @@ class OnlyAddDeleteIfChangedTest(SeecrTestCase):
         self.observer.returnValues['getRecord'] = None
         self.observer.returnValues['getData'] = None
         consume(self.top.all.add(identifier='identifier', partname='partname', data="data"))
-        self.assertEquals(['getRecord', 'add'], self.observer.calledMethodNames())
+        self.assertEqual(['getRecord', 'add'], self.observer.calledMethodNames())
         getRecordCall, addCall = self.observer.calledMethods
-        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
-        self.assertEquals(dict(identifier='identifier', partname='partname', data='data'), addCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), getRecordCall.kwargs)
+        self.assertEqual(dict(identifier='identifier', partname='partname', data='data'), addCall.kwargs)
 
     def testAddKnownDataMissing(self):
         self.observer.returnValues['getData'] = None
         consume(self.top.all.add(identifier='identifier', partname='partname', data="data"))
-        self.assertEquals(['getRecord', 'getData', 'add'], self.observer.calledMethodNames())
+        self.assertEqual(['getRecord', 'getData', 'add'], self.observer.calledMethodNames())
         getRecordCall, getDataCall, addCall = self.observer.calledMethods
-        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
-        self.assertEquals(dict(identifier='identifier', name='partname'), getDataCall.kwargs)
-        self.assertEquals(dict(identifier='identifier', partname='partname', data='data'), addCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), getRecordCall.kwargs)
+        self.assertEqual(dict(identifier='identifier', name='partname'), getDataCall.kwargs)
+        self.assertEqual(dict(identifier='identifier', partname='partname', data='data'), addCall.kwargs)
 
     def testDeleteNew(self):
         self.observer.returnValues['getRecord'] = None
         consume(self.top.all.delete(identifier='identifier'))
-        self.assertEquals(['getRecord', 'delete'], self.observer.calledMethodNames())
+        self.assertEqual(['getRecord', 'delete'], self.observer.calledMethodNames())
         getRecordCall, deleteCall = self.observer.calledMethods
-        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
-        self.assertEquals(dict(identifier='identifier'), deleteCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), getRecordCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), deleteCall.kwargs)
 
     def testAddNotChanged(self):
         consume(self.top.all.add(identifier='identifier', partname='partname', data="data"))
-        self.assertEquals(['getRecord', 'getData'], self.observer.calledMethodNames())
+        self.assertEqual(['getRecord', 'getData'], self.observer.calledMethodNames())
 
     def testAddChanged(self):
         observer = CallTrace('storageAndMore', emptyGeneratorMethods=['add'], returnValues={'getRecord': CallTrace(), 'getData': 'data'})
@@ -86,21 +86,21 @@ class OnlyAddDeleteIfChangedTest(SeecrTestCase):
             )
         )
         consume(top.all.add(identifier='identifier', partname='partname', data="different"))
-        self.assertEquals(['getRecord', 'getData', 'add'], observer.calledMethodNames())
+        self.assertEqual(['getRecord', 'getData', 'add'], observer.calledMethodNames())
         getRecordCall, getDataCall, addCall = observer.calledMethods
-        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
-        self.assertEquals(dict(identifier='identifier', name='partname'), getDataCall.kwargs)
-        self.assertEquals(dict(identifier='identifier', partname='partname', data='different'), addCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), getRecordCall.kwargs)
+        self.assertEqual(dict(identifier='identifier', name='partname'), getDataCall.kwargs)
+        self.assertEqual(dict(identifier='identifier', partname='partname', data='different'), addCall.kwargs)
 
     def testDeleteAlreadAdded(self):
         self.observer.returnValues['getRecord'].isDeleted = False
         consume(self.top.all.delete(identifier='identifier'))
-        self.assertEquals(['getRecord', 'delete'], self.observer.calledMethodNames())
+        self.assertEqual(['getRecord', 'delete'], self.observer.calledMethodNames())
         getRecordCall, deleteCall = self.observer.calledMethods
-        self.assertEquals(dict(identifier='identifier'), getRecordCall.kwargs)
-        self.assertEquals(dict(identifier='identifier'), deleteCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), getRecordCall.kwargs)
+        self.assertEqual(dict(identifier='identifier'), deleteCall.kwargs)
 
     def testDeleteAlreadDeleted(self):
         self.observer.returnValues['getRecord'].isDeleted = True
         consume(self.top.all.delete(identifier='identifier'))
-        self.assertEquals(['getRecord'], self.observer.calledMethodNames())
+        self.assertEqual(['getRecord'], self.observer.calledMethodNames())

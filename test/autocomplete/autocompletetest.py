@@ -77,9 +77,9 @@ class AutocompleteTest(SeecrTestCase):
         header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['Te']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
-        self.assertEquals("""["Te", ["term0", "term&/\\""]]""", body)
-        self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'fieldname':'lom', 'limit':50}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual("""["Te", ["term0", "term&/\\""]]""", body)
+        self.assertEqual(['prefixSearch'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual({'prefix':'te', 'fieldname':'lom', 'limit':50}, self.observer.calledMethods[0].kwargs)
 
     def testHandleRequest(self):
         response = SolrResponse()
@@ -94,9 +94,9 @@ class AutocompleteTest(SeecrTestCase):
         header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
-        self.assertEquals("""["te", ["term0", "term&/\\""]]""", body)
-        self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual("""["te", ["term0", "term&/\\""]]""", body)
+        self.assertEqual(['prefixSearch'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
 
     @stderr_replaced
     def testOldStyleAutocomplete(self):
@@ -125,9 +125,9 @@ class AutocompleteTest(SeecrTestCase):
         header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
-        self.assertEquals("""["te", ["term0", "term&/\\""]]""", body)
-        self.assertEquals(['prefixSearch'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual("""["te", ["term0", "term&/\\""]]""", body)
+        self.assertEqual(['prefixSearch'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
 
         result = asString(self.auto.handleRequest(
             path='/path/opensearchdescription.xml',
@@ -148,15 +148,15 @@ class AutocompleteTest(SeecrTestCase):
         header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['test']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
-        self.assertEquals("""["test", []]""", body)
-        self.assertEquals([], [m.name for m in self.observer.calledMethods])
+        self.assertEqual("""["test", []]""", body)
+        self.assertEqual([], [m.name for m in self.observer.calledMethods])
 
     def testDefaultMinimumLength(self):
         header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['t']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
-        self.assertEquals("""["t", []]""", body)
-        self.assertEquals([], [m.name for m in self.observer.calledMethods])
+        self.assertEqual("""["t", []]""", body)
+        self.assertEqual([], [m.name for m in self.observer.calledMethods])
 
     def testOpenSearchDescriptionXml(self):
         result = asString(self.auto.handleRequest(

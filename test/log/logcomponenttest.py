@@ -58,7 +58,7 @@ class LogComponentTest(SeecrTestCase):
         # "message" is the only keyword-argument that cannot be handled by anything implementing *_unknown.
         try:
             self.top.call.aMessage(message='m')
-        except TypeError, e:
+        except TypeError as e:
             self.assertTrue("got multiple values for keyword argument 'message'" in str(e), str(e))
 
         # ... and "method" does work (broken in previous version).
@@ -70,14 +70,14 @@ class LogComponentTest(SeecrTestCase):
         self.observer.methods['f'] = lambda: 42
         with stdout_replaced() as out:
             result = self.top.call.f()
-            self.assertEquals(42, result)
+            self.assertEqual(42, result)
             self.assertCall('f', tuple(), {}, out)
 
     def assertCall(self, message, args, kwargs, out):
-        self.assertEquals([message], self.observer.calledMethodNames())
+        self.assertEqual([message], self.observer.calledMethodNames())
         calledMethod = self.observer.calledMethods[0]
-        self.assertEquals((args, kwargs), (calledMethod.args, calledMethod.kwargs))
-        self.assertEquals(msg(message, args, kwargs), out.getvalue())
+        self.assertEqual((args, kwargs), (calledMethod.args, calledMethod.kwargs))
+        self.assertEqual(msg(message, args, kwargs), out.getvalue())
         self.observer.calledMethods.reset()
 
 

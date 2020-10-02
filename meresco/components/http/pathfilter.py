@@ -30,7 +30,7 @@
 #
 ## end license ##
 
-from handlerequestfilter import HandleRequestFilter
+from .handlerequestfilter import HandleRequestFilter
 
 class PathFilter(HandleRequestFilter):
 

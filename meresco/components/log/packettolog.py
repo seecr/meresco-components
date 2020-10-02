@@ -39,7 +39,7 @@ def loglineToDict(line):
     parts = line.split(' ') + ['']
     zulutime, ipAddress, size, duration, hits, path, arguments = parts[:7]
     return {
-        'timestamp': long(ZuluTime(zulutime).epoch if 'Z' in zulutime else long(zulutime)),
+        'timestamp': int(ZuluTime(zulutime).epoch if 'Z' in zulutime else int(zulutime)),
         'ipAddress': ipAddress,
         'size': int(float(size[:-1]) * 1024) if size != '-' else None,
         'duration': int(float(duration.split('s')[0])*1000) if duration != '-' else None,

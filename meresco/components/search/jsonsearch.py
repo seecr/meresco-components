@@ -34,7 +34,7 @@ from meresco.core import Observable
 from cqlparser import cqlToExpression
 from cqlparser.cqltoexpression import QueryExpression
 from simplejson import dumps
-from urllib import urlencode as _urlencode
+from urllib.parse import urlencode as _urlencode
 
 from meresco.components.http.utils import CRLF
 
@@ -85,7 +85,7 @@ class JsonSearch(Observable):
                 if args.stop - args.start and args.start > 0:
                     jsonResponse['previous'] = args.pageDict(-1, path=path)
 
-                for fieldname, terms in jsonResponse.get('facets', {}).items():
+                for fieldname, terms in list(jsonResponse.get('facets', {}).items()):
                     if fieldname.endswith('.uri'):
                         def displayValue(term):
                             return term['displayTerm'] if 'displayTerm' in term else self.call.labelForUri(uri=term['term'])
@@ -97,7 +97,7 @@ class JsonSearch(Observable):
                     ]
                     jsonResponse['facets'][fieldname] = fieldList
                 jsonResult['response'] = jsonResponse
-            except ValueError, e:
+            except ValueError as e:
                 jsonResult['error'] = {
                         'type': type(e).__name__,
                         'message': str(e),
@@ -209,7 +209,7 @@ class _Arguments(object):
                 facets=queryFacets or None,
             )
         extra_arguments = {}
-        for k, v in arguments.items():
+        for k, v in list(arguments.items()):
             if k.startswith('x-'):
                 extra_arguments[k] = v
             else:
@@ -272,6 +272,7 @@ def getInt(arguments, key, default):
 
 _first={key:nr for nr, key in enumerate(reversed(['total', 'items', 'response', 'request']), start=1)}
 _last={key:nr for nr, key in enumerate(['next', 'previous', 'version'], start=1)}
-def _item_sort_key((k,v)):
+def _item_sort_key(xxx_todo_changeme):
+    (k,v) = xxx_todo_changeme
     return ' ' * _first.get(k,0) + chr(127) * _last.get(k,0) + k
 

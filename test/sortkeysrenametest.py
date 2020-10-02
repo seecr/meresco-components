@@ -42,24 +42,24 @@ class SortKeysRenameTest(SeecrTestCase):
 
     def testShouldNotInterfereIfSortKeysIsOmitted(self):
         total, recordIds = asList(self.sortKeysRename.executeQuery(query='AbstractSyntaxTree', start=1, stop=2))[0]
-        self.assertEquals(0, total)
-        self.assertEquals([], recordIds)
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals({'query':'AbstractSyntaxTree', 'start':1, 'stop':2, 'sortKeys':None}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual(0, total)
+        self.assertEqual([], recordIds)
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual({'query':'AbstractSyntaxTree', 'start':1, 'stop':2, 'sortKeys':None}, self.observer.calledMethods[0].kwargs)
 
     def testShouldNotInterfereIfSortKeysIsNone(self):
         consume(self.sortKeysRename.executeQuery(query='AbstractSyntaxTree', sortKeys=None))
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals({'query':'AbstractSyntaxTree', 'sortKeys':None}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual({'query':'AbstractSyntaxTree', 'sortKeys':None}, self.observer.calledMethods[0].kwargs)
 
     def testShouldRenameSortKeysFieldname(self):
         consume(self.sortKeysRename.executeQuery(query='AbstractSyntaxTree', sortKeys=[{'sortBy':'sortKeys', 'sortDescending': True}]))
-        self.assertEquals(1, len(self.observer.calledMethods))
-        self.assertEquals({'query':'AbstractSyntaxTree', 'sortKeys':[{'sortBy':'new.sortKeys', 'sortDescending': True}]}, self.observer.calledMethods[0].kwargs)
+        self.assertEqual(1, len(self.observer.calledMethods))
+        self.assertEqual({'query':'AbstractSyntaxTree', 'sortKeys':[{'sortBy':'new.sortKeys', 'sortDescending': True}]}, self.observer.calledMethods[0].kwargs)
 
     def testShouldBeTransparent(self):
         start = Observable()
         start.addObserver(self.sortKeysRename)
         self.observer.returnValues['someMethod'] = 'someResult'
-        self.assertEquals('someResult', start.call.someMethod('someParameter'))
+        self.assertEqual('someResult', start.call.someMethod('someParameter'))
         

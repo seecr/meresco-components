@@ -50,12 +50,12 @@ class ArgumentsInSessionTest(TestCase):
 
         session = {}
         list(compose(self.argsInSession.handleRequest(session=session, arguments={'aap': ["+'noot'"]})))
-        self.assertEquals(['noot'], sessions[0]['aap'])
-        self.assertEquals(session, sessions[0])
+        self.assertEqual(['noot'], sessions[0]['aap'])
+        self.assertEqual(session, sessions[0])
         
         list(compose(self.argsInSession.handleRequest(session=session, arguments={'aap': ["+'noot'"]})))
-        self.assertEquals(sessions[0], sessions[1])
-        self.assertEquals(['noot'], sessions[0]['aap'])
+        self.assertEqual(sessions[0], sessions[1])
+        self.assertEqual(['noot'], sessions[0]['aap'])
 
     def testParseAndSetSessionVars(self):
         arguments = {}
@@ -64,9 +64,9 @@ class ArgumentsInSessionTest(TestCase):
             yield 'goodbye'
         self.observer.handleRequest = handleRequest
         list(compose(self.argsInSession.handleRequest(session={}, arguments={'key': ["+('a simple tuple',)"]})))
-        self.assertEquals(1, len(arguments))
+        self.assertEqual(1, len(arguments))
         self.assertTrue('key' in arguments)
-        self.assertEquals( [('a simple tuple',)], arguments['key'])
+        self.assertEqual( [('a simple tuple',)], arguments['key'])
 
     def testParseAndSetAndRemoveSessionVars2(self):
         arguments = {}
@@ -76,13 +76,13 @@ class ArgumentsInSessionTest(TestCase):
         self.observer.handleRequest = handleRequest
         session = {}
         list(compose(self.argsInSession.handleRequest(session=session, arguments={'aap': ["+'noot'"]})))
-        self.assertEquals( ['noot'], arguments['aap'])
+        self.assertEqual( ['noot'], arguments['aap'])
         list(compose(self.argsInSession.handleRequest(session=session, arguments={'aap': ["-'noot'"]})))
-        self.assertEquals( [], arguments['aap'])
+        self.assertEqual( [], arguments['aap'])
 
     def testDoNotEvalAnything(self):
         response = ''.join(compose(self.argsInSession.handleRequest(session={}, arguments={'key': ["+exit(0)"]})))
-        self.assertEquals("HTTP/1.0 400 Bad Request\r\n\r\nname 'exit' is not defined", response)
+        self.assertEqual("HTTP/1.0 400 Bad Request\r\n\r\nname 'exit' is not defined", response)
 
     def testAddWithoutSignImpliesPlus(self):
         arguments = {}
@@ -92,5 +92,5 @@ class ArgumentsInSessionTest(TestCase):
         self.observer.handleRequest = handleRequest
         session = {}
         list(compose(self.argsInSession.handleRequest(session=session, arguments={'aap': ["noot"]})))
-        self.assertEquals( ['noot'], arguments['aap'])
+        self.assertEqual( ['noot'], arguments['aap'])
 

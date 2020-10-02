@@ -67,19 +67,19 @@ class _PacketListener(Observable):
     @identify
     def _processPacket(self, packet, remote):
         this = yield # this generator, from @identify
-        self._reactor.addProcess(this.next)
+        self._reactor.addProcess(this.__next__)
         try:
             yield
             for _response in compose(self.all.handlePacket(data=packet, remote=remote)):
                 if _response is not Yield and callable(_response):
-                    _response(self._reactor, this.next)
+                    _response(self._reactor, this.__next__)
                     yield
                     _response.resumeProcess()
                 yield
         except (AssertionError, KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            print >> sys.stderr, "Exception in _handlePacket for data=%s from %s" % (repr(packet), remote)
+            print("Exception in _handlePacket for data=%s from %s" % (repr(packet), remote), file=sys.stderr)
             print_exc()
             sys.stderr.flush()
         finally:

@@ -30,14 +30,14 @@ from meresco.components.url import parseAbsoluteUrl
 
 class UrlTest(SeecrTestCase):
     def testParseAbsoluteUrlNotAbsolute(self):
-        self.assertEquals(None, parseAbsoluteUrl('urn:iets'))
-        self.assertEquals(None, parseAbsoluteUrl('example.org'))
-        self.assertEquals(None, parseAbsoluteUrl('http://'))
-        self.assertEquals(None, parseAbsoluteUrl('ï'))
+        self.assertEqual(None, parseAbsoluteUrl('urn:iets'))
+        self.assertEqual(None, parseAbsoluteUrl('example.org'))
+        self.assertEqual(None, parseAbsoluteUrl('http://'))
+        self.assertEqual(None, parseAbsoluteUrl('ï'))
 
     def testParseAbsoluteUrl(self):
         result = parseAbsoluteUrl('https://example.org')
-        self.assertEquals({
+        self.assertEqual({
                 'host': 'example.org',
                 'port': 443,
                 'path': '',
@@ -48,7 +48,7 @@ class UrlTest(SeecrTestCase):
                 'scheme': 'https',
             }, result)
         result = parseAbsoluteUrl('http://example.org:8000/sparql')
-        self.assertEquals({
+        self.assertEqual({
                 'host': 'example.org',
                 'port': 8000,
                 'path': '/sparql',
@@ -58,9 +58,9 @@ class UrlTest(SeecrTestCase):
                 'password': None,
                 'scheme': 'http',
             }, result)
-        self.assertEquals(result.host, 'example.org')
+        self.assertEqual(result.host, 'example.org')
 
-        self.assertEquals({
+        self.assertEqual({
                 'username': 'user',
                 'password': 'pass',
                 'fragment': 'fragment',
@@ -71,7 +71,7 @@ class UrlTest(SeecrTestCase):
                 'port': 80,
             }, parseAbsoluteUrl('http://user:pass@example.org/path#fragment'))
 
-        self.assertEquals({
+        self.assertEqual({
                 'username': 'user',
                 'password': 'pass',
                 'fragment': '',
@@ -82,7 +82,7 @@ class UrlTest(SeecrTestCase):
                 'port': 21,
             }, parseAbsoluteUrl('ftp://user:pass@example.org/path'))
 
-        self.assertEquals({
+        self.assertEqual({
                 'username': None,
                 'password': None,
                 'fragment': '',
@@ -94,7 +94,7 @@ class UrlTest(SeecrTestCase):
             }, parseAbsoluteUrl('udp://example.org:1234/'))
 
 
-        self.assertEquals({
+        self.assertEqual({
                 'username': None,
                 'password': None,
                 'fragment': '',

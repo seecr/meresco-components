@@ -41,7 +41,7 @@ class PersistLogTest(SeecrTestCase):
         persist = PersistLog(join(self.tempdir, 'store'), dictToLine=dictToLogline)
         consume(persist.logData(dataDict=LOGDATADICT))
         persist.close()
-        self.assertEquals(
+        self.assertEqual(
                 '2009-11-02T11:25:36Z 11.12.13.14 4.0K 12.340s 0hits /path key=value\n',
                 open(join(self.tempdir, 'store', 'current')).read())
 
@@ -51,18 +51,18 @@ class PersistLogTest(SeecrTestCase):
         persist = PersistLog(self.tempdir, maxSize=10, dictToLine=dictToLogline)
         consume(persist.logData(dataDict=LOGDATADICT))
         persist.close()
-        self.assertEquals(
+        self.assertEqual(
                 '2009-11-02T11:25:36Z 11.12.13.14 4.0K 12.340s 0hits /path key=value\n',
                 open(join(self.tempdir, 'current')).read())
-        self.assertEquals(2 , len(listdir(self.tempdir)))
+        self.assertEqual(2 , len(listdir(self.tempdir)))
         consume(persist.logData(dataDict=LOGDATADICT))
         consume(persist.logData(dataDict=LOGDATADICT))
         persist._thread.join()
         consume(persist.logData(dataDict=LOGDATADICT))
         persist._thread.join()
-        self.assertEquals(5, len(listdir(self.tempdir)))
+        self.assertEqual(5, len(listdir(self.tempdir)))
         self.assertTrue('current' in listdir(self.tempdir))
-        self.assertEquals(3, len([l for l in listdir(self.tempdir) if l.endswith('.gz')]))
+        self.assertEqual(3, len([l for l in listdir(self.tempdir) if l.endswith('.gz')]))
 
     def testMaxFiles(self):
         self.assertRaises(ValueError, lambda: PersistLog(self.tempdir, maxSize=10, maxFiles=2))
@@ -72,22 +72,22 @@ class PersistLogTest(SeecrTestCase):
             d['arguments'] += '&line=%s' % nr
             return d
         consume(persist.logData(dataDict=dataDict(1)))
-        self.assertEquals(1, len(listdir(self.tempdir)))
+        self.assertEqual(1, len(listdir(self.tempdir)))
         consume(persist.logData(dataDict=dataDict(2)))
         persist._thread.join()
-        self.assertEquals(2, len(listdir(self.tempdir)))
+        self.assertEqual(2, len(listdir(self.tempdir)))
         consume(persist.logData(dataDict=dataDict(3)))
         persist._thread.join()
-        self.assertEquals(3, len(listdir(self.tempdir)))
+        self.assertEqual(3, len(listdir(self.tempdir)))
         consume(persist.logData(dataDict=dataDict(4)))
         persist._thread.join()
-        self.assertEquals(3, len(listdir(self.tempdir)))
+        self.assertEqual(3, len(listdir(self.tempdir)))
         consume(persist.logData(dataDict=dataDict(5)))
         persist._thread.join()
-        self.assertEquals(3, len(listdir(self.tempdir)))
+        self.assertEqual(3, len(listdir(self.tempdir)))
         persist.close()
         zipped, notzipped, current = sorted(listdir(self.tempdir))
-        self.assertEquals('current', current)
+        self.assertEqual('current', current)
         self.assertTrue(zipped.endswith('.gz'))
         self.assertTrue('line=5' in open(join(self.tempdir, current)).read())
         self.assertTrue('line=4' in open(join(self.tempdir, notzipped)).read())
@@ -98,7 +98,7 @@ class PersistLogTest(SeecrTestCase):
 
 
 LOGDATADICT={
-    'timestamp': 1257161136L,
+    'timestamp': 1257161136,
     'ipAddress': '11.12.13.14',
     'size': 4096,
     'duration': 12340,

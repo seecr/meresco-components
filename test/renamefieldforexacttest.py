@@ -33,18 +33,18 @@ from meresco.components import CqlMultiSearchClauseConversion, RenameFieldForExa
 
 class RenameFieldForExactTest(TestCase):
     def testNothingToBeDone(self):
-        self.assertEquals(cqlToExpression('field=value'), self.convert('field=value'))
+        self.assertEqual(cqlToExpression('field=value'), self.convert('field=value'))
 
     def testRenameField(self):
-        self.assertEquals(cqlToExpression('untokenized.field exact value'), self.convert('field exact value'))
-        self.assertEquals(cqlToExpression('untokenized.field == value'), self.convert('field == value'))
+        self.assertEqual(cqlToExpression('untokenized.field exact value'), self.convert('field exact value'))
+        self.assertEqual(cqlToExpression('untokenized.field == value'), self.convert('field == value'))
 
     def testDoNotRenameField(self):
-        self.assertEquals(cqlToExpression('otherfield exact value'), self.convert('otherfield exact value'))
-        self.assertEquals(cqlToExpression('otherfield == value'), self.convert('otherfield == value'))
+        self.assertEqual(cqlToExpression('otherfield exact value'), self.convert('otherfield exact value'))
+        self.assertEqual(cqlToExpression('otherfield == value'), self.convert('otherfield == value'))
 
     def testRenameFieldThatMatchesPrefix(self):
-        self.assertEquals(cqlToExpression('untokenized.prefix.certainfield exact value'), self.convert('prefix.certainfield exact value'))
+        self.assertEqual(cqlToExpression('untokenized.prefix.certainfield exact value'), self.convert('prefix.certainfield exact value'))
 
     def convert(self, cqlString):
         converter = CqlMultiSearchClauseConversion([

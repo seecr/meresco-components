@@ -36,47 +36,47 @@ from simplejson import JSONDecodeError
 class JsonTest(SeecrTestCase):
     def testStr(self):
         jd = JsonDict({'hello': 'world'})
-        self.assertEquals('{"hello": "world"}', str(jd))
+        self.assertEqual('{"hello": "world"}', str(jd))
 
     def testPrettyPrint(self):
         jd = JsonDict({'hello': 'world'})
-        self.assertEquals('{\n     "hello": "world"\n}', jd.pretty_print(indent=5))
+        self.assertEqual('{\n     "hello": "world"\n}', jd.pretty_print(indent=5))
 
     def testLoads(self):
         jd = JsonDict({'hello': 'world'})
         jd2 = JsonDict.loads(str(jd))
-        self.assertEquals(jd, jd2)
+        self.assertEqual(jd, jd2)
 
     def testLoad(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
         open(tempfile, 'w').write(str(jd))
         jd2 = JsonDict.load(open(tempfile))
-        self.assertEquals(jd, jd2)
+        self.assertEqual(jd, jd2)
 
     def testLoadFromFilename(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
         open(tempfile, 'w').write(str(jd))
         jd2 = JsonDict.load(tempfile)
-        self.assertEquals(jd, jd2)
+        self.assertEqual(jd, jd2)
 
     def testDump(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
         with open(tempfile, 'w') as f:
             jd.dump(f)
-        self.assertEquals('{"hello": "world"}', open(tempfile).read())
+        self.assertEqual('{"hello": "world"}', open(tempfile).read())
 
     def testDumpWithFilename(self):
         jd = JsonDict({'hello': 'world'})
         tempfile = join(self.tempdir, 'json.json')
         jd.dump(tempfile)
-        self.assertEquals('{"hello": "world"}', open(tempfile).read())
+        self.assertEqual('{"hello": "world"}', open(tempfile).read())
 
     def testStrList(self):
         jl = JsonList(['hello', 'world'])
-        self.assertEquals('["hello", "world"]', str(jl))
+        self.assertEqual('["hello", "world"]', str(jl))
 
     def testPrettyPrintList(self):
         jd = JsonList(['hello', 'world'])
@@ -87,22 +87,22 @@ class JsonTest(SeecrTestCase):
     def testLoadsList(self):
         jd = JsonList(['hello', 'world'])
         jd2 = JsonList.loads(str(jd))
-        self.assertEquals(jd, jd2)
+        self.assertEqual(jd, jd2)
 
     def testLoadList(self):
         jd = JsonList(['hello', 'world'])
         tempfile = join(self.tempdir, 'json.json')
         open(tempfile, 'w').write(str(jd))
         jd2 = JsonList.load(open(tempfile))
-        self.assertEquals(jd, jd2)
+        self.assertEqual(jd, jd2)
 
     def testLoadEmptyFile(self):
         tempfile = join(self.tempdir, 'json.json')
         open(tempfile, 'w').close()
         self.assertRaises(JSONDecodeError, lambda: JsonDict.load(tempfile))
-        self.assertEquals({}, JsonDict.load(tempfile, emptyOnError=True))
+        self.assertEqual({}, JsonDict.load(tempfile, emptyOnError=True))
         self.assertRaises(JSONDecodeError, lambda: JsonList.load(tempfile))
-        self.assertEquals([], JsonList.load(tempfile, emptyOnError=True))
+        self.assertEqual([], JsonList.load(tempfile, emptyOnError=True))
 
     def testConvert(self):
         converter = JsonToString(fromKwarg='kwarg')
@@ -113,3 +113,4 @@ class JsonTest(SeecrTestCase):
         converter = StringToJson(fromKwarg='kwarg')
         self.assertEqual(JsonDict({'aap':3}), converter._convert('{\n    "aap": 3\n}'))
         self.assertEqual(JsonList(['aap',3]), converter._convert('[\n    "aap", 3\n]'))
+

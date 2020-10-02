@@ -27,7 +27,7 @@
 from unittest import TestCase
 import sys
 from socket import socket, AF_INET, SOCK_DGRAM
-from StringIO import StringIO
+from io import StringIO
 
 from seecr.test import CallTrace
 from weightless.core import compose, be
@@ -48,15 +48,15 @@ class PacketListenerTest(TestCase):
         ))
         list(compose(server.once.observer_init()))
 
-        self.assertEquals('addReader', reactor.calledMethods[0].name)
+        self.assertEqual('addReader', reactor.calledMethods[0].name)
         handleCallback = reactor.calledMethods[0].args[1]
         sok = socket(AF_INET, SOCK_DGRAM)
         sok.sendto("TEST", ('localhost', 1234))
         sok.close()
         handleCallback()
         reactor.calledMethods[-1].args[0]()
-        self.assertEquals(['observer_init', 'handlePacket'], observer.calledMethodNames())
-        self.assertEquals("TEST", observer.calledMethods[1].kwargs['data'])
+        self.assertEqual(['observer_init', 'handlePacket'], observer.calledMethodNames())
+        self.assertEqual("TEST", observer.calledMethods[1].kwargs['data'])
 
     def testTcpPacketListener(self):
         reactor = CallTrace('reactor')
@@ -69,27 +69,27 @@ class PacketListenerTest(TestCase):
         ))
         list(compose(server.once.observer_init()))
 
-        self.assertEquals('addReader', reactor.calledMethods[0].name)
+        self.assertEqual('addReader', reactor.calledMethods[0].name)
         acceptCallback = reactor.calledMethods[0].args[1]
 
         data = "TEST" * 1024
         sok = socket()
         sok.connect(('localhost', 1234))
         bytesSent = sok.send(data)
-        self.assertEquals(len(data), bytesSent)
+        self.assertEqual(len(data), bytesSent)
         sok.close()
 
         acceptCallback()
-        self.assertEquals('addReader', reactor.calledMethods[1].name)
+        self.assertEqual('addReader', reactor.calledMethods[1].name)
         handleCallback = reactor.calledMethods[1].args[1]
         handleCallback()
-        self.assertEquals('addProcess', reactor.calledMethods[-2].name)
+        self.assertEqual('addProcess', reactor.calledMethods[-2].name)
         reactor.calledMethods[-2].args[0]()
 
-        self.assertEquals(['observer_init', 'handlePacket'], observer.calledMethodNames())
-        self.assertEquals(data, observer.calledMethods[1].kwargs['data'])
-        self.assertEquals('removeReader', reactor.calledMethods[-2].name)
-        self.assertEquals('removeProcess', reactor.calledMethods[-1].name)
+        self.assertEqual(['observer_init', 'handlePacket'], observer.calledMethodNames())
+        self.assertEqual(data, observer.calledMethods[1].kwargs['data'])
+        self.assertEqual('removeReader', reactor.calledMethods[-2].name)
+        self.assertEqual('removeProcess', reactor.calledMethods[-1].name)
 
     def testExceptionInDownstreamHandlePacket(self):
         reactor = CallTrace()
@@ -107,6 +107,6 @@ class PacketListenerTest(TestCase):
         finally:
             sys.stderr = sys.__stderr__
         lines = mockStderr.getvalue().split('\n')
-        self.assertEquals("Exception in _handlePacket for data='data' from ('127.0.0.1', 1234)", lines[0])
-        self.assertEquals('Traceback (most recent call last):', lines[1])
-        self.assertEquals('Exception: This should be happening', lines[-2])
+        self.assertEqual("Exception in _handlePacket for data='data' from ('127.0.0.1', 1234)", lines[0])
+        self.assertEqual('Traceback (most recent call last):', lines[1])
+        self.assertEqual('Exception: This should be happening', lines[-2])

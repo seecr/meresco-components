@@ -32,7 +32,7 @@ import sys
 from errno import EINPROGRESS, ECONNREFUSED
 from socket import socket, error as SocketError, SHUT_RDWR, SOL_SOCKET, SO_ERROR, SOL_TCP, TCP_KEEPINTVL, TCP_KEEPIDLE, TCP_KEEPCNT, SO_KEEPALIVE
 from traceback import format_exc
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 from warnings import warn
 
 from weightless.core import compose, Yield
@@ -136,7 +136,7 @@ class PeriodicDownload(Observable):
     def _startProcess(self):
         self._currentTimer = None
         self._currentProcess = compose(self._processOne())
-        self._currentProcess.next()
+        next(self._currentProcess)
 
     def _processOne(self):
         additionalHeaders = {'Host': self._host} if self._host else {}
@@ -160,7 +160,7 @@ class PeriodicDownload(Observable):
         self._sok = yield self._tryConnect(host, port, proxyServer=proxyServer)
         try:
             yield self._quickOrAsyncSend(self._sok, requestString)
-            self._reactor.addReader(self._sok, self._currentProcess.next, prio=self._prio)
+            self._reactor.addReader(self._sok, self._currentProcess.__next__, prio=self._prio)
             responses = []
             try:
                 while True:
@@ -174,13 +174,16 @@ class PeriodicDownload(Observable):
                     self._reactor.removeReader(self._sok)
                 except KeyError:
                     pass
-        except SocketError, (errno, msg):
+        except SocketError as xxx_todo_changeme2:
+            (errno, msg) = xxx_todo_changeme2.args
             yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=self._retryAfterErrorTime)
             return
         finally:
             try:
                 self._sok.shutdown(SHUT_RDWR)
-            except SocketError, (errno, msg):
+            except SocketError as xxx_todo_changeme1:
+                # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
+                (errno, msg) = xxx_todo_changeme1.args
                 # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
                 pass
             self._sok.close()
@@ -205,14 +208,14 @@ class PeriodicDownload(Observable):
             body = decompressedBody
 
             topErrorResponse = _httpErrorStr(statusAndHeaders, body)
-            self._reactor.addProcess(self._currentProcess.next)
+            self._reactor.addProcess(self._currentProcess.__next__)
             yield
             try:
                 gen = self.all.handle(data=body)
                 g = compose(gen)
                 for _response  in g:
                     if callable(_response) and not _response is Yield:
-                        _response(self._reactor, self._currentProcess.next)
+                        _response(self._reactor, self._currentProcess.__next__)
                         yield
                         _response.resumeProcess()
                     yield
@@ -245,11 +248,12 @@ class PeriodicDownload(Observable):
             try:
                 try:
                     sok.connect((host, port))
-                except SocketError, (errno, msg):
+                except SocketError as xxx_todo_changeme:
+                    (errno, msg) = xxx_todo_changeme.args
                     if errno != EINPROGRESS:
                         yield self._retryAfterError("%s: %s" % (errno, msg), retryAfter=self._retryAfterErrorTime)
                         return
-                self._reactor.addWriter(sok, self._currentProcess.next)
+                self._reactor.addWriter(sok, self._currentProcess.__next__)
                 yield
                 self._reactor.removeWriter(sok)
 
@@ -262,7 +266,7 @@ class PeriodicDownload(Observable):
 
                 if proxyServer:
                     yield self._quickOrAsyncSend(sok, "CONNECT {0}:{1} HTTP/1.0\r\nHost: {0}:{1}\r\n\r\n".format(origHost, origPort))
-                    self._reactor.addReader(sok, self._currentProcess.next)
+                    self._reactor.addReader(sok, self._currentProcess.__next__)
                     try:
                         response = ''
                         while True:
@@ -279,9 +283,9 @@ class PeriodicDownload(Observable):
                     finally:
                         self._reactor.removeReader(sok)
                 break
-            except (AssertionError, KeyboardInterrupt, SystemExit), e:
+            except (AssertionError, KeyboardInterrupt, SystemExit) as e:
                 raise
-            except Exception, e:
+            except Exception as e:
                 yield self._retryAfterError(str(e), retryAfter=self._retryAfterErrorTime)
                 return
         raise StopIteration(sok)
@@ -293,7 +297,7 @@ class PeriodicDownload(Observable):
             # Quick: single call consumes all data, no Reactor calls & select overhead.
             return
 
-        self._reactor.addWriter(sok, self._currentProcess.next)
+        self._reactor.addWriter(sok, self._currentProcess.__next__)
         yield
         try:
             while data != "":

@@ -68,19 +68,19 @@ class FilterMessagesTest(SeecrTestCase):
 
     def testAll(self):
         list(compose(self.dna.all.message()))
-        self.assertEquals([], [m.name for m in self.observer1.calledMethods])
-        self.assertEquals(['message'], [m.name for m in self.observer3.calledMethods])
+        self.assertEqual([], [m.name for m in self.observer1.calledMethods])
+        self.assertEqual(['message'], [m.name for m in self.observer3.calledMethods])
 
     def testCall(self):
-        self.assertEquals(42, self.dna.call.function())
+        self.assertEqual(42, self.dna.call.function())
 
     def testDo(self):
         self.dna.do.noop()
-        self.assertEquals([], [m.name for m in self.observer1.calledMethods])
-        self.assertEquals(['noop'], [m.name for m in self.observer3.calledMethods])
+        self.assertEqual([], [m.name for m in self.observer1.calledMethods])
+        self.assertEqual(['noop'], [m.name for m in self.observer3.calledMethods])
 
     def testAny(self):
-        self.assertEquals([42], list(compose(self.dna.any.gen())))
+        self.assertEqual([42], list(compose(self.dna.any.gen())))
 
     def testEitherAllowedOrDisallowed(self):
         self.assertRaises(ValueError, lambda: FilterMessages(allowed=['either'], disallowed=['or']))

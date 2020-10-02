@@ -58,8 +58,8 @@ class HandleRequestFilterTest(SeecrTestCase):
         inputKwargs = dict(path='path', Method='GET')
         list(compose(self.dna.all.handleRequest(**inputKwargs)))
 
-        self.assertEquals([('handleRequest', inputKwargs)], [(m.name, m.kwargs) for m in self.observer.calledMethods])
-        self.assertEquals([inputKwargs], self.usedKwargs)
+        self.assertEqual([('handleRequest', inputKwargs)], [(m.name, m.kwargs) for m in self.observer.calledMethods])
+        self.assertEqual([inputKwargs], self.usedKwargs)
 
     def testYouShallNotPass(self):
         """Fly you fools!"""
@@ -67,5 +67,5 @@ class HandleRequestFilterTest(SeecrTestCase):
         inputKwargs = dict(path='path', Method='GET')
         list(compose(self.dna.all.handleRequest(**inputKwargs)))
 
-        self.assertEquals([], [m.name for m in self.observer.calledMethods])
-        self.assertEquals([inputKwargs], self.usedKwargs)
+        self.assertEqual([], [m.name for m in self.observer.calledMethods])
+        self.assertEqual([inputKwargs], self.usedKwargs)

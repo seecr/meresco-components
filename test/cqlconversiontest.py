@@ -51,9 +51,9 @@ class CQLConversionTest(SeecrTestCase):
         ))
         o.do.whatever(aQuery=query)
 
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals('whatever', observer.calledMethods[0].name)
-        self.assertEquals({'aQuery': query}, observer.calledMethods[0].kwargs)
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual('whatever', observer.calledMethods[0].name)
+        self.assertEqual({'aQuery': query}, observer.calledMethods[0].kwargs)
 
     def testSearchClauseModifySimpleSearchClause(self):
         query = cqlToExpression('field=value')
@@ -64,7 +64,7 @@ class CQLConversionTest(SeecrTestCase):
             expression.term = 'othervalue'
         conversion = CqlSearchClauseConversion(canModify, modify, fromKwarg="aQuery")
         result = conversion._convert(query)
-        self.assertEquals(cqlToExpression('otherfield = othervalue'), result)
+        self.assertEqual(cqlToExpression('otherfield = othervalue'), result)
 
     def testMultipleSearchClauseReplacements(self):
         ast = cqlToExpression('term1 AND term2 AND term3')
@@ -98,13 +98,13 @@ class CQLConversionTest(SeecrTestCase):
         classic.do.message(thisQuery=ast)
         newStyle.do.message(thisQuery=ast)
 
-        self.assertEquals(['message'], [m.name for m in observerClassic.calledMethods])
+        self.assertEqual(['message'], [m.name for m in observerClassic.calledMethods])
         resultClassic = observerClassic.calledMethods[0].kwargs['thisQuery']
-        self.assertEquals(['message'], [m.name for m in observerNewStyle.calledMethods])
+        self.assertEqual(['message'], [m.name for m in observerNewStyle.calledMethods])
         resultNewStyle = observerNewStyle.calledMethods[0].kwargs['thisQuery']
 
-        self.assertEquals(cqlToExpression('termOne AND term2 AND termThree'), resultClassic)
-        self.assertEquals(cqlToExpression('termOne AND term2 AND termThree'), resultNewStyle)
+        self.assertEqual(cqlToExpression('termOne AND term2 AND termThree'), resultClassic)
+        self.assertEqual(cqlToExpression('termOne AND term2 AND termThree'), resultNewStyle)
 
     def testNestedWithReplaced(self):
         q = cqlToExpression('A')

@@ -35,7 +35,7 @@ from meresco.core import Observable
 
 from seecr.test import SeecrTestCase, CallTrace
 from lxml.etree import parse
-from StringIO import StringIO
+from io import StringIO
 from weightless.core import compose, be, consume
 
 SUCCESS = "SUCCESS"
@@ -158,8 +158,8 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         try:
             component.parseSruArgs({'version':['1.1'], 'query':['twente'], 'operation':['searchRetrieve'], 'maximumRecords': ['101']})
             self.fail()
-        except SruException, e:
-            self.assertEquals(UNSUPPORTED_PARAMETER_VALUE, [e.code, e.message])
+        except SruException as e:
+            self.assertEqual(UNSUPPORTED_PARAMETER_VALUE, [e.code, e.message])
 
     def testValidateCQLSyntax(self):
         error = UNSUPPORTED_PARAMETER_VALUE
@@ -175,8 +175,8 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
                 component.parseSruArgs(arguments)
             if expectedResult != SUCCESS:
                 self.fail("Expected %s but got nothing"  % expectedResult)
-        except SruException, e:
-            self.assertEquals(expectedResult, [e.code, e.message])
+        except SruException as e:
+            self.assertEqual(expectedResult, [e.code, e.message])
 
     def testSearchRetrieve(self):
         component = SruParser()
@@ -186,16 +186,16 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
 
         response = "".join(compose(component.handleRequest(arguments=dict(version=['1.1'], query= ['aQuery'], operation=['searchRetrieve'], startRecord=['11'], maximumRecords = ['15'], sortKeys=['aField,,1']))))
 
-        self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
-        self.assertEquals((), sruHandler.calledMethods[0].args)
+        self.assertEqual(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
+        self.assertEqual((), sruHandler.calledMethods[0].args)
         kwargs = sruHandler.calledMethods[0].kwargs
-        self.assertEquals('1.1', kwargs['version'])
-        self.assertEquals('aQuery', kwargs['query'])
-        self.assertEquals('searchRetrieve', kwargs['operation'])
-        self.assertEquals(11, kwargs['startRecord'])
-        self.assertEquals(15, kwargs['maximumRecords'])
-        self.assertEquals('aQuery', kwargs['sruArguments']['query'])
-        self.assertEquals(['aField,,1'], kwargs['sruArguments']['sortKeys'])
+        self.assertEqual('1.1', kwargs['version'])
+        self.assertEqual('aQuery', kwargs['query'])
+        self.assertEqual('searchRetrieve', kwargs['operation'])
+        self.assertEqual(11, kwargs['startRecord'])
+        self.assertEqual(15, kwargs['maximumRecords'])
+        self.assertEqual('aQuery', kwargs['sruArguments']['query'])
+        self.assertEqual(['aField,,1'], kwargs['sruArguments']['sortKeys'])
 
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue(XML_HEADER in response)
@@ -211,7 +211,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
                 operation=['searchRetrieve'],
                 sortKeys=[sortKeys]))))
             kwargs = sruHandler.calledMethods[0].kwargs
-            self.assertEquals([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
+            self.assertEqual([{'sortBy': 'aField', 'sortDescending': expectedSortedDescending}], kwargs['sortKeys'])
 
         assertSortKeys(True, 'aField,,0', False)
         assertSortKeys(False, 'aField,,1', False)
@@ -226,10 +226,10 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
 
         list(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve'], 'x-something':['something']})))
 
-        self.assertEquals(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
-        self.assertEquals((), sruHandler.calledMethods[0].args)
+        self.assertEqual(['searchRetrieve'], [m.name for m in sruHandler.calledMethods])
+        self.assertEqual((), sruHandler.calledMethods[0].args)
         kwargs = sruHandler.calledMethods[0].kwargs
-        self.assertEquals(['something'], kwargs['sruArguments']['x-something'])
+        self.assertEqual(['something'], kwargs['sruArguments']['x-something'])
 
     def testDiagnosticGetHandledByObserver(self):
         def mockAdditionalDiagnosticDetails(**kwargs):
@@ -245,7 +245,7 @@ xmlns:zr="http://explain.z3950.org/dtd/2.0/">
         )
 
         response = ''.join(compose(dna.all.handleRequest(arguments={'startRecord': ['aap']})))
-        self.assertEquals(['additionalDiagnosticDetails'], observer.calledMethodNames())
+        self.assertEqual(['additionalDiagnosticDetails'], observer.calledMethodNames())
         self.assertTrue("<details>operation - additional details</details>" in response, response)
 
 

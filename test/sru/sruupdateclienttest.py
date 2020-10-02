@@ -40,12 +40,12 @@ class SruUpdateClientTest(SeecrTestCase):
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost
         list(compose(sruUpdate.add(identifier='anIdentifier', data='<xml/>')))
-        self.assertEquals(1, len(postArguments))
+        self.assertEqual(1, len(postArguments))
         arguments = postArguments[0]
-        self.assertEquals('localhost', arguments['host'])
-        self.assertEquals(1234, arguments['port'])
-        self.assertEquals('/update', arguments['request'])
-        self.assertEquals({"User-Agent": "testAgent", "Host": 'localhost'}, arguments['headers'])
+        self.assertEqual('localhost', arguments['host'])
+        self.assertEqual(1234, arguments['port'])
+        self.assertEqual('/update', arguments['request'])
+        self.assertEqual({"User-Agent": "testAgent", "Host": 'localhost'}, arguments['headers'])
         self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
             <ucp:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
             <srw:version>1.0</srw:version>
@@ -70,10 +70,10 @@ class SruUpdateClientTest(SeecrTestCase):
         try:
             list(compose(sruUpdate.add(identifier='anIdentifier', data='<xml/>')))
             self.fail("should not get here")
-        except SruUpdateException, e:
-            self.assertEquals(e.url, 'http://localhost:12345/update')
-            self.assertEquals(e.status, 'fail')
-            self.assertEquals(e.diagnostics, 'Traceback: some traceback')
+        except SruUpdateException as e:
+            self.assertEqual(e.url, 'http://localhost:12345/update')
+            self.assertEqual(e.status, 'fail')
+            self.assertEqual(e.diagnostics, 'Traceback: some traceback')
 
     def testDelete(self):
         postArguments = []
@@ -84,12 +84,12 @@ class SruUpdateClientTest(SeecrTestCase):
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost
         list(compose(sruUpdate.delete(identifier='anIdentifier')))
-        self.assertEquals(1, len(postArguments))
+        self.assertEqual(1, len(postArguments))
         arguments = postArguments[0]
-        self.assertEquals('localhost', arguments['host'])
-        self.assertEquals(1234, arguments['port'])
-        self.assertEquals('/update', arguments['request'])
-        self.assertEquals({"User-Agent": "testAgent", "Host": 'localhost'}, arguments['headers'])
+        self.assertEqual('localhost', arguments['host'])
+        self.assertEqual(1234, arguments['port'])
+        self.assertEqual('/update', arguments['request'])
+        self.assertEqual({"User-Agent": "testAgent", "Host": 'localhost'}, arguments['headers'])
         self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
             <ucp:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
             <srw:version>1.0</srw:version>

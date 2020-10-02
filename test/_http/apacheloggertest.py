@@ -27,7 +27,7 @@
 
 from unittest import TestCase
 from seecr.test import CallTrace
-from StringIO import StringIO
+from io import StringIO
 from weightless.core import compose
 
 from meresco.components.http import ApacheLogger
@@ -43,17 +43,17 @@ class ApacheLoggerTest(TestCase):
         
         result = ''.join(compose(logger.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={}, otherKwarg='value'))) 
 
-        self.assertEquals(okPlainText + 'text', result)
+        self.assertEqual(okPlainText + 'text', result)
 
         logline = output.getvalue()
         beforeTimestamp = logline.split('[',1)[0]
         afterTimestamp = logline.split(']', 1)[-1]
-        self.assertEquals('127.0.0.1 - - ', beforeTimestamp)
-        self.assertEquals(' "GET /path?key=value HTTP/1.0" 200 ?? "-" "-"\n'
+        self.assertEqual('127.0.0.1 - - ', beforeTimestamp)
+        self.assertEqual(' "GET /path?key=value HTTP/1.0" 200 ?? "-" "-"\n'
                 , afterTimestamp)
 
-        self.assertEquals(['handleRequest'], [m.name for m in observer.calledMethods])
-        self.assertEquals([dict(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={}, otherKwarg='value')], [m.kwargs for m in observer.calledMethods])
+        self.assertEqual(['handleRequest'], [m.name for m in observer.calledMethods])
+        self.assertEqual([dict(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={}, otherKwarg='value')], [m.kwargs for m in observer.calledMethods])
 
     def testLogHttpError(self):
         output = StringIO()
@@ -66,12 +66,12 @@ class ApacheLoggerTest(TestCase):
         logline = output.getvalue()
         beforeTimestamp = logline.split('[',1)[0]
         afterTimestamp = logline.split(']', 1)[-1]
-        self.assertEquals('127.0.0.1 - - ', beforeTimestamp)
-        self.assertEquals(' "GET /path?key=value HTTP/1.0" 503 ?? "-" "-"\n'
+        self.assertEqual('127.0.0.1 - - ', beforeTimestamp)
+        self.assertEqual(' "GET /path?key=value HTTP/1.0" 503 ?? "-" "-"\n'
                 , afterTimestamp)
 
-        self.assertEquals(['logHttpError'], [m.name for m in observer.calledMethods])
-        self.assertEquals([dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value')], [m.kwargs for m in observer.calledMethods])
+        self.assertEqual(['logHttpError'], [m.name for m in observer.calledMethods])
+        self.assertEqual([dict(Method='GET', ResponseCode=503, Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', Headers={}, otherKwarg='value')], [m.kwargs for m in observer.calledMethods])
 
     def testHandleRequestAsynchronous(self):
         logger = ApacheLogger(StringIO())
@@ -81,4 +81,4 @@ class ApacheLoggerTest(TestCase):
         
         result = list(compose(logger.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={}, otherKwarg='value'))) 
 
-        self.assertEquals([str, okPlainText, 'text', int], result)
+        self.assertEqual([str, okPlainText, 'text', int], result)

@@ -29,7 +29,7 @@
 #
 ## end license ##
 
-from srufielddrilldown import SRUFieldDrilldown, SruFieldDrilldown
-from srutermdrilldown import SRUTermDrilldown, SruTermDrilldown
-from drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
-from translatedrilldownfieldnames import TranslateDrilldownFieldnames
+from .srufielddrilldown import SRUFieldDrilldown, SruFieldDrilldown
+from .srutermdrilldown import SRUTermDrilldown, SruTermDrilldown
+from .drilldown import DRILLDOWN_HEADER, DRILLDOWN_FOOTER, DEFAULT_MAXIMUM_TERMS
+from .translatedrilldownfieldnames import TranslateDrilldownFieldnames

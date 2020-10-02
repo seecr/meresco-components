@@ -31,7 +31,7 @@
 from meresco.core import Transparent
 from weightless.core import compose, Yield
 from time import strftime, gmtime
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 
 class DevNull(object):
     def write(self, *args, **kwargs):

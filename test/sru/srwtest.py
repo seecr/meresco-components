@@ -98,7 +98,7 @@ Content-Type: text/xml; charset=utf-8
     </srw:searchRetrieveRequest>"""
         response = asString(self.srw.handleRequest(Body=request))
         header, body = response.split('\r\n\r\n')
-        self.assertEquals(['1'], xpath(XML(body), '//srw:searchRetrieveResponse/srw:numberOfRecords/text()'))
+        self.assertEqual(['1'], xpath(XML(body), '//srw:searchRetrieveResponse/srw:numberOfRecords/text()'))
 
     def testNonSRUArguments(self):
         """Arguments that are invalid in any SRU implementation"""

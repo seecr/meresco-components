@@ -26,7 +26,7 @@
 from uuid import uuid4
 from meresco.components import TimedDictionary
 from time import time
-from rfc822 import formatdate
+from email.utils import formatdate
 
 TWO_WEEKS = 2*7*24*60*60
 
@@ -56,9 +56,9 @@ class CookieMemoryStore(object):
             pass
 
     def removeCookies(self, filter):
-        for k in self._store.keys():
+        for k in list(self._store.keys()):
             try:
-                if filter(self._store.peek(k)['value']):
+                if list(filter(self._store.peek(k)['value'])):
                     del self._store[k]
             except (AttributeError, KeyError):
                 pass

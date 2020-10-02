@@ -31,10 +31,10 @@
 #
 ## end license ##
 
-from StringIO import StringIO
+from io import StringIO
 from lxml.etree import parse, tostring, XMLParser
 
-from converter import Converter
+from .converter import Converter
 from re import compile as compileRe
 
 
@@ -74,7 +74,7 @@ _CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):
     code = matchObj.groupdict()['code']
     code = int(code[1:], base=16) if 'x' in code else int(code)
-    return str(unichr(code))
+    return str(chr(code))
 
 def _fixLxmltostringRootElement(aString):
     firstGt = aString.find('>')

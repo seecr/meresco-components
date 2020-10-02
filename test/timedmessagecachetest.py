@@ -52,16 +52,16 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield 'text'
         self.observer.methods['someMessage'] = someMessage
         result = asString(self.dna.all.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('text', result)
+        self.assertEqual('text', result)
         result = asString(self.dna.all.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('text', result)
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('text', result)
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testTransparentForDo(self):
         self.observer.methods['someMessage'] = lambda *args, **kwargs: None
         self.dna.do.someMessage('arg', kwarg='kwarg')
         self.dna.do.someMessage('arg', kwarg='kwarg')
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testCacheAny(self):
         def someMessage(*args, **kwargs):
@@ -69,16 +69,16 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield
         self.observer.methods['someMessage'] = someMessage
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
+        self.assertEqual('result', result)
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         sleep(0.11)
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
         result = retval(self.dna.any.someMessage('arg', kwarg='otherkwarg'))
-        self.assertEquals(['someMessage', 'someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage', 'someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testClearCache(self):
         def someMessage(*args, **kwargs):
@@ -86,10 +86,10 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield
         self.observer.methods['someMessage'] = someMessage
         retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         self.cache.clear()
         retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testKeepValueInCaseOfError(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True)
@@ -101,16 +101,16 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield
         self.observer.methods['someMessage'] = someMessageResult
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
+        self.assertEqual('result', result)
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         sleep(0.11)
 
         self.observer.methods['someMessage'] = someMessageError
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testTimeoutExceptionIsRaiseIfNoBackoffTimeoutSet(self):
         self.init(cacheTimeout=0.1)
@@ -130,13 +130,13 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield
         self.observer.methods['someMessage'] = someMessageResult
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         sleep(0.11)
 
         self.observer.methods['someMessage'] = someMessageTimeout
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testTimeoutExceptionTriggersBackoff(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True, backoffTimeout=0.1)
@@ -148,23 +148,23 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield
         self.observer.methods['someMessage'] = someMessageResult
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         sleep(0.11)
 
         self.observer.methods['someMessage'] = someMessageTimeout
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
+        self.assertEqual('result', result)
         # should be in backoff mode and not even try!
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
         sleep(0.11)
 
         self.observer.methods['someMessage'] = someMessageResult
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
-        self.assertEquals('result', result)
-        self.assertEquals(['someMessage', 'someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['someMessage', 'someMessage', 'someMessage'], self.observer.calledMethodNames())
 
     def testTimeoutExceptionWithoutCachedResult(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True, backoffTimeout=0.1)
@@ -173,11 +173,11 @@ class TimedMessageCacheTest(SeecrTestCase):
             yield
         self.observer.methods['someMessage'] = someMessageTimeout
         self.assertRaises(BackoffException, lambda: retval(self.dna.any.someMessage('arg', kwarg='kwarg')))
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         self.assertRaises(BackoffException, lambda: retval(self.dna.any.someMessage('arg', kwarg='kwarg')))
-        self.assertEquals(['someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage'], self.observer.calledMethodNames())
         sleep(0.11)
 
         self.assertRaises(BackoffException, lambda: retval(self.dna.any.someMessage('arg', kwarg='kwarg')))
-        self.assertEquals(['someMessage', 'someMessage'], self.observer.calledMethodNames())
+        self.assertEqual(['someMessage', 'someMessage'], self.observer.calledMethodNames())
 

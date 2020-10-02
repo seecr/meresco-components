@@ -61,17 +61,17 @@ class SessionHandlerTest(SeecrTestCase):
         self.handler.addObserver(MyObserver())
         result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
 
-        self.assertEquals(1, len(called))
+        self.assertEqual(1, len(called))
         self.assertEqual({}, called[0]['session'])
         session = called[0]['kwargs']['session']
         self.assertEqual({}, session)
-        self.assertEquals({'a':'b'}, called[0]['kwargs']['Headers'])
+        self.assertEqual({'a':'b'}, called[0]['kwargs']['Headers'])
         self.assertTrue(('127.0.0.1', 12345), called[0]['kwargs']['Client'])
         header, body = result.split(utils.CRLF*2,1)
-        self.assertEquals('<html/>', body)
+        self.assertEqual('<html/>', body)
         self.assertTrue('Set-Cookie' in header, header)
         headerParts = header.split(utils.CRLF)
-        self.assertEquals("HTTP/1.0 200 OK", headerParts[0])
+        self.assertEqual("HTTP/1.0 200 OK", headerParts[0])
         sessionCookie = [p for p in headerParts[1:] if 'Set-Cookie' in p][0]
         self.assertTrue(sessionCookie.startswith('Set-Cookie: session'))
 
@@ -88,8 +88,8 @@ class SessionHandlerTest(SeecrTestCase):
         self.assertTrue('Set-Cookie' in headers, headers)
         cookie = findCookies(headers, self.cookiestore.cookieName(), 'Set-Cookie')[0]
         consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': '{0}={1}'.format(self.cookiestore.cookieName(), cookie)}))
-        self.assertEquals(sessions[0], sessions[1])
-        self.assertEquals(id(sessions[0]),id(sessions[1]))
+        self.assertEqual(sessions[0], sessions[1])
+        self.assertEqual(id(sessions[0]),id(sessions[1]))
 
     def testInjectAnyCookie(self):
         sessions = []
@@ -114,9 +114,9 @@ class SessionHandlerTest(SeecrTestCase):
 
         self.handler.addObserver(MyObserver())
         result = asList(self.handler.handleRequest(Headers={}))
-        self.assertEquals(callableMethod, result[0])
-        self.assertEquals("HTTP/1.0 200 OK\r\n", result[1])
-        self.assertEquals("\r\nBODY", result[3])
-        self.assertEquals(callableMethod, result[4])
+        self.assertEqual(callableMethod, result[0])
+        self.assertEqual("HTTP/1.0 200 OK\r\n", result[1])
+        self.assertEqual("\r\nBODY", result[3])
+        self.assertEqual(callableMethod, result[4])
         self.assertTrue(result[2].startswith('Set-Cookie: session'), result[2])
-        self.assertEquals("THE END", result[5])
+        self.assertEqual("THE END", result[5])

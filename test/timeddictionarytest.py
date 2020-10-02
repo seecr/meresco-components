@@ -41,23 +41,23 @@ class TimedDictionaryTest(TestCase):
     def testBasicGetAndPut(self):
         timedDict = TimedDictionary(TWO_HOURS)
         timedDict['key'] = 'value'
-        self.assertEquals('value', timedDict['key'])
+        self.assertEqual('value', timedDict['key'])
 
         timedDict['key'] = 'otherValue'
-        self.assertEquals('otherValue', timedDict['key'])
+        self.assertEqual('otherValue', timedDict['key'])
         timedDict['key'] = 5
-        self.assertEquals(5, timedDict['key'])
+        self.assertEqual(5, timedDict['key'])
         timedDict['key'] = 5.0
-        self.assertEquals(5.0, timedDict['key'])
+        self.assertEqual(5.0, timedDict['key'])
         timedDict['key'] = ['someMutable', 5]
-        self.assertEquals(['someMutable', 5], timedDict['key'])
+        self.assertEqual(['someMutable', 5], timedDict['key'])
 
-        self.assertEquals(['someMutable', 5], timedDict.get('key'))
+        self.assertEqual(['someMutable', 5], timedDict.get('key'))
 
         self.assertRaises(TypeError, timedDict.__setitem__, [], 'value')
         self.assertRaises(KeyError, timedDict.__getitem__, 'iamnothere')
-        self.assertEquals(None, timedDict.get('iamnothere'))
-        self.assertEquals('MARK', timedDict.get('iamnothere', 'MARK'))
+        self.assertEqual(None, timedDict.get('iamnothere'))
+        self.assertEqual('MARK', timedDict.get('iamnothere', 'MARK'))
 
     def testBasicContains(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -68,10 +68,10 @@ class TimedDictionaryTest(TestCase):
         self.assertFalse(42 in timedDict)
         self.assertFalse(None in timedDict)
 
-        self.assertTrue(timedDict.has_key(5))
-        self.assertTrue(timedDict.has_key('six'))
-        self.assertFalse(timedDict.has_key(42))
-        self.assertFalse(timedDict.has_key(None))
+        self.assertTrue(5 in timedDict)
+        self.assertTrue('six' in timedDict)
+        self.assertFalse(42 in timedDict)
+        self.assertFalse(None in timedDict)
 
     def testBasicDeletion(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -89,16 +89,16 @@ class TimedDictionaryTest(TestCase):
         timedDict[1] = SomeObject(10)
         timedDict[2] = SomeObject(20)
 
-        self.assertEquals([3, 1, 2], timedDict._expirationOrder)
+        self.assertEqual([3, 1, 2], timedDict._expirationOrder)
 
         timedDict[1] = SomeObject(23)
-        self.assertEquals([3, 2, 1], timedDict._expirationOrder)
+        self.assertEqual([3, 2, 1], timedDict._expirationOrder)
 
         timedDict[0] = SomeObject(23.01)
-        self.assertEquals([3, 2, 1, 0], timedDict._expirationOrder)
+        self.assertEqual([3, 2, 1, 0], timedDict._expirationOrder)
 
         del timedDict[2]
-        self.assertEquals([3, 1, 0], timedDict._expirationOrder)
+        self.assertEqual([3, 1, 0], timedDict._expirationOrder)
 
     def testGetTime(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -111,25 +111,25 @@ class TimedDictionaryTest(TestCase):
         timedDict[1] = SomeObject('id1')
         timedDict[2] = SomeObject('id2')
 
-        self.assertEquals([1, 2], timedDict._expirationOrder)
+        self.assertEqual([1, 2], timedDict._expirationOrder)
         timedDict.touch(1)
-        self.assertEquals([2, 1], timedDict._expirationOrder)
+        self.assertEqual([2, 1], timedDict._expirationOrder)
 
     def testPurge(self):
         timedDict = TimedDictionary(TWO_HOURS)
         timedDict[1] = SomeObject('id1')
         timedDict[2] = SomeObject('id2')
         timedDict._now = lambda : time() + ONE_HOUR
-        self.assertEquals([1, 2], timedDict._expirationOrder)
+        self.assertEqual([1, 2], timedDict._expirationOrder)
 
         timedDict[3] = SomeObject('id3')
         timedDict.touch(2)
         timedDict._now = lambda : time() + TWO_HOURS
         timedDict.purge()
-        self.assertEquals([3, 2], timedDict._expirationOrder)
+        self.assertEqual([3, 2], timedDict._expirationOrder)
         timedDict._now = lambda : time() + TWO_HOURS + TWO_HOURS
         timedDict.purge()
-        self.assertEquals([], timedDict._expirationOrder)
+        self.assertEqual([], timedDict._expirationOrder)
 
     def testPurgeOnSetItem(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -137,7 +137,7 @@ class TimedDictionaryTest(TestCase):
         timedDict._now = lambda : time() + TWO_HOURS
         timedDict[2] = SomeObject('id2')
 
-        self.assertEquals([2], timedDict._expirationOrder)
+        self.assertEqual([2], timedDict._expirationOrder)
 
     def testDeleteExpiredOnGetItem(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -145,7 +145,7 @@ class TimedDictionaryTest(TestCase):
         timedDict._now = lambda : time() + TWO_HOURS
 
         self.assertRaises(KeyError, timedDict.__getitem__, 1)
-        self.assertEquals([], timedDict._expirationOrder)
+        self.assertEqual([], timedDict._expirationOrder)
 
     def testExpiredOnInShouldReturnDefaultOnGetWithoutAnException(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -163,9 +163,9 @@ class TimedDictionaryTest(TestCase):
 
         timedDict._now = lambda : setTime + TWO_HOURS + 0.000001
 
-        self.assertEquals(None, timedDict.get(1))
-        self.assertEquals('a default', timedDict.get(1, 'a default'))
-        self.assertEquals([], timedDict._expirationOrder)
+        self.assertEqual(None, timedDict.get(1))
+        self.assertEqual('a default', timedDict.get(1, 'a default'))
+        self.assertEqual([], timedDict._expirationOrder)
 
     def testPop(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -187,7 +187,7 @@ class TimedDictionaryTest(TestCase):
         timedDict[1] = "Now you see me, now you don't."
         timedDict._now = lambda : time() + TWO_HOURS
 
-        self.assertEquals("Now you see me, now you don't.", timedDict.peek(1))
+        self.assertEqual("Now you see me, now you don't.", timedDict.peek(1))
         self.assertRaises(KeyError, timedDict.__getitem__, 1)
 
     def testClear(self):
@@ -201,7 +201,7 @@ class TimedDictionaryTest(TestCase):
         timedDict['key'] = 'five'
         timedDict._now = lambda : time() + TWO_HOURS
         timedDict.setTimeout(TWO_HOURS + 1)
-        self.assertEquals("five", timedDict["key"])
+        self.assertEqual("five", timedDict["key"])
 
     def testSize(self):
         timedDict = TimedDictionary(TWO_HOURS)
@@ -222,27 +222,27 @@ class TimedDictionaryTest(TestCase):
         self.assertEqual(1, timedDict.size())
         timedDict['key1'] = 'six'
         self.assertEqual(2, timedDict.size())
-        self.assertEquals('five', timedDict['key'])
+        self.assertEqual('five', timedDict['key'])
         timedDict['key2'] = 'seven'
         self.assertEqual(2, timedDict.size())
-        self.assertEquals(set(['key', 'key2']), set(timedDict.keys()))
+        self.assertEqual(set(['key', 'key2']), set(timedDict.keys()))
 
     def testExpiredLeastRecentlyUsedGracefullyDealtWith(self):
         timedDict = TimedDictionary(TWO_HOURS, lruMaxSize=2)
         timedDict['key1'] = 'five'
         timedDict['key2'] = 'six'
         timedDict['key3'] = 'seven'
-        self.assertEquals(set(['key2', 'key3']), set(timedDict.keys()), set(timedDict.keys()))
-        self.assertEquals(3, len(timedDict._times))
-        self.assertEquals(3, len(timedDict._expirationOrder))
+        self.assertEqual(set(['key2', 'key3']), set(timedDict.keys()), set(timedDict.keys()))
+        self.assertEqual(3, len(timedDict._times))
+        self.assertEqual(3, len(timedDict._expirationOrder))
         timedDict.purge()
-        self.assertEquals(2, len(timedDict._times))
-        self.assertEquals(2, len(timedDict._expirationOrder))
+        self.assertEqual(2, len(timedDict._times))
+        self.assertEqual(2, len(timedDict._expirationOrder))
         timedDict._now = lambda : time() + TWO_HOURS
         timedDict.purge()
-        self.assertEquals([], list(timedDict.keys()))
-        self.assertEquals(0, len(timedDict._times))
-        self.assertEquals(0, len(timedDict._expirationOrder))
+        self.assertEqual([], list(timedDict.keys()))
+        self.assertEqual(0, len(timedDict._times))
+        self.assertEqual(0, len(timedDict._expirationOrder))
 
     # def testSpeed(self):
     #     timedDict = TimedDictionary(TWO_HOURS)

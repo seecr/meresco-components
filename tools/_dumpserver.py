@@ -71,7 +71,7 @@ class Dump(object):
             if self._number <= self._maxCountNumber:
                 filename = '%05d_%s.updateRequest' %(self._number, normalizedRecordId)
                 with open(join(self._dumpdir, filename), 'w') as f:
-                    print recordId
+                    print(recordId)
                     stdout.flush()
                     f.write(tostring(updateRequest))
                 answer = RESPONSE_XML % {
@@ -79,11 +79,11 @@ class Dump(object):
                     "diagnostics": ""}
             else:
                 self._maxCountNumber = self._number + self._maxCount
-                print 'Reached maxCount'
+                print('Reached maxCount')
                 answer = RESPONSE_XML % {
                     "operationStatus": "fail",
                     "diagnostics": DIAGNOSTIC_XML % {'uri': '', 'message': '', 'details': escapeXml("Enough is enough")}}
-        except Exception, e:
+        except Exception as e:
             answer = RESPONSE_XML % {
                 "operationStatus": "fail",
                 "diagnostics": DIAGNOSTIC_XML % {'uri': '', 'message': '', 'details': escapeXml(format_exc())}}
@@ -108,13 +108,13 @@ def main(reactor, portNumber, dumpdir):
 if __name__== '__main__':
     args = argv[1:]
     if len(args) != 2:
-        print "Usage %s <portnumber> <dumpdir>" % argv[0]
+        print("Usage %s <portnumber> <dumpdir>" % argv[0])
         exit(1)
     portNumber = int(args[0])
     dumpdir = args[1]
     reactor = Reactor()
     main(reactor, portNumber, dumpdir)
-    print 'Ready to rumble the dumpserver at', portNumber
-    print '  - dumps are written to', dumpdir
+    print('Ready to rumble the dumpserver at', portNumber)
+    print('  - dumps are written to', dumpdir)
     stdout.flush()
     reactor.loop()

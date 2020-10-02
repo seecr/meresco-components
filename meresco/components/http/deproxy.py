@@ -30,8 +30,8 @@
 ## end license ##
 
 from meresco.core import Observable
-from ipfilter import IpFilter
-from handlerequestfilter import HandleRequestFilter
+from .ipfilter import IpFilter
+from .handlerequestfilter import HandleRequestFilter
 
 
 class Deproxy(Observable):

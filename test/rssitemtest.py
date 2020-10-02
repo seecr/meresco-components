@@ -31,7 +31,7 @@
 from seecr.test import SeecrTestCase as TestCase
 
 from meresco.components.rssitem import RssItem
-from StringIO import StringIO
+from io import StringIO
 
 class RssItemTest(TestCase):
     def testOne(self):
@@ -94,8 +94,8 @@ class RssItemTest(TestCase):
                 linkTemplate = 'http://www.example.org/%(notMentioned)s',
             )
             self.fail()
-        except TypeError, e:
-            self.assertEquals("__init__() takes at least 6 arguments (5 given, missing 'notMentioned')", str(e))
+        except TypeError as e:
+            self.assertEqual("__init__() takes at least 6 arguments (5 given, missing 'notMentioned')", str(e))
 
     def testUnicodeInData(self):
         item = RssItem(

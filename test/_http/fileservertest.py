@@ -36,7 +36,7 @@ from seecr.test.utils import mkdir
 from os.path import join
 from os import remove, makedirs
 from time import time
-from rfc822 import parsedate
+from email.utils import parsedate
 from calendar import timegm
 
 from weightless.core import asString
@@ -194,7 +194,7 @@ class FileServerTest(SeecrTestCase):
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir/"))
         self.assertTrue("<title>Index of /subdir</title>" in response, response)
         links = [line for line in response.split("\n") if line.startswith("<a href")]
-        self.assertEquals('<a href="../">../</a>', links[0])
+        self.assertEqual('<a href="../">../</a>', links[0])
         self.assertTrue(links[1].startswith('''<a href='The "real" &lt;deal&gt;.txt'>The "real" &lt;deal&gt;.txt</a>'''), links[1])
         self.assertTrue(links[1].endswith(' 16'), links[1])
 
@@ -204,7 +204,7 @@ class FileServerTest(SeecrTestCase):
         links = [line for line in response.split("\n") if line.startswith("<a href")]
         self.assertTrue(1, len(links))
         hrs = [line for line in response.split("\n") if line.strip() == "<hr>"]
-        self.assertEquals(2, len(hrs))
+        self.assertEqual(2, len(hrs))
 
         response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/does_not_exist/"))
         self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)

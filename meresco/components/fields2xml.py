@@ -31,7 +31,7 @@
 from meresco.core import Observable
 
 from re import compile
-from StringIO import StringIO
+from io import StringIO
 from xml.sax.saxutils import escape as escapeXml
 
 correctNameRe = compile(r'^\w+$')

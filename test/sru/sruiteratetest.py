@@ -24,8 +24,8 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from StringIO import StringIO
-from urlparse import urlparse, parse_qs
+from io import StringIO
+from urllib.parse import urlparse, parse_qs
 
 from meresco.components.sru.sruiterate import iterateSruQuery, SruQuery
 
@@ -83,14 +83,14 @@ class SruIterateTest(SeecrTestCase):
         try:
             sruQuery = SruQuery.fromUrl("https://hostname:port/path")
             self.fail()
-        except ValueError, e:
-            self.assertEquals("No query specified", str(e))
+        except ValueError as e:
+            self.assertEqual("No query specified", str(e))
 
         try:
             sruQuery = SruQuery.fromUrl("https://hostname:port/path?query=aap")
             self.fail()
-        except ValueError, e:
-            self.assertEquals("No recordSchema specified", str(e))
+        except ValueError as e:
+            self.assertEqual("No recordSchema specified", str(e))
 
 def response(numberOfRecords, records, nextRecordPosition=None):
 

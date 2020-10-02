@@ -44,8 +44,8 @@ from meresco.core import Observable, decorate
 from meresco.components.drilldown import DEFAULT_MAXIMUM_TERMS
 from meresco.components.sru.sruparser import SruException
 from meresco.components.log import collectLogForScope
-from diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
-from sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
+from .diagnostic import createDiagnostic, GENERAL_SYSTEM_ERROR, QUERY_FEATURE_UNSUPPORTED, UNSUPPORTED_PARAMETER_VALUE
+from .sruparser import RESPONSE_HEADER, RESPONSE_FOOTER
 
 
 ECHOED_PARAMETER_NAMES = ['version', 'query', 'startRecord', 'maximumRecords', 'recordPacking', 'recordSchema', 'recordXPath', 'resultSetTTL', 'sortKeys', 'stylesheet']
@@ -83,7 +83,7 @@ class SruHandler(Observable):
 
             queryExpression = cqlToExpression(query)
 
-            extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
+            extraArguments = dict((key, value) for key, value in list(sruArguments.items()) if key.startswith('x-'))
             try:
                 response = yield self.any.executeQuery(
                         query=queryExpression,
@@ -94,7 +94,7 @@ class SruHandler(Observable):
                         **kwargs)
                 total, hits = response.total, response.hits
                 drilldownData = getattr(response, "drilldownData", None)
-            except Exception, e:
+            except Exception as e:
                 print_exc()
                 yield RESPONSE_HEADER
                 yield self._writeDiagnostics([(QUERY_FEATURE_UNSUPPORTED[0], QUERY_FEATURE_UNSUPPORTED[1], str(e))])
@@ -191,7 +191,7 @@ class SruHandler(Observable):
     def _extraResponseDataTryExcept(self, **kwargs):
         try:
             yield self.all.extraResponseData(**kwargs)
-        except Exception, e:
+        except Exception as e:
             print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 
@@ -221,10 +221,10 @@ class SruHandler(Observable):
     def _catchErrors(self, dataGenerator, recordSchema, recordId):
         try:
             yield dataGenerator
-        except KeyError, e:
+        except KeyError as e:
             print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape("recordSchema '%s' for identifier '%s' does not exist" % (recordSchema, recordId)))
-        except Exception, e:
+        except Exception as e:
             print_exc()
             yield self._createDiagnostic(uri=GENERAL_SYSTEM_ERROR[0], message=GENERAL_SYSTEM_ERROR[1], details=xmlEscape(str(e)))
 

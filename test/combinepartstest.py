@@ -37,17 +37,17 @@ class CombinePartsTest(SeecrTestCase):
 
     def testPassThroughOtherStuff(self):
         result = self.combine.getData(identifier='identifier', name='name')
-        self.assertEquals('<name/>', result)
-        self.assertEquals(['getData'], self.observer.calledMethodNames())
-        self.assertEquals([dict(identifier='identifier', name='name')], [m.kwargs for m in self.observer.calledMethods])
+        self.assertEqual('<name/>', result)
+        self.assertEqual(['getData'], self.observer.calledMethodNames())
+        self.assertEqual([dict(identifier='identifier', name='name')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogether(self):
         result = self.combine.getData(identifier='identifier', name='together')
         expected = '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part><doc:part name="two"><two/></doc:part></doc:document>'
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
-        self.assertEquals(['getData', 'getData'], self.observer.calledMethodNames())
-        self.assertEquals([dict(identifier='identifier', name='one'), dict(identifier='identifier', name='two')], [m.kwargs for m in self.observer.calledMethods])
+        self.assertEqual(['getData', 'getData'], self.observer.calledMethodNames())
+        self.assertEqual([dict(identifier='identifier', name='one'), dict(identifier='identifier', name='two')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogetherWithOnePartMissingAllowed(self):
         self.combine = CombineParts({'together':['one', 'two']}, allowMissingParts=['two'])
@@ -58,7 +58,7 @@ class CombinePartsTest(SeecrTestCase):
             return '<%s/>' % name
         self.observer.methods['getData'] = getData
         result = self.combine.getData(identifier='identifier', name='together')
-        self.assertEquals('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
+        self.assertEqual('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
 
     def testTogetherWithOnePartMissingNotAllowed(self):
         def getData(identifier, name):

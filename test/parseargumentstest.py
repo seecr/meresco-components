@@ -36,8 +36,8 @@ class ParseArgumentsTest(TestCase):
         parser.addOption('', '--port', help='Port', type='int', mandatory=True)
         argv = ['script', '--name', 'TestServer', '--port', '1234']
         options, arguments = parser.parse(argv)
-        self.assertEquals(1234, options.port)
-        self.assertEquals('TestServer', options.name)
+        self.assertEqual(1234, options.port)
+        self.assertEqual('TestServer', options.name)
         argv = ['script', '--port', '1234']
         self.assertRaises(ValueError, parser._parse, argv)
 
@@ -48,9 +48,9 @@ class ParseArgumentsTest(TestCase):
         parser.addOption('', '--port', help='Port', type='int')
         parser.addOption('', '--withDefault', help='Default', default="default", type='str')
         options, arguments = parser.parse(argv)
-        self.assertEquals('TestServer', options.name)
-        self.assertEquals(None, options.port)
-        self.assertEquals('default', options.withDefault)
+        self.assertEqual('TestServer', options.name)
+        self.assertEqual(None, options.port)
+        self.assertEqual('default', options.withDefault)
 
     def testDefaultValueInHelp(self):
         parser = ParseArguments()
@@ -83,7 +83,7 @@ class ParseArgumentsTest(TestCase):
         with stdout_replaced() as out:
             parser.print_help()
             s = out.getvalue()
-            self.assertEquals(['Usage: _alltests.py [options]', '', description, '', 'Options:'], s.splitlines()[:5])
+            self.assertEqual(['Usage: _alltests.py [options]', '', description, '', 'Options:'], s.splitlines()[:5])
 
     def testEpilog(self):
         epilog = 'And this is how they lived happily ever after.'
@@ -100,7 +100,7 @@ class ParseArgumentsTest(TestCase):
         with stdout_replaced() as out:
             parser.print_help()
             s = out.getvalue()
-            self.assertEquals(['Usage: _alltests.py [options]', ''], s.splitlines()[:2])
+            self.assertEqual(['Usage: _alltests.py [options]', ''], s.splitlines()[:2])
 
         # explicit default: "%prog [options]"
         usage = "%prog [options]"
@@ -108,7 +108,7 @@ class ParseArgumentsTest(TestCase):
         with stdout_replaced() as out:
             parser.print_help()
             s = out.getvalue()
-            self.assertEquals(['Usage: _alltests.py [options]', ''], s.splitlines()[:2])
+            self.assertEqual(['Usage: _alltests.py [options]', ''], s.splitlines()[:2])
 
         # decidedly different
         usage = "|before| %prog [options] [more-stuff]"
@@ -116,7 +116,7 @@ class ParseArgumentsTest(TestCase):
         with stdout_replaced() as out:
             parser.print_help()
             s = out.getvalue()
-            self.assertEquals(['Usage: |before| _alltests.py [options] [more-stuff]', ''], s.splitlines()[:2])
+            self.assertEqual(['Usage: |before| _alltests.py [options] [more-stuff]', ''], s.splitlines()[:2])
 
     def testError(self):
         parser = ParseArguments()
@@ -125,12 +125,12 @@ class ParseArgumentsTest(TestCase):
             try:
                 parser.error('error msg.')
                 self.fail()
-            except SystemExit, e:
-                self.assertEquals(2, e.code)
+            except SystemExit as e:
+                self.assertEqual(2, e.code)
             lines = err.getvalue().split('\n')
 
-        self.assertEquals(4, len(lines))
+        self.assertEqual(4, len(lines))
         self.assertTrue(lines[0].startswith('Usage: '))
-        self.assertEquals('', lines[1])
+        self.assertEqual('', lines[1])
         self.assertTrue(lines[2].endswith(': error: error msg.'))
-        self.assertEquals('', lines[3])
+        self.assertEqual('', lines[3])

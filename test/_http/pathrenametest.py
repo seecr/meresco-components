@@ -43,8 +43,8 @@ class PathRenameTest(TestCase):
 
         list(compose(rename.handleRequest(path='/mypath')))
 
-        self.assertEquals(['handleRequest'], interceptor.calledMethodNames())
-        self.assertEquals(dict(originalPath='/mypath', path='/new/mypath'), interceptor.calledMethods[0].kwargs)
+        self.assertEqual(['handleRequest'], interceptor.calledMethodNames())
+        self.assertEqual(dict(originalPath='/mypath', path='/new/mypath'), interceptor.calledMethods[0].kwargs)
 
     def testTransparency(self):
         observable = Observable()
@@ -55,8 +55,8 @@ class PathRenameTest(TestCase):
 
         observable.do.otherMethod('attribute')
 
-        self.assertEquals(1, len(interceptor.calledMethods))
-        self.assertEquals("otherMethod('attribute')", str(interceptor.calledMethods[0]))
+        self.assertEqual(1, len(interceptor.calledMethods))
+        self.assertEqual("otherMethod('attribute')", str(interceptor.calledMethods[0]))
 
     def testOriginalPathAlreadyUsed(self):
         rename = PathRename(lambda path: '/new'+path)
@@ -65,6 +65,6 @@ class PathRenameTest(TestCase):
 
         list(compose(rename.handleRequest(path='/mypath', originalPath='/original/path')))
 
-        self.assertEquals(['handleRequest'], interceptor.calledMethodNames())
-        self.assertEquals(dict(originalPath='/original/path', path='/new/mypath'), interceptor.calledMethods[0].kwargs)
+        self.assertEqual(['handleRequest'], interceptor.calledMethodNames())
+        self.assertEqual(dict(originalPath='/original/path', path='/new/mypath'), interceptor.calledMethods[0].kwargs)
 

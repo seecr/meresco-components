@@ -36,21 +36,21 @@ class CookieMemoryStoreTest(SeecrTestCase):
     def testCookieName(self):
         name = self.d.cookieName()
         self.assertTrue(name.startswith('name'))
-        self.assertEquals(name, self.d.cookieName())
+        self.assertEqual(name, self.d.cookieName())
         self.assertNotEqual(name, CookieMemoryStore(timeout=0.1).cookieName())
 
     def testCreateCookie(self):
         result = self.d.createCookie('username')
-        self.assertEquals('username', self.d.validateCookie(result['cookie'])['value'])
+        self.assertEqual('username', self.d.validateCookie(result['cookie'])['value'])
         self.assertNotEqual(result, self.d.createCookie('username'))
         self.assertEqual('Set-Cookie: {0}={1}; path=/; expires=Thu, 29 Nov 1973 21:33:09 GMT'.format(
             self.d.cookieName(), result['cookie']), result['header'])
         sleep(0.06)
-        self.assertEquals('username', self.d.validateCookie(result['cookie'])['value'])
+        self.assertEqual('username', self.d.validateCookie(result['cookie'])['value'])
         sleep(0.06)
-        self.assertEquals('username', self.d.validateCookie(result['cookie'])['value'])
+        self.assertEqual('username', self.d.validateCookie(result['cookie'])['value'])
         sleep(0.12)
-        self.assertEquals(None, self.d.validateCookie(result['cookie']))
+        self.assertEqual(None, self.d.validateCookie(result['cookie']))
 
     def testCreateCookieSecure(self):
         d = CookieMemoryStore(name='name', timeout=0.1, secure=True, httpOnly=False)
@@ -81,13 +81,13 @@ class CookieMemoryStoreTest(SeecrTestCase):
     def testCreateCookieForAnyObject(self):
         o = object()
         result = self.d.createCookie(o)
-        self.assertEquals(o, self.d.validateCookie(result['cookie'])['value'])
+        self.assertEqual(o, self.d.validateCookie(result['cookie'])['value'])
 
     def testRemoveCookie(self):
         result = self.d.createCookie('username')
-        self.assertEquals('username', self.d.validateCookie(result['cookie'])['value'])
+        self.assertEqual('username', self.d.validateCookie(result['cookie'])['value'])
         self.d.removeCookie(result['cookie'])
-        self.assertEquals(None, self.d.validateCookie(result['cookie']))
+        self.assertEqual(None, self.d.validateCookie(result['cookie']))
         self.d.removeCookie(result['cookie'])
 
     def testRemoveCookiesWithObjectFilter(self):

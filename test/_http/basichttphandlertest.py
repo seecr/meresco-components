@@ -40,8 +40,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/"))
 
-        self.assertEquals('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testOk(self):
         handler = BasicHttpHandler()
@@ -51,8 +51,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/"))
 
-        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 200 OK\r\n\r\nBody', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testAlternativeMethod(self):
         handler = BasicHttpHandler(notFoundMethod=lambda path, **kwargs: 'HTTP/1.0 404\r\n\r\n%s' % path)
@@ -61,8 +61,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/", path='/'))
 
-        self.assertEquals('HTTP/1.0 404\r\n\r\n/', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 404\r\n\r\n/', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testRedirect(self):
         handler = BasicHttpHandler.createWithRedirect('http://example.org/here')
@@ -71,8 +71,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/"))
 
-        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: http://example.org/here\r\n\r\n', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 302 Found\r\nLocation: http://example.org/here\r\n\r\n', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testAddHeader(self):
         handler = BasicHttpHandler(additionalHeaders={'Aap': "Noot Mies"})
@@ -82,8 +82,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/"))
 
-        self.assertEquals('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\n\r\nBody', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\n\r\nBody', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testAddHeaders(self):
         handler = BasicHttpHandler(additionalHeaders={'Aap': "Noot Mies", "Boom": "Vis"})
@@ -93,8 +93,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/"))
 
-        self.assertEquals('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\nBoom: Vis\r\n\r\nBody', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\nBoom: Vis\r\n\r\nBody', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def test404WithAddedHeaders(self):
         handler = BasicHttpHandler(additionalHeaders={'Aap': "Noot Mies"})
@@ -103,8 +103,8 @@ class BasicHttpHandlerTest(SeecrTestCase):
 
         response = asString(dna.all.handleRequest(RequestURI="/"))
 
-        self.assertEquals('HTTP/1.0 404 Not Found\r\nAap: Noot Mies\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual('HTTP/1.0 404 Not Found\r\nAap: Noot Mies\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
 
     def testNoProperHttpResponseStillWorks(self):
         handler = BasicHttpHandler()

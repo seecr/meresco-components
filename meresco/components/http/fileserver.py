@@ -31,14 +31,14 @@
 ## end license ##
 
 from os.path import isfile, join, normpath, commonprefix, abspath, isdir, getsize
-from rfc822 import formatdate
+from email.utils import formatdate
 from time import time
 from stat import ST_MTIME, ST_SIZE
 from os import stat, listdir
 
 from meresco.components.http import utils as httputils
 from meresco.components.http.utils import CRLF
-from urllib import unquote, unquote_plus
+from urllib.parse import unquote, unquote_plus
 #from cgi import escape as escapeHtml
 from xml.sax.saxutils import quoteattr, escape as escapeHtml
 
@@ -79,7 +79,7 @@ class File(object):
 
     def stream(self):
         yield 'HTTP/1.0 200 OK' + CRLF
-        for item in self.getHeaders().items():
+        for item in list(self.getHeaders().items()):
             yield "%s: %s" % item + CRLF
         yield CRLF
 
@@ -114,7 +114,7 @@ class Directory(object):
         yield httputils.Ok
         headers = {'Content-Type': httputils.ContentTypeHtml}
         headers.update(self.getHeaders())
-        for item in headers.items():
+        for item in list(headers.items()):
             yield "%s: %s" % item + CRLF
         yield CRLF
         totalPath = self._basePath + ('' if strippedPath.startswith('/') else '/') + strippedPath
@@ -133,7 +133,7 @@ class Directory(object):
             yield '<a href="../">../</a>\n'
         files = sorted(listdir(self._path))
         if len(files) > 0:
-            longest = max(map(str.__len__, files)) + 2
+            longest = max(list(map(str.__len__, files))) + 2
             for filename in files:
                 fullFilename = join(self._path, filename)
                 fileStats = stat(fullFilename)

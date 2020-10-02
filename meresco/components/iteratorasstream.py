@@ -37,19 +37,19 @@ class IteratorAsStream(object):
             return data + ''.join(self._iterator)
         while len(self._leftover) < size:
             try:
-                self._leftover += self._iterator.next()
+                self._leftover += next(self._iterator)
             except StopIteration:
                 break
         data = self._leftover[:size]
         self._leftover = self._leftover[size:]
         return data
 
-    def next(self):
+    def __next__(self):
         if self._leftover:
             data = self._leftover
             self._leftover = ''
             return data
-        return self._iterator.next()
+        return next(self._iterator)
 
     def __iter__(self):
         return self

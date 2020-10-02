@@ -38,44 +38,44 @@ usrSharePath = join(dirname(dirname(mydir)), 'usr-share') #DO_NOT_DISTRIBUTE
 
 from ._utils import *
 
-from converter import Converter
-from timeddictionary import TimedDictionary
-from xmlcompose import XmlCompose
-from xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
+from .converter import Converter
+from .timeddictionary import TimedDictionary
+from .xmlcompose import XmlCompose
+from .xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
 
-from berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
-from combineparts import CombineParts
-from configuration import Configuration, readConfig
-from contextset import ContextSetList, ContextSet
-from cqlconversion import CqlSearchClauseConversion, CqlMultiSearchClauseConversion
-from directorywatcher import DirectoryWatcher, DirectoryWatcherException
-from fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
-from fields2xml import Fields2Xml
-from fields2xmlfields import Fields2XmlFields
-from filtermessages import FilterMessages
-from filterdatabyname import FilterDataByName
-from inbox import Inbox
-from iteratorasstream import IteratorAsStream
-from multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
-from parsearguments import ParseArguments
-from periodiccall import PeriodicCall
-from periodicdownload import PeriodicDownload
-from renamecqlindex import RenameCqlIndex
-from renamefieldforexact import RenameFieldForExact
-from requestscope import RequestScope
-from rewritepartname import RewritePartname
-from rss import Rss
-from rssitem import RssItem
-from schedule import Schedule
-from timedmessagecache import TimedMessageCache, BackoffException
-from venturi import Venturi
-from xml2fields import Xml2Fields
-from xmlxpath import XmlXPath
-from xpath2field import XPath2Field
-from xsltcrosswalk import XsltCrosswalk
-from url import parseAbsoluteUrl
-from onlyadddeleteifchanged import OnlyAddDeleteIfChanged
-from retrievetogetdataadapter import RetrieveToGetDataAdapter
-from sortkeysrename import SortKeysRename
+from .berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
+from .combineparts import CombineParts
+from .configuration import Configuration, readConfig
+from .contextset import ContextSetList, ContextSet
+from .cqlconversion import CqlSearchClauseConversion, CqlMultiSearchClauseConversion
+from .directorywatcher import DirectoryWatcher, DirectoryWatcherException
+from .fieldlets import RenameField, TransformFieldValue, FilterFieldValue, FilterField, AddField
+from .fields2xml import Fields2Xml
+from .fields2xmlfields import Fields2XmlFields
+from .filtermessages import FilterMessages
+from .filterdatabyname import FilterDataByName
+from .inbox import Inbox
+from .iteratorasstream import IteratorAsStream
+from .multileveldrilldown import MultiLevelDrilldown, MultiLevelDrilldownException
+from .parsearguments import ParseArguments
+from .periodiccall import PeriodicCall
+from .periodicdownload import PeriodicDownload
+from .renamecqlindex import RenameCqlIndex
+from .renamefieldforexact import RenameFieldForExact
+from .requestscope import RequestScope
+from .rewritepartname import RewritePartname
+from .rss import Rss
+from .rssitem import RssItem
+from .schedule import Schedule
+from .timedmessagecache import TimedMessageCache, BackoffException
+from .venturi import Venturi
+from .xml2fields import Xml2Fields
+from .xmlxpath import XmlXPath
+from .xpath2field import XPath2Field
+from .xsltcrosswalk import XsltCrosswalk
+from .url import parseAbsoluteUrl
+from .onlyadddeleteifchanged import OnlyAddDeleteIfChanged
+from .retrievetogetdataadapter import RetrieveToGetDataAdapter
+from .sortkeysrename import SortKeysRename
 
 

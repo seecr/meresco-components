@@ -46,9 +46,9 @@ class RewritePartnameTest(TestCase):
 
         result = list(compose(observable.all.add(identifier='identifier', partname='oldPartname', data='data')))
 
-        self.assertEquals(['add'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
-        self.assertEquals([], result)
+        self.assertEqual(['add'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'identifier': 'identifier', 'partname': 'newPartname', 'data': 'data'}, observer.calledMethods[0].kwargs)
+        self.assertEqual([], result)
 
     def testGetDataPartname(self):
         def getData(**kwargs):
@@ -61,9 +61,9 @@ class RewritePartnameTest(TestCase):
 
         result = observable.call.getData(identifier='identifier', name='oldPartname')
 
-        self.assertEquals(['getData'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
-        self.assertEquals('data', result)
+        self.assertEqual(['getData'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
+        self.assertEqual('data', result)
 
     def testRetrieveDataPartname(self):
         def retrieveData(**kwargs):
@@ -77,7 +77,7 @@ class RewritePartnameTest(TestCase):
 
         result = retval(observable.any.retrieveData(identifier='identifier', name='oldPartname'))
 
-        self.assertEquals(['retrieveData'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
-        self.assertEquals('data', result)
+        self.assertEqual(['retrieveData'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'identifier': 'identifier', 'name': 'newPartname'}, observer.calledMethods[0].kwargs)
+        self.assertEqual('data', result)
 

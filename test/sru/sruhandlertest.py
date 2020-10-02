@@ -33,8 +33,8 @@
 ## end license ##
 
 from os.path import join
-from StringIO import StringIO
-from urllib2 import urlopen
+from io import StringIO
+from urllib.request import urlopen
 from decimal import Decimal
 from xml.sax.saxutils import escape as xmlEscape
 
@@ -110,7 +110,7 @@ class SruHandlerTest(SeecrTestCase):
     def testExtraResponseDataHandlerNoHandler(self):
         component = SruHandler()
         result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
-        self.assertEquals('' , result)
+        self.assertEqual('' , result)
 
     def testExtraResponseDataHandlerNoData(self):
         class TestHandler:
@@ -120,7 +120,7 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(TestHandler())
         result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
-        self.assertEquals('' , result)
+        self.assertEqual('' , result)
 
     def testExtraResponseDataHandlerWithData(self):
         argsUsed = []
@@ -134,11 +134,11 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(TestHandler())
         result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
-        self.assertEquals('<srw:extraResponseData><someData/></srw:extraResponseData>' , result)
-        self.assertEquals([()], argsUsed)
-        self.assertEquals(None, kwargsUsed['cqlAbstractSyntaxTree'])
-        self.assertEquals(MOCKDATA['queryTime'], kwargsUsed['queryTime'])
-        self.assertEquals(MOCKDATA['response'], kwargsUsed['response'])
+        self.assertEqual('<srw:extraResponseData><someData/></srw:extraResponseData>' , result)
+        self.assertEqual([()], argsUsed)
+        self.assertEqual(None, kwargsUsed['cqlAbstractSyntaxTree'])
+        self.assertEqual(MOCKDATA['queryTime'], kwargsUsed['queryTime'])
+        self.assertEqual(MOCKDATA['response'], kwargsUsed['response'])
 
     def testExtraResponseDataWithTermDrilldown(self):
         sruHandler = SruHandler()
@@ -179,15 +179,15 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = queryArguments
         sruArguments['x-term-drilldown'] = ["field0:1,fie:ld1:2,field2,fie:ld3"]
         consume(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
-        self.assertEquals(['executeQuery'] + ['retrieveData', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
-        self.assertEquals([
+        self.assertEqual(['executeQuery'] + ['retrieveData', 'extraRecordData'] * 15 + ['echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEqual([
             dict(fieldname='field0', maxTerms=1, sortBy='somevalue'),
             dict(fieldname='fie:ld1', maxTerms=2, sortBy='somevalue'),
             dict(fieldname='field2', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue'),
             dict(fieldname='fie:ld3', maxTerms=DEFAULT_MAXIMUM_TERMS, sortBy='somevalue')
             ], list(observer.calledMethods[0].kwargs['facets']))
         extraResponseDataMethod = observer.calledMethods[-1]
-        self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
+        self.assertEqual(response, extraResponseDataMethod.kwargs['response'])
 
     def testNextRecordPosition(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
@@ -212,8 +212,8 @@ class SruHandlerTest(SeecrTestCase):
         self.assertTrue("<srw:nextRecordPosition>26</srw:nextRecordPosition>" in result, result)
 
         executeCqlCallKwargs = observer.calledMethods[0].kwargs
-        self.assertEquals(10, executeCqlCallKwargs['start']) # SRU is 1 based
-        self.assertEquals(25, executeCqlCallKwargs['stop'])
+        self.assertEqual(10, executeCqlCallKwargs['start']) # SRU is 1 based
+        self.assertEqual(25, executeCqlCallKwargs['stop'])
 
     def testNextRecordPositionNotShownIfAfterLimitBeyond(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
@@ -358,22 +358,22 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(observer)
 
         result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
-        self.assertEquals(['executeQuery', 'extraRecordData', 'extraRecordData', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
+        self.assertEqual(['executeQuery', 'extraRecordData', 'extraRecordData', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         executeQueryMethod, extraRecordData1, extraRecordData2, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
-        self.assertEquals('executeQuery', executeQueryMethod.name)
+        self.assertEqual('executeQuery', executeQueryMethod.name)
         methodKwargs = executeQueryMethod.kwargs
-        self.assertEquals(cqlToExpression('field=value'), methodKwargs['query'])
-        self.assertEquals(0, methodKwargs['start'])
-        self.assertEquals(2, methodKwargs['stop'])
-        self.assertEquals({'x-recordSchema': ['extra', 'evenmore'], 'x-extra-key': 'extraValue'}, methodKwargs['extraArguments'])
-        self.assertEquals('<aap&noot>', extraRecordData1.kwargs['hit'].id)
-        self.assertEquals('vuur', extraRecordData2.kwargs['hit'].id)
+        self.assertEqual(cqlToExpression('field=value'), methodKwargs['query'])
+        self.assertEqual(0, methodKwargs['start'])
+        self.assertEqual(2, methodKwargs['stop'])
+        self.assertEqual({'x-recordSchema': ['extra', 'evenmore'], 'x-extra-key': 'extraValue'}, methodKwargs['extraArguments'])
+        self.assertEqual('<aap&noot>', extraRecordData1.kwargs['hit'].id)
+        self.assertEqual('vuur', extraRecordData2.kwargs['hit'].id)
 
-        self.assertEquals(6, sum(retrieveDataCalls))
+        self.assertEqual(6, sum(retrieveDataCalls))
 
         resultXml = parse(StringIO(result))
         ids = resultXml.xpath('//srw:recordIdentifier/text()', namespaces={'srw':"http://www.loc.gov/zing/srw/"})
-        self.assertEquals(['<aap&noot>', 'vuur'], ids)
+        self.assertEqual(['<aap&noot>', 'vuur'], ids)
 
         self.assertEqualsWS("""
 <srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
@@ -445,10 +445,10 @@ class SruHandlerTest(SeecrTestCase):
 </srw:searchRetrieveResponse>
 """ % namespaces, result)
 
-        self.assertEquals((), echoedExtraRequestDataMethod.args)
-        self.assertEquals(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
-        self.assertEquals((), extraResponseDataMethod.args)
-        self.assertEquals(sorted(['version', 'recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'response', 'drilldownData', 'queryTime', 'sruArguments']), sorted(extraResponseDataMethod.kwargs.keys()))
+        self.assertEqual((), echoedExtraRequestDataMethod.args)
+        self.assertEqual(set(['version', 'recordSchema', 'x-recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'x-extra-key']), set(echoedExtraRequestDataMethod.kwargs['sruArguments'].keys()))
+        self.assertEqual((), extraResponseDataMethod.args)
+        self.assertEqual(sorted(['version', 'recordSchema', 'maximumRecords', 'startRecord', 'query', 'operation', 'recordPacking', 'response', 'drilldownData', 'queryTime', 'sruArguments']), sorted(extraResponseDataMethod.kwargs.keys()))
 
     def testExtraRecordDataOldStyle(self):
         queryArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2}
@@ -583,10 +583,10 @@ class SruHandlerTest(SeecrTestCase):
             arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
             result = parse(StringIO("".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))))
             diagnostic = result.xpath("/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic", namespaces=namespaces)
-            self.assertEquals(1, len(diagnostic))
-            self.assertEquals(["info://srw/diagnostics/1/48"], diagnostic[0].xpath("diag:uri/text()", namespaces=namespaces))
-            self.assertEquals(["Query Feature Unsupported"], diagnostic[0].xpath("diag:message/text()", namespaces=namespaces))
-            self.assertEquals(["Test Exception"], diagnostic[0].xpath("diag:details/text()", namespaces=namespaces))
+            self.assertEqual(1, len(diagnostic))
+            self.assertEqual(["info://srw/diagnostics/1/48"], diagnostic[0].xpath("diag:uri/text()", namespaces=namespaces))
+            self.assertEqual(["Query Feature Unsupported"], diagnostic[0].xpath("diag:message/text()", namespaces=namespaces))
+            self.assertEqual(["Test Exception"], diagnostic[0].xpath("diag:details/text()", namespaces=namespaces))
 
     def testDiagnosticWarning(self):
         sruArguments = {'version':'1.2', 'operation':'searchRetrieve',  'recordSchema':'schema', 'recordPacking':'xml', 'query':'field=value', 'startRecord':1, 'maximumRecords':2, }
@@ -617,7 +617,7 @@ class SruHandlerTest(SeecrTestCase):
 
         response = parse(StringIO(result))
 
-        self.assertEquals([t % namespaces for t in [
+        self.assertEqual([t % namespaces for t in [
                 '{%(srw)s}version',
                 '{%(srw)s}numberOfRecords',
                 '{%(srw)s}records',
@@ -631,7 +631,7 @@ class SruHandlerTest(SeecrTestCase):
             'details': xpath(d, 'diag:details/text()')[0],
             'message': xpath(d, 'diag:message/text()')[0]} for d in
                 xpath(response, '/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic')]
-        self.assertEquals([
+        self.assertEqual([
             {'uri': 'info://srw/diagnostics/1/998', 'message': 'Diagnostic 998', 'details': 'The <tag> message'},
             {'uri': 'info://srw/diagnostics/1/999', 'message': 'Diagnostic 999', 'details': 'Some message'},
             ], diagnostics)
@@ -643,7 +643,7 @@ class SruHandlerTest(SeecrTestCase):
         def sruHandlerKwargs(x_term_drilldown):
             arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'blissfully_ignored', 'recordSchema':'blissfully_ignored', 'recordPacking':'string'}
             arguments['x_term_drilldown'] = [x_term_drilldown]
-            arguments['sruArguments'] = dict((k.replace('_', '-'),v) for k,v in arguments.items())
+            arguments['sruArguments'] = dict((k.replace('_', '-'),v) for k,v in list(arguments.items()))
             return arguments
 
         # No problem - max
@@ -658,13 +658,13 @@ class SruHandlerTest(SeecrTestCase):
 
         try:
             ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
-        except KeyboardInterrupt, e:
-            self.assertEquals('Ok', str(e))
+        except KeyboardInterrupt as e:
+            self.assertEqual('Ok', str(e))
         else:
             self.fail('Should not come here')
 
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        self.assertEquals([
+        self.assertEqual(['executeQuery'], observer.calledMethodNames())
+        self.assertEqual([
                 dict(fieldname='field0', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT),
                 dict(fieldname='fielddefault', maxTerms=3, sortBy=DRILLDOWN_SORTBY_COUNT)
             ], observer.calledMethods[0].kwargs['facets'])
@@ -674,13 +674,13 @@ class SruHandlerTest(SeecrTestCase):
         observer.calledMethods.reset()
         try:
             ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
-        except KeyboardInterrupt, e:
-            self.assertEquals('Ok', str(e))
+        except KeyboardInterrupt as e:
+            self.assertEqual('Ok', str(e))
         else:
             self.fail('Should not come here')
 
-        self.assertEquals(['executeQuery'], observer.calledMethodNames())
-        self.assertEquals([dict(fieldname='field0', maxTerms=1, sortBy=DRILLDOWN_SORTBY_COUNT)], observer.calledMethods[0].kwargs['facets'])
+        self.assertEqual(['executeQuery'], observer.calledMethodNames())
+        self.assertEqual([dict(fieldname='field0', maxTerms=1, sortBy=DRILLDOWN_SORTBY_COUNT)], observer.calledMethods[0].kwargs['facets'])
 
         # Too high
         kwargs = sruHandlerKwargs(x_term_drilldown='field0:4')
@@ -695,9 +695,9 @@ class SruHandlerTest(SeecrTestCase):
 
         try:
             ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
-        except SruException, e:
-            self.assertEquals('field0; drilldown with maximumResults > 3', str(e))
-        except KeyboardInterrupt, e:
+        except SruException as e:
+            self.assertEqual('field0; drilldown with maximumResults > 3', str(e))
+        except KeyboardInterrupt as e:
             self.fail(str(e))
         else:
             self.fail('Should not come here')
@@ -706,9 +706,9 @@ class SruHandlerTest(SeecrTestCase):
         kwargs = sruHandlerKwargs(x_term_drilldown='field55:0')
         try:
             ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
-        except SruException, e:
-            self.assertEquals('field55; drilldown with maximumResults < 1', str(e))
-        except KeyboardInterrupt, e:
+        except SruException as e:
+            self.assertEqual('field55; drilldown with maximumResults < 1', str(e))
+        except KeyboardInterrupt as e:
             self.fail(str(e))
         else:
             self.fail('Should not come here')
@@ -717,9 +717,9 @@ class SruHandlerTest(SeecrTestCase):
         kwargs = sruHandlerKwargs(x_term_drilldown='field55:-1')
         try:
             ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
-        except SruException, e:
-            self.assertEquals('field55; drilldown with maximumResults < 1', str(e))
-        except KeyboardInterrupt, e:
+        except SruException as e:
+            self.assertEqual('field55; drilldown with maximumResults < 1', str(e))
+        except KeyboardInterrupt as e:
             self.fail(str(e))
         else:
             self.fail('Should not come here')
@@ -783,8 +783,8 @@ class SruHandlerTest(SeecrTestCase):
 </srw:extraResponseData>""" % namespaces, lxmltostring(extraResponseData))
         queryTimes = lxmltostring(extraResponseData.xpath('//ti:querytimes', namespaces={'ti':"http://meresco.org/namespace/timing"})[0])
         assertValid(queryTimes, join(schemasPath, 'timing-20120827.xsd'))
-        self.assertEquals(['executeQuery', 'echoedExtraRequestData', 'extraResponseData', 'handleQueryTimes'], observer.calledMethodNames())
-        self.assertEquals({'sru': Decimal("2.500"), 'queryTime': Decimal("1.500"), 'index': Decimal("0.005")}, observer.calledMethods[3].kwargs)
+        self.assertEqual(['executeQuery', 'echoedExtraRequestData', 'extraResponseData', 'handleQueryTimes'], observer.calledMethodNames())
+        self.assertEqual({'sru': Decimal("2.500"), 'queryTime': Decimal("1.500"), 'index': Decimal("0.005")}, observer.calledMethods[3].kwargs)
 
     def testCollectLog(self):
         handler = SruHandler(enableCollectLog=True)
@@ -805,7 +805,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
         consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
 
-        self.assertEquals({
+        self.assertEqual({
             'sru': {
                 'handlingTime': [Decimal('2.500')],
                 'queryTime': [Decimal('1.500')],
@@ -839,7 +839,7 @@ class SruHandlerTest(SeecrTestCase):
         arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
         consume(handler.searchRetrieve(sruArguments=arguments, **arguments))
 
-        self.assertEquals({
+        self.assertEqual({
             'sru': {
                 'arguments': [{
                     'startRecord': 11,
@@ -878,7 +878,7 @@ class SruHandlerTest(SeecrTestCase):
 
         with stderr_replaced():
             response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
-            self.assertEquals(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
+            self.assertEqual(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
             self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
 
     def testGetDataWithAdapter(self):
@@ -896,20 +896,20 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['echoedExtraRequestData'] = lambda *a, **kw: (x for x in 'echoedExtraRequestData')
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
         response = asString(handler.searchRetrieve(query="word", recordSchema='schema', recordPacking='string', maximumRecords=2, sruArguments={}))
-        self.assertEquals(['getData', 'getData'], observer.calledMethodNames()[1:4:2])
+        self.assertEqual(['getData', 'getData'], observer.calledMethodNames()[1:4:2])
         self.assertTrue('<srw:recordData>&lt;record/&gt;</srw:recordData>' in response, response)
-        self.assertEquals({'identifier': '1', 'name': 'schema'}, observer.calledMethods[1].kwargs)
-        self.assertEquals({'identifier': '2', 'name': 'schema'}, observer.calledMethods[3].kwargs)
+        self.assertEqual({'identifier': '1', 'name': 'schema'}, observer.calledMethods[1].kwargs)
+        self.assertEqual({'identifier': '2', 'name': 'schema'}, observer.calledMethods[3].kwargs)
 
     def testParseDrilldownArguments(self):
         handler = SruHandler(drilldownSortBy='count')
-        self.assertEquals(None, handler._parseDrilldownArgs([]))
-        self.assertEquals([], handler._parseDrilldownArgs(['']))
-        self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field']))
-        self.assertEquals([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field,']))
-        self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20']))
-        self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20,field2']))
-        self.assertEquals([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
+        self.assertEqual(None, handler._parseDrilldownArgs([]))
+        self.assertEqual([], handler._parseDrilldownArgs(['']))
+        self.assertEqual([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field']))
+        self.assertEqual([{'fieldname':'field', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field,']))
+        self.assertEqual([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20']))
+        self.assertEqual([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20,field2']))
+        self.assertEqual([{'fieldname':'field', 'maxTerms':20, 'sortBy':'count'}, {'fieldname':'field2', 'maxTerms':10, 'sortBy':'count'}], handler._parseDrilldownArgs(['field:20','field2']))
 
 
     def testExecuteQueryGetsRecordSchemaAsOnOfTheKwargs(self):

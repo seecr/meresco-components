@@ -36,47 +36,47 @@ from meresco.components import DoubleUniqueBerkeleyDict, BerkeleyDict
 
 class BerkeleyDictTestBase(SeecrTestCase):
     def testInsert(self):
-        self.bdict['1'] = 'some string'
-        self.assertEquals('some string', self.bdict['1'])
-        self.bdict['1'] = 'some other string'
-        self.assertEquals('some other string', self.bdict['1'])
+        self.bdict[b'1'] = b'some string'
+        self.assertEqual(b'some string', self.bdict[b'1'])
+        self.bdict[b'1'] = b'some other string'
+        self.assertEqual(b'some other string', self.bdict[b'1'])
 
     def testNoneExistingKey(self):
         try:
-            self.bdict['not']
+            self.bdict[b'not']
             self.fail()
         except KeyError:
             pass
 
     def testDelete(self):
-        self.bdict['1'] = 'a string'
-        self.assertEquals('a string', self.bdict['1'])
-        del self.bdict['1']
+        self.bdict[b'1'] = b'a string'
+        self.assertEqual(b'a string', self.bdict[b'1'])
+        del self.bdict[b'1']
         try:
-            self.bdict['1']
+            self.bdict[b'1']
             self.fail('must not come here')
         except KeyError:
             pass
 
     def testGet(self):
-        self.bdict['1'] = 'some other string'
+        self.bdict[b'1'] = b'some other string'
 
-        self.assertEquals('some other string', self.bdict.get('1', 'something'))
-        self.assertEquals('something', self.bdict.get('2', 'something'))
+        self.assertEqual(b'some other string', self.bdict.get(b'1', 'something'))
+        self.assertEqual('something', self.bdict.get(b'2', 'something'))
 
     def testStopWord(self):
-        self.bdict['the'] = 'an'
-        self.assertEquals('an', self.bdict['the'])
+        self.bdict[b'the'] = b'an'
+        self.assertEqual(b'an', self.bdict[b'the'])
 
     def testCase(self):
-        self.bdict['The'] = 'De'
-        self.bdict['the'] = 'de'
-        self.assertEquals('De', self.bdict['The'])
-        self.assertEquals('de', self.bdict['the'])
+        self.bdict[b'The'] = b'De'
+        self.bdict[b'the'] = b'de'
+        self.assertEqual(b'De', self.bdict[b'The'])
+        self.assertEqual(b'de', self.bdict[b'the'])
 
     def testSpaces(self):
-        self.bdict['The one'] = 'De ene'
-        self.assertEquals('De ene', self.bdict['The one'])
+        self.bdict[b'The one'] = b'De ene'
+        self.assertEqual(b'De ene', self.bdict[b'The one'])
         
 class DoubleUniqueBerkeleyDictTest(BerkeleyDictTestBase):
     def setUp(self):
@@ -85,12 +85,12 @@ class DoubleUniqueBerkeleyDictTest(BerkeleyDictTestBase):
 
     def testDelete(self):
         BerkeleyDictTestBase.testDelete(self)
-        self.assertEquals(None, self.bdict.getKeyFor('a string'))
+        self.assertEqual(None, self.bdict.getKeyFor(b'a string'))
 
     def testGetKeyFor(self):
-        self.bdict['1'] = 'one'
-        self.bdict['2'] = 'two'
-        self.assertEquals('1', self.bdict.getKeyFor('one'))
+        self.bdict[b'1'] = b'one'
+        self.bdict[b'2'] = b'two'
+        self.assertEqual(b'1', self.bdict.getKeyFor(b'one'))
 
 class BerkeleyDictTest(BerkeleyDictTestBase):
     def setUp(self):

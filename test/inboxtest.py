@@ -60,14 +60,14 @@ class InboxTest(SeecrTestCase):
         try:
             Inbox(CallTrace('Reactor'), inboxDirectory="/no_such_inbox", doneDirectory="/tmp")
             self.fail()
-        except InboxException, e:
-            self.assertEquals("directory /no_such_inbox does not exist", str(e))
+        except InboxException as e:
+            self.assertEqual("directory /no_such_inbox does not exist", str(e))
 
         try:
             Inbox(CallTrace('Reactor'), inboxDirectory="/tmp", doneDirectory="/no_such_done")
             self.fail()
-        except InboxException, e:
-            self.assertEquals("directory /no_such_done does not exist", str(e))
+        except InboxException as e:
+            self.assertEqual("directory /no_such_done does not exist", str(e))
 
     def testMovedInFileTriggersThings(self):
         events = []
@@ -75,18 +75,18 @@ class InboxTest(SeecrTestCase):
 
         self.moveInRecord('repository:some:identifier:1')
         self.reactor.step()
-        self.assertEquals(1, len(events))
-        self.assertEquals("repository:some:identifier:1.record", events[0])
+        self.assertEqual(1, len(events))
+        self.assertEqual("repository:some:identifier:1.record", events[0])
 
 
     def testProcessedGetsMovedToDone(self):
         self.moveInRecord(identifier='repository:some:identifier:1')
 
-        self.assertEquals(0, len(self.observer.calledMethods))
+        self.assertEqual(0, len(self.observer.calledMethods))
         self.assertTrue(isfile(join(self.inboxDirectory, 'repository:some:identifier:1.record')))
         self.assertFalse(isfile(join(self.doneDirectory, 'repository:some:identifier:1.record')))
         self.reactor.step()
-        self.assertEquals(1, len(self.observer.calledMethods))
+        self.assertEqual(1, len(self.observer.calledMethods))
         self.assertFalse(isfile(join(self.inboxDirectory, 'repository:some:identifier:1.record')))
         self.assertTrue(isfile(join(self.doneDirectory, 'repository:some:identifier:1.record')))
 
@@ -106,11 +106,11 @@ class InboxTest(SeecrTestCase):
             )
         )
         dna.once.observer_init()
-        self.assertEquals(set(['repo:ident:1.record', 'repo:ident:2.record', 'repo:ident:3.record']), set(listdir(self.inboxDirectory)))
+        self.assertEqual(set(['repo:ident:1.record', 'repo:ident:2.record', 'repo:ident:3.record']), set(listdir(self.inboxDirectory)))
 
         inbox.processInboxDirectory()
 
-        self.assertEquals(set(['repo:ident:1.record', 'repo:ident:2.record', 'repo:ident:3.record']), set(listdir(self.doneDirectory)))
+        self.assertEqual(set(['repo:ident:1.record', 'repo:ident:2.record', 'repo:ident:3.record']), set(listdir(self.doneDirectory)))
 
 
     def testErrorHandling(self):

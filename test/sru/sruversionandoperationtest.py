@@ -38,7 +38,7 @@ class SruVersionAndOperationTest(SeecrTestCase):
         vo.addObserver(observer)
 
         result = asString(vo.handleRequest(arguments={'query':['query'], 'recordSchema': ['schema']}))
-        self.assertEquals('DATA', result)
+        self.assertEqual('DATA', result)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
         self.assertEqual({
                 'arguments': {
@@ -51,7 +51,7 @@ class SruVersionAndOperationTest(SeecrTestCase):
         observer.calledMethods.reset()
 
         result = asString(vo.handleRequest(arguments={'query':['query'], 'version': ['1.2']}))
-        self.assertEquals('DATA', result)
+        self.assertEqual('DATA', result)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
         self.assertEqual({
                 'arguments': {

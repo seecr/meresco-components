@@ -1,10 +1,10 @@
-from urllib2 import urlopen
-from urllib import urlencode
-from urlparse import urlsplit, parse_qs
+from urllib.request import urlopen
+from urllib.parse import urlencode
+from urllib.parse import urlsplit, parse_qs
 
 from meresco.xml.namespaces import xpath, xpathFirst
 from lxml.etree import parse, tostring, cleanup_namespaces
-from StringIO import StringIO
+from io import StringIO
 
 def _first(collection, element, default=None):
     value = collection.get(element, [])
@@ -51,7 +51,7 @@ class SruQuery(object):
         try:
             return SearchRetrieveResponse(self, parse(self._urlopen(url)))
         except:
-            print url
+            print(url)
             raise
 
 class SearchRetrieveResponse(object):

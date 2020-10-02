@@ -42,34 +42,34 @@ class DrilldownQueriesTest(SeecrTestCase):
 
     def testDrilldownQuery(self):
         result = retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a = b']}))
-        self.assertEquals('result', result)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
+        self.assertEqual([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
 
         self.observer.calledMethods.reset()
 
         result = retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a exact b']}))
-        self.assertEquals('result', result)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
+        self.assertEqual([('a', ['b'])], executeQueryMethod.kwargs['drilldownQueries'])
 
     def testErrorForInvalidFormatDrilldownQuery(self):
         try:
             retval(self.dbdq.executeQuery(extraArguments={'x-drilldown-query': ['a']}))
             self.fail()
-        except ValueError, e:
-            self.assertEquals('x-drilldown-query format should be field=value', str(e))
-        self.assertEquals([], self.observer.calledMethodNames())
+        except ValueError as e:
+            self.assertEqual('x-drilldown-query format should be field=value', str(e))
+        self.assertEqual([], self.observer.calledMethodNames())
 
     def testNoDrilldownQuery(self):
         result = retval(self.dbdq.executeQuery(extraArguments={}, query='*'))
-        self.assertEquals('result', result)
-        self.assertEquals(['executeQuery'], self.observer.calledMethodNames())
+        self.assertEqual('result', result)
+        self.assertEqual(['executeQuery'], self.observer.calledMethodNames())
         executeQueryMethod = self.observer.calledMethods[0]
-        self.assertEquals([], executeQueryMethod.kwargs['drilldownQueries'])
-        self.assertEquals("*", executeQueryMethod.kwargs['query'])
+        self.assertEqual([], executeQueryMethod.kwargs['drilldownQueries'])
+        self.assertEqual("*", executeQueryMethod.kwargs['query'])
 
 
 def mockExecuteQuery(**kwargs):
