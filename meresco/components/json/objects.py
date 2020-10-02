@@ -52,14 +52,18 @@ class _Json(object):
 
     @classmethod
     def load(clz, fp, emptyOnError=False, *args, **kwargs):
+        def _inner(clz, fp, emptyOnError=False, *args, **kwargs):
+            try:
+                return clz(load(fp, *args, **kwargs))
+            except JSONDecodeError:
+                if emptyOnError:
+                    return clz()
+                raise
         if not hasattr(fp, 'read'):
-            fp = open(fp)
-        try:
-            return clz(load(fp, *args, **kwargs))
-        except JSONDecodeError:
-            if emptyOnError:
-                return clz()
-            raise
+            with open(fp) as fp:
+                return _inner(clz, fp, emptyOnError=emptyOnError, *args, **kwargs)
+        else:
+            return _inner(clz, fp, emptyOnError=emptyOnError, *args, **kwargs)
 
 class JsonDict(dict, _Json):
     pass
@@ -68,3 +72,4 @@ class JsonList(list, _Json):
     pass
 
 __all__ = ["JsonDict", "JsonList"]
+

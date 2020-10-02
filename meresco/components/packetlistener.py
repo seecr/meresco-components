@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2015, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
 # This file is part of "Meresco Components"
@@ -40,27 +40,32 @@ class _PacketListener(Observable):
         self._reactor = reactor
         self._port = port
         self._acceptorClass = acceptorClass
+        self._acceptor = None
 
     def observer_init(self):
         def sinkFactory(sok):
             return lambda: self._handlePacket(sok)
-        self._acceptorClass(
+        self._acceptor = self._acceptorClass(
             reactor=self._reactor,
             port=self._port,
             sinkFactory=sinkFactory)
+
+    def close(self):
+        if not self._acceptor is None:
+            self._acceptor.close()
 
     def _handlePacket(self, sok):
         packet, remote = sok.recvfrom(2048)
         if type(self) is TcpPacketListener:
             while True:
                 data = sok.recv(2048)
-                if data == '':
+                if data == b'':
                     break
                 packet += data
         if remote is None:
             remote = sok.getpeername()
         try:
-            self._processPacket(packet, remote)
+            self._processPacket(packet.decode(), remote)
         finally:
             self.transmissionDone(sok)
 
