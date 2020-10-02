@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Components"
@@ -41,4 +41,4 @@ class DrilldownQueries(Observable):
                     raise ValueError("x-drilldown-query format should be field=value")
                 drilldownQueries.append((field.strip(), [value.strip()]))
         response = yield self.any.executeQuery(extraArguments=extraArguments, drilldownQueries=drilldownQueries, **kwargs)
-        raise StopIteration(response)
+        return response

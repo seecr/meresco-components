@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
 #
@@ -73,5 +73,5 @@ class DrilldownQueriesTest(SeecrTestCase):
 
 
 def mockExecuteQuery(**kwargs):
-    raise StopIteration('result')
+    return 'result'
     yield

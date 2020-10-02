@@ -4,7 +4,7 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -79,13 +79,15 @@ class DirectoryWatcherTest(SeecrTestCase):
     def testNotifyOnCreateAndModifyFile(self):
         changedFiles = []
         dw = DirectoryWatcher(self.tempdir, lambda f: changedFiles.append(f), CreateFile=True, ModifyFile=True)
-        open(join(self.tempdir, 'createmodifytest'), 'w').close()
-        
+        with open(join(self.tempdir, 'createmodifytest'), 'w') as fp:
+            pass
+
         dw()
         self.assertEqual(1, len(changedFiles))
         self.assertEqual('createmodifytest', changedFiles[0].name)
 
-        open(join(self.tempdir, 'createmodifytest'), 'a').write('test')
+        with open(join(self.tempdir, 'createmodifytest'), 'a') as fp:
+            fp.write('test')
         dw()
         self.assertEqual(2, len(changedFiles))
         self.assertEqual('createmodifytest', changedFiles[1].name)
