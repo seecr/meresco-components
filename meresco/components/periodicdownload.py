@@ -141,7 +141,7 @@ class PeriodicDownload(Observable):
     def _processOne(self):
         additionalHeaders = {'Host': self._host} if self._host else {}
         if self._compress:
-            additionalHeaders['Accept-Encoding'] = ', '.join(sorted(SUPPORTED_COMPRESSION_CONTENT_ENCODINGS.keys()))
+            additionalHeaders['Accept-Encoding'] = ', '.join(sorted([each.decode() for each in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS.keys()]))
         request = self.call.buildRequest(additionalHeaders=additionalHeaders)
         proxyServer = None
         if type(request) is dict:
@@ -159,14 +159,14 @@ class PeriodicDownload(Observable):
             return
         self._sok = yield self._tryConnect(host, port, proxyServer=proxyServer)
         try:
-            yield self._quickOrAsyncSend(self._sok, requestString)
+            yield self._quickOrAsyncSend(self._sok, requestString.encode())
             self._reactor.addReader(self._sok, self._currentProcess.__next__, prio=self._prio)
             responses = []
             try:
                 while True:
                     yield
                     response = self._sok.recv(4096)
-                    if response == '':
+                    if response == b'':
                          break
                     responses.append(response)
             finally:
@@ -189,8 +189,8 @@ class PeriodicDownload(Observable):
             self._sok.close()
             self._sok = None
 
+        _response = topErrorResponse = b''.join(responses)
         try:
-            _response = topErrorResponse = ''.join(responses)
             (statusAndHeaders, body), error = parseHttpResponse(response=_response)
             if error:
                 yield self._retryAfterError(message=error, request=requestString, retryAfter=self._retryAfterErrorTime)
@@ -207,7 +207,7 @@ class PeriodicDownload(Observable):
                 return
             body = decompressedBody
 
-            topErrorResponse = _httpErrorStr(statusAndHeaders, body)
+            topErrorResponse = _httpErrorStr(statusAndHeaders, body).encode()
             self._reactor.addProcess(self._currentProcess.__next__)
             yield
             try:
@@ -225,7 +225,7 @@ class PeriodicDownload(Observable):
             raise
         except Exception:
             message = format_exc()
-            message += 'Error while processing response: ' + _shorten(topErrorResponse)
+            message += 'Error while processing response: ' + _shorten(topErrorResponse.decode())
             self._logError(message, request=requestString)
         self._errorState = None
         self._startTimer()
@@ -288,7 +288,7 @@ class PeriodicDownload(Observable):
             except Exception as e:
                 yield self._retryAfterError(str(e), retryAfter=self._retryAfterErrorTime)
                 return
-        raise StopIteration(sok)
+        return sok
 
     def _quickOrAsyncSend(self, sok, data):
         size = sok.send(data)
@@ -389,6 +389,10 @@ def parseHttpResponse(response):
     body = response[_match.end():]  # Slice can result in an empty string
 
     statusAndHeaders = _match.groupdict()
+    for key, value in statusAndHeaders.items():
+        if key == '_headers':
+            continue
+        statusAndHeaders[key] = value.decode()
     _headers = parseHeaders(statusAndHeaders['_headers'])
     del statusAndHeaders['_headers']
     statusAndHeaders['Headers'] = _headers
@@ -400,7 +404,7 @@ def checkStatusCode200(statusAndHeaders, body):
     return None
 
 def maybeDecompressBody(compress, statusAndHeaders, body):
-    contentEncoding = statusAndHeaders['Headers'].get('Content-Encoding')
+    contentEncoding = statusAndHeaders['Headers'].get(b'Content-Encoding')
     if compress and contentEncoding is not None:
         contentEncoding = parseContentEncoding(contentEncoding)
         if len(contentEncoding) != 1 or contentEncoding[0] not in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS:
@@ -409,7 +413,7 @@ def maybeDecompressBody(compress, statusAndHeaders, body):
         contentEncoding = contentEncoding[0]
         decodeRequestBody = SUPPORTED_COMPRESSION_CONTENT_ENCODINGS[contentEncoding]['decode']()
         body = decodeRequestBody.decompress(body) + decodeRequestBody.flush()
-    return body, None
+    return body.decode(), None
 
 def _httpErrorStr(statusAndHeaders, body):
     return '\nStatus code and headers:\n{0}\nBody:\n{1}'.format(JsonDict(statusAndHeaders).pretty_print(), _shorten(body))
@@ -418,6 +422,6 @@ MAX_LENGTH=1500
 def _shorten(response):
     if len(response) < MAX_LENGTH:
         return response
-    headLength = 2*MAX_LENGTH/3
+    headLength = 2*MAX_LENGTH // 3
     tailLength = MAX_LENGTH - headLength
-    return "%s ... %s" % (response[:headLength], response[-tailLength:])
+    return response[:headLength] + " ... " + response[-tailLength:]

@@ -106,7 +106,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[1].args[1]
             callback() # HTTP GET
             sleep(0.01)
-            self.assertEqual("GET", msgs[0][:3])
+            self.assertEqual(b"GET", msgs[0][:3])
             self.assertEqual('removeWriter', reactor.calledMethods[2].name)
             self.assertEqual('addReader', reactor.calledMethods[3].name)
             self.assertEqual(0, reactor.calledMethods[3].kwargs['prio'])
@@ -127,13 +127,13 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback()
             self.assertReactorStateClean(reactor)
 
-    def xtestRequestContentEncoded_Compressed_Response_Succes_NotEmpty(self):
-        def xtest():
+    def testRequestContentEncoded_Compressed_Response_Succes_NotEmpty(self):
+        def test():
             ## Prepare
             text = 'Hello ' * 10
             compressor = deflateCompress()
-            compressedText = compressor.compress(text) + compressor.flush()
-            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
+            compressedText = compressor.compress(text.encode()) + compressor.flush()
+            response = b'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -156,18 +156,18 @@ class PeriodicDownloadTest(SeecrTestCase):
                         },
                     }),
                     (buildRequestMethod.args, buildRequestMethod.kwargs))
-                self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
                 self.assertEqual(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
 
         asProcess(test())
 
-    def xtestRequestContentEncoded_Compressed_Response_Succes_Empty(self):
-        def xtest():
+    def testRequestContentEncoded_Compressed_Response_Succes_Empty(self):
+        def test():
             ## Prepare
             text = ''
             compressor = deflateCompress()
-            compressedText = compressor.compress(text) + compressor.flush()
-            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
+            compressedText = compressor.compress(text.encode()) + compressor.flush()
+            response = b'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + compressedText
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -190,17 +190,17 @@ class PeriodicDownloadTest(SeecrTestCase):
                         },
                     }),
                     (buildRequestMethod.args, buildRequestMethod.kwargs))
-                self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
                 self.assertEqual(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
 
         asProcess(test())
 
-    def xtestRequestContentEncoded_Compressed_Response_NotHonored(self):
+    def testRequestContentEncoded_Compressed_Response_NotHonored(self):
         # Server refusing to compress it's response (whatever; uncompressed works too).
-        def xtest():
+        def test():
             ## Prepare
             text = 'Hello ' * 10
-            response = 'HTTP/1.0 200 OK\r\n\r\n' + text  # No Content-Encoding header sent back (means server said no-can-do).
+            response = b'HTTP/1.0 200 OK\r\n\r\n' + text.encode()  # No Content-Encoding header sent back (means server said no-can-do).
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                 observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -223,17 +223,17 @@ class PeriodicDownloadTest(SeecrTestCase):
                         },
                     }),
                     (buildRequestMethod.args, buildRequestMethod.kwargs))
-                self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
                 self.assertEqual(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
 
         asProcess(test())
 
-    def xtestRequestNormal_ContentEncoded_Compressed_Response_NotProcessed(self):
+    def testRequestNormal_ContentEncoded_Compressed_Response_NotProcessed(self):
         # At buildRequest-time Accept-Encoding added (not requested by PeriodicDownload - compress=False) - so let it be interpreted & processed by someone else too.
-        def xtest():
+        def test():
             ## Prepare
             text = 'EncodedBody ' * 10
-            response = 'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + text
+            response = b'HTTP/1.0 200 OK\r\nContent-Encoding: deflate\r\n\r\n' + text.encode()
             with server([response]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
                 def mockBuildRequest(additionalHeaders):
@@ -259,18 +259,18 @@ class PeriodicDownloadTest(SeecrTestCase):
                         },
                     }),
                     (buildRequestMethod.args, buildRequestMethod.kwargs))
-                self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
                 self.assertEqual(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
 
         asProcess(test())
 
-    def xtestRequestNormal_ContentEncoded_Otherwise_Response_NotProcessed(self):
+    def testRequestNormal_ContentEncoded_Otherwise_Response_NotProcessed(self):
         # At buildRequest-time Accept-Encoding added (not requested by PeriodicDownload - compress=False) - so let it be interpreted & processed by someone else too.
-        def xtest():
+        def test():
             ## Prepare
             text = 'EncodedBody ' * 10
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: what, ever\r\n\r\n' + text
-            with server([response]) as (port, msgs):
+            with server([response.encode()]) as (port, msgs):
                 downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=False)
                 def mockBuildRequest(additionalHeaders):
                     self.assertEqual({'Host': '127.0.0.1'}, additionalHeaders)
@@ -295,18 +295,18 @@ class PeriodicDownloadTest(SeecrTestCase):
                         },
                     }),
                     (buildRequestMethod.args, buildRequestMethod.kwargs))
-                self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: no, what, ever, idea\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: no, what, ever, idea\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
                 self.assertEqual(((), {'data': text}), (handleMethod.args, handleMethod.kwargs))
 
         asProcess(test())
 
-    def xtestRequestContentEncoded_Compressed_Response_WrongContentEncoded(self):
+    def testRequestContentEncoded_Compressed_Response_WrongContentEncoded(self):
         # weird, log error.
-        def xtest():
+        def test():
             ## Prepare
             text = 'Ignored In This Test.'
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: evilbadwrong\r\n\r\n' + text
-            with server([response]) as (port, msgs):
+            with server([response.encode()]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -329,19 +329,19 @@ class PeriodicDownloadTest(SeecrTestCase):
                             },
                         }),
                         (buildRequestMethod.args, buildRequestMethod.kwargs))
-                    self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                    self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
 
                     self.assertTrue('Unexpected header content (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
                     self.assertTrue('"Content-Encoding": "evilbadwrong"' in err.getvalue(), err.getvalue())
 
         asProcess(test())
 
-    def xtestRequestContentEncoded_Compressed_Response_NotHttp(self):
+    def testRequestContentEncoded_Compressed_Response_NotHttp(self):
         # weird, log error.
-        def xtest():
+        def test():
             ## Prepare
             response = 'NOT HTTP'
-            with server([response]) as (port, msgs):
+            with server([response.encode()]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -361,13 +361,13 @@ class PeriodicDownloadTest(SeecrTestCase):
 
         asProcess(test())
 
-    def xtestRequestContentEncoded_Compressed_Response_MultipleContentEncoded(self):
+    def testRequestContentEncoded_Compressed_Response_MultipleContentEncoded(self):
         # Not supported, log error.
-        def xtest():
+        def test():
             ## Prepare
             text = 'Ignored In This Test.'
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: pixiedust, gzip\r\n\r\n' + text
-            with server([response]) as (port, msgs):
+            with server([response.encode()]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -390,21 +390,20 @@ class PeriodicDownloadTest(SeecrTestCase):
                             },
                         }),
                         (buildRequestMethod.args, buildRequestMethod.kwargs))
-                    self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                    self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
 
                     self.assertTrue('Unexpected header content (Bad Content-Encoding):' in err.getvalue(), err.getvalue())
                     self.assertTrue('"Content-Encoding": "pixiedust, gzip"' in err.getvalue(), err.getvalue())
 
         asProcess(test())
 
-    def xtestRequestContentEncoded_Compressed_Response_MalformedBody(self):
+    def testRequestContentEncoded_Compressed_Response_MalformedBody(self):
         # weird, log error.
-        def xtest():
+        def test():
             ## Prepare
             text = 'NOT_GZIPPED ' * 10
-            compressor = deflateCompress()
             response = 'HTTP/1.0 200 OK\r\nContent-Encoding: gzip\r\n\r\n' + text
-            with server([response]) as (port, msgs):
+            with server([response.encode()]) as (port, msgs):
                 with stderr_replaced() as err:
                     downloader = PeriodicDownload(reactor=reactor(), host='127.0.0.1', port=port, schedule=Schedule(period=0.1), compress=True)
                     observer = CallTrace('Observer', methods={'handle': mockHandle, 'buildRequest': mockBuildRequest})
@@ -427,14 +426,14 @@ class PeriodicDownloadTest(SeecrTestCase):
                             },
                         }),
                         (buildRequestMethod.args, buildRequestMethod.kwargs))
-                    self.assertEqual(['GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
+                    self.assertEqual([b'GET / HTTP/1.0\r\nAccept-Encoding: deflate, gzip, x-deflate, x-gzip\r\nHost: 127.0.0.1\r\n\r\n'], msgs)
 
                     self.assertTrue('Error while processing response:' in err.getvalue(), err.getvalue())
                     self.assertTrue('NOT_GZIPPED' in err.getvalue(), err.getvalue())
 
         asProcess(test())
 
-    def xtestOneWithProxy(self):
+    def xxx_testOneWithProxy(self):
         request = []
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             proxyServer(port + 1, request)
@@ -472,14 +471,14 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEqual(1, len(request))
             self.assertReactorStateClean(reactor)
 
-    def xtestNoConnectionPossibleWithNonIntegerPort(self):
+    def testNoConnectionPossibleWithNonIntegerPort(self):
         downloader, observer, reactor = self._prepareDownloader("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
-        self.assertEqual("%s: an integer is required\n" % repr(downloader), downloader._err.getvalue())
+        self.assertEqual("%s: an integer is required (got type str)\n" % repr(downloader), downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
-    def xtestNoConnectionPossible(self):
+    def testNoConnectionPossible(self):
         downloader, observer, reactor = self._prepareDownloader("localhost", 8899)
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
@@ -498,7 +497,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEqual("addWriter", reactor.calledMethods[-1].name)
         self.assertEqual("%s: error in sockopt\n" % downloader, downloader._err.getvalue()) # remains 1 error
 
-    def xtestVerboseDeprecationWarning(self):
+    def testVerboseDeprecationWarning(self):
         with stderr_replaced() as s:
             PeriodicDownload(reactor='x', host='x', port='x')
             result = s.getvalue()
@@ -511,8 +510,8 @@ class PeriodicDownloadTest(SeecrTestCase):
                 result = s.getvalue()
                 self.assertTrue('DeprecationWarning: Verbose flag is deprecated' in result, result)
 
-    def xtestErrorResponse(self):
-        with server(['HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request']) as (port, msgs):
+    def testErrorResponse(self):
+        with server([b'HTTP/1.0 400 Error\r\nContent-Type: text/plain\r\n\r\nIllegal Request']) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = reactor.calledMethods[0].args[1]
             callback() # connect
@@ -528,7 +527,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEqual(['buildRequest'], [m.name for m in observer.calledMethods])
             self.assertReactorStateClean(reactor)
 
-    def xtestInvalidPortConnectionRefused(self):
+    def testInvalidPortConnectionRefused(self):
         downloader, observer, reactor = self._prepareDownloader("localhost", 88)
         callback = reactor.calledMethods[0].args[1]
         callback() # startProcess
@@ -540,7 +539,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEqual("%s: Connection to localhost:88 refused.\n" % downloader, downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
-    def xtestInvalidHost(self):
+    def testInvalidHost(self):
         strangeHost = "UEYR^$*FD(#>NDJ.khfd9.(*njnd.nl"
         downloader, observer, reactor = self._prepareDownloader(strangeHost, 88)
         callback = reactor.calledMethods[0].args[1]
@@ -553,7 +552,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertTrue(nameOrServiceNotKnown or noAddressAssociatedWithHost or temporaryFailureInNameResolution, downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
-    def xtestInvalidHostConnectionRefused(self):
+    def testInvalidHostConnectionRefused(self):
         downloader, observer, reactor = self._prepareDownloader("127.0.0.255", 9876)
         callback = reactor.calledMethods[0].args[1]
         callback() # startProcess
@@ -565,7 +564,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         self.assertEqual("addTimer", reactor.calledMethods[3].name)
         self.assertReactorStateClean(reactor)
 
-    def xtestSuccess(self):
+    def testSuccess(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEqual(1, downloader.getState().schedule.secondsFromNow())
@@ -585,7 +584,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEqual('addTimer', reactor.calledMethods[-1].name)
             self.assertReactorStateClean(reactor)
 
-    def xtestSuccessWithSuspend(self):
+    def testSuccessWithSuspend(self):
         suspendObject = Suspend()
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port, handleGenerator=(x for x in ['X', suspendObject]))
@@ -611,7 +610,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             self.assertEqual('addTimer', reactor.calledMethods[-1].name)
             self.assertReactorStateClean(reactor)
 
-    def xtestRaiseInHandle(self):
+    def testRaiseInHandle(self):
         def handleGenerator():
             yield 'first'
             raise Exception('xcptn')
@@ -623,7 +622,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback() # _processOne.next -> HTTP GET
             self.assertEqual('buildRequest', observer.calledMethods[0].name)
             sleep(0.01)
-            self.assertEqual(['GET /path?argument=value HTTP/1.0\r\n\r\n'], msgs) # message received, getting response
+            self.assertEqual([b'GET /path?argument=value HTTP/1.0\r\n\r\n'], msgs) # message received, getting response
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''; then addProcess
             callback() # first self.all.handle(data=body) -> 1st response
@@ -637,6 +636,10 @@ class PeriodicDownloadTest(SeecrTestCase):
             expected =  ignoreLineNumbers("""%s: Traceback (most recent call last):
   File "%%(periodicdownload.py)s", line 104, in _processOne
     for _response  in g:
+  File "[x]", line [#], in _compose
+    raise exception[1].with_traceback(exception[2])
+  File "[x]", line [#], in all
+    c, v, t = exc_info(); raise v.with_traceback(t.tb_next)
   File "%%(__file__)s", line 243, in handleGenerator
     raise Exception('xcptn')
 Exception: xcptn
@@ -657,7 +660,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertEqual('addTimer', reactor.calledMethods[-1].name)
             self.assertReactorStateClean(reactor)
 
-    def xtestAssertionErrorReraised(self):
+    def testAssertionErrorReraised(self):
         with server([RESPONSE_TWO_RECORDS]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             def raiseAssertionError(*args, **kwargs):
@@ -678,8 +681,8 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             except AssertionError as e:
                 self.assertEqual('Somewhat but not quite unexpected: True not equal to False', str(e))
 
-    def xtestSuccessHttp1dot1Server(self):
-        with server([STATUSLINE_ALTERNATIVE + ONE_RECORD]) as (port, msgs):
+    def testSuccessHttp1dot1Server(self):
+        with server([STATUSLINE_ALTERNATIVE.encode() + ONE_RECORD.encode()]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = self.doConnect()
             callback() # HTTP GET
@@ -694,8 +697,8 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback()
             self.assertReactorStateClean(reactor)
 
-    def xtestPeriod(self):
-        with server([RESPONSE_TWO_RECORDS, 'HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
+    def testPeriod(self):
+        with server([RESPONSE_TWO_RECORDS, b'HTTP/1.0 400 Error\r\n\r\nIllegal Request']) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port, period=2)
             callback = self.doConnect()
             callback() # HTTP GET
@@ -723,7 +726,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertEqual(30, reactor.calledMethods[-1].args[0])
             self.assertReactorStateClean(reactor)
 
-    def xtestRecoveringAfterDroppedConnection(self):
+    def testRecoveringAfterDroppedConnection(self):
         with server([DROP_CONNECTION, RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = self.doConnect()
@@ -737,7 +740,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback = reactor.calledMethods[-1].args[1]
             callback() # _processOne.next -> HTTP GET
             sleep(0.01)
-            self.assertEqual("GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
+            self.assertEqual(b"GET /path?argument=value HTTP/1.0\r\n\r\n", msgs[0])
             callback() # _processOne.next -> sok.recv
             callback() # _processOne.next -> recv = ''
             callback() # _processOne.next -> addProcess
@@ -745,7 +748,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback()
             self.assertReactorStateClean(reactor)
 
-    def xtestDriver(self):
+    def testDriver(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEqual(1, reactor.calledMethods[0].args[0])
@@ -767,25 +770,25 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertEqual('removeProcess', reactor.calledMethods[6].name)
             self.assertReactorStateClean(reactor)
 
-    def xtestShortenErrorMessage(self):
+    def testShortenErrorMessage(self):
         from meresco.components.periodicdownload import _shorten
         longMessage = "a"*100000
-        self.assertTrue(len(_shorten(longMessage)) < len(longMessage)/10)
+        self.assertTrue(len(_shorten(longMessage)) < len(longMessage)//10)
 
-    def xtestAutoStartOff(self):
+    def testAutoStartOff(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, 'host', 12345, autoStart=False)
         downloader.observer_init()
         self.assertEqual([], reactor.calledMethodNames())
 
-    def xtestHostAndPortRequiredUnlessAutostartFalse(self):
+    def testHostAndPortRequiredUnlessAutostartFalse(self):
         reactor = CallTrace("reactor")
         self.assertRaises(ValueError, lambda: PeriodicDownload(reactor))
         self.assertRaises(ValueError, lambda: PeriodicDownload(reactor, host='example.com'))
         self.assertRaises(ValueError, lambda: PeriodicDownload(reactor, port=123))
         PeriodicDownload(reactor, autoStart=False)
 
-    def xtestRepr(self):
+    def testRepr(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, autoStart=False)
         self.assertEqual("PeriodicDownload(schedule=Schedule(period=1))", repr(downloader))
@@ -795,7 +798,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader = PeriodicDownload(reactor, name="theName", autoStart=False)
         self.assertEqual("PeriodicDownload(name='theName', schedule=Schedule(period=1))", repr(downloader))
 
-    def xtestResumeDuringSuspend(self):
+    def testResumeDuringSuspend(self):
         reactor = Reactor()
         stepping = [True]
         def uit():
@@ -808,7 +811,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 yield 'ignore'
 
         err = StringIO()
-        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*20, sleepWhile=lambda: suspended[0]) as (port, msgs):
+        with server([b"HTTP/1.0 200 OK\r\n\r\nmessage"]*20, sleepWhile=lambda: suspended[0]) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.01), err=err)
             observer = CallTrace(methods={'handle': handle}, returnValues={'buildRequest': 'request'}, emptyGeneratorMethods=['handle'])
             dna = be(
@@ -828,7 +831,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 reactor.step()
         self.assertFalse('Process is already in processes' in err.getvalue())
 
-    def xtestPauseResume(self):
+    def testPauseResume(self):
         reactor = Reactor()
         stepping = [True]
         def uit():
@@ -851,7 +854,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return
                 yield
 
-        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*5) as (port, msgs):
+        with server([b"HTTP/1.0 200 OK\r\n\r\nmessage"]*5) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.1), err=StringIO())
             dna = be(
             (Observable(),
@@ -866,7 +869,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             reactor.addTimer(1, lambda: dna.call.resume())
             while stepping[0]:
                 reactor.step()
-            self.assertEqual('message', urlopen('http://127.0.0.1:%s/request' % port).read())
+            self.assertEqual(b'message', urlopen('http://127.0.0.1:%s/request' % port).read())
         self.assertEqual([
             ('0.1s', 'message'),
             ('0.2s', 'message'),
@@ -876,7 +879,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             'PAUSE',
             ], receivedData)
 
-    def xtestPauseResumeWithError(self):
+    def testPauseResumeWithError(self):
         reactor = Reactor()
         stepping = [True]
         def uit():
@@ -900,7 +903,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return
                 yield
 
-        with server(["HTTP/1.0 200 OK\r\n\r\nmessage"]*4) as (port, msgs):
+        with server([b"HTTP/1.0 200 OK\r\n\r\nmessage"]*4) as (port, msgs):
             download = PeriodicDownload(reactor, '127.0.0.1', port, schedule=Schedule(period=0.1), err=StringIO())
             dna = be(
             (Observable(),
@@ -915,7 +918,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             reactor.addTimer(1, lambda: dna.call.resume())
             while stepping[0]:
                 reactor.step()
-            self.assertEqual('message', urlopen('http://127.0.0.1:%s/request' % port).read())
+            self.assertEqual(b'message', urlopen('http://127.0.0.1:%s/request' % port).read())
         self.assertEqual([
             ('0.1s', 'message'),
             ('0.2s', 'message'),
@@ -924,7 +927,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             'PAUSE',
             ], receivedData)
 
-    def xtestResumeAfterDroppedConnectionPauseAndRefusedConnection(self):
+    def testResumeAfterDroppedConnectionPauseAndRefusedConnection(self):
         with server([DROP_CONNECTION]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             callback = self.doConnect()
@@ -941,7 +944,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         callback() # startProcess
         self.assertEqual('addWriter', reactor.calledMethods[-1].name)
         callback = reactor.calledMethods[-1].args[1]
-        downloader._err.truncate(0)
+        downloader._err = StringIO()
         callback()
         self.assertEqual('removeWriter', reactor.calledMethods[-1].name)
         self.assertEqual("%s: Connection to localhost:11111 refused.\n" % repr(downloader), downloader._err.getvalue())
@@ -951,7 +954,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             downloader.resume()
             self.assertEqual('addTimer', reactor.calledMethods[-1].name)
 
-    def xtestGetState(self):
+    def testGetState(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, 'host', 12345, name='theName')
         s = downloader.getState()
@@ -972,7 +975,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 
         self.assertEqual([], reactor.calledMethodNames())
 
-    def xtestSetDownloadAddress(self):
+    def testSetDownloadAddress(self):
         reactor = CallTrace("reactor")
         downloader = PeriodicDownload(reactor, host=None, port=None, autoStart=False)
         downloader.setDownloadAddress(host='host', port=12345)
@@ -1017,7 +1020,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             callback()
             self.assertReactorStateClean(reactor)
 
-    def xtestSetPeriod(self):
+    def testSetPeriod(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)
             self.assertEqual('addTimer', reactor.calledMethods[0].name)
@@ -1044,14 +1047,14 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             self.assertEqual('addTimer', reactor.calledMethods[-1].name)
             self.assertEqual(42, reactor.calledMethods[-1].args[0])
 
-    def xtestSetRetryAfterErrorTime(self):
+    def testSetRetryAfterErrorTime(self):
         pd = PeriodicDownload(reactor='ignored', autoStart=False)
         self.assertEqual(30, pd.getState().retryAfterErrorTime)
 
         pd.setRetryAfterErrorTime(seconds=10)
         self.assertEqual(10, pd.getState().retryAfterErrorTime)
 
-    def xtestSendOnClosedSocketRetries(self):
+    def testSendOnClosedSocketRetries(self):
         sok = socket()
         sok.close()
         reactor = CallTrace('reactor')
@@ -1059,13 +1062,13 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
         def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(sok)
+            return sok
             yield
         downloader._tryConnect = mockTryConnect
         list(compose(downloader._processOne()))
         self.assertEqual(['addTimer'], reactor.calledMethodNames())
 
-    def xtestHalfClosedSocketAfterTryConnectResultsInEmptyData(self):
+    def testHalfClosedSocketAfterTryConnectResultsInEmptyData(self):
         # Kindof odd, but tests try/except around clientSocket.shutdown()
         # which gives an ENOTCONN / Transport endpoint is not connected.
         sokClient = socket()
@@ -1097,7 +1100,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         downloader.addObserver(observer)
         def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(sokClient)
+            return sokClient
             yield
         downloader._tryConnect = mockTryConnect
         processOne = downloader._processOne()
@@ -1105,7 +1108,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         consume(processOne)
         self.assertEqual(['addReader', 'removeReader', 'addTimer'], reactor.calledMethodNames())
 
-    def xtestSocketNotShutdownForWriteAfterWriteDone(self):
+    def testSocketNotShutdownForWriteAfterWriteDone(self):
         # A.k.a don't send TCP FIN until HTTP Request finished please ;-)
         client, server = socketpair(AF_UNIX)
         client.setblocking(0)
@@ -1117,7 +1120,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return 'small request'
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(client)
+            return client
             yield
         downloader._tryConnect = mockTryConnect
         downloader._currentProcess = compose(downloader._processOne())
@@ -1126,7 +1129,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         next(downloader._currentProcess)
         self.assertEqual(['addReader'], reactor.calledMethodNames())
         sleep(0.01)
-        self.assertEqual('small request', server.recv(4096))
+        self.assertEqual(b'small request', server.recv(4096))
 
         sleep(0.01)
         try:
@@ -1142,7 +1145,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
 
-    def xtestShortRequestSendWithoutReactor(self):
+    def testShortRequestSendWithoutReactor(self):
         client, server = socketpair(AF_UNIX)
         client.setblocking(0)
         reactor = CallTrace()
@@ -1152,7 +1155,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return 'small request'
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(client)
+            return client
             yield
         downloader._tryConnect = mockTryConnect
         downloader._currentProcess = compose(downloader._processOne())
@@ -1160,22 +1163,22 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 
         next(downloader._currentProcess)
         self.assertEqual(['addReader'], reactor.calledMethodNames())
-        self.assertEqual('small request', server.recv(4096))
+        self.assertEqual(b'small request', server.recv(4096))
 
         reactor.calledMethods.reset()
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
 
-    def xtestReallyLargeRequestSendWithReactor(self):
+    def xxx_testReallyLargeRequestSendWithReactor(self):
         def readall():
             data = None
             count = 0
-            while data != '':
+            while data != b'':
                 try:
                     data = server.recv(4096)
                     count += 1
-                except SocketError as xxx_todo_changeme:
-                    (errno, msg) = xxx_todo_changeme.args
+                except SocketError as e:
+                    (errno, msg) = e.args
                     self.assertEqual(EAGAIN, errno)
                     break
             self.assertTrue(data)
@@ -1191,7 +1194,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
                 return ('x' * (256 * 1024))
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
         def mockTryConnect(host, port, proxyServer=None):
-            raise StopIteration(client)
+            return client
             yield
         downloader._tryConnect = mockTryConnect
         downloader._currentProcess = compose(downloader._processOne())
@@ -1218,7 +1221,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
 
-    def xtestNoBuildRequestSleeps(self):
+    def testNoBuildRequestSleeps(self):
         reactor = CallTrace('reactor')
         observer = CallTrace('observer', returnValues={'buildRequest': None})
         downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
@@ -1227,7 +1230,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         downloader._startProcess()
         self.assertEqual(['addTimer'], reactor.calledMethodNames())
 
-    def xtestUseBuildRequestHostAndPort(self):
+    def testUseBuildRequestHostAndPort(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             reactor = CallTrace('reactor')
             observer = CallTrace('observer', returnValues={'buildRequest': dict(host='localhost', port=port, request='GET /path HTTP/1.0\r\n\r\n')}, emptyGeneratorMethods=['handle'])
@@ -1252,7 +1255,10 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         self._downloader = PeriodicDownload(self._reactor, host, port, schedule=Schedule(period=period), prio=0, err=StringIO())
         self._observer = CallTrace("observer", methods={'handle': lambda data: handleGenerator})
         if proxyServer:
-            self._observer.returnValues["buildRequest"] = dict(request="GET /path?argument=value HTTP/1.0\r\n\r\n", host=host, port=port, proxyServer=proxyServer)
+            self._observer.returnValues["buildRequest"] = dict(
+                request="GET /path?argument=value HTTP/1.0\r\n\r\n",
+                host=host, port=port,
+                proxyServer=proxyServer)
         else:
             self._observer.returnValues["buildRequest"] = "GET /path?argument=value HTTP/1.0\r\n\r\n"
         self._downloader.addObserver(self._observer)
@@ -1284,8 +1290,8 @@ EMBEDDED_RECORD = '<record>ignored</record>'
 BODY = """<aap:noot xmlns:aap="mies">%s</aap:noot>"""
 ONE_RECORD = BODY % (EMBEDDED_RECORD)
 TWO_RECORDS = BODY % (EMBEDDED_RECORD * 2)
-RESPONSE_ONE_RECORD = STATUSLINE + ONE_RECORD
-RESPONSE_TWO_RECORDS = STATUSLINE + TWO_RECORDS
+RESPONSE_ONE_RECORD = (STATUSLINE + ONE_RECORD).encode()
+RESPONSE_TWO_RECORDS = (STATUSLINE + TWO_RECORDS).encode()
 
 def _dunderFile(): pass
 fileDict = {
