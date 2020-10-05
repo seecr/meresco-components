@@ -25,6 +25,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.calltrace import TracedCall
 from seecr.test.io import stderr_replaced
 
 from types import GeneratorType
@@ -252,7 +253,11 @@ class PeriodicCallTest(SeecrTestCase):
             self.assertEqual(['removeProcess', 'addTimer'], self.reactor.calledMethodNames())
 
     def testHandleWithCallableAndData(self):
-        suspend = CallTrace('Suspend', returnValues={'__call__': lambda *a, **kw: None})
+        class MockSuspend(CallTrace):
+            def __call__(this, *args, **kwargs):
+                TracedCall("__call__", this)(*args, **kwargs)
+                return None
+        suspend = MockSuspend('Suspend')
         handleLog = []
         def handle():
             handleLog.append('ignored-da')
