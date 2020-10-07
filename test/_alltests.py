@@ -88,19 +88,19 @@ from xmlxpathtest import XmlXPathTest
 from xpath2fieldtest import XPath2FieldTest
 from xsltcrosswalktest import XsltCrosswalkTest
 
-#from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
+from cql.searchtermfilterandmodifiertest import SearchTermFilterAndModifierTest
 
-#from autocomplete.autocompletetest import AutocompleteTest
+from autocomplete.autocompletetest import AutocompleteTest
 
-#from drilldown.srufielddrilldowntest import SruFieldDrilldownTest
-#from drilldown.srutermdrilldowntest import SruTermDrilldownTest
-#from drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
+from drilldown.srufielddrilldowntest import SruFieldDrilldownTest
+from drilldown.srutermdrilldowntest import SruTermDrilldownTest
+from drilldown.translatedrilldownfieldnamestest import TranslateDrilldownFieldnamesTest
 
-#from _http.apacheloggertest import ApacheLoggerTest
-#from _http.argumentsinsessiontest import ArgumentsInSessionTest
-#from _http.basicauthenticationtest import BasicAuthenticationTest
-#from _http.basichttphandlertest import BasicHttpHandlerTest
-#from _http.deproxytest import DeproxyTest
+from _http.apacheloggertest import ApacheLoggerTest
+from _http.argumentsinsessiontest import ArgumentsInSessionTest
+from _http.basicauthenticationtest import BasicAuthenticationTest
+from _http.basichttphandlertest import BasicHttpHandlerTest
+from _http.deproxytest import DeproxyTest
 #from _http.fileservertest import FileServerTest
 #from _http.handlerequestfiltertest import HandleRequestFilterTest
 #from _http.httpclienttest import HttpClientTest

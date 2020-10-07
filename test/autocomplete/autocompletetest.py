@@ -70,7 +70,7 @@ class AutocompleteTest(SeecrTestCase):
         response.total = 2
         response.qtime = 5
         def prefixSearch(**kwargs):
-            raise StopIteration(response)
+            return response
             yield
         self.observer.methods['prefixSearch'] = prefixSearch
 
@@ -87,7 +87,7 @@ class AutocompleteTest(SeecrTestCase):
         response.total = 2
         response.qtime = 5
         def prefixSearch(**kwargs):
-            raise StopIteration(response)
+            return response
             yield
         self.observer.methods['prefixSearch'] = prefixSearch
 
@@ -118,7 +118,7 @@ class AutocompleteTest(SeecrTestCase):
         response.total = 2
         response.qtime = 5
         def prefixSearch(**kwargs):
-            raise StopIteration(response)
+            return response
             yield
         self.observer.methods['prefixSearch'] = prefixSearch
 

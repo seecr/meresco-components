@@ -46,9 +46,9 @@ class SruFieldDrilldownTest(SeecrTestCase):
         def executeQuery(**kwargs):
             if not firstCall:
                 firstCall.append(True)
-                raise StopIteration(Response(total=5, hits=list(range(5))))
+                return Response(total=5, hits=list(range(5)))
             else:
-                raise StopIteration(Response(total=10, hits=list(range(10))))
+                return Response(total=10, hits=list(range(10)))
             yield
         sruFieldDrilldown = SruFieldDrilldown()
         observer = CallTrace("observer")
@@ -69,7 +69,7 @@ class SruFieldDrilldownTest(SeecrTestCase):
         adapter = SruFieldDrilldown()
         observer = CallTrace("Observer")
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=16, hits=list(range(16))))
+            return Response(total=16, hits=list(range(16)))
             yield
         observer.methods['executeQuery'] = executeQuery
         adapter.addObserver(observer)

@@ -57,7 +57,7 @@ class SruFieldDrilldown(Observable):
             cqlString = '(%s) AND %s=%s' % (query, field, term)
             response = yield self.any.executeQuery(query=cqlToExpression(cqlString))
             drilldownResult.append((field, response.total))
-        raise StopIteration(drilldownResult)
+        return drilldownResult
 
     @decorateWith(DRILLDOWN_HEADER, DRILLDOWN_FOOTER)
     def echoedExtraRequestData(self, sruArguments, **kwargs):

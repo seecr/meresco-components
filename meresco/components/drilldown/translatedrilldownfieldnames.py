@@ -50,7 +50,7 @@ class TranslateDrilldownFieldnames(Transparent):
         if hasattr(response, 'drilldownData'):
             response.drilldownData = [self._reverseTranslateFacet(facet, reverseLookup) \
                     for facet in response.drilldownData]
-        raise StopIteration(response)
+        return response
 
     def _translateFacet(self, facet, reverseLookup):
         translatedFacet = facet.copy()

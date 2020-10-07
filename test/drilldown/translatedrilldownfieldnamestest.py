@@ -48,7 +48,7 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                 for facet in facets:
                     if isinstance(facet, dict):
                         self.response.drilldownData.append({'fieldname': facet['fieldname'], 'terms':[{'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2}]})
-            raise StopIteration(self.response)
+            return self.response
             yield
         self.observer = CallTrace('observer', methods={'executeQuery': executeQuery}, emptyGeneratorMethods=['someMethod'])
 

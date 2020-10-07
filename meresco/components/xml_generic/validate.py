@@ -42,7 +42,8 @@ class Validate(Observable):
     def __init__(self, schemaPath):
         Observable.__init__(self)
         try:
-            self._schema = XMLSchema(parse(open(schemaPath)))
+            with open(schemaPath) as fp:
+                self._schema = XMLSchema(parse(fp))
         except XMLSchemaParseError as e:
             print(e.error_log.last_error)
             raise
@@ -85,7 +86,7 @@ class Validate(Observable):
             raise exception
 
     def assertValid(self, xmlOrString):
-        toValidate = XML(xmlOrString) if isinstance(xmlOrString, str) else xmlOrString
+        toValidate = XML(xmlOrString.encode('utf-8')) if isinstance(xmlOrString, str) else xmlOrString
         self._schema.validate(toValidate)
         if self._schema.error_log:
             raise AssertionError(formatException(self._schema, toValidate))

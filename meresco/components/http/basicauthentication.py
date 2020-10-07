@@ -53,15 +53,15 @@ class BasicAuthentication(Observable):
         if len(parts) != 2:
             return None
         part0, b64encoded = parts
-        if part0 != "Basic":
+        if part0 != b"Basic":
             return None
 
-        parts = b64decode(b64encoded).split(":", 1)
+        parts = b64decode(b64encoded).split(b":", 1)
         if len(parts) != 2:
             return None
         username, password = parts
 
-        return username, password
+        return username.decode(), password.decode()
 
 REQUEST_AUTHENTICATION_RESPONSE = '\r\n'.join(
     [
