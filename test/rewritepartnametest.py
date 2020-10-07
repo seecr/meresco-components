@@ -67,7 +67,7 @@ class RewritePartnameTest(TestCase):
 
     def testRetrieveDataPartname(self):
         def retrieveData(**kwargs):
-            raise StopIteration('data')
+            return 'data'
             yield
         observable = Observable()
         observer = CallTrace('observer', methods={'retrieveData': retrieveData})

@@ -1,4 +1,3 @@
-# -*- coding=utf-8 -*-
 ## begin license ##
 #
 # "Meresco Components" are components to build searchengines, repositories
@@ -78,7 +77,7 @@ class XmlPumpTest(SeecrTestCase):
             self.assertEqualsLxml(XML(xmlString), xmlNode)
 
     def testParseWithElementStringResult(self):
-        xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""")
+        xmlString = _ElementStringResult("""<tag><content>contents</content></tag>""", "utf-8")
         self.observable.do.add(identifier="id", partname="partName", data=xmlString)
 
         self.assertEqual(1, len(self.observer.calledMethods))
@@ -174,7 +173,7 @@ class XmlPumpTest(SeecrTestCase):
 
         observable.do.something('identifier', 'partname', parse(StringIO('<a/>')))
         self.assertEqual(1, len(observer.calledMethods))
-        self.assertEqual("<type 'lxml.etree._ElementTree'>", str(type(observer.calledMethods[0].args[2])))
+        self.assertEqual("<class 'lxml.etree._ElementTree'>", str(type(observer.calledMethods[0].args[2])))
 
     def testFileParseLxml(self):
         observable = Observable()
@@ -183,18 +182,16 @@ class XmlPumpTest(SeecrTestCase):
         observable.addObserver(p)
         p.addObserver(observer)
         a = StringIO('<a>aaa</a>')
-        f = open(self.tempfile, 'w')
-        f.write('<b>bbb</b>')
-        f.close()
-        b = open(self.tempfile)
-
         observable.do.someMessage(filedata=a)
         lxmlA = observer.calledMethods[0].kwargs['lxmlNode']
         self.assertEqual('<a>aaa</a>', lxmltostring(lxmlA))
 
-        observable.do.someMessage(filedata=b)
-        lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
-        self.assertEqual('<b>bbb</b>', lxmltostring(lxmlB))
+        with open(self.tempfile, 'w') as f:
+            f.write('<b>bbb</b>')
+        with open(self.tempfile) as b:
+            observable.do.someMessage(filedata=b)
+            lxmlB = observer.calledMethods[1].kwargs['lxmlNode']
+            self.assertEqual('<b>bbb</b>', lxmltostring(lxmlB))
 
     def testRenameKwargOnConvert(self):
         observer = CallTrace()
@@ -229,10 +226,10 @@ class XmlPumpTest(SeecrTestCase):
         xml = """<root><sub><subsub attribute="%s">%s</subsub></sub></root>""" % (uri, uri)
         lxmlNode = parse(StringIO(xml))
         subnode = lxmlNode.xpath("sub")[0]
-        self.assertEqual("""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode))
+        self.assertEqual(b"""<sub><subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub></sub>""", lxmltostring(subnode).encode('utf-8'))
         subsubnode = lxmlNode.xpath("sub/subsub")[0]
-        self.assertEqual("""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
-        self.assertEqual("""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode))
+        self.assertEqual(b"""<subsub attribute="Bah&#xE1;ma's">Bah\xc3\xa1ma's</subsub>""", tostring(subsubnode, encoding='UTF-8'))
+        self.assertEqual(b"""<subsub attribute="Bah\xc3\xa1ma's">Bah\xc3\xa1ma's</subsub>""", lxmltostring(subsubnode).encode('utf-8'))
 
 
     def testLxmltostringFixes(self):

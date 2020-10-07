@@ -42,4 +42,4 @@ class RewritePartname(Transparent):
         return self.call.getData(identifier=identifier, name=self._partname)
 
     def retrieveData(self, identifier, name):
-        raise StopIteration((yield self.any.retrieveData(identifier=identifier, name=self._partname)))
+        return (yield self.any.retrieveData(identifier=identifier, name=self._partname))

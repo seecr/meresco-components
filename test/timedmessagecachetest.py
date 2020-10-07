@@ -65,7 +65,7 @@ class TimedMessageCacheTest(SeecrTestCase):
 
     def testCacheAny(self):
         def someMessage(*args, **kwargs):
-            raise StopIteration('result')
+            return 'result'
             yield
         self.observer.methods['someMessage'] = someMessage
         result = retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
@@ -82,7 +82,7 @@ class TimedMessageCacheTest(SeecrTestCase):
 
     def testClearCache(self):
         def someMessage(*args, **kwargs):
-            raise StopIteration('result')
+            return 'result'
             yield
         self.observer.methods['someMessage'] = someMessage
         retval(self.dna.any.someMessage('arg', kwarg='kwarg'))
@@ -94,7 +94,7 @@ class TimedMessageCacheTest(SeecrTestCase):
     def testKeepValueInCaseOfError(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True)
         def someMessageResult(*args, **kwargs):
-            raise StopIteration('result')
+            return 'result'
             yield
         def someMessageError(*args, **kwargs):
             raise RuntimeError("could be any exception")
@@ -123,7 +123,7 @@ class TimedMessageCacheTest(SeecrTestCase):
     def testTimeoutExceptionNotHandledSpecially(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True)
         def someMessageResult(*args, **kwargs):
-            raise StopIteration('result')
+            return 'result'
             yield
         def someMessageTimeout(*args, **kwargs):
             raise TimeoutException()
@@ -141,7 +141,7 @@ class TimedMessageCacheTest(SeecrTestCase):
     def testTimeoutExceptionTriggersBackoff(self):
         self.init(cacheTimeout=0.1, returnCachedValueInCaseOfException=True, backoffTimeout=0.1)
         def someMessageResult(*args, **kwargs):
-            raise StopIteration('result')
+            return 'result'
             yield
         def someMessageTimeout(*args, **kwargs):
             raise TimeoutException()

@@ -42,5 +42,5 @@ class SortKeysRename(Transparent):
                 newSortKeys.append(sortKey)
             sortKeys = newSortKeys
         response = yield self.any.executeQuery(sortKeys=sortKeys, *args, **kwargs)
-        raise StopIteration(response)
+        return response
 

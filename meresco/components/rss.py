@@ -87,7 +87,7 @@ class Rss(Observable):
             yield '<link>%s</link>' % xmlEscape(self._link)
             yield "<description>An error occurred '%s'</description>" % xmlEscape(str(e))
             yield """</channel></rss>"""
-            raise StopIteration()
+            return
         yield '<title>%s</title>' % xmlEscape(self._title)
         yield '<description>%s</description>' % xmlEscape(self._description)
         yield '<link>%s</link>' % xmlEscape(self._link)

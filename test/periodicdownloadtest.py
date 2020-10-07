@@ -433,11 +433,13 @@ class PeriodicDownloadTest(SeecrTestCase):
 
         asProcess(test())
 
-    def xxx_testOneWithProxy(self):
+    def py3_fixme_testOneWithProxy(self):
         request = []
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             proxyServer(port + 1, request)
-            downloader, observer, reactor = self._prepareDownloader("localhost", port, proxyServer="http://localhost:%s" % (port + 1))
+            downloader, observer, reactor = self._prepareDownloader(
+                "localhost", port,
+                proxyServer="http://localhost:%s" % (port + 1))
             self.assertEqual('addTimer', reactor.calledMethods[0].name)
             self.assertEqual(1, reactor.calledMethods[0].args[0])
             callback = reactor.calledMethods[0].args[1]
@@ -1169,7 +1171,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
 
-    def xxx_testReallyLargeRequestSendWithReactor(self):
+    def py3_fixme_testReallyLargeRequestSendWithReactor(self):
         def readall():
             data = None
             count = 0
@@ -1192,7 +1194,8 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
             def buildRequest(self, additionalHeaders=None):
                 # A.k.a. not fitting into the buffer.
                 return ('x' * (256 * 1024))
-        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        err = StringIO()
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=err)
         def mockTryConnect(host, port, proxyServer=None):
             return client
             yield
@@ -1306,13 +1309,19 @@ def proxyServer(port, request):
         def log_message(*args, **kwargs):
             pass
 
+        def handle_one_request(self):
+            print("--->", self.rfile.readline(65537), "<---")
+            print("hier2")
+            return BaseHTTPRequestHandler.handle_one_request(self)
+
         def do_CONNECT(self):
+            print("do_CONNECT", flush=True)
             request.append({'command': self.command, 'path': self.path, 'headers': self.headers})
             self.send_response(200, "Connection established")
             self.end_headers()
-            origRequest = self.connection.recv(4096)
+            origRequest = self.connection.recv(4096).decode()
             path = "http://" + self.path + origRequest.split()[1]
-            self.wfile.write("HTTP/1.0 200 OK\r\n\r\n")
+            #self.wfile.write("HTTP/1.0 200 OK\r\n\r\n")
             self.wfile.write(urlopen(path).read())
             self.wfile.flush()
             self.connection.close()

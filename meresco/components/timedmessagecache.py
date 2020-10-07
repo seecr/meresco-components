@@ -59,12 +59,12 @@ class TimedMessageCache(Transparent):
         else:
             found = True
             if not self._cache.hasExpired(key):
-                raise StopIteration(value)
+                return value
         if self._backoffStarted:
             if self._backoffStarted + self._backoffTimeout < now():
                 self._backoffStarted = None
             elif found:
-                raise StopIteration(value)
+                return value
             else:
                 raise BackoffException()
         try:
@@ -79,7 +79,7 @@ class TimedMessageCache(Transparent):
                     raise BackoffException()
             if not (self._returnCachedValueInCaseOfException and found):
                 raise
-        raise StopIteration(value)
+        return value
         yield
 
 class BackoffException(Exception):

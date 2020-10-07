@@ -63,7 +63,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
+            return Response(total=0, hits=[])
             yield
         observer.methods['executeQuery'] = executeQuery
 
@@ -87,7 +87,7 @@ class RssTest(SeecrTestCase):
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
 
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=1, hits=[Hit(1)]))
+            return Response(total=1, hits=[Hit(1)])
             yield
         observer.methods['executeQuery'] = executeQuery
 
@@ -111,7 +111,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
+            return Response(total=0, hits=[])
             yield
         observer.methods['executeQuery'] = executeQuery
         rss = Rss(
@@ -122,7 +122,7 @@ class RssTest(SeecrTestCase):
         rss.addObserver(observer)
         result = asString(rss.handleRequest(RequestURI='/?query=aQuery%29')) #%29 == ')'
 
-        xml = parse(StringIO(result[result.index("<?xml"):]))
+        xml = parse(StringIO(result[result.index("<rss"):]))
         self.assertEqual(['Test title'], xml.xpath('/rss/channel/title/text()'))
         self.assertEqual(['Test description'], xml.xpath('/rss/channel/description/text()'))
 
@@ -134,7 +134,7 @@ class RssTest(SeecrTestCase):
         )
         result = asString(rss.handleRequest(RequestURI='/'))
 
-        xml = parse(StringIO(result[result.index("<?xml"):]))
+        xml = parse(StringIO(result[result.index("<rss"):]))
         self.assertEqual(['ERROR Test title'], xml.xpath('/rss/channel/title/text()'))
         self.assertEqual(["An error occurred 'MANDATORY parameter 'query' not supplied or empty'"], xml.xpath('/rss/channel/description/text()'))
 
@@ -153,7 +153,7 @@ class RssTest(SeecrTestCase):
 
         def executeQuery(start, stop, *args, **kwargs):
             response = Response(total=50, hits=[Hit(i) for i in range(start, stop)])
-            raise StopIteration(response)
+            return response
             yield
         observer = CallTrace(
             methods={
@@ -197,7 +197,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
+            return Response(total=0, hits=[])
             yield
         observer.methods['executeQuery'] = executeQuery
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
@@ -213,7 +213,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
+            return Response(total=0, hits=[])
             yield
         observer.methods['executeQuery'] = executeQuery
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
@@ -231,7 +231,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
+            return Response(total=0, hits=[])
             yield
         observer.methods['executeQuery'] = executeQuery
         rss = Rss(title='Title', description='Description', link='Link', antiUnaryClause='antiunary')
@@ -249,7 +249,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=0, hits=[]))
+            return Response(total=0, hits=[])
             yield
         observer.methods['executeQuery'] = executeQuery
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
@@ -266,6 +266,7 @@ class RssTest(SeecrTestCase):
         observer = CallTrace(
             ignoredAttributes=['unknown', 'extraResponseData', 'echoedExtraRequestData'])
         observer.exceptions['executeQuery'] = StopIteration([0, []])
+        observer.returnValues['executeQuery'] = [0, []]
         rss = Rss(title = 'Title', description = 'Description', link = 'Link')
         rss.addObserver(observer)
 

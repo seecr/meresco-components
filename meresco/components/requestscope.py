@@ -39,7 +39,7 @@ class RequestScope(Transparent):
             response = yield self.any.unknown(message, *args, **kwargs)
         except NoneOfTheObserversRespond:
             raise DeclineMessage
-        raise StopIteration(response)
+        return response
     def do_unknown(self, message, *args, **kwargs):
         __callstack_var_requestScope__ = {}
         self.do.unknown(message, *args, **kwargs)

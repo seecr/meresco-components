@@ -109,7 +109,7 @@ class RequestScopeTest(SeecrTestCase):
             def someAnyMethod(self, key, value, *args, **kwargs):
                 self.do.setArg(key, value)
                 result = self.call.getArg(key)
-                raise StopIteration(result)
+                return result
                 yield
             def someAllMethod(self, key, value, *args, **kwargs):
                 self.do.setArg(key, value)

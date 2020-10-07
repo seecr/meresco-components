@@ -31,8 +31,8 @@
 #
 ## end license ##
 
-from io import StringIO
-from lxml.etree import parse, tostring, XMLParser
+from io import BytesIO
+from lxml.etree import parse, tostring, XMLParser, _ElementStringResult
 
 from .converter import Converter
 from re import compile as compileRe
@@ -58,7 +58,10 @@ e.g. parseOptions=dict(huge_tree=True, remove_blank_text=True)"""
         parseKwargs = {}
         if not self._parseOptions is None:
             parseKwargs = dict(parser=XMLParser(**self._parseOptions))
-        return parse(StringIO(anObject.encode('UTF-8')), **parseKwargs)
+        if type(anObject) is _ElementStringResult:
+            return parse(BytesIO(bytes(anObject)), **parseKwargs)
+
+        return parse(BytesIO(anObject.encode('UTF-8')), **parseKwargs)
 
 
 class XmlPrintLxml(Converter):
@@ -76,8 +79,10 @@ def _replCharRef(matchObj):
     code = int(code[1:], base=16) if 'x' in code else int(code)
     return str(chr(code))
 
-def _fixLxmltostringRootElement(aString):
-    firstGt = aString.find('>')
-    if aString.find('&#', 0, firstGt) > -1:
-        return _CHAR_REF.sub(_replCharRef, aString[:firstGt]) + aString[firstGt:]
-    return aString
+def _fixLxmltostringRootElement(value):
+    if type(value) is bytes:
+        value = value.decode()
+    firstGt = value.find('>')
+    if value.find('&#', 0, firstGt) > -1:
+        return _CHAR_REF.sub(_replCharRef, value[:firstGt]) + value[firstGt:]
+    return value
