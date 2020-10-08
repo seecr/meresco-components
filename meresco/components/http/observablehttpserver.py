@@ -102,3 +102,6 @@ class ObservableHttpServer(Observable):
 
     def setMaxConnections(self, m):
         self._httpserver.setMaxConnections(m)
+
+    def shutdown(self):
+        self._httpserver.shutdown()

@@ -83,19 +83,19 @@ class HttpUtilsTest(TestCase):
         self.assertEqual(['value'], cookies)
 
     def testParseRequestHeaders(self):
-        headers = parseRequestHeaders('''GET /path?argument=value HTTP/1.0\r\nAccept: something\r\n\r\nBody data ignored''')
+        headers = parseRequestHeaders(b'''GET /path?argument=value HTTP/1.0\r\nAccept: something\r\n\r\nBody data ignored''')
         self.assertEqual({
-                'HTTPVersion': '1.0',
-                'Headers': {'Accept': 'something'},
-                'Method': 'GET',
-                'RequestURI': '/path?argument=value'
+                'HTTPVersion': b'1.0',
+                'Headers': {b'Accept': b'something'},
+                'Method': b'GET',
+                'RequestURI': b'/path?argument=value'
             }, headers)
 
     def testParseResponseHeaders(self):
-        headers = parseResponseHeaders('''HTTP/1.0 200 Ok\r\nAccept: something\r\n\r\nBody data ignored''')
+        headers = parseResponseHeaders(b'''HTTP/1.0 200 Ok\r\nAccept: something\r\n\r\nBody data ignored''')
         self.assertEqual({
-                'HTTPVersion': '1.0',
-                'Headers': {'Accept': 'something'},
-                'ReasonPhrase': 'Ok',
-                'StatusCode': '200'
+                'HTTPVersion': b'1.0',
+                'Headers': {b'Accept': b'something'},
+                'ReasonPhrase': b'Ok',
+                'StatusCode': b'200'
             }, headers)

@@ -39,7 +39,7 @@ class HttpClientTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         def httpRequest(**kwargs):
-            raise StopIteration(self.response)
+            return self.response
             yield
         httpclient.httpget = httpRequest
         httpclient.httppost = httpRequest
@@ -48,7 +48,7 @@ class HttpClientTest(SeecrTestCase):
 
     def testPlainText(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
+        self.response = b"""HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
 
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={}, parse=False)
         headers, body = retval(gen)
@@ -58,7 +58,7 @@ class HttpClientTest(SeecrTestCase):
 
     def testPlainXml(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
+        self.response = b"""HTTP/1.0 200 OK\r\nContent-Type: text/xml\r\n\r\n<xml/>"""
 
         gen = client.httpGet(hostname='localhost', port=80, path='/', arguments={})
         headers, body = retval(gen)
@@ -68,7 +68,7 @@ class HttpClientTest(SeecrTestCase):
 
     def testHttpPost(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 OK\r\n\r\nother-data"""
+        self.response = b"""HTTP/1.0 200 OK\r\n\r\nother-data"""
 
         gen = client.httpPost(hostname='localhost', port=80, path='/', data='data', parse=False)
         headers, body = retval(gen)
@@ -78,7 +78,7 @@ class HttpClientTest(SeecrTestCase):
 
     def testHttpsGet(self):
         client = HttpClient()
-        self.response = """HTTP/1.0 200 OK\r\n\r\nother-data"""
+        self.response = b"""HTTP/1.0 200 OK\r\n\r\nother-data"""
 
         gen = client.httpsGet(hostname='localhost', port=443, path='/', arguments={}, parse=False)
         headers, body = retval(gen)

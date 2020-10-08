@@ -35,7 +35,7 @@ from meresco.core import Observable
 from meresco.components.http import SessionHandler, utils, CookieMemoryStore
 from meresco.components.http.utils import CRLF, findCookies
 from weightless.core import asString, consume, asList
-from weightless.http import parseHeaders
+from weightless.http import parseHeaders, parseHeadersString
 from seecr.test import CallTrace, SeecrTestCase
 from seecr.zulutime import ZuluTime
 from os.path import join
@@ -84,7 +84,7 @@ class SessionHandlerTest(SeecrTestCase):
                 yield  utils.okHtml + '<html/>'
         self.handler.addObserver(MyObserver())
         headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})).split(CRLF*2,1)[0]
-        headers = parseHeaders(headers)
+        headers = parseHeadersString(headers)
         self.assertTrue('Set-Cookie' in headers, headers)
         cookie = findCookies(headers, self.cookiestore.cookieName(), 'Set-Cookie')[0]
         consume(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': '{0}={1}'.format(self.cookiestore.cookieName(), cookie)}))
@@ -98,8 +98,11 @@ class SessionHandlerTest(SeecrTestCase):
                 sessions.append(session)
                 yield  utils.okHtml + '<html/>'
         self.handler.addObserver(MyObserver())
-        headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'Cookie': '%s=%s' % (self.cookiestore.cookieName(), 'injected_id')})).split(CRLF*2,1)[0]
-        headers = parseHeaders(headers)
+        headers = asString(self.handler.handleRequest(
+            RequestURI='/path', 
+            Client=('127.0.0.1', 12345), 
+            Headers={'Cookie': '%s=%s' % (self.cookiestore.cookieName(), 'injected_id')})).split(CRLF*2,1)[0]
+        headers = parseHeadersString(headers)
         self.assertTrue('injected_id' not in headers['Set-Cookie'])
 
     def testPassThroughOfCallables(self):

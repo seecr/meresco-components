@@ -26,32 +26,32 @@
 from weightless.http import httpget, httppost, httpspost, httpsget
 from meresco.components.http.utils import CRLF
 from lxml.etree import parse as lxmlParse
-from io import StringIO
+from io import BytesIO
 from urllib.parse import urlencode
 
 class HttpClient(object):
 
     def httpGet(self, hostname, port, path, arguments, parse=True, **kwargs):
-        raise StopIteration((
+        return (
             yield _doRequest(httpget, parse=parse, host=hostname, port=port, request='%s?%s' % (path, urlencode(arguments)), **kwargs)
-        ))
+        )
 
     def httpsGet(self, hostname, port, path, arguments, parse=True, **kwargs):
-        raise StopIteration((
+        return (
             yield _doRequest(httpsget, parse=parse, host=hostname, port=port, request='%s?%s' % (path, urlencode(arguments)), **kwargs)
-        ))
+        )
 
     def httpPost(self, hostname, port, path, data, parse=True, **kwargs):
-        raise StopIteration((
+        return (
             yield _doRequest(httppost, parse=parse, host=hostname, port=port, request=path, body=data, **kwargs)
-        ))
+        )
 
     def httpsPost(self, hostname, port, path, data, parse=True, **kwargs):
-        raise StopIteration((
+        return (
             yield _doRequest(httpspost, parse=parse, host=hostname, port=port, request=path, body=data, **kwargs)
-        ))
+        )
 
 def _doRequest(method, parse, **kwargs):
     response = yield method(**kwargs)
-    headers, body = response.split(CRLF*2)
-    raise StopIteration((headers, lxmlParse(StringIO(body)) if parse else body))
+    headers, body = response.split(b'\r\n\r\n')
+    return (headers.decode(), lxmlParse(BytesIO(body)) if parse else body.decode())

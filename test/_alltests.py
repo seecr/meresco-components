@@ -101,16 +101,16 @@ from _http.argumentsinsessiontest import ArgumentsInSessionTest
 from _http.basicauthenticationtest import BasicAuthenticationTest
 from _http.basichttphandlertest import BasicHttpHandlerTest
 from _http.deproxytest import DeproxyTest
-#from _http.fileservertest import FileServerTest
-#from _http.handlerequestfiltertest import HandleRequestFilterTest
-#from _http.httpclienttest import HttpClientTest
-#from _http.ipfiltertest import IpFilterTest
-#from _http.observablehttpservertest import ObservableHttpServerTest
+from _http.fileservertest import FileServerTest
+from _http.handlerequestfiltertest import HandleRequestFilterTest
+from _http.httpclienttest import HttpClientTest
+from _http.ipfiltertest import IpFilterTest
+from _http.observablehttpservertest import ObservableHttpServerTest
 #from _http.observablehttpsservertest import ObservableHttpsServerTest
-#from _http.pathfiltertest import PathFilterTest
-#from _http.pathrenametest import PathRenameTest
-#from _http.sessionhandlertest import SessionHandlerTest
-#from _http.httputilstest import HttpUtilsTest
+from _http.pathfiltertest import PathFilterTest
+from _http.pathrenametest import PathRenameTest
+from _http.sessionhandlertest import SessionHandlerTest
+from _http.httputilstest import HttpUtilsTest
 #from _http.cookiememorystoretest import CookieMemoryStoreTest
 #from _http.staticfilestest import StaticFilesTest
 

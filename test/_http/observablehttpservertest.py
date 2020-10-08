@@ -90,53 +90,71 @@ class ObservableHttpServerTest(SeecrTestCase):
 
         s = ObservableHttpServer(reactor, 1024, maxConnections=5)
         s.startServer()
-
-        acceptor = s._httpserver._acceptor
-        httphandler = acceptor._sinkFactory('sok')
-        errorHandler = httphandler._errorHandler
-        self.assertTrue(errorHandler == s._error)
+        try:
+            acceptor = s._httpserver._acceptor
+            httphandler = acceptor._sinkFactory('sok')
+            errorHandler = httphandler._errorHandler
+            self.assertTrue(errorHandler == s._error)
+        finally:
+            s.shutdown()
 
     def testSetMaximumConnections(self):
         reactor = CallTrace('Reactor')
 
         s = ObservableHttpServer(reactor, 2048, maxConnections=5)
         s.startServer()
-
-        httpserver = s._httpserver
-        self.assertEqual(5, httpserver._maxConnections)
-        s.setMaxConnections(6)
-        acceptor = s._httpserver
-        self.assertEqual(6, httpserver._maxConnections)
-        self.assertEqual(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
+        try:
+            httpserver = s._httpserver
+            self.assertEqual(5, httpserver._maxConnections)
+            s.setMaxConnections(6)
+            self.assertEqual(6, httpserver._maxConnections)
+            self.assertEqual(6, httpserver._acceptor._sinkFactory('a sink')._maxConnections)
+        finally:
+            s.shutdown()
 
     def testCompressResponseFlag(self):
         reactor = CallTrace('Reactor')
 
         s = ObservableHttpServer(reactor, 0)
         s.startServer()
-        httpserver = s._httpserver
-        self.assertEqual(True, httpserver._compressResponse)
+        try:
+            httpserver = s._httpserver
+            self.assertEqual(True, httpserver._compressResponse)
+        finally:
+            s.shutdown()
 
         s = ObservableHttpServer(reactor, 0, compressResponse=True)
         s.startServer()
-        httpserver = s._httpserver
-        self.assertEqual(True, httpserver._compressResponse)
+        try:
+            httpserver = s._httpserver
+            self.assertEqual(True, httpserver._compressResponse)
+        finally:
+            s.shutdown()
 
         s = ObservableHttpServer(reactor, 0, compressResponse=False)
         s.startServer()
-        httpserver = s._httpserver
-        self.assertEqual(False, httpserver._compressResponse)
+        try:
+            httpserver = s._httpserver
+            self.assertEqual(False, httpserver._compressResponse)
+        finally:
+            s.shutdown()
 
     def testServerWithPrio(self):
         reactor = CallTrace('reactor')
         s = ObservableHttpServer(reactor, 2000, prio=3)
         s.observer_init()
-        self.assertEqual(['addReader'], reactor.calledMethodNames())
-        self.assertEqual(3, reactor.calledMethods[0].kwargs['prio'])
+        try:
+            self.assertEqual(['addReader'], reactor.calledMethodNames())
+            self.assertEqual(3, reactor.calledMethods[0].kwargs['prio'])
+        finally:
+            s.shutdown()
 
     def testServerBindAddress(self):
         reactor = CallTrace()
         port = next(PortNumberGenerator)
         server = ObservableHttpServer(reactor, port, bindAddress='127.0.0.1')
         server.startServer()
-        self.assertEqual(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
+        try:
+            self.assertEqual(('127.0.0.1', port), server._httpserver._acceptor._sok.getsockname())
+        finally:
+            server.shutdown()
