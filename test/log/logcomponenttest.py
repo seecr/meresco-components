@@ -59,7 +59,7 @@ class LogComponentTest(SeecrTestCase):
         try:
             self.top.call.aMessage(message='m')
         except TypeError as e:
-            self.assertTrue("got multiple values for keyword argument 'message'" in str(e), str(e))
+            self.assertTrue("got multiple values for argument 'message'" in str(e), str(e))
 
         # ... and "method" does work (broken in previous version).
         with stdout_replaced() as out:

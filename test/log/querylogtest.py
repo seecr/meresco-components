@@ -126,7 +126,7 @@ class QueryLogTest(SeecrTestCase):
     def testAllQueryHelpersForSRU(self):
         index = CallTrace('index')
         def executeQuery(**kwargs):
-            raise StopIteration(Response(total=3201, hits=[]))
+            return Response(total=3201, hits=[])
             yield
         index.methods['executeQuery'] = executeQuery
         index.ignoredAttributes.extend(['echoedExtraRequestData', 'extraResponseData', 'all_unknown'])

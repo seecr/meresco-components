@@ -58,7 +58,7 @@ class CookieMemoryStore(object):
     def removeCookies(self, filter):
         for k in list(self._store.keys()):
             try:
-                if list(filter(self._store.peek(k)['value'])):
+                if filter(self._store.peek(k)['value']):
                     del self._store[k]
             except (AttributeError, KeyError):
                 pass
@@ -78,7 +78,7 @@ class CookieMemoryStore(object):
         values = ["{0}={1}".format(*i) for i in [
             (self._name, cookie), 
             ('path', '/'), 
-            ('expires', formatdate(self._now() + self._timeout))]]
+            ('expires', formatdate(self._now() + self._timeout, usegmt=True))]]
         values.extend(k for k in [SECURE, HTTPONLY] if cookieInfo.get(k) == True)
 
         return dict(

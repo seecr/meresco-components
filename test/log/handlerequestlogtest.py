@@ -127,7 +127,7 @@ class HandleRequestLogTest(SeecrTestCase):
         self.assertEqual([], result)
         self.assertEqual(['handleRequest'], requestHandler.calledMethodNames())
         logline = stream.getvalue()
-        self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 500 - "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\',)\n', logline)
+        self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 500 - "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\')\n', logline)
 
     def testLogRequestInCaseOfExceptionAfterStatusCode(self):
         requestHandler = CallTrace('handler', ignoredAttributes=['writeLog', 'do_unknown'])
@@ -162,4 +162,4 @@ class HandleRequestLogTest(SeecrTestCase):
         self.assertEqual([Yield, okPlainText, 'text'], result)
         self.assertEqual(['handleRequest'], requestHandler.calledMethodNames())
         logline = stream.getvalue()
-        self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\',)\n', logline)
+        self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\')\n', logline)

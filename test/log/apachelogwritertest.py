@@ -71,7 +71,7 @@ class ApacheLogWriterTest(SeecrTestCase):
                 }
             }
         )
-        self.assertEqual('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-" Exception raised:\n    ValueError(\'xyz\',)\n', stream.getvalue())
+        self.assertEqual('10.11.12.13 - - [18/Jul/2016:12:32:16 +0000] "GET /abc HTTP/1.0" 200 - "-" "-" Exception raised:\n    ValueError(\'xyz\')\n', stream.getvalue())
 
     def testWriteLogWithoutSensibleData(self):
         stream = StringIO()

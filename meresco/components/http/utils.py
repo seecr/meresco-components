@@ -181,12 +181,18 @@ def _parseHeaders(regexp, header):
     return headers
 
 def parseRequestHeaders(header):
-    return _parseHeaders(REGEXP.REQUEST, header)
+    return _convert(_parseHeaders(REGEXP.REQUEST, header.encode()))
 
 def parseResponseHeaders(header):
-    return _parseHeaders(REGEXP.RESPONSE, header)
+    return _convert(_parseHeaders(REGEXP.RESPONSE, header.encode()))
 
 def parseResponse(data):
     headers = parseResponseHeaders(data)
     body = data.split(CRLF*2,1)[-1]
     return headers, body
+
+def _convert(data):
+    return {
+        bytes: lambda x: x.decode(),
+        dict: lambda x: {_convert(k):_convert(v) for k,v in x.items()}
+    }.get(type(data), lambda x:x)(data)

@@ -211,7 +211,7 @@ def createObserver():
         yield 'res'
         yield 'ult'
     def anyMessage(*args, **kwargs):
-        raise StopIteration('anyresult')
+        return 'anyresult'
         yield
     return CallTrace('observer', methods={
         'allMessage': allMessage,

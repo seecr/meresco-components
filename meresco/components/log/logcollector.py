@@ -76,7 +76,7 @@ class LogCollector(Observable):
                 response = yield self.any.unknown(message, *args, **kwargs)
             except NoneOfTheObserversRespond:
                 raise DeclineMessage
-            raise StopIteration(response)
+            return response
         finally:
             self._writeLog(__callstack_var_logCollector__)
 
@@ -137,7 +137,7 @@ class LogCollectorScope(Observable):
                 response = yield self.any.unknown(message, *args, **kwargs)
             except NoneOfTheObserversRespond:
                 raise DeclineMessage
-            raise StopIteration(response)
+            return response
         finally:
             myLogCollector[self._scopeName] = __callstack_var_logCollector__
 

@@ -39,7 +39,16 @@ class LogUtilsTest(SeecrTestCase):
         result = list(LogParse.parse(join(self.tempdir, 'f')).lines())
         self.assertEqual(3, len(result))
         self.assertEqual(('2015-10-08T00:00:04Z', '127.0.0.3', '0.3K', '0.3s', '3hits', '/path', ''), result[-1])
-        self.assertEqual(dict(timestamp='2015-10-08T00:00:04Z', ipaddress='127.0.0.2', size='0.2K', duration='0.2s', hits='2hits', path='/path', arguments='key=value'), dict(vars(result[1])))
+        self.assertEqual(
+            dict(
+                timestamp='2015-10-08T00:00:04Z',
+                ipaddress='127.0.0.2',
+                size='0.2K',
+                duration='0.2s',
+                hits='2hits',
+                path='/path',
+                arguments='key=value'),
+            dict(result[1]._asdict()))
         self.assertEqual('1hits', result[0].hits)
 
     def testParseCustomLines(self):
@@ -48,7 +57,8 @@ class LogUtilsTest(SeecrTestCase):
 2hits /path key=value
 3hits /path
 ''')
-        result = list(LogParse.parse(open(join(self.tempdir, 'f')), parts=['a','b','c','d','e']).lines())
+        with open(join(self.tempdir, 'f')) as fp:
+            result = list(LogParse.parse(fp, parts=['a','b','c','d','e']).lines())
         self.assertEqual(('3hits', '/path', '', '', ''), result[-1])
-        self.assertEqual(dict(a='2hits', b='/path', c='key=value', d='', e=''), dict(vars(result[1])))
+        self.assertEqual(dict(a='2hits', b='/path', c='key=value', d='', e=''), dict(result[1]._asdict()))
         self.assertEqual('1hits', result[0].a)
