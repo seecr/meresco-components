@@ -294,6 +294,7 @@ class SruHandler(Observable):
 
     def _createDiagnostic(self, uri, message, details):
         additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
+        print("additionalDiagnosticDetails", additionalDiagnosticDetails)
         details = ' - '.join([details] + list(additionalDiagnosticDetails))
         return createDiagnostic(uri=uri, message=message, details=details)
 

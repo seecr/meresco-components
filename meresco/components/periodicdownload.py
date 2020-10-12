@@ -179,15 +179,16 @@ class PeriodicDownload(Observable):
             yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=self._retryAfterErrorTime)
             return
         finally:
-            try:
-                self._sok.shutdown(SHUT_RDWR)
-            except SocketError as xxx_todo_changeme1:
-                # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
-                (errno, msg) = xxx_todo_changeme1.args
-                # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
-                pass
-            self._sok.close()
-            self._sok = None
+            if not self._sok is None:
+                try:
+                    self._sok.shutdown(SHUT_RDWR)
+                except SocketError as e:
+                    # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
+                    (errno, msg) = e.args
+                    # ENOTCONN / errno 107 when remote end (half-)closed the connection can occur.
+                    pass
+                self._sok.close()
+                self._sok = None
 
         _response = topErrorResponse = b''.join(responses)
         try:

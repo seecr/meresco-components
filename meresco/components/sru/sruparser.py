@@ -191,7 +191,7 @@ class SruParser(Observable):
         if not operation in SUPPORTED_OPERATIONS:
             raise SruException(UNSUPPORTED_OPERATION, operation)
 
-        self._validateCorrectEncoding(arguments)
+        #self._validateCorrectEncoding(arguments)
 
         for argument in arguments:
             if not (argument in OFFICIAL_REQUEST_PARAMETERS[operation] or argument.startswith('x-')):

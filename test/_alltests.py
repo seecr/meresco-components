@@ -124,9 +124,9 @@ from log.loglinetest import LogLineTest
 from log.logutilstest import LogUtilsTest
 from log.packettologtest import PacketToLogTest
 from log.persistlogtest import PersistLogTest
-#from log.querylogtest import QueryLogTest
-#from log.querylogwritertest import QueryLogWriterTest
-#from log.srulogtest import SruLogTest
+from log.querylogtest import QueryLogTest
+from log.querylogwritertest import QueryLogWriterTest
+from log.srulogtest import SruLogTest
 
 #from numeric.converttest import ConvertTest
 
