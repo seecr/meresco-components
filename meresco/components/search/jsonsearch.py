@@ -139,7 +139,7 @@ class JsonSearch(Observable):
         if result.queryTime:
             jsonResponse["querytimes"]["indexTime"] = self._querytime(result.queryTime/1000.0)
 
-        raise StopIteration(jsonResponse)
+        return jsonResponse
 
     def _timeNow(self):
         return time()

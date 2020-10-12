@@ -27,5 +27,5 @@ from meresco.core import Transparent
 
 class RetrieveToGetDataAdapter(Transparent):
     def retrieveData(self, identifier, name):
-        raise StopIteration(self.call.getData(identifier=identifier, name=name))
+        return self.call.getData(identifier=identifier, name=name)
         yield

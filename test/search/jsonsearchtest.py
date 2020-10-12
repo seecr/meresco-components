@@ -65,11 +65,11 @@ class JsonSearchTest(SeecrTestCase):
                 )
             if self.drilldownData:
                 result.drilldownData = self.drilldownData
-            raise StopIteration(result)
+            return result
             yield
 
         def retrieveData(identifier, name):
-            raise StopIteration({'identifier':identifier, 'name': name})
+            return {'identifier':identifier, 'name': name}
             yield
 
         self.observer = CallTrace(methods=dict(
@@ -362,7 +362,7 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual(cqlToExpression('* AND field exact somevalue'), executeQueryMethod.kwargs['query'])
         facets = json['response']['facets']
         link = self.parseLink(facets['field'][0]['link'])
-        self.assertEqual(['field=somevalue', 'field=value0'], link.query['facet-filter'])
+        self.assertEqual(sorted(['field=somevalue', 'field=value0']), sorted(link.query['facet-filter']))
 
     def testPassXArguments(self):
         self.total = 100

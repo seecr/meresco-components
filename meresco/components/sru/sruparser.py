@@ -118,7 +118,7 @@ class SruParser(Observable):
             additionalDiagnosticDetails = compose(self.all.additionalDiagnosticDetails())
             details = ' - '.join([e.details] + list(additionalDiagnosticDetails))
             yield DIAGNOSTICS % (e.code, xmlEscape(details), xmlEscape(e.message))
-            raise StopIteration()
+            return
         except Exception as e:
             from traceback import print_exc
             print_exc()

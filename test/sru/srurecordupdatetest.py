@@ -35,7 +35,7 @@ from meresco.components.sru.srurecordupdate import SruRecordUpdate
 from meresco.components import lxmltostring
 from lxml.etree import parse, XML, _ElementTree as ElementTreeType
 from meresco.xml.namespaces import xpathFirst
-from io import StringIO
+from io import StringIO, BytesIO
 from weightless.core import compose
 from meresco.components.xml_generic.validate import ValidateException
 from meresco.core import asyncnoreturnvalue
@@ -226,14 +226,14 @@ class SruRecordUpdateTest(SeecrTestCase):
         self.observer.exceptions['add'] = Exception('Some <Exception>')
         headers, result = self.performRequest(self.createRequestBody())
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = parse(StringIO(result))
+        diag = parse(BytesIO(result.encode()))
         self.assertTrue("Some <Exception>" in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
 
     def testValidationErrors(self):
         self.observer.exceptions['add'] = ValidateException('Some <Exception>')
         headers, result = self.performRequest(self.createRequestBody())
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = parse(StringIO(result))
+        diag = parse(BytesIO(result.encode()))
         self.assertEqual("info:srw/diagnostic/12/12", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
         self.assertEqual("Some <Exception>", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'))
         self.assertEqual("Invalid data:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))
@@ -242,7 +242,7 @@ class SruRecordUpdateTest(SeecrTestCase):
         requestBody = self.createRequestBody(recordIdentifier="")
         headers, result = self.performRequest(requestBody)
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = parse(StringIO(result))
+        diag = parse(BytesIO(result.encode()))
         self.assertEqual("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
         self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
         self.assertTrue("Invalid component:  record rejected" in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'), result)
@@ -260,7 +260,7 @@ class SruRecordUpdateTest(SeecrTestCase):
 </srw:updateRequest>"""
         headers, result = self.performRequest(requestBody)
         self.assertTrue("""<ucp:operationStatus>fail</ucp:operationStatus>""" in result, result)
-        diag = parse(StringIO(result))
+        diag = parse(BytesIO(result.encode()))
         self.assertEqual("info:srw/diagnostic/12/1", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:uri/text()'))
         self.assertTrue("recordIdentifier is mandatory." in xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:details/text()'), result)
         self.assertEqual("Invalid component:  record rejected", xpathFirst(diag, '/srw:updateResponse/srw:diagnostics/diag:diagnostic/diag:message/text()'))

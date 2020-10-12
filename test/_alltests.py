@@ -128,13 +128,13 @@ from log.querylogtest import QueryLogTest
 from log.querylogwritertest import QueryLogWriterTest
 from log.srulogtest import SruLogTest
 
-#from numeric.converttest import ConvertTest
+from numeric.converttest import ConvertTest
 
-#from search.jsonsearchtest import JsonSearchTest
+from search.jsonsearchtest import JsonSearchTest
 
-#from sru.sruhandlertest import SruHandlerTest
-#from sru.sruparsertest import SruParserTest
-#from sru.srurecordupdatetest import SruRecordUpdateTest
+from sru.sruhandlertest import SruHandlerTest
+from sru.sruparsertest import SruParserTest
+from sru.srurecordupdatetest import SruRecordUpdateTest
 #from sru.sruupdateclienttest import SruUpdateClientTest
 #from sru.srulimitstartrecordtest import SruLimitStartRecordTest
 #from sru.sruversionandoperationtest import SruVersionAndOperationTest
