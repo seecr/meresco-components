@@ -433,7 +433,7 @@ class PeriodicDownloadTest(SeecrTestCase):
 
         asProcess(test())
 
-    def py3_fixme_testOneWithProxy(self):
+    def testOneWithProxy(self):
         request = []
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             proxyServer(port + 1, request)
@@ -453,7 +453,7 @@ class PeriodicDownloadTest(SeecrTestCase):
             callback = reactor.calledMethods[-1].args[1]
             callback() #proxy recv
             sleep(0.01)
-            self.assertEqual("GET", msgs[0][:3])
+            self.assertEqual(b"GET", msgs[0][:3])
             self.assertEqual('addReader', reactor.calledMethods[-1].name)
             callback = reactor.calledMethods[3].args[1]
             callback() # sok.recv
@@ -1171,7 +1171,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
 
-    def py3_fixme_testReallyLargeRequestSendWithReactor(self):
+    def testReallyLargeRequestSendWithReactor(self):
         def readall():
             data = None
             count = 0
@@ -1309,19 +1309,13 @@ def proxyServer(port, request):
         def log_message(*args, **kwargs):
             pass
 
-        def handle_one_request(self):
-            print("--->", self.rfile.readline(65537), "<---")
-            print("hier2")
-            return BaseHTTPRequestHandler.handle_one_request(self)
-
         def do_CONNECT(self):
-            print("do_CONNECT", flush=True)
             request.append({'command': self.command, 'path': self.path, 'headers': self.headers})
             self.send_response(200, "Connection established")
             self.end_headers()
             origRequest = self.connection.recv(4096).decode()
             path = "http://" + self.path + origRequest.split()[1]
-            #self.wfile.write("HTTP/1.0 200 OK\r\n\r\n")
+            self.wfile.write(b"HTTP/1.0 200 OK\r\n\r\n")
             self.wfile.write(urlopen(path).read())
             self.wfile.flush()
             self.connection.close()

@@ -174,9 +174,12 @@ class PeriodicDownload(Observable):
                     self._reactor.removeReader(self._sok)
                 except KeyError:
                     pass
-        except SocketError as xxx_todo_changeme2:
-            (errno, msg) = xxx_todo_changeme2.args
-            yield self._retryAfterError("Receive error: %s: %s" % (errno, msg), request=requestString, retryAfter=self._retryAfterErrorTime)
+        except SocketError as e:
+            (errno, msg) = e.args
+            yield self._retryAfterError(
+                "Receive error: %s: %s" % (errno, msg),
+                request=requestString,
+                retryAfter=self._retryAfterErrorTime)
             return
         finally:
             if not self._sok is None:
@@ -189,7 +192,6 @@ class PeriodicDownload(Observable):
                     pass
                 self._sok.close()
                 self._sok = None
-
         _response = topErrorResponse = b''.join(responses)
         try:
             (statusAndHeaders, body), error = parseHttpResponse(response=_response)
@@ -249,8 +251,8 @@ class PeriodicDownload(Observable):
             try:
                 try:
                     sok.connect((host, port))
-                except SocketError as xxx_todo_changeme:
-                    (errno, msg) = xxx_todo_changeme.args
+                except SocketError as e:
+                    (errno, msg) = e.args
                     if errno != EINPROGRESS:
                         yield self._retryAfterError("%s: %s" % (errno, msg), retryAfter=self._retryAfterErrorTime)
                         return
@@ -266,20 +268,21 @@ class PeriodicDownload(Observable):
                     raise IOError(err)
 
                 if proxyServer:
-                    yield self._quickOrAsyncSend(sok, "CONNECT {0}:{1} HTTP/1.0\r\nHost: {0}:{1}\r\n\r\n".format(origHost, origPort))
+                    requestString = "CONNECT {0}:{1} HTTP/1.0\r\nHost: {0}:{1}\r\n\r\n".format(origHost, origPort)
+                    yield self._quickOrAsyncSend(sok, requestString.encode())
                     self._reactor.addReader(sok, self._currentProcess.__next__)
                     try:
-                        response = ''
+                        response = b''
                         while True:
                             yield
                             fragment = sok.recv(4096)
-                            if fragment == '':
+                            if fragment == b'':
                                 break
                             response += fragment
-                            if "\r\n\r\n" in response:
+                            if b"\r\n\r\n" in response:
                                 break
                         status = response.split()[:2]
-                        if not "200" in status:
+                        if not b"200" in status:
                             raise ValueError("Failed to connect through proxy")
                     finally:
                         self._reactor.removeReader(sok)
@@ -301,7 +304,7 @@ class PeriodicDownload(Observable):
         self._reactor.addWriter(sok, self._currentProcess.__next__)
         yield
         try:
-            while data != "":
+            while data != b"":
                 size = sok.send(data)
                 data = data[size:]
                 yield
@@ -394,9 +397,7 @@ def parseHttpResponse(response):
         if key == '_headers':
             continue
         statusAndHeaders[key] = value.decode()
-    _headers = parseHeaders(statusAndHeaders['_headers'])
-    del statusAndHeaders['_headers']
-    statusAndHeaders['Headers'] = _headers
+    statusAndHeaders['Headers'] = parseHeaders(statusAndHeaders.pop('_headers'))
     return ((statusAndHeaders, body), None)
 
 def checkStatusCode200(statusAndHeaders, body):
