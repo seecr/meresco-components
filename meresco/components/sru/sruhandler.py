@@ -83,7 +83,7 @@ class SruHandler(Observable):
 
             queryExpression = cqlToExpression(query)
 
-            extraArguments = dict((key, value) for key, value in list(sruArguments.items()) if key.startswith('x-'))
+            extraArguments = dict((key, value) for key, value in sruArguments.items() if key.startswith('x-'))
             try:
                 response = yield self.any.executeQuery(
                         query=queryExpression,

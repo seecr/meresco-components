@@ -35,7 +35,7 @@ class MultiLevelDrilldown(Observable):
     def __init__(self, multiLevelFieldsDict):
         Observable.__init__(self)
         self._multiLevelFields = multiLevelFieldsDict
-        for key, multilevelFields in list(multiLevelFieldsDict.items()):
+        for key, multilevelFields in multiLevelFieldsDict.items():
             for multilevelField in multilevelFields:
                 assert len(multilevelField) == 3, 'multilevelFields for %s should be a list of tuples with: levelField, maximumCount, sorted' % key
 

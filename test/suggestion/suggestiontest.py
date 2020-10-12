@@ -40,7 +40,7 @@ class SuggestionTest(SeecrTestCase):
         self.observer = CallTrace('observer')
         self.response = Response(total=0, hits=[])
         def executeQuery(**kwargs):
-            raise StopIteration(self.response)
+            return self.response
             yield
         self.observer.methods['executeQuery'] = executeQuery
 

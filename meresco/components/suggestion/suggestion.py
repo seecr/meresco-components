@@ -53,7 +53,7 @@ class Suggestion(Observable):
                 if suggestMode:
                     suggestionRequest['mode'] = suggestMode
         response = yield self.any.executeQuery(suggestionRequest=suggestionRequest, **kwargs)
-        raise StopIteration(response)
+        return response
 
     def extraResponseData(self, response, sruArguments, **kwargs):
         if not hasattr(response, 'suggestions'):

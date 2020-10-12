@@ -85,7 +85,7 @@ class JsonSearch(Observable):
                 if args.stop - args.start and args.start > 0:
                     jsonResponse['previous'] = args.pageDict(-1, path=path)
 
-                for fieldname, terms in list(jsonResponse.get('facets', {}).items()):
+                for fieldname, terms in jsonResponse.get('facets', {}).items():
                     if fieldname.endswith('.uri'):
                         def displayValue(term):
                             return term['displayTerm'] if 'displayTerm' in term else self.call.labelForUri(uri=term['term'])
@@ -209,7 +209,7 @@ class _Arguments(object):
                 facets=queryFacets or None,
             )
         extra_arguments = {}
-        for k, v in list(arguments.items()):
+        for k, v in arguments.items():
             if k.startswith('x-'):
                 extra_arguments[k] = v
             else:

@@ -61,7 +61,7 @@ class Validate(Observable):
         self._detectAndValidate(*args, **kwargs)
         try:
             response = yield self.any.unknown(message, *args, **kwargs)
-            raise StopIteration(response)
+            return response
         except NoneOfTheObserversRespond:
             raise DeclineMessage
 

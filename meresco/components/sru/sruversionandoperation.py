@@ -35,6 +35,6 @@ class SruVersionAndOperation(Transparent):
 
     def handleRequest(self, arguments, **kwargs):
         if 'query' in arguments:
-            for k,v in list(self._defaults.items()):
+            for k,v in self._defaults.items():
                 arguments.setdefault(k, v)
         yield self.all.handleRequest(arguments=arguments, **kwargs)

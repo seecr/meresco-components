@@ -43,7 +43,7 @@ class Bucket(object):
         return simplerepr(self)
 
 def simplerepr(o):
-    return '%s(%s)' % (o.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in list(o.__dict__.items())))
+    return '%s(%s)' % (o.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in o.__dict__.items()))
 
 @contextmanager
 def atomic_write(filename, mode="w", tmpPostfix=".tmp"):

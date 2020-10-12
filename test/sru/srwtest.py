@@ -53,12 +53,12 @@ class SrwTest(SeecrTestCase):
 
         self.srw.addObserver(self.sruParser)
         self.sruParser.addObserver(self.sruHandler)
-        self.response = StopIteration(Response(total=1, hits=[Hit('0')]))
+        self.response = Response(total=1, hits=[Hit('0')])
         def executeQuery(**kwargs):
-            raise self.response
+            return self.response
             yield
         def retrieveData(**kwargs):
-            raise StopIteration('data')
+            return 'data'
             yield
         self.observer = CallTrace(
             methods={
@@ -146,10 +146,10 @@ Content-Type: text/xml; charset=utf-8
 
     def testNormalOperation(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
-        self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
+        self.response = Response(total=1, hits=[Hit('recordId')])
         del self.observer.methods['retrieveData']
         def retrieveData(identifier, name):
-            raise StopIteration("<DATA>%s-%s</DATA>" % (identifier, name))
+            return "<DATA>%s-%s</DATA>" % (identifier, name)
             yield
         self.observer.methods['retrieveData'] = retrieveData
 
@@ -159,7 +159,7 @@ Content-Type: text/xml; charset=utf-8
 
     def testEmptySortKeys(self):
         request = soapEnvelope % SRW_REQUEST % argumentsWithMandatory % "<SRW:sortKeys/>"
-        self.response = StopIteration(Response(total=0, hits=[]))
+        self.response = Response(total=0, hits=[])
 
         result = "".join(compose(self.srw.handleRequest(Body=request)))
 
@@ -192,10 +192,10 @@ Content-Type: text/xml; charset=utf-8
   </SOAP:Body>
 </SOAP:Envelope>"""
 
-        self.response = StopIteration(Response(total=1, hits=[Hit('recordId')]))
+        self.response = Response(total=1, hits=[Hit('recordId')])
         del self.observer.methods['retrieveData']
         def retrieveData(identifier, name):
-            raise StopIteration("<DATA>%s-%s</DATA>" % (identifier, name))
+            return "<DATA>%s-%s</DATA>" % (identifier, name)
             yield
         self.observer.methods['retrieveData'] = retrieveData
         response = "".join(compose(self.srw.handleRequest(Body=request)))
@@ -222,7 +222,7 @@ Content-Type: text/xml; charset=utf-8
         sruParser.addObserver(self.sruHandler)
         response = Response(total=1, hits=[Hit(1)])
         def executeQuery(**kwargs):
-            raise StopIteration(response)
+            return response
             yield
         @asyncnoreturnvalue
         def methodAsGenerator(**kwargs):

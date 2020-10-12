@@ -643,7 +643,7 @@ class SruHandlerTest(SeecrTestCase):
         def sruHandlerKwargs(x_term_drilldown):
             arguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'blissfully_ignored', 'recordSchema':'blissfully_ignored', 'recordPacking':'string'}
             arguments['x_term_drilldown'] = [x_term_drilldown]
-            arguments['sruArguments'] = dict((k.replace('_', '-'),v) for k,v in list(arguments.items()))
+            arguments['sruArguments'] = dict((k.replace('_', '-'),v) for k,v in arguments.items())
             return arguments
 
         # No problem - max

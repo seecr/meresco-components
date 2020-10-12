@@ -35,7 +35,7 @@ class SruUpdateClientTest(SeecrTestCase):
         postArguments = []
         def _httppost(**kwargs):
             postArguments.append(kwargs)
-            raise StopIteration(('HTTP/1.0 200 OK\r\n\r\n', SRU_UPDATE_RESPONSE % ("success", '')))
+            return dict(header='HTTP/1.0 200 OK\r\n\r\n', body=SRU_UPDATE_RESPONSE % ("success", ''))
             yield
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost
@@ -62,7 +62,7 @@ class SruUpdateClientTest(SeecrTestCase):
         postArguments = []
         def _httppost(**kwargs):
             postArguments.append(kwargs)
-            raise StopIteration(('HTTP/1.0 200 OK\r\n\r\n', SRU_UPDATE_RESPONSE % ("fail", SRU_DIAGNOSTICS)))
+            return dict(header='HTTP/1.0 200 OK\r\n\r\n', body=SRU_UPDATE_RESPONSE % ("fail", SRU_DIAGNOSTICS))
             yield
         sruUpdate = SruUpdateClient()
         sruUpdate._httppost = _httppost
@@ -79,7 +79,7 @@ class SruUpdateClientTest(SeecrTestCase):
         postArguments = []
         def _httppost(**kwargs):
             postArguments.append(kwargs)
-            raise StopIteration(('HTTP/1.0 200 OK\r\n\r\n', SRU_UPDATE_RESPONSE % ("success", '')))
+            return dict(header='HTTP/1.0 200 OK\r\n\r\n', body=SRU_UPDATE_RESPONSE % ("success", ''))
             yield
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost

@@ -165,11 +165,11 @@ class LogCollectorScope(Observable):
 def collectLog(*logDicts):
     collector=local('__callstack_var_logCollector__')
     for aLogDict in logDicts:
-        for key, value in list(aLogDict.items()):
+        for key, value in aLogDict.items():
             collector.setdefault(key, []).append(value)
 
 def collectLogForScope(**scopes):
-    for scope, aLogDict in list(scopes.items()):
+    for scope, aLogDict in scopes.items():
         collector=local('__callstack_var_logCollector__').setdefault(scope, dict())
-        for key, value in list(aLogDict.items()):
+        for key, value in aLogDict.items():
             collector.setdefault(key, []).append(value)

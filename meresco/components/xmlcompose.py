@@ -42,7 +42,7 @@ class XmlCompose(Observable):
     def getRecord(self, identifier):
         data = {}
         cachedRecord = {}
-        for tagName, values in list(self._fieldMapping.items()):
+        for tagName, values in self._fieldMapping.items():
             partname, xPathExpression = values
             if not partname in cachedRecord:
                 cachedRecord[partname] = self._getPart(identifier, partname)
@@ -55,7 +55,7 @@ class XmlCompose(Observable):
     def createRecord(self, data):
         if len(data) != len(self._fieldMapping):
             return ''
-        return self._template % dict(((k, xmlEscape(v)) for k,v in list(data.items())))
+        return self._template % dict(((k, xmlEscape(v)) for k,v in data.items()))
 
     def _getPart(self, identifier, partname):
         return parse(StringIO(self.call.getData(identifier, partname)))

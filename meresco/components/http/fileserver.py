@@ -79,7 +79,7 @@ class File(object):
 
     def stream(self):
         yield 'HTTP/1.0 200 OK' + CRLF
-        for item in list(self.getHeaders().items()):
+        for item in self.getHeaders().items():
             yield "%s: %s" % item + CRLF
         yield CRLF
 
@@ -114,7 +114,7 @@ class Directory(object):
         yield httputils.Ok
         headers = {'Content-Type': httputils.ContentTypeHtml}
         headers.update(self.getHeaders())
-        for item in list(headers.items()):
+        for item in headers.items():
             yield "%s: %s" % item + CRLF
         yield CRLF
         totalPath = self._basePath + ('' if strippedPath.startswith('/') else '/') + strippedPath

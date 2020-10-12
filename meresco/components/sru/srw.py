@@ -56,7 +56,7 @@ class Srw(Observable):
         except SoapException as e:
             yield httputils.serverErrorXml
             yield SOAP % e.asSoap()
-            raise StopIteration()
+            return
 
         yield httputils.okXml
 
@@ -66,7 +66,7 @@ class Srw(Observable):
             sruArgs, queryArgs = self.call.parseSruArgs(arguments)
         except SruException as e:
             yield SOAP % DIAGNOSTICS % (e.code, xmlEscape(e.details), xmlEscape(e.message))
-            raise StopIteration()
+            return
 
         try:
             yield SOAP_HEADER

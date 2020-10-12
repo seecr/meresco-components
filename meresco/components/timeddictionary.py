@@ -90,7 +90,7 @@ class TimedDictionary(object):
             raise
 
     def keys(self):
-        return list(self._dictionary.keys())
+        return self._dictionary.keys()
 
     def clear(self):
         self._dictionary.clear()

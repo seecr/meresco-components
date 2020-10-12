@@ -135,17 +135,17 @@ from search.jsonsearchtest import JsonSearchTest
 from sru.sruhandlertest import SruHandlerTest
 from sru.sruparsertest import SruParserTest
 from sru.srurecordupdatetest import SruRecordUpdateTest
-#from sru.sruupdateclienttest import SruUpdateClientTest
-#from sru.srulimitstartrecordtest import SruLimitStartRecordTest
-#from sru.sruversionandoperationtest import SruVersionAndOperationTest
-#from sru.srwtest import SrwTest
-#from sru.sruiteratetest import SruIterateTest
+from sru.sruupdateclienttest import SruUpdateClientTest
+from sru.srulimitstartrecordtest import SruLimitStartRecordTest
+from sru.sruversionandoperationtest import SruVersionAndOperationTest
+from sru.srwtest import SrwTest
+from sru.sruiteratetest import SruIterateTest
 
-#from suggestion.suggestiontest import SuggestionTest
+from suggestion.suggestiontest import SuggestionTest
 
-#from xml_generic.validatetest import ValidateTest
+from xml_generic.validatetest import ValidateTest
 
-#from web.webquerytest import WebQueryTest
+from web.webquerytest import WebQueryTest
 
 if __name__ == '__main__':
     unittest.main()

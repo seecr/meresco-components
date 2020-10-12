@@ -51,7 +51,7 @@ class RssItem(XmlCompose):
 
     def createRecord(self, dataDictionary):
         try:
-            link = self._linkTemplate % dict(((k, urlQuote(v)) for k,v in list(dataDictionary.items())))
+            link = self._linkTemplate % dict(((k, urlQuote(v)) for k,v in dataDictionary.items()))
         except KeyError:
             link = ''
         rssData = {
@@ -63,7 +63,7 @@ class RssItem(XmlCompose):
 
 def assertLinkTemplate(linkTemplate, linkFields):
     try:
-        linkTemplate % dict(((k,'value') for k in list(linkFields.keys())))
+        linkTemplate % dict(((k,'value') for k in linkFields.keys()))
     except KeyError as e:
         givenArguments = len(linkFields) + len(['self', 'nsMap', 'title', 'description', 'linkTemplate'])
         raise TypeError("__init__() takes at least %s arguments (%s given, missing %s)" % (givenArguments + 1, givenArguments, str(e)))

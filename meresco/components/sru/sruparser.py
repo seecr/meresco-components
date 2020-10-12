@@ -206,7 +206,7 @@ class SruParser(Observable):
 
     def _validateCorrectEncoding(self, arguments):
         try:
-            for key, values in list(arguments.items()):
+            for key, values in arguments.items():
                 key.decode('utf-8')
                 for value in values:
                     value.decode('utf-8')

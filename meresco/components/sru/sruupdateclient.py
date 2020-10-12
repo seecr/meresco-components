@@ -29,13 +29,15 @@ class SruUpdateClient(object):
         yield self._upload(SRURECORDDELETE_TEMPLATE % locals())
 
     def _upload(self, sruRecordUpdate):
-        header, body = yield self._httppost(
+        response = yield self._httppost(
                 host=self._host,
                 port=self._port,
                 request=self._path,
                 body=str(sruRecordUpdate),
                 headers={'User-Agent': self._userAgent, 'Host': self._host}
             )
+        header = response['header']
+        body = response['body']
 
         url = "http://%s:%s%s" % (self._host, self._port, self._path)
         if not '200' in header.lower():
@@ -43,17 +45,20 @@ class SruUpdateClient(object):
         response = XML(body)
         operationStatus = xpathFirst(response, "/srw:updateResponse/ucp:operationStatus/text()")
         if operationStatus != "success":
-            raise SruUpdateException(url=url, status=operationStatus, diagnostics=xpathFirst(response, '//diag:diagnostic/diag:details/text()'))
+            raise SruUpdateException(
+                url=url,
+                status=operationStatus,
+                diagnostics=xpathFirst(response, '//diag:diagnostic/diag:details/text()'))
 
     def _httppost(self, **kwargs):
         if self._synchronous:
             req = Request("http://%(host)s:%(port)s%(request)s" % kwargs, kwargs['body'])
             req.add_header('User-Agent', kwargs['headers']['User-Agent'])
             response = urlopen(req)
-            raise StopIteration((str(response.getcode()), response.read()))
+            return dict(header=str(response.getcode()), body=response.read())
         response = yield httppost(**kwargs)
-        raise StopIteration((response.split(CRLF * 2)))
-
+        header, body = response.split(CRLF * 2)
+        return dict(header=header, body=body)
 
 class SruUpdateException(Exception):
     def __init__(self, url, status, diagnostics=None):
