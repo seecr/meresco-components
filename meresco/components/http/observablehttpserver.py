@@ -98,10 +98,20 @@ class ObservableHttpServer(Observable):
             'arguments': arguments,
             'RequestURI': RequestURI}
         requestArguments.update(kwargs)
-        yield self.all.handleRequest(**requestArguments)
+        yield self.all.handleRequest(**_convertToStrings(requestArguments))
 
     def setMaxConnections(self, m):
         self._httpserver.setMaxConnections(m)
 
     def shutdown(self):
         self._httpserver.shutdown()
+
+def _convertToStrings(values):
+    def _convert(value):
+        return {
+            list: lambda x:[_convert(v) for v in x],
+            dict: lambda x:{_convert(k):_convert(v) for k,v in x.items()},
+            bytes: lambda x:x.decode()
+        }.get(type(value), lambda x:x)(value)
+    return _convert(values)
+
