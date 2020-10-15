@@ -5,7 +5,7 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
-# Copyright (C) 2015-2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015-2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
 #
 # This file is part of "Meresco Components"

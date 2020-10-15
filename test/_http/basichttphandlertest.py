@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2013-2014, 2016, 2019 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2013-2014, 2016, 2019-2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2014 Netherlands Institute for Sound and Vision http://instituut.beeldengeluid.nl/
 # Copyright (C) 2016 SURFmarket https://surf.nl

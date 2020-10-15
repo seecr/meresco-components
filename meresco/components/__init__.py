@@ -8,7 +8,7 @@
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2010, 2013, 2015-2016, 2018 Stichting Kennisnet https://www.kennisnet.nl
-# Copyright (C) 2011-2013, 2015-2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011-2013, 2015-2016, 2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012-2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Drents Archief http://www.drentsarchief.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl

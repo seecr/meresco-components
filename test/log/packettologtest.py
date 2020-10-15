@@ -4,7 +4,7 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
-# Copyright (C) 2015-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015-2017, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "Meresco Components"
 #

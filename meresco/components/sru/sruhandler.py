@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011-2016, 2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2011-2015, 2018 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl

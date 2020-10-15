@@ -4,7 +4,7 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2014 SURF http://www.surf.nl
-# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014 Stichting Kennisnet http://www.kennisnet.nl
 #

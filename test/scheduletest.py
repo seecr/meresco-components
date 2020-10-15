@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2013, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012-2013 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2013 Maastricht University Library http://www.maastrichtuniversity.nl/web/Library/home.htm
 # Copyright (C) 2013 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
