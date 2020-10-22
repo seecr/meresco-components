@@ -29,6 +29,9 @@
 #
 ## end license ##
 
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning, module='bsddb3')
+
 from bsddb3 import btopen
 from os.path import join
 
@@ -72,4 +75,4 @@ class DoubleUniqueBerkeleyDict(BerkeleyDict):
 
     def getKeyFor(self, value):
         return self._valuekeyDict.get(value, None)
-        
+
