@@ -31,5 +31,6 @@ export LANG=en_US.UTF-8
 export PYTHONPATH=.:"$PYTHONPATH"
 export WEIGHTLESS_COMPOSE_TEST="PYTHON"
 export TESTMODE=true
+export PYTHONWARNINGS=default
 
 python3 ./_alltests.py "$@"

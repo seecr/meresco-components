@@ -638,9 +638,9 @@ class PeriodicDownloadTest(SeecrTestCase):
             expected =  ignoreLineNumbers("""%s: Traceback (most recent call last):
   File "%%(periodicdownload.py)s", line 104, in _processOne
     for _response  in g:
-  File "[x]", line [#], in _compose
+  File "_compose_py.py", line [#], in _compose
     raise exception[1].with_traceback(exception[2])
-  File "[x]", line [#], in all
+  File "_observable.py", line [#], in all
     c, v, t = exc_info(); raise v.with_traceback(t.tb_next)
   File "%%(__file__)s", line 243, in handleGenerator
     raise Exception('xcptn')
