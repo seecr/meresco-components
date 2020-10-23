@@ -106,7 +106,6 @@ from _http.handlerequestfiltertest import HandleRequestFilterTest
 from _http.httpclienttest import HttpClientTest
 from _http.ipfiltertest import IpFilterTest
 from _http.observablehttpservertest import ObservableHttpServerTest
-#from _http.observablehttpsservertest import ObservableHttpsServerTest
 from _http.pathfiltertest import PathFilterTest
 from _http.pathrenametest import PathRenameTest
 from _http.sessionhandlertest import SessionHandlerTest
