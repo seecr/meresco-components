@@ -263,6 +263,7 @@ class PeriodicDownload(Observable):
 
                 err = sok.getsockopt(SOL_SOCKET, SO_ERROR)
                 if err == ECONNREFUSED:
+                    sok.close()
                     yield self._retryAfterError("Connection to %s:%s refused." % (host, port), retryAfter=1)
                     return
                 if err != 0:   # any other error
