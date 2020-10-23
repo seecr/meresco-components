@@ -1146,6 +1146,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         reactor.calledMethods.reset()
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+        closeall(client, server)
 
     def testShortRequestSendWithoutReactor(self):
         client, server = socketpair(AF_UNIX)
@@ -1170,6 +1171,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         reactor.calledMethods.reset()
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+        closeall(client, server)
 
     def testReallyLargeRequestSendWithReactor(self):
         def readall():
@@ -1223,8 +1225,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         reactor.calledMethods.reset()
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
-        client.close()
-        server.close()
+        closeall(client, server)
 
     def testNoBuildRequestSleeps(self):
         reactor = CallTrace('reactor')
@@ -1333,3 +1334,7 @@ def mockBuildRequest(additionalHeaders):
 def mockHandle(data):
     return
     yield
+
+def closeall(*soks):
+    for sok in soks:
+        sok.close()

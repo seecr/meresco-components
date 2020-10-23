@@ -292,6 +292,7 @@ class PeriodicDownload(Observable):
             except (AssertionError, KeyboardInterrupt, SystemExit) as e:
                 raise
             except Exception as e:
+                sok.close()
                 yield self._retryAfterError(str(e), retryAfter=self._retryAfterErrorTime)
                 return
         return sok
