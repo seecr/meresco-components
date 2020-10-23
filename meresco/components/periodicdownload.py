@@ -254,6 +254,7 @@ class PeriodicDownload(Observable):
                 except SocketError as e:
                     (errno, msg) = e.args
                     if errno != EINPROGRESS:
+                        sok.close()
                         yield self._retryAfterError("%s: %s" % (errno, msg), retryAfter=self._retryAfterErrorTime)
                         return
                 self._reactor.addWriter(sok, self._currentProcess.__next__)
