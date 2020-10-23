@@ -1223,6 +1223,8 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         reactor.calledMethods.reset()
         list(downloader._currentProcess)
         self.assertEqual(['removeReader', 'addTimer'], reactor.calledMethodNames())
+        client.close()
+        server.close()
 
     def testNoBuildRequestSleeps(self):
         reactor = CallTrace('reactor')
