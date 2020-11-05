@@ -3,9 +3,10 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2020 Stichting Kennisnet https://www.kennisnet.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -29,7 +30,7 @@ from os.path import join
 
 from seecr.test import SeecrTestCase
 
-from meresco.components.json import JsonDict, JsonList
+from meresco.components.json import JsonDict, JsonList, JsonToString, StringToJson
 from simplejson import JSONDecodeError
 
 class JsonTest(SeecrTestCase):
@@ -102,3 +103,13 @@ class JsonTest(SeecrTestCase):
         self.assertEquals({}, JsonDict.load(tempfile, emptyOnError=True))
         self.assertRaises(JSONDecodeError, lambda: JsonList.load(tempfile))
         self.assertEquals([], JsonList.load(tempfile, emptyOnError=True))
+
+    def testConvert(self):
+        converter = JsonToString(fromKwarg='kwarg')
+        self.assertEqual('{\n    "aap": 3\n}', converter._convert({"aap":3}))
+        self.assertEqual('[\n    "aap",\n    3\n]', converter._convert(["aap",3]))
+
+    def testConvertFromString(self):
+        converter = StringToJson(fromKwarg='kwarg')
+        self.assertEqual(JsonDict({'aap':3}), converter._convert('{\n    "aap": 3\n}'))
+        self.assertEqual(JsonList(['aap',3]), converter._convert('[\n    "aap", 3\n]'))
