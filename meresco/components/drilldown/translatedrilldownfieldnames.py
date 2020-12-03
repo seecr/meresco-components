@@ -4,9 +4,9 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2012-2013, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2017, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# Copyright (C) 2012-2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012-2013, 2020 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2017 SURFmarket http://www.surf.nl
 #
 # This file is part of "Meresco Components"
@@ -55,7 +55,7 @@ class TranslateDrilldownFieldnames(Transparent):
     def _translateFacet(self, facet, reverseLookup):
         translatedFacet = facet.copy()
         translatedFacet['fieldname'] = self.translate(facet['fieldname'])
-        reverseLookup[translatedFacet['fieldname']] = facet['fieldname']
+        reverseLookup.setdefault(translatedFacet['fieldname'], []).append(facet['fieldname'])
         return translatedFacet
 
     def _reverseTranslateFacet(self, facet, reverseLookup):
@@ -63,4 +63,4 @@ class TranslateDrilldownFieldnames(Transparent):
         for term in terms:
             if 'pivot' in term:
                 term['pivot'] = self._reverseTranslateFacet(term['pivot'], reverseLookup)
-        return {'fieldname': reverseLookup[facet['fieldname']], 'terms': terms}
+        return {'fieldname': reverseLookup[facet['fieldname']].pop(0), 'terms': terms}

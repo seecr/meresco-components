@@ -4,9 +4,9 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2012 SURF http://www.surf.nl
-# Copyright (C) 2012-2014, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014, 2017, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
-# Copyright (C) 2012-2013 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012-2013, 2020 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2017 SURFmarket http://www.surf.nl
 #
 # This file is part of "Meresco Components"
@@ -286,4 +286,35 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
         )
         consume(observable.any.someMethod(field='whatever'))
         self.assertEqual(['someMethod'], self.observer.calledMethodNames())
+
+    def testSameTranslationForMultipleNames(self):
+        translate = lambda name: 'internal.name'
+        result = self._doDrilldown(
+                translate=translate,
+                queryKwargs=dict(
+                    query='query',
+                    facets=[dict(fieldname='name1', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
+                            dict(fieldname='name2', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
+                            dict(fieldname='name3', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]))
+
+        self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
+        self.assertEquals(dict(query='query', facets=[
+            dict(fieldname='internal.name', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
+            dict(fieldname='internal.name', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
+            dict(fieldname='internal.name', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
+            ]), self.observer.calledMethods[0].kwargs)
+        self.assertEquals(self.response.hits, result.hits)
+        self.assertEquals(self.response.total, result.total)
+        self.assertEquals([ {
+                'fieldname': 'name1',
+                'terms': [ {'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2} ]
+            }, {
+                'fieldname': 'name2',
+                'terms': [ {'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2} ]
+            }, {
+                'fieldname': 'name3',
+                'terms': [ {'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2} ]
+            }], result.drilldownData)
+
+
 
