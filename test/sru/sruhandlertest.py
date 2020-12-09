@@ -8,8 +8,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011-2015, 2018 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011-2015, 2018, 2020 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012, 2014 SURF http://www.surf.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -188,6 +188,16 @@ class SruHandlerTest(SeecrTestCase):
             ], list(observer.calledMethods[0].kwargs['facets']))
         extraResponseDataMethod = observer.calledMethods[-1]
         self.assertEquals(response, extraResponseDataMethod.kwargs['response'])
+
+
+    def testUseGetRecordDataTrue(self):
+        handler = SruHandler(useGetRecordData=True)
+        observer = CallTrace()
+        observer.methods['getRecordData'] = lambda *args,**kwargs: (i for i in ['data'])
+        handler.addObserver(observer)
+        consume(handler._yieldData(identifier="identifier", recordSchema="schema", recordPacking='blah'))
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual('getRecordData', observer.calledMethods[0].name)
 
     def testNextRecordPosition(self):
         observer = CallTrace(emptyGeneratorMethods=['additionalDiagnosticDetails'])
