@@ -7,8 +7,8 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016, 2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011-2015, 2018, 2020 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011-2015, 2018 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 SURF http://www.surf.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -56,7 +56,7 @@ DRILLDOWN_SORTBY_INDEX = 'index'
 DRILLDOWN_SORTBY_COUNT = 'count'
 
 class SruHandler(Observable):
-    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False, useGetRecordData=False):
+    def __init__(self, extraRecordDataNewStyle=True, drilldownSortBy=DRILLDOWN_SORTBY_COUNT, extraXParameters=None, includeQueryTimes=False, drilldownMaximumMaximumResults=None, enableCollectLog=False):
         Observable.__init__(self)
         self._drilldownSortBy = drilldownSortBy
         self._extraRecordDataNewStyle = extraRecordDataNewStyle
@@ -66,7 +66,6 @@ class SruHandler(Observable):
         self._drilldownMaximumMaximumResults = drilldownMaximumMaximumResults
         self._drilldownMaximumTerms = DEFAULT_MAXIMUM_TERMS if self._drilldownMaximumMaximumResults is None else min(DEFAULT_MAXIMUM_TERMS, self._drilldownMaximumMaximumResults)
         self._collectLogForScope = collectLogForScope if enableCollectLog else lambda **kwargs: None
-        self._useGetRecordData = useGetRecordData
 
     def searchRetrieve(self, version=None, recordPacking=None, startRecord=1, maximumRecords=10, query='', sruArguments=None, diagnostics=None, **kwargs):
         SRU_IS_ONE_BASED = 1
@@ -262,10 +261,6 @@ class SruHandler(Observable):
             yield '</srw:extraRecordData>'
 
     def _yieldData(self, identifier=None, recordSchema=None, recordPacking=None):
-        if self._useGetRecordData:
-            yield self.any.getRecordData(identifier=identifier, recordSchema=recordSchema, recordPacking=recordPacking)
-            return
-
         data = yield self.any.retrieveData(identifier=identifier, name=recordSchema)
         if recordPacking == 'xml':
             yield data
