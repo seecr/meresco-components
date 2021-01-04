@@ -81,6 +81,7 @@ from timedmessagecachetest import TimedMessageCacheTest
 from tokenizefieldlettest import TokenizeFieldletTest
 from urltest import UrlTest
 from venturitest import VenturiTest
+from versiontest import VersionTest
 from xml2fieldstest import Xml2FieldsTest
 from xmlcomposetest import XmlComposeTest
 from xmlpumptest import XmlPumpTest
