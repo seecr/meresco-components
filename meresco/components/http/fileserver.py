@@ -9,8 +9,10 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012-2013, 2015, 2017, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2017 SURF http://www.surf.nl
+# Copyright (C) 2015, 2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2017, 2021 SURF https://www.surf.nl
+# Copyright (C) 2021 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -83,12 +85,11 @@ class File(object):
             yield "%s: %s" % item + CRLF
         yield CRLF
 
-        fp = open(self._filename)
-        data = fp.read(1024)
-        while data:
-            yield data
+        with open(self._filename, 'rb') as fp:
             data = fp.read(1024)
-        fp.close()
+            while data:
+                yield data
+                data = fp.read(1024)
 
     def _date(self, offset=0):
         return formatdate(time() + offset)

@@ -9,8 +9,10 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2012-2013, 2016-2017, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
-# Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
-# Copyright (C) 2017 SURF http://www.surf.nl
+# Copyright (C) 2016, 2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2017, 2021 SURF https://www.surf.nl
+# Copyright (C) 2021 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -39,7 +41,7 @@ from time import time
 from email.utils import parsedate
 from calendar import timegm
 
-from weightless.core import asString
+from weightless.core.utils import asList, generatorToString
 from meresco.components.http.fileserver import FileServer
 
 
@@ -86,16 +88,15 @@ class FileServerTest(SeecrTestCase):
             remove('/tmp/testFileExists')
 
     def testServeFile(self):
-        f = open(join(self.directory, 'someFile'), 'w')
-        f.write("Some Contents")
-        f.close()
+        with open(join(self.directory, 'someFile'), 'wb') as f:
+            f.write(b"Some Contents")
 
         fileServer = FileServer(self.directory)
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        response = asList(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
 
         self.assertTrue("HTTP/1.0 200 OK" in response)
         self.assertTrue("Content-Length: 13" in response, response)
-        self.assertTrue("Some Contents" in response)
+        self.assertTrue(b"Some Contents" in response, response)
 
     def testServeFileWithCorrectContentType(self):
         for extension, expectedType in [
@@ -109,7 +110,7 @@ class FileServerTest(SeecrTestCase):
             f.close()
 
             fileServer = FileServer(self.directory)
-            response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={}))
+            response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/%s" % filename, Method="GET", Headers={}))
             headersList = response.split('\r\n\r\n', 1)[0].split('\r\n')
 
             self.assertTrue("HTTP/1.0 200 OK" in response)
@@ -123,12 +124,12 @@ class FileServerTest(SeecrTestCase):
             f.write("Different Contents")
 
         fileServer = FileServer(documentRoot=[self.directory, self.directory2])
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
         self.assertTrue("Some Contents" in response)
         self.assertFalse("Different Contents" in response)
 
         fileServer = FileServer(documentRoot=[self.directory2, self.directory])
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
         self.assertTrue("Different Contents" in response)
         self.assertFalse("Some Contents" in response)
 
@@ -137,7 +138,7 @@ class FileServerTest(SeecrTestCase):
             f.write("Some Contents")
 
         fileServer = FileServer(self.directory)
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
         headers, body = response.split("\r\n\r\n")
 
         self.assertTrue("Date: " in headers)
@@ -158,7 +159,7 @@ class FileServerTest(SeecrTestCase):
             f.write("DO NOT READ ME")
         fileServer = FileServer(documentRoot)
 
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={}))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/../"+notAllowedFile, Method="GET", Headers={}))
 
         self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
         self.assertTrue("<title>404 Not Found</title>" in response)
@@ -166,7 +167,7 @@ class FileServerTest(SeecrTestCase):
 
     def testListDirectory(self):
         fileServer = FileServer(self.directory)
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
         self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)
 
         fileServer = FileServer(self.directory, allowDirectoryListing=True)
@@ -177,7 +178,7 @@ class FileServerTest(SeecrTestCase):
         with open(join(self.directory, subdir, 'The "real" <deal>.txt'), "w") as f:
             f.write("to test escaping")
 
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
         self.assertTrue(response.startswith("HTTP/1.0 200 OK"), response)
         self.assertTrue("<title>Index of /</title>" in response, response)
 
@@ -188,10 +189,10 @@ class FileServerTest(SeecrTestCase):
         self.assertTrue(links[0].endswith(' 5'), links[0])
         self.assertTrue(links[1].startswith('<a href="subdir/">subdir/</a>'), links[1])
 
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir"))
         self.assertTrue(response.startswith("HTTP/1.0 301 Moved Permanently"), response)
 
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir/"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir/"))
         self.assertTrue("<title>Index of /subdir</title>" in response, response)
         links = [line for line in response.split("\n") if line.startswith("<a href")]
         self.assertEqual('<a href="../">../</a>', links[0])
@@ -199,14 +200,14 @@ class FileServerTest(SeecrTestCase):
         self.assertTrue(links[1].endswith(' 16'), links[1])
 
         subdir = mkdir(self.directory, "subdir2")
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir2/"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/subdir2/"))
         self.assertTrue("<title>Index of /subdir2</title>" in response, response)
         links = [line for line in response.split("\n") if line.startswith("<a href")]
         self.assertTrue(1, len(links))
         hrs = [line for line in response.split("\n") if line.strip() == "<hr>"]
         self.assertEqual(2, len(hrs))
 
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/does_not_exist/"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/does_not_exist/"))
         self.assertTrue(response.startswith("HTTP/1.0 404 Not Found"), response)
 
     def testListDirectoryBasePath(self):
@@ -215,7 +216,7 @@ class FileServerTest(SeecrTestCase):
             f.write("Dummy")
         mkdir(self.directory, "subdir")
 
-        response = asString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
+        response = generatorToString(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/"))
         self.assertTrue(response.startswith("HTTP/1.0 200 OK"), response)
         self.assertTrue("<title>Index of /webpath</title>" in response, response)
 

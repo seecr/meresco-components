@@ -6,10 +6,13 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011, 2014, 2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
+# Copyright (C) 2021 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2021 SURF https://www.surf.nl
+# Copyright (C) 2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -33,7 +36,8 @@ from meresco.components.autocomplete import Autocomplete, PrefixBasedSuggest
 
 from testhelpers import Response as SolrResponse
 from seecr.test import SeecrTestCase, CallTrace
-from weightless.core import be, asString
+from weightless.core import be
+from weightless.core.utils import generatorToString
 from seecr.test.io import stderr_replaced
 
 class AutocompleteTest(SeecrTestCase):
@@ -74,7 +78,7 @@ class AutocompleteTest(SeecrTestCase):
             yield
         self.observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['Te']})).split('\r\n'*2)
+        header, body = generatorToString(self.auto.handleRequest(path='/path', arguments={'prefix':['Te']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["Te", ["term0", "term&/\\""]]""", body)
@@ -91,7 +95,7 @@ class AutocompleteTest(SeecrTestCase):
             yield
         self.observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
+        header, body = generatorToString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["te", ["term0", "term&/\\""]]""", body)
@@ -122,14 +126,14 @@ class AutocompleteTest(SeecrTestCase):
             yield
         self.observer.methods['prefixSearch'] = prefixSearch
 
-        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
+        header, body = generatorToString(self.auto.handleRequest(path='/path', arguments={'prefix':['te'], 'limit': ['5'], 'field': ['field.one']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["te", ["term0", "term&/\\""]]""", body)
         self.assertEqual(['prefixSearch'], [m.name for m in self.observer.calledMethods])
         self.assertEqual({'prefix':'te', 'fieldname':'field.one', 'limit':5}, self.observer.calledMethods[0].kwargs)
 
-        result = asString(self.auto.handleRequest(
+        result = generatorToString(self.auto.handleRequest(
             path='/path/opensearchdescription.xml',
             arguments={}))
         header,body = result.split('\r\n'*2)
@@ -145,21 +149,21 @@ class AutocompleteTest(SeecrTestCase):
 
     def testMinimumLength(self):
         self._setUpAuto(prefixBasedSearchKwargs=dict(minimumLength=5))
-        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['test']})).split('\r\n'*2)
+        header, body = generatorToString(self.auto.handleRequest(path='/path', arguments={'prefix':['test']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["test", []]""", body)
         self.assertEqual([], [m.name for m in self.observer.calledMethods])
 
     def testDefaultMinimumLength(self):
-        header, body = asString(self.auto.handleRequest(path='/path', arguments={'prefix':['t']})).split('\r\n'*2)
+        header, body = generatorToString(self.auto.handleRequest(path='/path', arguments={'prefix':['t']})).split('\r\n'*2)
 
         self.assertTrue("Content-Type: application/x-suggestions+json" in header, header)
         self.assertEqual("""["t", []]""", body)
         self.assertEqual([], [m.name for m in self.observer.calledMethods])
 
     def testOpenSearchDescriptionXml(self):
-        result = asString(self.auto.handleRequest(
+        result = generatorToString(self.auto.handleRequest(
             path='/path/opensearchdescription.xml',
             arguments={}))
         header,body = result.split('\r\n'*2)
@@ -188,7 +192,7 @@ class AutocompleteTest(SeecrTestCase):
             ),
             (self.observer,),
         ))
-        result = asString(self.auto.handleRequest(
+        result = generatorToString(self.auto.handleRequest(
             path='/path/opensearchdescription.xml',
             arguments={}))
         header,body = result.split('\r\n'*2)
@@ -203,7 +207,7 @@ class AutocompleteTest(SeecrTestCase):
 </OpenSearchDescription>""", body)
 
     def testJQueryJS(self):
-        result = asString(self.auto.handleRequest(
+        result = generatorToString(self.auto.handleRequest(
             path='/path/jquery.js',
             arguments={}))
         header,body = result.split('\r\n'*2)
@@ -214,7 +218,7 @@ class AutocompleteTest(SeecrTestCase):
             self.assertTrue('Content-Type: application/javascript' in header, header)
 
     def testJQueryAutocompleteJS(self):
-        result = asString(self.auto.handleRequest(
+        result = generatorToString(self.auto.handleRequest(
             path='/path/jquery.autocomplete.js',
             arguments={}))
         header,body = result.split('\r\n'*2)
@@ -225,7 +229,7 @@ class AutocompleteTest(SeecrTestCase):
             self.assertTrue('Content-Type: application/javascript' in header, header)
 
     def testAutocompleteCSS(self):
-        result = asString(self.auto.handleRequest(
+        result = generatorToString(self.auto.handleRequest(
             path='/path/autocomplete.css',
             arguments={}))
         header,body = result.split('\r\n'*2)

@@ -3,8 +3,11 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2016-2017, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2017 SURF http://www.surf.nl
+# Copyright (C) 2016-2017, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2017, 2021 SURF https://www.surf.nl
+# Copyright (C) 2021 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
 #
@@ -29,7 +32,7 @@ from meresco.components.http import StaticFiles, libdirForPrefix
 from meresco.components.http.utils import parseResponse
 from os.path import join
 from os import makedirs
-from weightless.core import asString
+from weightless.core.utils import generatorToString
 
 class StaticFilesTest(SeecrTestCase):
     def setUp(self):
@@ -42,21 +45,21 @@ class StaticFilesTest(SeecrTestCase):
         self.assertEqual('/jquery/', self.sf.path)
 
     def testData(self):
-        headers, body = parseResponse(asString(self.sf.handleRequest(path='/jquery/data.txt')))
+        headers, body = parseResponse(generatorToString(self.sf.handleRequest(path='/jquery/data.txt')))
         self.assertEqual('200', headers['StatusCode'])
         self.assertEqual('text/plain', headers['Headers']['Content-Type'])
         self.assertEqual('DATA', body)
 
     def testDoesNotExist(self):
-        headers, body = parseResponse(asString(self.sf.handleRequest(path='/jquery/no')))
+        headers, body = parseResponse(generatorToString(self.sf.handleRequest(path='/jquery/no')))
         self.assertEqual('404', headers['StatusCode'])
 
     def testNotMyPath(self):
-        self.assertEqual('', asString(self.sf.handleRequest(path='/other')))
+        self.assertEqual('', generatorToString(self.sf.handleRequest(path='/other')))
 
     def testIndex(self):
         sf = StaticFiles(libdir=self.tempdir, path='/path', allowDirectoryListing=True)
-        headers, body = parseResponse(asString(sf.handleRequest(path='/path/')))
+        headers, body = parseResponse(generatorToString(sf.handleRequest(path='/path/')))
         self.assertTrue('<a href="data.txt"' in body, body)
 
     def testPrefix(self):
@@ -78,7 +81,7 @@ class StaticFilesTest(SeecrTestCase):
 
         sf = StaticFiles(libdir=prefixDir, path='/jquery')
 
-        headers, body = parseResponse(asString(sf.handleRequest(path='/jquery/data.txt')))
+        headers, body = parseResponse(generatorToString(sf.handleRequest(path='/jquery/data.txt')))
         self.assertEqual('200', headers['StatusCode'])
         self.assertEqual('text/plain', headers['Headers']['Content-Type'])
         self.assertEqual('DATA', body)
