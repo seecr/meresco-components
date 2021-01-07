@@ -7,7 +7,7 @@
 # Copyright (C) 2007 SURFnet. http://www.surfnet.nl
 # Copyright (C) 2007-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2012-2013, 2015, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015, 2017, 2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://stichting.bibliotheek.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2017 SURF http://www.surf.nl
@@ -30,7 +30,7 @@
 #
 ## end license ##
 
-from os.path import isfile, join, normpath, commonprefix, abspath, isdir
+from os.path import isfile, join, normpath, commonprefix, abspath, isdir, getsize
 from rfc822 import formatdate
 from time import time
 from stat import ST_MTIME, ST_SIZE
@@ -73,7 +73,8 @@ class File(object):
             'Date': self._date(),
             'Expires': self._date(expires),
             'Last-Modified': formatdate(stat(self._filename)[ST_MTIME]),
-            'Content-Type': contentType
+            'Content-Type': contentType,
+            'Content-Length': getsize(self._filename),
         }
 
     def stream(self):
