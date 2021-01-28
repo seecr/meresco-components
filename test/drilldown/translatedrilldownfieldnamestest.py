@@ -297,15 +297,15 @@ class TranslateDrilldownFieldnamesTest(SeecrTestCase):
                             dict(fieldname='name2', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
                             dict(fieldname='name3', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX)]))
 
-        self.assertEquals(['executeQuery'], [m.name for m in self.observer.calledMethods])
-        self.assertEquals(dict(query='query', facets=[
+        self.assertEqual(['executeQuery'], [m.name for m in self.observer.calledMethods])
+        self.assertEqual(dict(query='query', facets=[
             dict(fieldname='internal.name', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
             dict(fieldname='internal.name', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
             dict(fieldname='internal.name', maxTerms=10, sortBy=DRILLDOWN_SORTBY_INDEX),
             ]), self.observer.calledMethods[0].kwargs)
-        self.assertEquals(self.response.hits, result.hits)
-        self.assertEquals(self.response.total, result.total)
-        self.assertEquals([ {
+        self.assertEqual(self.response.hits, result.hits)
+        self.assertEqual(self.response.total, result.total)
+        self.assertEqual([ {
                 'fieldname': 'name1',
                 'terms': [ {'term': 'value1', 'count': 1}, {'term': 'value2', 'count': 2} ]
             }, {

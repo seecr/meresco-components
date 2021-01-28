@@ -94,8 +94,8 @@ class FileServerTest(SeecrTestCase):
         fileServer = FileServer(self.directory)
         response = asList(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
 
-        self.assertTrue("HTTP/1.0 200 OK" in response)
-        self.assertTrue("Content-Length: 13" in response, response)
+        self.assertTrue("HTTP/1.0 200 OK\r\n" in response)
+        self.assertTrue("Content-Length: 13\r\n" in response, response)
         self.assertTrue(b"Some Contents" in response, response)
 
     def testServeFileWithCorrectContentType(self):
