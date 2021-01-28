@@ -30,6 +30,7 @@ from meresco.components import ParseArguments
 from seecr.test.io import stdout_replaced, stderr_replaced
 
 class ParseArgumentsTest(TestCase):
+    @stderr_replaced
     def testMandatoryKey(self):
         parser = ParseArguments()
         parser.addOption('', '--name', help='Naam', mandatory=True)
@@ -41,6 +42,7 @@ class ParseArgumentsTest(TestCase):
         argv = ['script', '--port', '1234']
         self.assertRaises(ValueError, parser._parse, argv)
 
+    @stderr_replaced
     def testAdditionalOptions_optional(self):
         argv = ['script', '--name', 'TestServer']
         parser = ParseArguments()
@@ -52,6 +54,7 @@ class ParseArgumentsTest(TestCase):
         self.assertEqual(None, options.port)
         self.assertEqual('default', options.withDefault)
 
+    @stderr_replaced
     def testDefaultValueInHelp(self):
         parser = ParseArguments()
         parser.addOption('', '--option', help='Option with a default value of {default}', default=42)
@@ -60,6 +63,7 @@ class ParseArgumentsTest(TestCase):
             parser.print_help()
             self.assertTrue("Option with a default value of 42" in out.getvalue(), out.getvalue())
 
+    @stderr_replaced
     def testMetaVars(self):
         parser = ParseArguments()
         parser.addOption('', '--option')
@@ -76,6 +80,7 @@ class ParseArgumentsTest(TestCase):
             self.assertTrue("--port=<int>" in out.getvalue(), out.getvalue())
             self.assertTrue("--otherPort=10000" in out.getvalue(), out.getvalue())
 
+    @stderr_replaced
     def testDescription(self):
         description = "Very nice program."
         parser = ParseArguments(description=description)
@@ -85,6 +90,7 @@ class ParseArgumentsTest(TestCase):
             s = out.getvalue()
             self.assertEqual(['Usage: _alltests.py [options]', '', description, '', 'Options:'], s.splitlines()[:5])
 
+    @stderr_replaced
     def testEpilog(self):
         epilog = 'And this is how they lived happily ever after.'
         parser = ParseArguments(epilog=epilog)
@@ -94,6 +100,7 @@ class ParseArgumentsTest(TestCase):
             s = out.getvalue()
             self.assertTrue(s.endswith('--option=<string>  \n\n{}\n'.format(epilog)), s)
 
+    @stderr_replaced
     def testUsage(self):
         # default
         parser = ParseArguments()
@@ -118,6 +125,7 @@ class ParseArgumentsTest(TestCase):
             s = out.getvalue()
             self.assertEqual(['Usage: |before| _alltests.py [options] [more-stuff]', ''], s.splitlines()[:2])
 
+    @stderr_replaced
     def testError(self):
         parser = ParseArguments()
         parser.addOption('', '--option')

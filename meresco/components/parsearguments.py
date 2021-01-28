@@ -28,9 +28,11 @@
 from optparse import OptionParser, Option
 
 from sys import exit
+from warnings import warn
 
 class ParseArguments(object):
     def __init__(self, usage=None, description=None, epilog=None):
+        warn("Please use python default module argparse.", DeprecationWarning)
         optKwargs = {}
         if description:
             optKwargs['description'] = description
