@@ -152,7 +152,7 @@ class ObservableHttpServerTest(SeecrTestCase):
 
     def testServerBindAddress(self):
         reactor = CallTrace()
-        port = next(PortNumberGenerator)
+        port = PortNumberGenerator.next()
         server = ObservableHttpServer(reactor, port, bindAddress='127.0.0.1')
         server.startServer()
         try:

@@ -54,4 +54,4 @@ class HttpClient(object):
 def _doRequest(method, parse, **kwargs):
     response = yield method(**kwargs)
     headers, body = response.split(b'\r\n\r\n')
-    return (headers.decode(), lxmlParse(BytesIO(body)) if parse else body.decode())
+    return [headers.decode(), lxmlParse(BytesIO(body)) if parse else body.decode()]

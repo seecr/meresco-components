@@ -59,7 +59,7 @@ from socketserver import TCPServer
 @contextmanager
 def server(responses, bufsize=4096, sleepWhile=None):
     sleepWhile = sleepWhile or (lambda: False)
-    port = next(PortNumberGenerator)
+    port = PortNumberGenerator.next()
     start = Event()
     end = Event()
     messages = []
@@ -1077,7 +1077,7 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
         sokClient.setblocking(0)
         sokServer = socket()
         sokServer.setblocking(0)
-        serverHostPort = ('127.0.0.1', next(PortNumberGenerator))
+        serverHostPort = ('127.0.0.1', PortNumberGenerator.next())
         sokServer.bind(serverHostPort)
         sokServer.listen(0)
         sleep(0.01)
