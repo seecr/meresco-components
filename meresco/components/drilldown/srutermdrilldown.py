@@ -28,7 +28,7 @@
 
 from traceback import print_exc
 from xml.sax.saxutils import escape as xmlEscape, quoteattr
-from simplejson import dumps
+from json import dumps
 
 from weightless.core import compose
 from meresco.core import Observable, decorateWith, decorate

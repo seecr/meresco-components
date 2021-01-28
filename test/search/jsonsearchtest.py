@@ -34,7 +34,7 @@ from meresco.components.log import LogCollectorScope, LogCollector
 from meresco.core import Observable
 from meresco.xml.namespaces import namespaces
 from meresco.xml.utils import createElement, createSubElement
-from simplejson import loads
+from json import loads
 from urllib.parse import urlparse, parse_qs
 from urllib.parse import urlencode
 from collections import namedtuple, OrderedDict

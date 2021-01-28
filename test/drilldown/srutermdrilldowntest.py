@@ -34,7 +34,7 @@ from seecr.test import SeecrTestCase
 from weightless.core import compose
 from lxml.etree import parse, XML
 from io import StringIO
-from simplejson import loads
+from json import loads
 from os.path import join, dirname, basename
 
 from seecr.test.io import stderr_replaced

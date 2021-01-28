@@ -40,7 +40,6 @@ from meresco.components.http.utils import CRLF
 
 from decimal import Decimal
 from time import time
-from simplejson import dumps
 
 class JsonSearch(Observable):
     VERSION = 0.1
@@ -196,7 +195,7 @@ class _Arguments(object):
             q.operands.append(self.query_expression)
             for facetFilter in facetFilters:
                 if '=' not in facetFilter:
-                    raise InvalidArgument('facet-filter', "expected <field>=<value> as a filter") 
+                    raise InvalidArgument('facet-filter', "expected <field>=<value> as a filter")
                 index, term = facetFilter.split('=', 1)
                 q.operands.append(QueryExpression.searchterm(index=index, relation='exact', term=term))
                 self._request['facet-filter'].append({'index':index, 'term':term})
