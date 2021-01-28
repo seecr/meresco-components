@@ -7,12 +7,12 @@
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2011-2016, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011, 2014, 2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011, 2014, 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
-# Copyright (C) 2021 Data Archiving and Network Services https://dans.knaw.nl
-# Copyright (C) 2021 SURF https://www.surf.nl
-# Copyright (C) 2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
+# Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2020-2021 SURF https://www.surf.nl
+# Copyright (C) 2020-2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
 #

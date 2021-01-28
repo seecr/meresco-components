@@ -4,8 +4,11 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2012-2014, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2012 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2012, 2020 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
+# Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2020 SURF https://www.surf.nl
+# Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
 #
