@@ -74,9 +74,9 @@ class MockStorage(object):
     def getData(self, ident, partname):
         self.timesCalled += 1
         if partname == 'partname1':
-            return """<one xmlns="http://namespaces.org/ns1"><tag>1</tag><tag>2</tag><escaped>&amp;</escaped></one>"""
+            return b"""<one xmlns="http://namespaces.org/ns1"><tag>1</tag><tag>2</tag><escaped>&amp;</escaped></one>"""
         elif partname == 'partname2':
-            return """<two><tag name="&lt;one&gt;">one</tag><tag name="&quot;two'">two</tag></two>"""
+            return b"""<two><tag name="&lt;one&gt;">one</tag><tag name="&quot;two'">two</tag></two>"""
         elif partname == 'partname3':
-            return """<root><one>One</one><two>TWo</two><three>THRee</three></root>"""
+            return b"""<root><one>One</one><two>TWo</two><three>THRee</three></root>"""
 

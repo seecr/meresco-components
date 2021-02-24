@@ -34,7 +34,7 @@
 from meresco.core import Observable
 from lxml.etree import parse
 from xml.sax.saxutils import escape as xmlEscape
-from io import StringIO
+from io import BytesIO
 
 class XmlCompose(Observable):
     def __init__(self, template, nsMap, **fieldMapping):
@@ -62,4 +62,4 @@ class XmlCompose(Observable):
         return self._template % dict(((k, xmlEscape(v)) for k,v in data.items()))
 
     def _getPart(self, identifier, partname):
-        return parse(StringIO(self.call.getData(identifier, partname)))
+        return parse(BytesIO(self.call.getData(identifier, partname)))
