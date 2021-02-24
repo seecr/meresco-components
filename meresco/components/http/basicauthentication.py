@@ -53,9 +53,13 @@ class BasicAuthentication(Observable):
         yield self.all.handleRequest(Headers=Headers, user=user, *args, **kwargs)
 
     def _parseHeader(self, header):
+        if type(header) is str:
+            header = bytes(header, encoding="utf-8")
+
         parts = header.split()
         if len(parts) != 2:
             return None
+
         part0, b64encoded = parts
         if part0 != b"Basic":
             return None

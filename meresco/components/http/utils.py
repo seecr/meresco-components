@@ -37,7 +37,7 @@
 ## end license ##
 
 from weightless.core import Yield
-from weightless.http import REGEXP, parseHeaders
+from weightless.http import REGEXP, HTTP, parseHeaders
 
 
 CRLF = "\r\n"
@@ -189,12 +189,22 @@ def parseResponseHeaders(header):
     return _convert(_parseHeaders(REGEXP.RESPONSE, header.encode()))
 
 def parseResponse(data):
-    headers = parseResponseHeaders(data)
-    body = data.split(CRLF*2,1)[-1]
+    headers = _convert(_parseHeaders(REGEXP.RESPONSE, data))
+    _, body = data.split(HTTP.CRLF*2,1)
     return headers, body
 
 def _convert(data):
-    return {
-        bytes: lambda x: x.decode(),
-        dict: lambda x: {_convert(k):_convert(v) for k,v in x.items()}
-    }.get(type(data), lambda x:x)(data)
+    def decodeBytes(someBytes):
+        try:
+            return someBytes.decode()
+        except UnicodeDecodeError:
+            print("UnicodeDecodeError for:", someBytes)
+            return someBytes
+    try:
+        return {
+            bytes: lambda x: decodeBytes(x),
+            dict: lambda x: {_convert(k):_convert(v) for k,v in x.items()}
+        }.get(type(data), lambda x:x)(data)
+    except:
+        print("Convert error for:", data)
+        raise

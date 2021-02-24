@@ -49,7 +49,7 @@ class ObservableHttpServerTest(SeecrTestCase):
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)
         s.addObserver(observer)
 
-        list(compose(s.handleRequest(RequestURI='http://localhost')))
+        list(compose(s.handleRequest(RequestURI=b'http://localhost')))
         self.assertEqual(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
         self.assertEqual('handleRequest', method.name)
@@ -61,7 +61,7 @@ class ObservableHttpServerTest(SeecrTestCase):
         s = ObservableHttpServer(CallTrace('Reactor'), 1024)
         s.addObserver(observer)
 
-        list(compose(s.handleRequest(RequestURI='http://localhost/path?key=value&emptykey#fragment')))
+        list(compose(s.handleRequest(RequestURI=b'http://localhost/path?key=value&emptykey#fragment')))
         self.assertEqual(1, len(observer.calledMethods))
         method = observer.calledMethods[0]
         self.assertEqual('handleRequest', method.name)
@@ -165,5 +165,5 @@ class ObservableHttpServerTest(SeecrTestCase):
 
     def testConvertToString(self):
         self.assertEqual(
-                {'scheme': '', 'netloc': '', 'path': '/path', 'query': 'query', 'fragments': '', 'arguments': {'query': ['']}, 'RequestURI': '/path?query', 'port': 6060, 'Method': 'GET', 'HTTPVersion': '1.1', 'Body': '', 'Headers': {'User-Agent': 'Wget/1.20.1 (linux-gnu)', 'Accept': '*/*', 'Accept-Encoding': 'identity', 'Host': 'localhost:6060', 'Connection': 'Keep-Alive'}, 'Client': ('127.0.0.1', 48506)}, 
+                {'scheme': '', 'netloc': '', 'path': '/path', 'query': 'query', 'fragments': '', 'arguments': {'query': ['']}, 'RequestURI': '/path?query', 'port': 6060, 'Method': 'GET', 'HTTPVersion': '1.1', 'Body': '', 'Headers': {'User-Agent': 'Wget/1.20.1 (linux-gnu)', 'Accept': '*/*', 'Accept-Encoding': 'identity', 'Host': 'localhost:6060', 'Connection': 'Keep-Alive'}, 'Client': ('127.0.0.1', 48506)},
                 _convertToStrings({'scheme': b'', 'netloc': b'', 'path': b'/path', 'query': b'query', 'fragments': b'', 'arguments': {b'query': [b'']}, 'RequestURI': b'/path?query', 'port': 6060, 'Method': b'GET', 'HTTPVersion': b'1.1', 'Body': b'', 'Headers': {b'User-Agent': b'Wget/1.20.1 (linux-gnu)', b'Accept': b'*/*', b'Accept-Encoding': b'identity', b'Host': b'localhost:6060', b'Connection': b'Keep-Alive'}, 'Client': ('127.0.0.1', 48506)}))

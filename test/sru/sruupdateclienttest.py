@@ -39,7 +39,10 @@ class SruUpdateClientTest(SeecrTestCase):
         postArguments = []
         def _httppost(**kwargs):
             postArguments.append(kwargs)
-            return dict(header='HTTP/1.0 200 OK\r\n\r\n', body=SRU_UPDATE_RESPONSE % ("success", ''))
+            return [
+                dict(StatusCode="200"),
+                bytes(SRU_UPDATE_RESPONSE % ("success", ''), encoding="utf-8")
+            ]
             yield
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost
@@ -60,13 +63,16 @@ class SruUpdateClientTest(SeecrTestCase):
                 <srw:recordSchema>rdf</srw:recordSchema>
                 <srw:recordData><xml/></srw:recordData>
             </srw:record>
-        </ucp:updateRequest>""", arguments['body'])
+        </ucp:updateRequest>""", str(arguments['body'], encoding="utf-8"))
 
     def testAddFailed(self):
         postArguments = []
         def _httppost(**kwargs):
             postArguments.append(kwargs)
-            return dict(header='HTTP/1.0 200 OK\r\n\r\n', body=SRU_UPDATE_RESPONSE % ("fail", SRU_DIAGNOSTICS))
+            return [
+                dict(StatusCode="200"),
+                bytes(SRU_UPDATE_RESPONSE % ("fail", SRU_DIAGNOSTICS), encoding="utf-8")
+            ]
             yield
         sruUpdate = SruUpdateClient()
         sruUpdate._httppost = _httppost
@@ -83,7 +89,10 @@ class SruUpdateClientTest(SeecrTestCase):
         postArguments = []
         def _httppost(**kwargs):
             postArguments.append(kwargs)
-            return dict(header='HTTP/1.0 200 OK\r\n\r\n', body=SRU_UPDATE_RESPONSE % ("success", ''))
+            return [
+                dict(StatusCode="200"),
+                bytes(SRU_UPDATE_RESPONSE % ("success", ''), encoding="utf-8")
+            ]
             yield
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost
@@ -104,7 +113,7 @@ class SruUpdateClientTest(SeecrTestCase):
                 <srw:recordSchema>ignored</srw:recordSchema>
                 <srw:recordData><ignored/></srw:recordData>
             </srw:record>
-        </ucp:updateRequest>""", arguments['body'])
+        </ucp:updateRequest>""", str(arguments['body'], encoding="utf-8"))
 
 
 SRU_UPDATE_RESPONSE = """

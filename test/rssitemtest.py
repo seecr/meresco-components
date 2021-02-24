@@ -121,12 +121,12 @@ class RssItemTest(TestCase):
 class MockStorage(object):
     def getData(self, identifier, partname):
         if partname == 'part1':
-            return '<dc><title>Title</title><description>Description</description></dc>'
+            return b'<dc><title>Title</title><description>Description</description></dc>'
         elif partname == 'part2':
-            return '<meta><upload><id>12(34)</id></upload><type>Type</type></meta>'
+            return b'<meta><upload><id>12(34)</id></upload><type>Type</type></meta>'
         elif partname == 'partNoDescription':
-            return '<dc><title>Title</title></dc>'
+            return b'<dc><title>Title</title></dc>'
         elif partname == 'partWithUnicode':
-            return '<dc><title>Title</title><description>&#8220;</description></dc>'
+            return b'<dc><title>Title</title><description>&#8220;</description></dc>'
 
 

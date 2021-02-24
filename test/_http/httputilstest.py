@@ -34,7 +34,7 @@
 ## end license ##
 
 import meresco.components.http.utils as utils
-from meresco.components.http.utils import redirectHttp, parseRequestHeaders, parseResponseHeaders
+from meresco.components.http.utils import redirectHttp, parseRequestHeaders, parseResponseHeaders, parseResponse
 from weightless.core import asString
 
 from unittest import TestCase

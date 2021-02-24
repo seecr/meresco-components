@@ -95,13 +95,20 @@ class ObservableHttpServer(Observable):
 
     def handleRequest(self, RequestURI=None, **kwargs):
         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
-        arguments = parse_qs(query, keep_blank_values=True)
+        arguments = parse_qs(str(query, encoding="utf-8"), keep_blank_values=True)
         requestArguments = {
             'scheme': scheme, 'netloc': netloc, 'path': path, 'query': query, 'fragments': fragments,
             'arguments': arguments,
             'RequestURI': RequestURI}
         requestArguments.update(kwargs)
-        yield self.all.handleRequest(**_convertToStrings(requestArguments))
+        savedBody = None
+        if 'Body' in requestArguments:
+            savedBody = requestArguments.pop('Body')
+        convertedResult = _convertToStrings(requestArguments)
+        if not savedBody is None:
+            convertedResult['Body'] = savedBody
+
+        yield self.all.handleRequest(**convertedResult)
 
     def setMaxConnections(self, m):
         self._httpserver.setMaxConnections(m)

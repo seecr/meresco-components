@@ -32,7 +32,7 @@ from xml.sax.saxutils import escape as xmlEscape
 from lxml.etree import XML
 
 from weightless.http import httppost
-from meresco.components.http.utils import CRLF
+from meresco.components.http.utils import CRLF, parseResponse
 from meresco.xml.namespaces import xpathFirst
 
 
@@ -58,19 +58,17 @@ class SruUpdateClient(object):
         yield self._upload(SRURECORDDELETE_TEMPLATE % locals())
 
     def _upload(self, sruRecordUpdate):
-        response = yield self._httppost(
-                host=self._host,
-                port=self._port,
-                request=self._path,
-                body=str(sruRecordUpdate),
-                headers={'User-Agent': self._userAgent, 'Host': self._host}
-            )
-        header = response['header']
-        body = response['body']
+        header, body = yield self._httppost(
+            host=self._host,
+            port=self._port,
+            request=self._path,
+            body=bytes(sruRecordUpdate, encoding="utf-8"),
+            headers={'User-Agent': self._userAgent, 'Host': self._host}
+        )
 
         url = "http://%s:%s%s" % (self._host, self._port, self._path)
-        if not '200' in header.lower():
-            raise SruUpdateException(url=url, status=header.split(' ', 2)[1])
+        if header['StatusCode'] != '200':
+            raise SruUpdateException(url=url, status=header['StatusCode'])
         response = XML(body)
         operationStatus = xpathFirst(response, "/srw:updateResponse/ucp:operationStatus/text()")
         if operationStatus != "success":
@@ -84,10 +82,10 @@ class SruUpdateClient(object):
             req = Request("http://%(host)s:%(port)s%(request)s" % kwargs, kwargs['body'])
             req.add_header('User-Agent', kwargs['headers']['User-Agent'])
             response = urlopen(req)
-            return dict(header=str(response.getcode()), body=response.read())
+            return [dict(StatusCode=str(response.getcode())), response.read()]
         response = yield httppost(**kwargs)
-        header, body = response.split(CRLF * 2)
-        return dict(header=header, body=body)
+        header, body = parseResponse(response)
+        return [header, body]
 
 class SruUpdateException(Exception):
     def __init__(self, url, status, diagnostics=None):

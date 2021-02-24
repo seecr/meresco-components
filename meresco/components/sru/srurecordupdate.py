@@ -60,6 +60,9 @@ class SruRecordUpdate(Observable):
             self._collectLogForScope = collectLogForScope
 
     def handleRequest(self, Body="", **kwargs):
+        if type(Body) is str:
+            Body = bytes(Body, encoding="utf-8")
+            
         yield okXml
         if not Body:
             yield self._respond(
@@ -71,7 +74,7 @@ class SruRecordUpdate(Observable):
         localLogCollector = dict()
         try:
             try:
-                lxmlNode = parse(BytesIO(Body.encode()))
+                lxmlNode = parse(BytesIO(Body))
             except XMLSyntaxError as e:
                 self._log(Body, localLogCollector=localLogCollector)
                 raise

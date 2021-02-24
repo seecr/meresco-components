@@ -61,9 +61,9 @@ class FileServerTest(SeecrTestCase):
 
     def testServeNotExistingFile(self):
         fileServer = FileServer(self.directory)
-        response = ''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/doesNotExist", Method="GET", Headers={}))
-        self.assertTrue("HTTP/1.0 404 Not Found" in response, response)
-        self.assertTrue("<title>404 Not Found</title>" in response)
+        response = b''.join(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/doesNotExist", Method="GET", Headers={}))
+        self.assertTrue(b"HTTP/1.0 404 Not Found" in response, response)
+        self.assertTrue(b"<title>404 Not Found</title>" in response)
 
     def testFindFile(self):
         server = FileServer([self.directory, self.directory2])
@@ -94,8 +94,8 @@ class FileServerTest(SeecrTestCase):
         fileServer = FileServer(self.directory)
         response = asList(fileServer.handleRequest(port=80, Client=('localhost', 9000), path="/someFile", Method="GET", Headers={}))
 
-        self.assertTrue("HTTP/1.0 200 OK\r\n" in response)
-        self.assertTrue("Content-Length: 13\r\n" in response, response)
+        self.assertTrue(b"HTTP/1.0 200 OK\r\n" in response)
+        self.assertTrue(b"Content-Length: 13\r\n" in response, response)
         self.assertTrue(b"Some Contents" in response, response)
 
     def testServeFileWithCorrectContentType(self):

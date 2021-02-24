@@ -32,7 +32,7 @@ from meresco.components.http import StaticFiles, libdirForPrefix
 from meresco.components.http.utils import parseResponse
 from os.path import join
 from os import makedirs
-from weightless.core.utils import generatorToString
+from weightless.core.utils import asBytes
 
 class StaticFilesTest(SeecrTestCase):
     def setUp(self):
@@ -45,22 +45,22 @@ class StaticFilesTest(SeecrTestCase):
         self.assertEqual('/jquery/', self.sf.path)
 
     def testData(self):
-        headers, body = parseResponse(generatorToString(self.sf.handleRequest(path='/jquery/data.txt')))
+        headers, body = parseResponse(asBytes(self.sf.handleRequest(path='/jquery/data.txt')))
         self.assertEqual('200', headers['StatusCode'])
         self.assertEqual('text/plain', headers['Headers']['Content-Type'])
-        self.assertEqual('DATA', body)
+        self.assertEqual(b'DATA', body)
 
     def testDoesNotExist(self):
-        headers, body = parseResponse(generatorToString(self.sf.handleRequest(path='/jquery/no')))
+        headers, body = parseResponse(asBytes(self.sf.handleRequest(path='/jquery/no')))
         self.assertEqual('404', headers['StatusCode'])
 
     def testNotMyPath(self):
-        self.assertEqual('', generatorToString(self.sf.handleRequest(path='/other')))
+        self.assertEqual(b'', asBytes(self.sf.handleRequest(path='/other')))
 
     def testIndex(self):
         sf = StaticFiles(libdir=self.tempdir, path='/path', allowDirectoryListing=True)
-        headers, body = parseResponse(generatorToString(sf.handleRequest(path='/path/')))
-        self.assertTrue('<a href="data.txt"' in body, body)
+        headers, body = parseResponse(asBytes(sf.handleRequest(path='/path/')))
+        self.assertTrue(b'<a href="data.txt"' in body, body)
 
     def testPrefix(self):
         fullLibDir = join(self.tempdir, 'library-3.4.5')
@@ -81,7 +81,7 @@ class StaticFilesTest(SeecrTestCase):
 
         sf = StaticFiles(libdir=prefixDir, path='/jquery')
 
-        headers, body = parseResponse(generatorToString(sf.handleRequest(path='/jquery/data.txt')))
+        headers, body = parseResponse(asBytes(sf.handleRequest(path='/jquery/data.txt')))
         self.assertEqual('200', headers['StatusCode'])
         self.assertEqual('text/plain', headers['Headers']['Content-Type'])
-        self.assertEqual('DATA', body)
+        self.assertEqual(b'DATA', body)

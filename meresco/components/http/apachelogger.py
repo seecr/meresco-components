@@ -47,17 +47,17 @@ class ApacheLogger(Transparent):
     def __init__(self, outputStream=DevNull()):
         Transparent.__init__(self)
         self._outputStream = outputStream
-        
+
     def handleRequest(self, *args, **kwargs):
         status = 0
         for line in compose(self.all.handleRequest(*args, **kwargs)):
             if line is Yield or callable(line):
                 yield line
                 continue
-            if not status and line.startswith('HTTP/1.'):
-                status = line[len('HTTP/1.0 '):][:3]
+            if not status and asBytes(line).startswith(b'HTTP/1.'):
+                status = str(asBytes(line)[len(b'HTTP/1.0 '):][:3], encoding='utf-8')
                 self._log(status, **kwargs)
-            yield line  
+            yield line
 
     def logHttpError(self, ResponseCode, RequestURI, *args, **kwargs):
         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
@@ -75,3 +75,8 @@ class ApacheLogger(Transparent):
 
         self._outputStream.write(logline % locals())
         self._outputStream.flush()
+
+def asBytes(s):
+    if type(s) is str:
+        return bytes(s, encoding='utf-8')
+    return s

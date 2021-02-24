@@ -58,6 +58,7 @@ from meresco.components import PeriodicDownload, Schedule
 from http.server import BaseHTTPRequestHandler
 from socketserver import TCPServer
 
+socksToClose = []
 
 @contextmanager
 def server(responses, bufsize=4096, sleepWhile=None):
@@ -74,6 +75,7 @@ def server(responses, bufsize=4096, sleepWhile=None):
             while not end.isSet():
                 try:
                     connection, address = s.accept()
+                    socksToClose.append(connection)
                     msg = connection.recv(bufsize)
                     messages.append(msg)
                     response = responses.pop(0)
@@ -98,6 +100,11 @@ def server(responses, bufsize=4096, sleepWhile=None):
 
 
 class PeriodicDownloadTest(SeecrTestCase):
+    def tearDown(self):
+        SeecrTestCase.tearDown(self)
+        for each in socksToClose:
+            each.close()
+
     def testOne(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
             downloader, observer, reactor = self._prepareDownloader("localhost", port)

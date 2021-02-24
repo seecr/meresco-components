@@ -80,10 +80,10 @@ class File(object):
         }
 
     def stream(self):
-        yield 'HTTP/1.0 200 OK' + CRLF
+        yield bytes('HTTP/1.0 200 OK' + CRLF, encoding="utf-8")
         for item in self.getHeaders().items():
-            yield "%s: %s" % item + CRLF
-        yield CRLF
+            yield bytes("%s: %s" % item + CRLF, encoding="utf-8")
+        yield bytes(CRLF, encoding="utf-8")
 
         with open(self._filename, 'rb') as fp:
             data = fp.read(1024)
@@ -112,16 +112,16 @@ class Directory(object):
             yield self._permanentRedirect(strippedPath)
             return
 
-        yield httputils.Ok
+        yield bytes(httputils.Ok, encoding="utf-8")
         headers = {'Content-Type': httputils.ContentTypeHtml}
         headers.update(self.getHeaders())
         for item in headers.items():
-            yield "%s: %s" % item + CRLF
-        yield CRLF
+            yield bytes("%s: %s" % item + CRLF, encoding="utf-8")
+        yield bytes(CRLF, encoding="utf-8")
         totalPath = self._basePath + ('' if strippedPath.startswith('/') else '/') + strippedPath
 
         title = escapeHtml('Index of %(path)s' % dict(path=totalPath[:-1] or '/'))
-        yield """<html>
+        yield bytes("""<html>
     <head>
         <title>%(title)s</title>
     </head>
@@ -129,9 +129,9 @@ class Directory(object):
         <h1>%(title)s</h1>
         <hr>
         <pre>
-""" % locals()
+""" % locals(), encoding="utf-8")
         if strippedPath != '/':
-            yield '<a href="../">../</a>\n'
+            yield bytes('<a href="../">../</a>\n', encoding="utf-8")
         files = sorted(listdir(self._path))
         if len(files) > 0:
             longest = max(list(map(str.__len__, files))) + 2
@@ -140,19 +140,20 @@ class Directory(object):
                 fileStats = stat(fullFilename)
                 if isdir(fullFilename):
                     filename += "/"
-                yield '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename))
-                yield ' ' * (longest-len(filename))
-                yield '%-20s' % formatdate(fileStats[ST_MTIME])
-                yield '%20.d' % fileStats[ST_SIZE]
-                yield "\n"
-        yield """       </pre>
+                yield bytes(
+                '<a href=%s>%s</a>' % (quoteattr(filename), escapeHtml(filename)) +
+                ' ' * (longest-len(filename)) +
+                '%-20s' % formatdate(fileStats[ST_MTIME]) +
+                '%20.d' % fileStats[ST_SIZE] +
+                "\n", encoding="utf-8")
+        yield bytes("""       </pre>
         <hr>
     </body>
 </html>
-        """
+        """, encoding="utf-8")
     def _permanentRedirect(self, path):
-        yield "HTTP/1.0 301 Moved Permanently\r\n"
-        yield "Location: %s/\r\n\r\n" % path
+        yield bytes("HTTP/1.0 301 Moved Permanently\r\n", encoding="utf-8")
+        yield bytes("Location: %s/\r\n\r\n" % path, encoding="utf-8")
 
 class FileServer(object):
     def __init__(self, documentRoot, allowDirectoryListing=False, basePath=''):
@@ -165,14 +166,15 @@ class FileServer(object):
     def handleRequest(self, path, port=None, Client=None, Method=None, Headers=None, **kwargs):
         resolvedFileOrDir = self._findFile(path)
         if resolvedFileOrDir is None:
-            yield httputils.notFoundHtml
-            yield '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n'
-            yield "<html><head>\n"
-            yield "<title>404 Not Found</title>\n"
-            yield "</head><body>\n"
-            yield "<h1>Not Found</h1>\n"
-            yield "<p>The requested URL %s was not found on this server.</p>\n" % path
-            yield "</body></html>\n"
+            yield bytes(
+                httputils.notFoundHtml +
+            '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n' +
+            "<html><head>\n" +
+            "<title>404 Not Found</title>\n" +
+            "</head><body>\n" +
+            "<h1>Not Found</h1>\n" +
+            "<p>The requested URL %s was not found on this server.</p>\n" % path +
+            "</body></html>\n", encoding="utf-8")
             return
         yield resolvedFileOrDir.stream()
 
