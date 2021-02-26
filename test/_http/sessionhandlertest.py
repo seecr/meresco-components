@@ -36,7 +36,8 @@
 from meresco.core import Observable
 from meresco.components.http import SessionHandler, utils, CookieMemoryStore
 from meresco.components.http.utils import CRLF, findCookies
-from weightless.core import asString, consume, asList
+from weightless.core import consume, asList
+from weightless.core.utils import generatorToString
 from weightless.http import parseHeaders, parseHeadersString
 from seecr.test import CallTrace, SeecrTestCase
 from seecr.zulutime import ZuluTime
@@ -61,7 +62,7 @@ class SessionHandlerTest(SeecrTestCase):
                 yield '<ht'
                 yield 'ml/>'
         self.handler.addObserver(MyObserver())
-        result = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
+        result = generatorToString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={'a':'b'}))
 
         self.assertEqual(1, len(called))
         self.assertEqual({}, called[0]['session'])
@@ -85,7 +86,7 @@ class SessionHandlerTest(SeecrTestCase):
                 sessions.append(session)
                 yield  utils.okHtml + '<html/>'
         self.handler.addObserver(MyObserver())
-        headers = asString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})).split(CRLF*2,1)[0]
+        headers = generatorToString(self.handler.handleRequest(RequestURI='/path', Client=('127.0.0.1', 12345), Headers={})).split(CRLF*2,1)[0]
         headers = parseHeadersString(headers)
         self.assertTrue('Set-Cookie' in headers, headers)
         cookie = findCookies(headers, self.cookiestore.cookieName(), 'Set-Cookie')[0]
@@ -100,9 +101,9 @@ class SessionHandlerTest(SeecrTestCase):
                 sessions.append(session)
                 yield  utils.okHtml + '<html/>'
         self.handler.addObserver(MyObserver())
-        headers = asString(self.handler.handleRequest(
-            RequestURI='/path', 
-            Client=('127.0.0.1', 12345), 
+        headers = generatorToString(self.handler.handleRequest(
+            RequestURI='/path',
+            Client=('127.0.0.1', 12345),
             Headers={'Cookie': '%s=%s' % (self.cookiestore.cookieName(), 'injected_id')})).split(CRLF*2,1)[0]
         headers = parseHeadersString(headers)
         self.assertTrue('injected_id' not in headers['Set-Cookie'])
@@ -120,8 +121,8 @@ class SessionHandlerTest(SeecrTestCase):
         self.handler.addObserver(MyObserver())
         result = asList(self.handler.handleRequest(Headers={}))
         self.assertEqual(callableMethod, result[0])
-        self.assertEqual("HTTP/1.0 200 OK\r\n", result[1])
-        self.assertEqual("\r\nBODY", result[3])
+        self.assertEqual(b"HTTP/1.0 200 OK\r\n", result[1])
+        self.assertEqual(b"\r\nBODY", result[3])
         self.assertEqual(callableMethod, result[4])
-        self.assertTrue(result[2].startswith('Set-Cookie: session'), result[2])
+        self.assertTrue(result[2].startswith(b'Set-Cookie: session'), result[2])
         self.assertEqual("THE END", result[5])

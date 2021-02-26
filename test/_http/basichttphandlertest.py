@@ -30,7 +30,8 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase,CallTrace
-from weightless.core import compose, be, asString
+from weightless.core import compose, be
+from weightless.core.utils import generatorToString
 from meresco.core import Observable
 
 from meresco.components.http import BasicHttpHandler
@@ -41,7 +42,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer = CallTrace('HttpComponent', emptyGeneratorMethods=['handleRequest'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
 
         self.assertEqual('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -52,7 +53,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer.returnValues['handleRequest'] = (f for f in ['HTTP/1.0 200 OK\r\n\r\n', 'Body'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
 
         self.assertEqual('HTTP/1.0 200 OK\r\n\r\nBody', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -62,7 +63,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer = CallTrace('HttpComponent', emptyGeneratorMethods=['handleRequest'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/", path='/'))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/", path='/'))
 
         self.assertEqual('HTTP/1.0 404\r\n\r\n/', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -72,7 +73,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer = CallTrace('HttpComponent', emptyGeneratorMethods=['handleRequest'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
 
         self.assertEqual('HTTP/1.0 302 Found\r\nLocation: http://example.org/here\r\n\r\n', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -83,7 +84,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer.returnValues['handleRequest'] = (f for f in ['HT','TP/1.0 200 OK\r\n\r\n', 'Body'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
 
         self.assertEqual('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\n\r\nBody', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -94,7 +95,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer.returnValues['handleRequest'] = (f for f in ['HT','TP/1.0 200 OK\r\n\r\n', 'Body'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
 
         self.assertEqual('HTTP/1.0 200 OK\r\nAap: Noot Mies\r\nBoom: Vis\r\n\r\nBody', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -104,7 +105,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer = CallTrace('HttpComponent', emptyGeneratorMethods=['handleRequest'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
 
         self.assertEqual('HTTP/1.0 404 Not Found\r\nAap: Noot Mies\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<html><body>404 Not Found</body></html>', response)
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
@@ -115,7 +116,7 @@ class BasicHttpHandlerTest(SeecrTestCase):
         observer.returnValues['handleRequest'] = (f for f in ['Body'])
         dna = self.build(handler, observer)
 
-        response = asString(dna.all.handleRequest(RequestURI="/"))
+        response = generatorToString(dna.all.handleRequest(RequestURI="/"))
         self.assertEqual('Body', response)
 
 

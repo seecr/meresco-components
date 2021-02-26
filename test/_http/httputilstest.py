@@ -35,7 +35,7 @@
 
 import meresco.components.http.utils as utils
 from meresco.components.http.utils import redirectHttp, parseRequestHeaders, parseResponseHeaders, parseResponse
-from weightless.core import asString
+from weightless.core.utils import asString, generatorToString
 
 from unittest import TestCase
 
@@ -48,7 +48,7 @@ class HttpUtilsTest(TestCase):
             yield 'ml/>'
 
         newHeader = 'Set-Cookie: session=dummySessionId1234; path=/'
-        result = ''.join(utils.insertHeader(handleRequest(), newHeader))
+        result = generatorToString(utils.insertHeader(handleRequest(), newHeader))
         header, body = result.split(utils.CRLF*2, 1)
         self.assertEqual('<html/>', body)
         headerParts = header.split(utils.CRLF)
@@ -74,6 +74,13 @@ class HttpUtilsTest(TestCase):
             yield 'ml/>'
         self.assertEqual('HTTP/1.0 200 OK\r\nHeader: value\r\n\r\n<html/>', asString(utils.insertHeader(handleRequest(), None)))
 
+    def testInsertHeaderWithBytes(self):
+        def handleRequest(*args, **kwargs):
+            yield b"HTTP/1.0 200 OK\r\n"
+            yield b"Header: value\r\n\r\n"
+            yield '<ht'
+            yield 'ml/>'
+        result = list(utils.insertHeader(handleRequest(), 'Set-Cookie: session=dummySessionId1234; path=/'))
 
     def testRedirect(self):
         self.assertEqual("HTTP/1.0 302 Found\r\nLocation: /somewhere\r\n\r\n", redirectHttp % "/somewhere")

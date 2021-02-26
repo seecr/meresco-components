@@ -145,25 +145,27 @@ serverUnavailableHtml = "HTTP/1.0 503 Service Unavailable" + CRLF +\
 
 
 def insertHeaders(httpResponse, *extraHeaders):
-    addedHeaders = CRLF.join(h for h in extraHeaders if h)
+    addedHeaders = HTTP.CRLF.join(_asBytes(h) for h in extraHeaders if h)
     if not addedHeaders:
         yield httpResponse
         return
     alreadyDone = False
     for response in httpResponse:
-        if response is Yield or callable(response):
+        if response is Yield or callable(response) or alreadyDone:
             yield response
             continue
 
-        if not alreadyDone and CRLF in response:
-            alreadyDone = True
-            statusLine, remainder = response.split(CRLF, 1)
-            yield statusLine + CRLF
-            yield addedHeaders + CRLF
-            if remainder != '':
-                yield remainder
-        else:
-            yield response
+        bResponse = _asBytes(response)
+        if not HTTP.CRLF in bResponse:
+            yield bResponse
+            continue
+
+        alreadyDone = True
+        statusLine, remainder = bResponse.split(HTTP.CRLF, 1)
+        yield statusLine + HTTP.CRLF
+        yield addedHeaders + HTTP.CRLF
+        if remainder != b'':
+            yield remainder
 
 def insertHeader(httpResponse, extraHeader):
     return insertHeaders(httpResponse, extraHeader)
@@ -208,3 +210,8 @@ def _convert(data):
     except:
         print("Convert error for:", data)
         raise
+
+def _asBytes(bytesOrString):
+    if type(bytesOrString) is bytes:
+        return bytesOrString
+    return bytes(bytesOrString, encoding='utf-8')
