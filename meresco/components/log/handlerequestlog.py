@@ -27,6 +27,7 @@
 
 from meresco.core import Transparent
 from meresco.components.log import collectLogForScope
+from meresco.components.http.utils import ensureBytes
 from weightless.core import compose, Yield
 from time import time
 from sys import exc_info
@@ -51,17 +52,17 @@ class HandleRequestLog(Transparent):
                 if response is Yield or callable(response):
                     yield response
                     continue
-                if hasattr(response, '__len__'):
-                    sizeInBytes += len(response)
-                    if not httpStatus and response.startswith('HTTP/1'):
-                        httpStatus = response[len('HTTP/1.0 '):][:3]
-                yield response
+                bResponse = ensureBytes(response)
+                sizeInBytes += len(bResponse)
+                if not httpStatus and bResponse.startswith(b'HTTP/1'):
+                    httpStatus = bResponse[len(b'HTTP/1.0 '):][:3]
+                yield bResponse
         except (SystemExit, KeyboardInterrupt, AssertionError):
             raise
         except:
             _, errorValue, _  = exc_info()
             responseLogDict['size'] = sizeInBytes or '-'
-            responseLogDict['httpStatus'] = httpStatus or '500'  # assuming this is what HttpServer will make of it
+            responseLogDict['httpStatus'] = str(httpStatus, encoding='utf-8') if httpStatus else '500'  # assuming this is what HttpServer will make of it
             responseLogDict['duration'] = self._time() - timestamp
             responseLogDict['exception'] = errorValue
             collectLogForScope(httpRequest=requestLogDict, httpResponse=responseLogDict)
@@ -69,7 +70,7 @@ class HandleRequestLog(Transparent):
 
         responseLogDict['size'] = sizeInBytes
         if httpStatus:
-            responseLogDict['httpStatus'] = httpStatus
+            responseLogDict['httpStatus'] = str(httpStatus, encoding='utf-8')
         responseLogDict['duration'] = self._time() - timestamp
         collectLogForScope(httpRequest=requestLogDict, httpResponse=responseLogDict)
 

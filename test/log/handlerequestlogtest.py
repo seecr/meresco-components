@@ -60,7 +60,7 @@ class HandleRequestLogTest(SeecrTestCase):
 
         result = asList(observable.all.handleRequest(Method='GET', Client=('127.0.0.1', 1234), RequestURI='http://example.org/path?key=value', query='key=value', path='/path', Headers={'Referer': 'http://meresco.org', 'User-Agent': 'Meresco-Components Test'}, otherKwarg='value'))
 
-        self.assertEqual([Yield, okPlainText, 'te', callable, 'xt'], result)
+        self.assertEqual([Yield, okPlainText.encode(), b'te', callable, b'xt'], result)
         self.assertEqual(['handleRequest'], requestHandler.calledMethodNames())
         logline = stream.getvalue()
         self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test"\n', logline)
@@ -162,7 +162,7 @@ class HandleRequestLogTest(SeecrTestCase):
         except Exception:
             pass
 
-        self.assertEqual([Yield, okPlainText, 'text'], result)
+        self.assertEqual([Yield, bytes(okPlainText, encoding='utf-8'), b'text'], result)
         self.assertEqual(['handleRequest'], requestHandler.calledMethodNames())
         logline = stream.getvalue()
         self.assertEqual('127.0.0.1 - - [21/Mar/2014:13:39:03 +0000] "GET /path?key=value HTTP/1.0" 200 64 "http://meresco.org" "Meresco-Components Test" Exception raised:\n    ValueError(\'doesntreallymatter\')\n', logline)
