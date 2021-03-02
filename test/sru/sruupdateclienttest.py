@@ -41,12 +41,42 @@ class SruUpdateClientTest(SeecrTestCase):
             postArguments.append(kwargs)
             return [
                 dict(StatusCode="200"),
-                bytes(SRU_UPDATE_RESPONSE % ("success", ''), encoding="utf-8")
+                SRU_UPDATE_RESPONSE % (b"success", b'')
             ]
             yield
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
         sruUpdate._httppost = _httppost
-        list(compose(sruUpdate.add(identifier='anIdentifier', data='<xml/>')))
+        list(compose(sruUpdate.add(identifier='anIdentifier', data=b'<xml/>')))
+        self.assertEqual(1, len(postArguments))
+        arguments = postArguments[0]
+        self.assertEqual('localhost', arguments['host'])
+        self.assertEqual(1234, arguments['port'])
+        self.assertEqual('/update', arguments['request'])
+        self.assertEqual({"User-Agent": "testAgent", "Host": 'localhost'}, arguments['headers'])
+        self.assertEqualsWS("""<?xml version="1.0" encoding="UTF-8"?>
+            <ucp:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
+            <srw:version>1.0</srw:version>
+            <ucp:action>info:srw/action/1/replace</ucp:action>
+            <ucp:recordIdentifier>anIdentifier</ucp:recordIdentifier>
+            <srw:record>
+                <srw:recordPacking>xml</srw:recordPacking>
+                <srw:recordSchema>rdf</srw:recordSchema>
+                <srw:recordData><xml/></srw:recordData>
+            </srw:record>
+        </ucp:updateRequest>""", str(arguments['body'], encoding="utf-8"))
+    
+    def testAddSuccessDataIsNotBytes(self):
+        postArguments = []
+        def _httppost(**kwargs):
+            postArguments.append(kwargs)
+            return [
+                dict(StatusCode="200"),
+                str(SRU_UPDATE_RESPONSE % (b"success", b''), encoding="utf-8")
+            ]
+            yield
+        sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
+        sruUpdate._httppost = _httppost
+        list(compose(sruUpdate.add(identifier='anIdentifier', data=b'<xml/>')))
         self.assertEqual(1, len(postArguments))
         arguments = postArguments[0]
         self.assertEqual('localhost', arguments['host'])
@@ -71,14 +101,14 @@ class SruUpdateClientTest(SeecrTestCase):
             postArguments.append(kwargs)
             return [
                 dict(StatusCode="200"),
-                bytes(SRU_UPDATE_RESPONSE % ("fail", SRU_DIAGNOSTICS), encoding="utf-8")
+                SRU_UPDATE_RESPONSE % (b"fail", SRU_DIAGNOSTICS)
             ]
             yield
         sruUpdate = SruUpdateClient()
         sruUpdate._httppost = _httppost
         sruUpdate.updateHostAndPort('localhost', 12345)
         try:
-            list(compose(sruUpdate.add(identifier='anIdentifier', data='<xml/>')))
+            list(compose(sruUpdate.add(identifier='anIdentifier', data=b'<xml/>')))
             self.fail("should not get here")
         except SruUpdateException as e:
             self.assertEqual(e.url, 'http://localhost:12345/update')
@@ -91,7 +121,7 @@ class SruUpdateClientTest(SeecrTestCase):
             postArguments.append(kwargs)
             return [
                 dict(StatusCode="200"),
-                bytes(SRU_UPDATE_RESPONSE % ("success", ''), encoding="utf-8")
+                SRU_UPDATE_RESPONSE % (b"success", b'')
             ]
             yield
         sruUpdate = SruUpdateClient(host='localhost', port=1234, userAgent="testAgent")
@@ -116,14 +146,14 @@ class SruUpdateClientTest(SeecrTestCase):
         </ucp:updateRequest>""", str(arguments['body'], encoding="utf-8"))
 
 
-SRU_UPDATE_RESPONSE = """
+SRU_UPDATE_RESPONSE = b"""
 <srw:updateResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
     <srw:version>1.0</srw:version>
-    <ucp:operationStatus>%s</ucp:operationStatus>%s
+    <ucp:operationStatus>%b</ucp:operationStatus>%b
 </srw:updateResponse>
 """
 
-SRU_DIAGNOSTICS = """<srw:diagnostics>
+SRU_DIAGNOSTICS = b"""<srw:diagnostics>
     <diag:diagnostic xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
         <diag:uri>info:srw/diagnostic/12/1</diag:uri>
         <diag:details>Traceback: some traceback</diag:details>

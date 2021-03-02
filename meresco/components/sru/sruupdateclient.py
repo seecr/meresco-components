@@ -49,20 +49,22 @@ class SruUpdateClient(object):
         self._port = port
 
     def add(self, identifier, data, **kwargs):
-        recordIdentifier = xmlEscape(identifier)
-        recordData = data
-        yield self._upload(SRURECORDUPDATE_TEMPLATE % locals())
+        yield self._upload(SRURECORDUPDATE_TEMPLATE % {
+            b'recordIdentifier': bytes(xmlEscape(identifier), encoding="utf-8"),
+            b'recordData': data if type(data) is bytes else bytes(data, encoding="utf-8")
+        })
 
     def delete(self, identifier):
-        recordIdentifier = xmlEscape(identifier)
-        yield self._upload(SRURECORDDELETE_TEMPLATE % locals())
+        yield self._upload(SRURECORDDELETE_TEMPLATE %  {
+            b'recordIdentifier': bytes(xmlEscape(identifier), encoding="utf-8"),
+        })
 
     def _upload(self, sruRecordUpdate):
         header, body = yield self._httppost(
             host=self._host,
             port=self._port,
             request=self._path,
-            body=bytes(sruRecordUpdate, encoding="utf-8"),
+            body=sruRecordUpdate,
             headers={'User-Agent': self._userAgent, 'Host': self._host}
         )
 
@@ -103,23 +105,23 @@ class SruUpdateException(Exception):
         return s + "."
 
 
-SRURECORDUPDATE_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+SRURECORDUPDATE_TEMPLATE = b"""<?xml version="1.0" encoding="UTF-8"?>
 <ucp:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
     <srw:version>1.0</srw:version>
     <ucp:action>info:srw/action/1/replace</ucp:action>
-    <ucp:recordIdentifier>%(recordIdentifier)s</ucp:recordIdentifier>
+    <ucp:recordIdentifier>%(recordIdentifier)b</ucp:recordIdentifier>
     <srw:record>
         <srw:recordPacking>xml</srw:recordPacking>
         <srw:recordSchema>rdf</srw:recordSchema>
-        <srw:recordData>%(recordData)s</srw:recordData>
+        <srw:recordData>%(recordData)b</srw:recordData>
     </srw:record>
 </ucp:updateRequest>"""
 
-SRURECORDDELETE_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+SRURECORDDELETE_TEMPLATE = b"""<?xml version="1.0" encoding="UTF-8"?>
 <ucp:updateRequest xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:ucp="info:lc/xmlns/update-v1">
     <srw:version>1.0</srw:version>
     <ucp:action>info:srw/action/1/delete</ucp:action>
-    <ucp:recordIdentifier>%(recordIdentifier)s</ucp:recordIdentifier>
+    <ucp:recordIdentifier>%(recordIdentifier)b</ucp:recordIdentifier>
     <srw:record>
         <srw:recordPacking>xml</srw:recordPacking>
         <srw:recordSchema>ignored</srw:recordSchema>
