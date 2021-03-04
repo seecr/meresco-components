@@ -44,7 +44,7 @@ from ._utils import *
 from .converter import Converter
 from .timeddictionary import TimedDictionary
 from .xmlcompose import XmlCompose
-from .xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring
+from .xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring, lxmltobytes
 
 from .berkeleydict import DoubleUniqueBerkeleyDict, BerkeleyDict
 from .combineparts import CombineParts

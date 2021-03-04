@@ -42,6 +42,9 @@ from re import compile as compileRe
 
 
 def lxmltostring(lxmlNode, **kwargs):
+    return str(lxmltobytes(lxmlNode, **kwargs), encoding='utf-8')
+
+def lxmltobytes(lxmlNode, **kwargs):
     return _fixLxmltostringRootElement(tostring(lxmlNode, encoding="UTF-8", **kwargs))
 
 
@@ -72,19 +75,17 @@ class XmlPrintLxml(Converter):
         self._pretty_print = pretty_print
 
     def _convert(self, anObject):
-        return bytes(lxmltostring(anObject, pretty_print=self._pretty_print), encoding='utf-8')
+        return lxmltobytes(anObject, pretty_print=self._pretty_print)
 
 
-_CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')
+_CHAR_REF = compileRe(rb'\&\#(?P<code>x?[0-9a-fA-F]+);')
 def _replCharRef(matchObj):
     code = matchObj.groupdict()['code']
-    code = int(code[1:], base=16) if 'x' in code else int(code)
-    return str(chr(code))
+    code = int(code[1:], base=16) if b'x' in code else int(code)
+    return bytes(chr(code), encoding='utf-8')
 
 def _fixLxmltostringRootElement(value):
-    if type(value) is bytes:
-        value = value.decode()
-    firstGt = value.find('>')
-    if value.find('&#', 0, firstGt) > -1:
+    firstGt = value.find(b'>')
+    if value.find(b'&#', 0, firstGt) > -1:
         return _CHAR_REF.sub(_replCharRef, value[:firstGt]) + value[firstGt:]
     return value

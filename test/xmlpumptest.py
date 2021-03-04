@@ -238,14 +238,14 @@ class XmlPumpTest(SeecrTestCase):
     def testLxmltostringFixes(self):
         from meresco.components.xmlpump import _fixLxmltostringRootElement
 
-        self.assertEqual('<root><sub ...', _fixLxmltostringRootElement('<root><sub ...'))
-        self.assertEqual('<root attrib="aap&amp;noot"><sub ...',
-                _fixLxmltostringRootElement('<root attrib="aap&amp;noot"><sub ...'))
-        self.assertEqual('<root attrib="aap&euro;noot"><sub ...',
-                _fixLxmltostringRootElement('<root attrib="aap&euro;noot"><sub ...'))
-        self.assertEqual('<root attrib="ĳs"><sub ...',
-                _fixLxmltostringRootElement('<root attrib="&#307;s"><sub ...'))
-        self.assertEqual('<root attrib="ĳs"><sub ...',
-                _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub ...'))
-        self.assertEqual('<root attrib="ĳs"><sub attrib="&#x133;s">...',
-                _fixLxmltostringRootElement('<root attrib="&#x133;s"><sub attrib="&#x133;s">...'))
+        self.assertEqual(b'<root><sub ...', _fixLxmltostringRootElement(b'<root><sub ...'))
+        self.assertEqual(b'<root attrib="aap&amp;noot"><sub ...',
+                _fixLxmltostringRootElement(b'<root attrib="aap&amp;noot"><sub ...'))
+        self.assertEqual(b'<root attrib="aap&euro;noot"><sub ...',
+                _fixLxmltostringRootElement(b'<root attrib="aap&euro;noot"><sub ...'))
+        self.assertEqual('<root attrib="ĳs"><sub ...'.encode(),
+                _fixLxmltostringRootElement(b'<root attrib="&#307;s"><sub ...'))
+        self.assertEqual('<root attrib="ĳs"><sub ...'.encode(),
+                _fixLxmltostringRootElement(b'<root attrib="&#x133;s"><sub ...'))
+        self.assertEqual('<root attrib="ĳs"><sub attrib="&#x133;s">...'.encode(),
+                _fixLxmltostringRootElement(b'<root attrib="&#x133;s"><sub attrib="&#x133;s">...'))
