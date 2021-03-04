@@ -61,10 +61,9 @@ e.g. parseOptions=dict(huge_tree=True, remove_blank_text=True)"""
         parseKwargs = {}
         if not self._parseOptions is None:
             parseKwargs = dict(parser=XMLParser(**self._parseOptions))
-        if type(anObject) is _ElementStringResult:
-            return parse(BytesIO(bytes(anObject)), **parseKwargs)
-
-        return parse(BytesIO(anObject.encode('UTF-8')), **parseKwargs)
+        if isinstance(anObject, str):
+            anObject = bytes(anObject, encoding='utf-8')
+        return parse(BytesIO(bytes(anObject)), **parseKwargs)
 
 
 class XmlPrintLxml(Converter):
@@ -73,7 +72,7 @@ class XmlPrintLxml(Converter):
         self._pretty_print = pretty_print
 
     def _convert(self, anObject):
-        return lxmltostring(anObject, pretty_print=self._pretty_print)
+        return bytes(lxmltostring(anObject, pretty_print=self._pretty_print), encoding='utf-8')
 
 
 _CHAR_REF = compileRe(r'\&\#(?P<code>x?[0-9a-fA-F]+);')

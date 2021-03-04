@@ -129,7 +129,7 @@ class XmlPumpTest(SeecrTestCase):
         self.assertEqual('''<a>
   <b>“c</b>
 </a>
-''', observer.calledMethods[0].kwargs['data'])
+''', observer.calledMethods[0].kwargs['data'].decode())
 
     def testXmlPrintLxmlPrettyPrintFalse(self):
         observable = Observable()
@@ -140,7 +140,7 @@ class XmlPumpTest(SeecrTestCase):
         list(compose(observable.all.someMessage(lxmlNode=parse(StringIO('<a><b>“c</b></a>')))))
         self.assertEqual(['someMessage'], observer.calledMethodNames())
         self.assertEqual(['data'], list(observer.calledMethods[0].kwargs.keys()))
-        self.assertEqual('''<a><b>“c</b></a>''', observer.calledMethods[0].kwargs['data'])
+        self.assertEqual(b'''<a><b>\xe2\x80\x9cc</b></a>''', observer.calledMethods[0].kwargs['data'])
 
     def testTransparency(self):
         lxml = CallTrace('lxml')
@@ -161,8 +161,8 @@ class XmlPumpTest(SeecrTestCase):
         )
 
         observable.do.something(identifier='identifier', partname='partName', data='<?xml version="1.0"?><a><b>c</b></a>')
-        self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].kwargs['data'])
-        self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].kwargs['data'])
+        self.assertEqualsWS('<a><b>c</b></a>', lxml.calledMethods[0].kwargs['data'].decode())
+        self.assertEqualsWS('<a><b>c</b></a>', lxml2.calledMethods[0].kwargs['data'].decode())
 
     def testMissingFromKwargDoesNothing(self):
         observer = CallTrace()
@@ -206,7 +206,7 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
         observable.do.something('identifier', 'partname', lxmlNode=parse(StringIO('<someXml/>')))
-        self.assertEqual("something('identifier', 'partname', dataString='<someXml/>\n')", str(observer.calledMethods[0]))
+        self.assertEqual(r"something('identifier', 'partname', dataString=b'<someXml/>\n')", str(observer.calledMethods[0]))
 
         observable.do.something('identifier', 'partname', someKwarg=1)
         self.assertEqual("something('identifier', 'partname', someKwarg=1)", str(observer.calledMethods[1]))
@@ -221,7 +221,7 @@ class XmlPumpTest(SeecrTestCase):
             )
         )
         observable.do.something('identifier', 'partname', data=parse(StringIO('<someXml/>')))
-        self.assertEqual("something('identifier', 'partname', data='<someXml/>\n')", str(observer.calledMethods[0]))
+        self.assertEqual(r"something('identifier', 'partname', data=b'<someXml/>\n')", str(observer.calledMethods[0]))
 
     def testLxmltostring(self):
         from lxml.etree import tostring
