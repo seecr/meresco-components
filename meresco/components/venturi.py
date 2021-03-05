@@ -32,13 +32,13 @@
 #
 ## end license ##
 
-from lxml.etree import _Element, ElementTree, parse, XMLParser
-from io import StringIO
+from lxml.etree import _Element, ElementTree, XML
 
 from meresco.core import Observable
 
 from meresco.components.xmlxpath import lxmlElementUntail
-from meresco.components import lxmltostring
+from meresco.components import lxmltobytes
+from meresco.components.http.utils import ensureBytes
 from warnings import warn
 from meresco.xml.namespaces import namespaces as _namespaces
 
@@ -60,21 +60,21 @@ class Venturi(Observable):
         for partSpec in self._should:
             shouldPartname = partSpec['partname']
             partXPath = partSpec['xpath']
-            asString = partSpec['asString']
-            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath, asString)
+            asData = partSpec['asData']
+            part = self._findPart(identifier, shouldPartname, lxmlNode, partXPath, asData)
             if part == None:
                 raise VenturiException("Expected '%s', '%s'" % (shouldPartname, partXPath))
             kwargs = dict(identifier=identifier, partname=shouldPartname)
-            kwargs['data' if asString else 'lxmlNode'] = part
+            kwargs['data' if asData else 'lxmlNode'] = part
             yield self.all.add(**kwargs)
         for partSpec in self._could:
             couldPartname = partSpec['partname']
             partXPath = partSpec['xpath']
-            asString = partSpec['asString']
-            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath, asString)
+            asData = partSpec['asData']
+            part = self._findPart(identifier, couldPartname, lxmlNode, partXPath, asData)
             if part != None:
                 kwargs = dict(identifier=identifier, partname=couldPartname)
-                kwargs['data' if asString else 'lxmlNode'] = part
+                kwargs['data' if asData else 'lxmlNode'] = part
                 yield self.all.add(**kwargs)
 
     def delete(self, identifier):
@@ -83,31 +83,31 @@ class Venturi(Observable):
         self.ctx.tx.locals['id'] = identifier
         yield self.all.delete(identifier=identifier)
 
-    def _findPart(self, identifier, partname, lxmlNode, partXPath, asString):
+    def _findPart(self, identifier, partname, lxmlNode, partXPath, asData):
         matches = self.xpath(lxmlNode, partXPath)
         if len(matches) > 1:
             raise VenturiException("XPath '%s' should return atmost one result." % partXPath)
         if len(matches) == 1:
-            return self._elementOrText2Text(matches[0]) if asString else self._nodeOrText2ElementTree(matches[0])
+            return self._elementOrText2Text(matches[0]) if asData else self._nodeOrText2ElementTree(matches[0])
         try:
             data = self.call.getData(identifier=identifier, name=partname)
-            return data if asString else parse(StringIO(data))
+            return data if asData else ElementTree(XML(data))
         except KeyError:
             return None
 
     def _nodeOrText2ElementTree(self, nodeOrText):
         if type(nodeOrText) == _Element:
             return ElementTree(lxmlElementUntail(nodeOrText))
-        return parse(StringIO(nodeOrText))
+        return ElementTree(XML(nodeOrText))
 
     def _elementOrText2Text(self, elementOrText):
         if type(elementOrText) == _Element:
-            return lxmltostring(elementOrText)
-        return elementOrText
+            return lxmltobytes(elementOrText)
+        return ensureBytes(elementOrText)
 
 
 mandatoryKeys = ['partname', 'xpath']
-optionalKeys = ['asString']
+optionalKeys = ['asData']
 def _init(venturiList):
     if venturiList is None:
         return []
@@ -117,8 +117,11 @@ def _init(venturiList):
             result.append(dict(partname=item[0], xpath=item[1], asString=False))
             warn("Please use {'partname':'...', 'xpath':'...', 'asString':False}", DeprecationWarning)
         else:
-            if not 'asString' in item:
-                item['asString'] = False
+            if 'asString' in item:
+                item['asData'] = item.pop('asString')
+                warn("Please use 'asData':... instead of 'asString'", DeprecationWarning)
+            if not 'asData' in item:
+                item['asData'] = False
             assert set(item.keys()) == set(mandatoryKeys + optionalKeys), "Expected the following keys: %s" % ', '.join(mandatoryKeys)
             result.append(item)
     return result
