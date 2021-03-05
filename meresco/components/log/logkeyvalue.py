@@ -47,7 +47,7 @@ class LogKeyValue(Observable):
             response = yield self.any.unknown(message, *args, **kwargs)
         except NoneOfTheObserversRespond:
             raise DeclineMessage
-        raise StopIteration(response)
+        return response
 
     def do_unknown(self, message, *args, **kwargs):
         self._log()
