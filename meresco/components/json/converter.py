@@ -32,8 +32,18 @@ class JsonToString(Converter):
     def _convert(self, anObject):
         return dumps(anObject, sort_keys=True, indent=4)
 
+class JsonToBytes(Converter):
+    def _convert(self, anObject):
+        return bytes(dumps(anObject, sort_keys=True, indent=4), encoding='utf-8')
+
 class StringToJson(Converter):
     def _convert(self, anObject):
         return {'{': JsonDict, '[': JsonList}[anObject[0]].loads(anObject)
 
-__all__ = ["JsonToString", "StringToJson"]
+class BytesToJson(Converter):
+    _dOrL = {ord(b'{'): JsonDict, ord(b'['): JsonList}
+    def _convert(self, anObject):
+        return self._dOrL[anObject[0]].loads(anObject)
+
+
+__all__ = ["JsonToString", "StringToJson", "BytesToJson", "JsonToBytes"]

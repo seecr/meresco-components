@@ -33,7 +33,7 @@ from os.path import join
 
 from seecr.test import SeecrTestCase
 
-from meresco.components.json import JsonDict, JsonList, JsonToString, StringToJson
+from meresco.components.json import JsonDict, JsonList, JsonToString, StringToJson, BytesToJson, JsonToBytes
 from simplejson import JSONDecodeError
 
 class JsonTest(SeecrTestCase):
@@ -117,11 +117,19 @@ class JsonTest(SeecrTestCase):
 
     def testConvert(self):
         converter = JsonToString(fromKwarg='kwarg')
+        bConverter = JsonToBytes(fromKwarg='kwarg')
         self.assertEqual('{\n    "aap": 3\n}', converter._convert({"aap":3}))
         self.assertEqual('[\n    "aap",\n    3\n]', converter._convert(["aap",3]))
+        self.assertEqual(b'{\n    "aap": 3\n}', bConverter._convert({"aap":3}))
+        self.assertEqual(b'[\n    "aap",\n    3\n]', bConverter._convert(["aap",3]))
 
     def testConvertFromString(self):
         converter = StringToJson(fromKwarg='kwarg')
         self.assertEqual(JsonDict({'aap':3}), converter._convert('{\n    "aap": 3\n}'))
         self.assertEqual(JsonList(['aap',3]), converter._convert('[\n    "aap", 3\n]'))
+
+    def testConvertFromBytes(self):
+        converter = BytesToJson(fromKwarg='kwarg')
+        self.assertEqual(JsonDict({'aap':3}), converter._convert(b'{\n    "aap": 3\n}'))
+        self.assertEqual(JsonList(['aap',3]), converter._convert(b'[\n    "aap", 3\n]'))
 
