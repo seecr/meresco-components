@@ -31,23 +31,24 @@ from seecr.test import CallTrace, SeecrTestCase
 from meresco.components import CombineParts
 
 class CombinePartsTest(SeecrTestCase):
+    maxDiff = None
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.combine = CombineParts({'together':['one', 'two']})
         self.observer = CallTrace('observer')
         self.combine.addObserver(self.observer)
-        self.observer.methods['getData'] = lambda identifier, name: '<%s/>' % name
+        self.observer.methods['getData'] = lambda identifier, name: bytes('<%s/>' % name, encoding='utf-8')
 
     def testPassThroughOtherStuff(self):
         result = self.combine.getData(identifier='identifier', name='name')
-        self.assertEqual('<name/>', result)
+        self.assertEqual(b'<name/>', result)
         self.assertEqual(['getData'], self.observer.calledMethodNames())
         self.assertEqual([dict(identifier='identifier', name='name')], [m.kwargs for m in self.observer.calledMethods])
 
     def testTogether(self):
         result = self.combine.getData(identifier='identifier', name='together')
         expected = '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part><doc:part name="two"><two/></doc:part></doc:document>'
-        self.assertEqual(expected, result)
+        self.assertEqual(expected, result.decode())
 
         self.assertEqual(['getData', 'getData'], self.observer.calledMethodNames())
         self.assertEqual([dict(identifier='identifier', name='one'), dict(identifier='identifier', name='two')], [m.kwargs for m in self.observer.calledMethods])
@@ -58,10 +59,10 @@ class CombinePartsTest(SeecrTestCase):
         def getData(identifier, name):
             if name == 'two':
                 raise KeyError('two')
-            return '<%s/>' % name
+            return bytes('<%s/>' % name, encoding='utf-8')
         self.observer.methods['getData'] = getData
         result = self.combine.getData(identifier='identifier', name='together')
-        self.assertEqual('<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
+        self.assertEqual(b'<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document"><doc:part name="one"><one/></doc:part></doc:document>', result)
 
     def testTogetherWithOnePartMissingNotAllowed(self):
         def getData(identifier, name):

@@ -37,7 +37,7 @@ class CombineParts(Transparent):
         self._allowMissingParts = allowMissingParts or []
 
     def retrieveData(self, identifier, name):
-        raise StopIteration(self.getData(identifier=identifier, name=name))
+        return self.getData(identifier=identifier, name=name)
         yield
 
     def getData(self, identifier, name):
@@ -52,10 +52,10 @@ class CombineParts(Transparent):
                 if subpart not in self._allowMissingParts:
                     raise
         def result():
-            yield '<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document">'
+            yield b'<doc:document xmlns:doc="http://meresco.org/namespace/harvester/document">'
             for subpart, data in resultparts:
-                yield '<doc:part name="%s">' % xmlEscape(subpart)
+                yield b'<doc:part name="%b">' % bytes(xmlEscape(subpart), encoding='utf-8')
                 yield data
-                yield '</doc:part>'
-            yield '</doc:document>'
-        return ''.join(result())
+                yield b'</doc:part>'
+            yield b'</doc:document>'
+        return b''.join(result())
