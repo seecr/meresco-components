@@ -36,7 +36,9 @@
 from time import time
 from decimal import Decimal
 from traceback import print_exc
+
 from xml.sax.saxutils import escape as xmlEscape
+from meresco.xml.utils import xmlEscapeBytes
 
 from cqlparser import cqlToExpression
 
@@ -267,7 +269,7 @@ class SruHandler(Observable):
         if recordPacking == 'xml':
             yield data
         elif recordPacking == 'string':
-            yield xmlEscape(data)
+            yield xmlEscapeBytes(data)
         else:
             raise Exception("Unknown Record Packing: %s" % recordPacking)
 

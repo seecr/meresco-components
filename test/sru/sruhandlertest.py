@@ -67,7 +67,7 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string'}
         component = SruHandler()
 
-        result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
+        result = asString(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments))
         self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
     <srw:version>1.1</srw:version>
     <srw:query>query &gt;= 3</srw:query>
@@ -79,7 +79,7 @@ class SruHandlerTest(SeecrTestCase):
         sruArguments = {'version':'1.1', 'operation':'searchRetrieve', 'query':'query >= 3', 'recordSchema':'schema', 'recordPacking':'string', 'x-link-filter': 'True'}
         component = SruHandler(extraXParameters=['x-link-filter'])
 
-        result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
+        result = asString(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments))
         self.assertEqualsWS("""<srw:echoedSearchRetrieveRequest>
     <srw:version>1.1</srw:version>
     <srw:query>query &gt;= 3</srw:query>
@@ -96,7 +96,7 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(SRUTermDrilldown())
         component.addObserver(observer)
 
-        result = "".join(list(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments)))
+        result = asString(component._writeEchoedSearchRetrieveRequest(sruArguments=sruArguments))
 
         drilldownRequestData = DRILLDOWN_HEADER \
         + """<dd:term-drilldown>field0,field1</dd:term-drilldown>"""\
@@ -111,7 +111,7 @@ class SruHandlerTest(SeecrTestCase):
 
     def testExtraResponseDataHandlerNoHandler(self):
         component = SruHandler()
-        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
+        result = asString(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA))
         self.assertEqual('' , result)
 
     def testExtraResponseDataHandlerNoData(self):
@@ -121,7 +121,7 @@ class SruHandlerTest(SeecrTestCase):
 
         component = SruHandler()
         component.addObserver(TestHandler())
-        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
+        result = asString(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA))
         self.assertEqual('' , result)
 
     def testExtraResponseDataHandlerWithData(self):
@@ -135,7 +135,7 @@ class SruHandlerTest(SeecrTestCase):
 
         component = SruHandler()
         component.addObserver(TestHandler())
-        result = "".join(list(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
+        result = asString(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA))
         self.assertEqual('<srw:extraResponseData><someData/></srw:extraResponseData>' , result)
         self.assertEqual([()], argsUsed)
         self.assertEqual(None, kwargsUsed['cqlAbstractSyntaxTree'])
@@ -151,7 +151,7 @@ class SruHandlerTest(SeecrTestCase):
                 {'fieldname': 'field2', 'terms': [{'term': 'value2_0', 'count': 3}, {'term': 'value2_1', 'count': 2}, {'term': 'value2_2', 'count': 1}]}
             ]
         sruHandler.addObserver(sruTermDrilldown)
-        result = "".join(sruHandler._writeExtraResponseData(drilldownData=drilldownData, sruArguments={}, **MOCKDATA))
+        result = asString(sruHandler._writeExtraResponseData(drilldownData=drilldownData, sruArguments={}, **MOCKDATA))
         self.assertEqualsWS("""<srw:extraResponseData><dd:drilldown\n    xmlns:dd="http://meresco.org/namespace/drilldown"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n    xsi:schemaLocation="http://meresco.org/namespace/drilldown http://meresco.org/files/xsd/drilldown-20070730.xsd"><dd:term-drilldown><dd:navigator name="field0"><dd:item count="14">value0_0</dd:item></dd:navigator><dd:navigator name="field1"><dd:item count="13">value1_0</dd:item><dd:item count="11">value1_1</dd:item></dd:navigator><dd:navigator name="field2"><dd:item count="3">value2_0</dd:item><dd:item count="2">value2_1</dd:item><dd:item count="1">value2_2</dd:item></dd:navigator></dd:term-drilldown></dd:drilldown></srw:extraResponseData>""" , result)
 
     def testDrilldownResultInExecuteQuery(self):
@@ -166,7 +166,7 @@ class SruHandlerTest(SeecrTestCase):
             return response
             yield
         def retrieveData(**kwargs):
-            return 'record'
+            return b'record'
             yield
         observer.methods['executeQuery'] = executeQuery
         observer.methods['retrieveData'] = retrieveData
@@ -198,7 +198,7 @@ class SruHandlerTest(SeecrTestCase):
             return response
             yield
         def retrieveData(**kwargs):
-            return 'record'
+            return b'record'
             yield
         observer.methods['executeQuery'] = executeQuery
         observer.methods['retrieveData'] = retrieveData
@@ -210,7 +210,7 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(observer)
 
         arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
-        result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
+        result = asString(component.searchRetrieve(sruArguments=arguments, **arguments))
         self.assertTrue("<srw:nextRecordPosition>26</srw:nextRecordPosition>" in result, result)
 
         executeCqlCallKwargs = observer.calledMethods[0].kwargs
@@ -224,7 +224,7 @@ class SruHandlerTest(SeecrTestCase):
             return response
             yield
         def retrieveData(**kwargs):
-            return 'record'
+            return b'record'
             yield
         observer.methods['executeQuery'] = executeQuery
         observer.methods['retrieveData'] = retrieveData
@@ -236,7 +236,7 @@ class SruHandlerTest(SeecrTestCase):
         component.addObserver(observer)
 
         arguments = dict(startRecord=10, maximumRecords=2, query='query', recordPacking='string', recordSchema='schema', limitBeyond=10)
-        result = "".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))
+        result = asString(component.searchRetrieve(sruArguments=arguments, **arguments))
         self.assertFalse("<srw:nextRecordPosition>" in result, result)
 
     def testSearchRetrieveVersion11(self):
@@ -253,7 +253,7 @@ class SruHandlerTest(SeecrTestCase):
         retrieveDataCalls = []
         def retrieveData(identifier, name):
             retrieveDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+            return bytes("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name), encoding='utf-8')
             yield
         observer.retrieveData = retrieveData
 
@@ -264,7 +264,7 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(observer)
 
-        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+        result = asString(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
 
         self.assertEqualsWS("""
 <srw:searchRetrieveResponse %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
@@ -348,7 +348,7 @@ class SruHandlerTest(SeecrTestCase):
         retrieveDataCalls = []
         def retrieveData(identifier, name):
             retrieveDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+            return bytes("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name), encoding='utf-8')
             yield
         observer.retrieveData = retrieveData
 
@@ -359,7 +359,7 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(observer)
 
-        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+        result = asString(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
         self.assertEqual(['executeQuery', 'extraRecordData', 'extraRecordData', 'echoedExtraRequestData', 'extraResponseData'], [m.name for m in observer.calledMethods])
         executeQueryMethod, extraRecordData1, extraRecordData2, echoedExtraRequestDataMethod, extraResponseDataMethod = observer.calledMethods
         self.assertEqual('executeQuery', executeQueryMethod.name)
@@ -466,7 +466,7 @@ class SruHandlerTest(SeecrTestCase):
         retrieveDataCalls = []
         def retrieveData(identifier, name):
             retrieveDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name)
+            return bytes("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name), encoding='utf-8')
             yield
         observer.retrieveData = retrieveData
 
@@ -477,7 +477,7 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler(extraRecordDataNewStyle=False)
         component.addObserver(observer)
 
-        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+        result = asString(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
 
         strippedResult = result[result.index('<srw:record>'):result.index('</srw:records>')]
         self.assertEqualsWS("""<srw:record>
@@ -511,7 +511,7 @@ class SruHandlerTest(SeecrTestCase):
         retrieveDataCalls = []
         def retrieveData(identifier, name):
             retrieveDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name)
+            return bytes("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (identifier, name), encoding='utf-8')
             yield
         observer.retrieveData = retrieveData
 
@@ -521,7 +521,7 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler(extraRecordDataNewStyle=False)
         component.addObserver(observer)
 
-        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, **queryArguments)))
+        result = asString(component.searchRetrieve(sruArguments=sruArguments, **queryArguments))
         strippedResult = result[result.index('<srw:record>'):result.index('</srw:records>')]
         self.assertEqualsWS("""<srw:record>
             <srw:recordSchema>schema</srw:recordSchema>
@@ -544,7 +544,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods["retrieveData"] = retrieveData
         component = SruHandler()
         component.addObserver(observer)
-        result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
+        result = asString(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID")))
         self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>recordSchema 'schema' for identifier 'ID' does not exist</details>" in result)
@@ -558,7 +558,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods["retrieveData"] = retrieveData
         component = SruHandler()
         component.addObserver(observer)
-        result = "".join(list(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID"))))
+        result = asString(compose(component._writeRecordData(recordPacking="string", recordSchema="schema", recordId="ID")))
         self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>Test Exception</details>" in result)
@@ -570,7 +570,7 @@ class SruHandlerTest(SeecrTestCase):
                 raise Exception("Test Exception")
         component = SruHandler()
         component.addObserver(RaisesException())
-        result = "".join(compose(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA)))
+        result = asString(component._writeExtraResponseData(cqlAbstractSyntaxTree=None, **MOCKDATA))
         self.assertTrue("<uri>info://srw/diagnostics/1/1</uri>" in result)
         self.assertTrue("<message>General System Error</message>" in result)
         self.assertTrue("<details>Test Exception</details>" in result)
@@ -583,7 +583,7 @@ class SruHandlerTest(SeecrTestCase):
             component = SruHandler()
             component.addObserver(RaisesException())
             arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
-            result = parse(StringIO("".join(compose(component.searchRetrieve(sruArguments=arguments, **arguments)))))
+            result = parse(StringIO(asString(component.searchRetrieve(sruArguments=arguments, **arguments))))
             diagnostic = result.xpath("/srw:searchRetrieveResponse/srw:diagnostics/diag:diagnostic", namespaces=namespaces)
             self.assertEqual(1, len(diagnostic))
             self.assertEqual(["info://srw/diagnostics/1/48"], diagnostic[0].xpath("diag:uri/text()", namespaces=namespaces))
@@ -604,7 +604,7 @@ class SruHandlerTest(SeecrTestCase):
         retrieveDataCalls = []
         def retrieveData(identifier, name):
             retrieveDataCalls.append(1)
-            return "<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name)
+            return bytes("<MOCKED_WRITTEN_DATA>%s-%s</MOCKED_WRITTEN_DATA>" % (xmlEscape(identifier), name), encoding='utf-8')
             yield
         observer.retrieveData = retrieveData
 
@@ -615,7 +615,7 @@ class SruHandlerTest(SeecrTestCase):
         component = SruHandler()
         component.addObserver(observer)
 
-        result = "".join(compose(component.searchRetrieve(sruArguments=sruArguments, diagnostics=[(998, 'Diagnostic 998', 'The <tag> message'), (999, 'Diagnostic 999', 'Some message')], **queryArguments)))
+        result = asString(component.searchRetrieve(sruArguments=sruArguments, diagnostics=[(998, 'Diagnostic 998', 'The <tag> message'), (999, 'Diagnostic 999', 'Some message')], **queryArguments))
 
         response = parse(StringIO(result))
 
@@ -659,7 +659,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['executeQuery'] = executeQuery
 
         try:
-            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+            asString(sruHandler.searchRetrieve(**kwargs))
         except KeyboardInterrupt as e:
             self.assertEqual('Ok', str(e))
         else:
@@ -675,7 +675,7 @@ class SruHandlerTest(SeecrTestCase):
         kwargs = sruHandlerKwargs(x_term_drilldown='field0:1')
         observer.calledMethods.reset()
         try:
-            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+            asString(sruHandler.searchRetrieve(**kwargs))
         except KeyboardInterrupt as e:
             self.assertEqual('Ok', str(e))
         else:
@@ -696,7 +696,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['executeQuery'] = executeQuery
 
         try:
-            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+            asString(sruHandler.searchRetrieve(**kwargs))
         except SruException as e:
             self.assertEqual('field0; drilldown with maximumResults > 3', str(e))
         except KeyboardInterrupt as e:
@@ -707,7 +707,7 @@ class SruHandlerTest(SeecrTestCase):
         # Too low
         kwargs = sruHandlerKwargs(x_term_drilldown='field55:0')
         try:
-            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+            asString(sruHandler.searchRetrieve(**kwargs))
         except SruException as e:
             self.assertEqual('field55; drilldown with maximumResults < 1', str(e))
         except KeyboardInterrupt as e:
@@ -718,7 +718,7 @@ class SruHandlerTest(SeecrTestCase):
         # Freezing
         kwargs = sruHandlerKwargs(x_term_drilldown='field55:-1')
         try:
-            ''.join(compose(sruHandler.searchRetrieve(**kwargs)))
+            asString(sruHandler.searchRetrieve(**kwargs))
         except SruException as e:
             self.assertEqual('field55; drilldown with maximumResults < 1', str(e))
         except KeyboardInterrupt as e:
@@ -737,7 +737,7 @@ class SruHandlerTest(SeecrTestCase):
             return response
             yield
         def retrieveData(**kwargs):
-            return '<bike/>'
+            return b'<bike/>'
             yield
         observer.methods['executeQuery'] = executeQuery
         observer.returnValues['echoedExtraRequestData'] = (f for f in [])
@@ -745,12 +745,12 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['extraRecordData'] = lambda hit: (f for f in [])
         observer.methods['retrieveData'] = retrieveData
 
-        result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']})))
+        result = asString(component.handleRequest(arguments={'version':['1.1'], 'query': ['aQuery'], 'operation':['searchRetrieve']}))
         header, body = result.split('\r\n'*2)
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
         self.assertTrue('<bike/>' in body, body)
 
-        result = ''.join(compose(component.handleRequest(arguments={'version':['1.1'], 'operation':['searchRetrieve']})))
+        result = asString(component.handleRequest(arguments={'version':['1.1'], 'operation':['searchRetrieve']}))
         header, body = result.split('\r\n'*2)
         assertValid(body, join(schemasPath, 'srw-types1.2.xsd'))
         self.assertTrue('diagnostic' in body, body)
@@ -773,7 +773,7 @@ class SruHandlerTest(SeecrTestCase):
         observer.methods['executeQuery'] = executeQuery
         handler.addObserver(observer)
         arguments = dict(startRecord=11, maximumRecords=15, query='query', recordPacking='string', recordSchema='schema')
-        result = "".join(compose(handler.searchRetrieve(sruArguments=arguments, **arguments)))
+        result = asString(handler.searchRetrieve(sruArguments=arguments, **arguments))
         sruResponse = parse(StringIO(result))
         extraResponseData = sruResponse.xpath('/srw:searchRetrieveResponse/srw:extraResponseData', namespaces={'srw':"http://www.loc.gov/zing/srw/"})[0]
         self.assertEqualsWS("""<srw:extraResponseData %(xmlns_srw)s %(xmlns_diag)s %(xmlns_xcql)s %(xmlns_dc)s %(xmlns_meresco_srw)s>
@@ -881,12 +881,12 @@ class SruHandlerTest(SeecrTestCase):
         )
 
         with stderr_replaced():
-            response = ''.join(compose(dna.all.searchRetrieve(query="word", sruArguments={})))
+            response = asString(dna.all.searchRetrieve(query="word", sruArguments={}))
             self.assertEqual(['executeQuery', 'additionalDiagnosticDetails'], observer.calledMethodNames())
             self.assertTrue("<details>Zo maar iets - additional details</details>" in response, response)
 
     def testGetDataWithAdapter(self):
-        observer = CallTrace(returnValues=dict(getData='<record/>'))
+        observer = CallTrace(returnValues=dict(getData=b'<record/>'))
         adapter = RetrieveToGetDataAdapter()
         handler = SruHandler()
         handler.addObserver(adapter)
