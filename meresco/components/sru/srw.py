@@ -36,7 +36,7 @@ from xml.sax.saxutils import escape as xmlEscape
 from meresco.core import Observable
 from meresco.xml import namespaces as _namespaces
 from meresco.components.http import utils as httputils
-from lxml.etree import parse
+from lxml.etree import XML
 from io import StringIO
 
 from meresco.components.sru import SruParser
@@ -48,7 +48,7 @@ class Srw(Observable):
         self._defaultRecordSchema = defaultRecordSchema
         self._defaultRecordPacking = defaultRecordPacking
 
-    def handleRequest(self, Body='', **kwargs):
+    def handleRequest(self, Body=b'', **kwargs):
         try:
             arguments = self._soapXmlToArguments(Body)
             if not 'recordPacking' in arguments and self._defaultRecordPacking:
@@ -83,7 +83,7 @@ class Srw(Observable):
     def _soapXmlToArguments(self, body):
         arguments = {}
         try:
-            lxmlNode = parse(StringIO(body))
+            lxmlNode = XML(body)
         except Exception as e:
             raise  SoapException("SOAP:Server.userException", str(e))
         envelope = xpathFirst(lxmlNode, '/soap:Envelope')

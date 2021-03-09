@@ -81,7 +81,7 @@ class SrwTest(SeecrTestCase):
         invalidSoapEnvelope = '<?xml version="1.0"?><SOAP:Envelope xmlns:SOAP="http://wrong.example.org/soap/envelope/"><SOAP:Body>%s</SOAP:Body></SOAP:Envelope>'
         request = invalidSoapEnvelope % SRW_REQUEST % argumentsWithMandatory % ""
 
-        response = "".join(list(Srw().handleRequest(Body=request)))
+        response = "".join(list(Srw().handleRequest(Body=request.encode())))
         self.assertEqualsWS("""HTTP/1.0 500 Internal Server Error
 Content-Type: text/xml; charset=utf-8
 
@@ -89,7 +89,7 @@ Content-Type: text/xml; charset=utf-8
 
     def testMalformedXML(self):
         """Stuff that is not even XML"""
-        request = 'This is not even XML'
+        request = b'This is not even XML'
 
         response = "".join(self.srw.handleRequest(Body=request))
         self.assertTrue('<faultcode>SOAP:Server.userException</faultcode>' in response)
