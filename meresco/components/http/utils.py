@@ -205,6 +205,7 @@ def _convert(data):
     try:
         return {
             bytes: lambda x: decodeBytes(x),
+            list: lambda x: [_convert(v) for v in x],
             dict: lambda x: {_convert(k):_convert(v) for k,v in x.items()}
         }.get(type(data), lambda x:x)(data)
     except:
