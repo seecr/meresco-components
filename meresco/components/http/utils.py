@@ -177,7 +177,16 @@ def createHttpHeaders(additionalHeaders=None, userAgent=None):
     return ''.join('\r\n{0}: {1}'.format(k, v) for k, v in sorted(headers.items()))
 
 def findCookies(Headers, name, CookieKey='Cookie'):
-    return [cookie.split('=',1)[-1].strip() for cookie in Headers.get(CookieKey,'').split(';') if cookie.strip().startswith('{}='.format(name))]
+    cookies = []
+    allCookies = Headers.get(CookieKey, [])
+    if not type(allCookies) is list:
+        allCookies = [allCookies]
+
+    for each in allCookies:
+        for c in each.split(';'):
+            if c.strip().startswith('{}='.format(name)):
+                cookies.append(c.split('=',1)[-1].strip())
+    return cookies
 
 def _parseHeaders(regexp, header):
     headers = regexp.match(header).groupdict()

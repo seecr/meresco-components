@@ -5,8 +5,8 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2010-2011, 2020 Stichting Kennisnet https://www.kennisnet.nl
-# Copyright (C) 2012, 2014-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2010-2011, 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012, 2014-2016, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2016 SURFmarket https://surf.nl
@@ -130,6 +130,18 @@ class DeproxyTest(TestCase):
         handleRequestCallKwargs = self.observer.calledMethods[1].kwargs
         self.assertEqual('4.4.4.4', handleRequestCallKwargs['Headers']['Host'])
         self.assertEqual(80, handleRequestCallKwargs['port'])
+
+    def testHostMultiple(self):
+        self.createTree(deproxyForIpRanges=[
+            ('9.9.9.0', '9.9.9.255')])
+        Headers={
+            "Host": ["1.1.1.1:11111", "4.4.4.4:44444"],
+        }
+        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
+
+        self.assertEqual(1, len(self.observer.calledMethods))
+        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+        self.assertEqual("4.4.4.4:44444", handleRequestCallKwargs['Headers']['Host'])
 
     def testDeproxyForIps(self):
         self.createTree(deproxyForIps=['3.3.3.3'])

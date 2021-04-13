@@ -5,8 +5,8 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2010-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2010-2011, 2020 Stichting Kennisnet https://www.kennisnet.nl
-# Copyright (C) 2012, 2014-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2010-2011, 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012, 2014-2016, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2016 SURFmarket https://surf.nl
@@ -64,5 +64,8 @@ class OnlyDeproxied(HandleRequestFilter):
     def _filter(self, OriginalClient=None, **kwargs):
         return OriginalClient is not None
 
-def _lastFromCommaSeparated(s):
+def _lastFromCommaSeparated(sorl):
+    s = sorl
+    if isinstance(sorl, list):
+        s = sorl[-1]
     return ''.join([p.strip() for p in s.split(',') if p.strip()][-1:])
