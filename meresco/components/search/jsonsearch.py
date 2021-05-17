@@ -54,9 +54,11 @@ class JsonSearch(Observable):
             defaultMaxTermsFacet=10,
             useOriginalPath=False,
             getItemsFromObserver=False,
+            version=VERSION,
             **kwargs
         ):
         Observable.__init__(self, **kwargs)
+        self._version = version
         self._defaultRecordSchema = defaultRecordSchema
         self._pageSize = pageSize
         self._maximumRecordNumber = maximumRecordNumber
@@ -76,7 +78,7 @@ class JsonSearch(Observable):
         path = self._determinePath(**kwargs)
         logDict = dict()
         jsonResult = {
-            'version': self.VERSION,
+            'version': self._version,
         }
         try:
             try:
