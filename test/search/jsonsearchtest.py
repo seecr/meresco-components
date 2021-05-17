@@ -5,10 +5,10 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
-# Copyright (C) 2015-2017, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015-2017, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020 SURF https://www.surf.nl
-# Copyright (C) 2020 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
@@ -106,6 +106,16 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual({'identifier': 'id:1', 'name': 'rdf'}, record_1)
         record_2 = json['response']['items'][1]
         self.assertEqual({'identifier': 'id:2', 'name': 'rdf'}, record_2)
+
+    def testRecordSchema(self):
+        json = self.request(recordSchema='recordSchema')
+        self.assertEqual(['executeQuery', 'retrieveData', 'retrieveData'], self.observer.calledMethodNames())
+        self.assertEqual(['response', 'request', 'version'], list(json.keys()))
+        self.assertEqual(2, len(json['response']['items']))
+        self.assertEqual(2, json['response']['total'])
+
+        record_1 = json['response']['items'][0]
+        self.assertEqual({'identifier': 'id:1', 'name': 'recordSchema'}, record_1)
 
     def testTimes(self):
         json = self.request()
@@ -424,10 +434,24 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual('/path/to/search', self.parseLink(response['response']['next']['link']).path)
         self.assertEqual('/path/to/search', self.parseLink(response['response']['facets']['field'][0]['link']).path)
 
+    def testGetItemsFromObserver(self):
+        self._buildDna(getItemsFromObserver=True)
+        response = self.request()
+        self.assertEqual(['executeQuery', 'getItem', 'getItem'], self.observer.calledMethodNames())
+        getItem = self.observer.calledMethods[-1]
+        self.assertEqual(dict(identifier='id:2', recordSchema='rdf'), getItem.kwargs)
+
+        self.observer.calledMethods.reset()
+
+        response = self.request(recordSchema='another')
+        self.assertEqual(['executeQuery', 'getItem', 'getItem'], self.observer.calledMethodNames())
+        getItem = self.observer.calledMethods[-1]
+        self.assertEqual(dict(identifier='id:2', recordSchema='another'), getItem.kwargs)
+
     def testParameterQueryOmitted(self):
         response = self.request(facet='field', query=None)
         self.assertEqual(dict(type="MissingArgument", message="Missing required argument: 'query'"), response['error'])
-    
+
     def testParameterQueryWebQuery(self):
         response = self.request(query='value1 value2')
         executeQueryMethod = self.observer.calledMethods[0]

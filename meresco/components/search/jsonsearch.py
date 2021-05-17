@@ -5,10 +5,10 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
-# Copyright (C) 2015-2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015-2018, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017, 2020 SURF https://www.surf.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
-# Copyright (C) 2020 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
@@ -53,6 +53,7 @@ class JsonSearch(Observable):
             maximumRecordNumber=1000,
             defaultMaxTermsFacet=10,
             useOriginalPath=False,
+            getItemsFromObserver=False,
             **kwargs
         ):
         Observable.__init__(self, **kwargs)
@@ -64,10 +65,12 @@ class JsonSearch(Observable):
                 page_size=pageSize,
                 maximum_record_number=maximumRecordNumber,
                 default_facet_terms_count=defaultMaxTermsFacet,
+                default_record_schema=defaultRecordSchema,
             )
         self._determinePath = lambda **kwargs:kwargs['path']
         if useOriginalPath:
             self._determinePath = lambda **kwargs:kwargs.get('originalPath', kwargs['path'])
+        self._getItems = self._observerGetItems if getItemsFromObserver else self._defaultGetItems
 
     def handleRequest(self, arguments, *args, **kwargs):
         path = self._determinePath(**kwargs)
@@ -81,7 +84,7 @@ class JsonSearch(Observable):
 
                 jsonResult.setdefault('request', args.request)
 
-                jsonResponse = yield self.jsonResponse(**args.queryKwargs)
+                jsonResponse = yield self.jsonResponse(args)
                 if args.stop - args.start and jsonResponse["total"] > args.stop:
                     jsonResponse['next'] = args.pageDict(1, path=path)
                 if args.stop - args.start and args.start > 0:
@@ -111,9 +114,9 @@ class JsonSearch(Observable):
         finally:
             collectLogForScope(search=logDict)
 
-    def jsonResponse(self, **kwargs):
+    def jsonResponse(self, args):
         t0 = self._timeNow()
-        result = yield self.any.executeQuery(**kwargs)
+        result = yield self.any.executeQuery(**args.queryKwargs)
 
         queryTime = self._timeNow() - t0
         total, hits = result.total, result.hits
@@ -123,9 +126,7 @@ class JsonSearch(Observable):
             if hasattr(result, 'items'):
                 jsonResponse['items'] = result.items
             else:
-                jsonResponse['items'] = []
-                for hit in hits:
-                    jsonResponse['items'].append((yield self.any.retrieveData(identifier=hit.id, name=self._defaultRecordSchema)))
+                jsonResponse['items'] = yield self._getItems(identifiers=[hit.id for hit in hits], recordSchema=args.recordSchema)
 
         drilldownData = getattr(result, 'drilldownData', None)
         if drilldownData is not None:
@@ -143,6 +144,16 @@ class JsonSearch(Observable):
 
         return jsonResponse
 
+    def _defaultGetItems(self, identifiers, recordSchema):
+        result = []
+        for identifier in identifiers:
+            result.append((yield self.any.retrieveData(identifier=identifier, name=recordSchema)))
+        return result
+
+    def _observerGetItems(self, identifiers, recordSchema):
+        return [self.call.getItem(identifier=identifier, recordSchema=recordSchema) for identifier in identifiers]
+        yield
+
     def _timeNow(self):
         return time()
 
@@ -150,7 +161,7 @@ class JsonSearch(Observable):
         return Decimal(t).quantize(MILLIS)
 
 class _Arguments(object):
-    def __init__(self, arguments, default_facet_terms_count, maximum_record_number, page_size):
+    def __init__(self, arguments, default_facet_terms_count, maximum_record_number, page_size, default_record_schema):
         query = arguments.pop('query', [None])[0]
         if query is None:
             raise MissingArgument('query')
@@ -164,6 +175,7 @@ class _Arguments(object):
             self._request['page'] = page
             self._next_request['page'] = page
             arguments.pop('page')
+        self.recordSchema = arguments.pop('recordSchema', [default_record_schema])[0]
         pageSize = getInt(arguments, 'page-size', page_size)
         if pageSize < 0:
             raise InvalidArgument('page-size', 'expected value >= 0')
