@@ -28,7 +28,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from io import StringIO
+from io import BytesIO
 from urllib.parse import urlparse, parse_qs
 
 from meresco.components.sru.sruiterate import iterateSruQuery, SruQuery
@@ -63,6 +63,7 @@ class SruIterateTest(SeecrTestCase):
         self.assertEqual(2, len(sruResult))
         self.assertEqual(2, len(requestedUrls))
         self.assertEqual(['ID-1', 'ID-2'], [each.identifier for each in sruResult])
+        self.assertEqual(2, len([each.data for each in sruResult])) # check to make sure getting the data works)
         self.assertTrue(2, parse_qs(urlparse(requestedUrls[1]).query)['startRecord'][0])
 
     def testFromUrl(self):
@@ -107,7 +108,7 @@ def response(numberOfRecords, records, nextRecordPosition=None):
     <srw:recordData>{data}</srw:recordData>
 </srw:record>""".format(packing=packing, identifier=identifier, data=data)
 
-    return StringIO("""<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meresco_srw="http://meresco.org/namespace/srw#">
+    _response = """<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xcql="http://www.loc.gov/zing/cql/xcql/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meresco_srw="http://meresco.org/namespace/srw#">
     <srw:version>1.2</srw:version>
     <srw:numberOfRecords>{numberOfRecords}</srw:numberOfRecords>
     <srw:records>{recordsData}</srw:records>{nextRecordPositionTag}
@@ -129,4 +130,7 @@ def response(numberOfRecords, records, nextRecordPosition=None):
 </srw:searchRetrieveResponse>""".format(
     numberOfRecords=numberOfRecords,
     recordsData=''.join(record(**each) for each in records),
-    nextRecordPositionTag="<srw:nextRecordPosition>{}</srw:nextRecordPosition>".format(nextRecordPosition) if nextRecordPosition else ''))
+    nextRecordPositionTag="<srw:nextRecordPosition>{}</srw:nextRecordPosition>".format(nextRecordPosition) if nextRecordPosition else '')
+
+    return BytesIO(bytes(_response, encoding="utf-8"))
+

@@ -33,7 +33,7 @@ from urllib.parse import urlsplit, parse_qs
 
 from meresco.xml.namespaces import xpath, xpathFirst
 from lxml.etree import parse, tostring, cleanup_namespaces
-from io import StringIO
+from io import BytesIO
 
 def _first(collection, element, default=None):
     value = collection.get(element, [])
@@ -119,7 +119,7 @@ class SruRecord(object):
         if _data is None:
             raise ValueError("srw:recordData is empty")
 
-        _data = parse(StringIO(tostring(_data)))
+        _data = parse(BytesIO(tostring(_data)))
         cleanup_namespaces(_data)
         if self.recordPacking == "xml":
             return _data
