@@ -177,6 +177,19 @@ class _Arguments(object):
             self._request['page'] = page
             self._next_request['page'] = page
             arguments.pop('page')
+        sortKeys = None
+        if 'sort' in arguments:
+            sort = [s.strip() for sortOption in arguments.pop('sort') for s in sortOption.split(',') if s.strip()]
+            sortKeys = []
+            for key in sort:
+                ascending = True
+                if key.startswith('-'):
+                    ascending = False
+                    key = key[1:]
+                if key:
+                    sortKeys.append(dict(sortBy=key, sortDescending=not ascending))
+                    self._request.setdefault('sort', []).append(('' if ascending else '-') + key)
+                    self._next_request.setdefault('sort', []).append(('' if ascending else '-') + key)
         self.recordSchema = arguments.pop('recordSchema', [default_record_schema])[0]
         pageSize = getInt(arguments, 'page-size', page_size)
         if pageSize < 0:
@@ -223,6 +236,7 @@ class _Arguments(object):
                 stop=self.stop,
                 query=self.query_expression,
                 facets=queryFacets or None,
+                sortKeys=sortKeys or None,
             )
         extra_arguments = {}
         for k, v in arguments.items():

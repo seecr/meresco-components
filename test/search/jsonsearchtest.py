@@ -378,6 +378,24 @@ class JsonSearchTest(SeecrTestCase):
         link = self.parseLink(facets['field'][0]['link'])
         self.assertEqual(sorted(['field=somevalue', 'field=value0']), sorted(link.query['facet-filter']))
 
+    def testSort(self):
+        self.total = 100
+        response = self.request(sort=['title,-subject', 'date'])
+        executeQueryMethod = self.observer.calledMethods[0]
+        self.assertEqual(cqlToExpression('*'), executeQueryMethod.kwargs['query'])
+        self.assertEqual([
+                {'sortBy': 'title', 'sortDescending': False},
+                {'sortBy': 'subject', 'sortDescending': True},
+                {'sortBy': 'date', 'sortDescending': False},
+            ], executeQueryMethod.kwargs['sortKeys'])
+        self.assertEqual({'query':['*'],
+                'page': ['2'],
+                'sort': ['title', '-subject', 'date'],
+            }, self.parseLink(response['response']['next']['link']).query)
+        self.assertEqual({'query':'*',
+                'sort': ['title', '-subject', 'date'],
+            }, response['request'])
+
     def testPassXArguments(self):
         self.total = 100
         response = self.request(**{'x-disable-filter': 'encyclopedie', 'x-something-else': 'important'})
