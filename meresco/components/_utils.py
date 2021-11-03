@@ -42,6 +42,10 @@ class Bucket(object):
     def __repr__(self):
         return simplerepr(self)
 
+    def asDict(self):
+        return dict(self.__dict__)
+
+
 def simplerepr(o):
     return '%s(%s)' % (o.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in o.__dict__.items()))
 
