@@ -55,6 +55,8 @@ mimetypes.add_type("application/javascript", ".js")
 
 # Add types
 mimetypes.add_type("application/xhtml+xml", ".xhtml")
+# XSD removed in Debian Bullsey package media-types (responsible for /etc/mime.types)
+mimetypes.add_type("application/xml", ".xsd")
 
 
 class File(object):

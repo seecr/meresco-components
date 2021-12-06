@@ -103,6 +103,7 @@ class FileServerTest(SeecrTestCase):
                 ('.js', 'application/javascript'),
                 ('.xhtml', 'application/xhtml+xml'),
                 ('.png', 'image/png'),
+                ('.xsd', 'application/xml'),
                 ('.css', 'text/css')]:
             filename = 'someFile' + extension
             f = open(join(self.directory, filename), 'w')
