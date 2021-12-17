@@ -212,6 +212,11 @@ class WebQueryTest(TestCase):
         wq = WebQuery('transport=fiets')
         newWq = wq.replaceTerm('fiets', 'bike')
         self.assertEqual('transport=bike', newWq.original)
+    
+    def testReplaceIndex(self):
+        wq = WebQuery('transport=fiets')
+        newWq = wq.replaceIndex(dict(transport="vervoer"))
+        self.assertEqual('vervoer=fiets', newWq.original)
 
     def testReplaceTerms(self):
         wq = WebQuery('fiets kaart')

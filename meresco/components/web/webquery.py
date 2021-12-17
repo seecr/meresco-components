@@ -113,6 +113,14 @@ class WebQuery(object):
             result._addFilter(f)
         return result
 
+    def replaceIndex(self, mapping):
+        newAst = CqlReplaceIndex(self.originalAst, mapping).visit()
+        result = WebQuery(cql2string(newAst))
+        for f in self._filters:
+            result._addFilter(f)
+        return result
+
+
     def asString(self):
         return cql2string(self.ast)
 
@@ -142,6 +150,16 @@ class CqlReplaceTerm(CqlIdentityVisitor):
             return node.__class__(self._newTerm)
         return CqlIdentityVisitor.visitTERM(self, node)
 
+class CqlReplaceIndex(CqlIdentityVisitor):
+    def __init__(self, ast, mapping):
+        CqlIdentityVisitor.__init__(self, ast)
+        self._mapping = mapping
+
+    def visitINDEX(self, node):
+        indexTerm = node.children[0].children[0]
+        if indexTerm in self._mapping:
+            return INDEX(TERM(self._mapping[indexTerm])) 
+        return CqlIdentityVisitor.visitINDEX(self, node)
 
 def _feelsLikePlusMinusQuery(aString):
     for part in (_valueFromGroupdict(m.groupdict()).lower() for m in SPLITTED_STRINGS.finditer(aString)):

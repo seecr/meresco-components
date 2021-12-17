@@ -39,6 +39,11 @@
 from weightless.core import Yield
 from weightless.http import REGEXP, HTTP, parseHeaders
 
+from meresco.components import Bucket
+from meresco.components.json import JsonDict
+
+from urllib.parse import parse_qs
+
 
 CRLF = "\r\n"
 ContentTypeXml = "text/xml; charset=utf-8"
@@ -225,3 +230,13 @@ def ensureBytes(bytesOrString):
     if type(bytesOrString) is bytes:
         return bytesOrString
     return bytes(bytesOrString, encoding='utf-8')
+
+def response(success, **kwargs):
+    yield bytes(okJson, encoding='utf-8')
+    yield bytes(JsonDict(success=success, **kwargs).dumps(), encoding='utf-8')
+
+def parse_arguments(Body, wanted):
+    data = parse_qs(str(Body, encoding='utf-8'))
+    def getValue(value):
+        return value[0] if len(value) == 1 else value
+    return Bucket(**{key:getValue(data.get(key, [None])) for key in wanted})

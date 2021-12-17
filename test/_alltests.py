@@ -117,6 +117,7 @@ from _http.httputilstest import HttpUtilsTest
 from _http.cookiememorystoretest import CookieMemoryStoreTest
 from _http.staticfilestest import StaticFilesTest
 from _http.staticfilemappingtest import StaticFileMappingTest
+from _http.utilstest import UtilsTest
 
 from log.apachelogwritertest import ApacheLogWriterTest
 from log.directorylogtest import DirectoryLogTest
