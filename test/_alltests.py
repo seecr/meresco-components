@@ -80,6 +80,7 @@ from scheduletest import ScheduleTest
 from sorteditertoolstest import SortedItertoolsTest
 from sortkeysrenametest import SortKeysRenameTest
 from timeddictionarytest import TimedDictionaryTest
+from timedpersistentdictionarytest import TimedPersistentDictionaryTest
 from timedmessagecachetest import TimedMessageCacheTest
 from tokenizefieldlettest import TokenizeFieldletTest
 from urltest import UrlTest

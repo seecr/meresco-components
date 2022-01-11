@@ -43,6 +43,7 @@ from ._utils import *
 
 from .converter import Converter
 from .timeddictionary import TimedDictionary
+from .timedpersistentdictionary import TimedPersistentDictionary
 from .xmlcompose import XmlCompose
 from .xmlpump import XmlPrintLxml, XmlParseLxml, FileParseLxml, lxmltostring, lxmltobytes
 

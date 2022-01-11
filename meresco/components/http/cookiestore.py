@@ -28,7 +28,7 @@
 ## end license ##
 
 from uuid import uuid4
-from meresco.components import TimedDictionary
+from meresco.components import TimedDictionary, TimedPersistentDictionary
 from time import time
 from email.utils import formatdate
 
@@ -37,11 +37,17 @@ TWO_WEEKS = 2*7*24*60*60
 SECURE = "Secure"
 HTTPONLY = "HttpOnly"
 
-class CookieMemoryStore(object):
-    def __init__(self, timeout, name=None, secure=False, httpOnly=True):
+def CookieMemoryStore(timeout, *args, **kwargs):
+    return CookieStore(TimedDictionary(timeout), timeout, *args, **kwargs)
+
+def CookiePersistentStore(timeout, filename, *args, **kwargs):
+    return CookieStore(TimedPersistentDictionary(timeout, filename=filename), timeout, *args, **kwargs)
+
+class CookieStore(object):
+    def __init__(self, store, timeout, name=None, secure=False, httpOnly=True,):
         self._timeout = timeout
-        self._store = TimedDictionary(self._timeout)
-        self._name = '{0}{1}'.format('' if name is None else '%s-' % name, uuid4())
+        self._store = store
+        self._name = '{0}{1}'.format('' if name is None else '%s-' % name, store.id())
         self._secure = secure
         self._httpOnly = httpOnly
 
@@ -80,8 +86,8 @@ class CookieMemoryStore(object):
     def _result(self, cookie):
         cookieInfo = self._store.get(cookie)
         values = ["{0}={1}".format(*i) for i in [
-            (self._name, cookie), 
-            ('path', '/'), 
+            (self._name, cookie),
+            ('path', '/'),
             ('expires', formatdate(self._now() + self._timeout, usegmt=True))]]
         values.extend(k for k in [SECURE, HTTPONLY] if cookieInfo.get(k) == True)
 

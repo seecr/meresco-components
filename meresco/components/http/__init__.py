@@ -47,6 +47,6 @@ from .utils import insertHeader
 from .handlerequestfilter import HandleRequestFilter
 from .deproxy import Deproxy, OnlyDeproxied
 from .httpclient import HttpClient
-from .cookiememorystore import CookieMemoryStore
+from .cookiestore import CookieMemoryStore, CookiePersistentStore
 from .staticfiles import StaticFiles, libdirForPrefix
 from .staticfilemapping import StaticFileMapping

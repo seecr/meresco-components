@@ -36,6 +36,7 @@ from time import time
 from warnings import warn
 
 from pylru import lrucache
+from uuid import uuid4
 
 
 class TimedDictionary(object):
@@ -44,6 +45,10 @@ class TimedDictionary(object):
         self._dictionary = {} if lruMaxSize is None else lrucache(lruMaxSize)
         self._times = {}
         self._expirationOrder = []
+        self._uuid = uuid4()
+
+    def id(self):
+        return self._uuid
 
     def __len__(self):
         return self.size()
