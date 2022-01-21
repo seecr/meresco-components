@@ -40,17 +40,14 @@ from os.path import isfile
 from .timeddictionary import TimedDictionary
 
 class TimedPersistentDictionary(TimedDictionary):
-    def __init__(self, timeout, filename, lruMaxSize=None):
+    def __init__(self, timeout, filename, lruMaxSize=None, saveHook=None, loadHook=None):
         TimedDictionary.__init__(self, timeout, lruMaxSize=lruMaxSize)
 
+        self._saveHook = saveHook
+        self._loadHook = loadHook
         self._filename = filename
         if isfile(self._filename):
-            with open(self._filename, "rb") as f:
-                data = pickle.load(f)
-                self._uuid = data['_uuid']
-                self._dictionary = data['_dictionary']
-                self._expirationOrder = data['_expirationOrder']
-                self._times = data['_times']
+            self._load()
 
     def __setitem__(self, key, value):
         TimedDictionary.__setitem__(self, key, value)
@@ -69,13 +66,23 @@ class TimedPersistentDictionary(TimedDictionary):
         self._save()
 
     def _save(self):
+        dictToStore = self._dictionary if self._saveHook is None else {k:self._saveHook(v) for k,v in self._dictionary.items()}
         fname = self._filename + "~"
         with open(fname, "wb") as f:
             pickle.dump(
                 dict(
                     _uuid=self._uuid,
-                    _dictionary=self._dictionary,
+                    _dictionary=dictToStore,
                     _times=self._times,
                     _expirationOrder=self._expirationOrder),
                 f)
         rename(fname, self._filename)
+
+    def _load(self):
+        with open(self._filename, "rb") as f:
+            data = pickle.load(f)
+            dictToLoad = data['_dictionary'] if self._loadHook is None else {k:self._loadHook(v) for k,v in data['_dictionary'].items()}
+            self._uuid = data['_uuid']
+            self._dictionary = dictToLoad
+            self._expirationOrder = data['_expirationOrder']
+            self._times = data['_times']

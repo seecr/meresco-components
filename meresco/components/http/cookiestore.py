@@ -38,10 +38,16 @@ SECURE = "Secure"
 HTTPONLY = "HttpOnly"
 
 def CookieMemoryStore(timeout, *args, **kwargs):
-    return CookieStore(TimedDictionary(timeout), timeout, *args, **kwargs)
+    return CookieStore(
+        TimedDictionary(timeout),
+        timeout,
+        *args, **kwargs)
 
-def CookiePersistentStore(timeout, filename, *args, **kwargs):
-    return CookieStore(TimedPersistentDictionary(timeout, filename=filename), timeout, *args, **kwargs)
+def CookiePersistentStore(timeout, filename, saveHook=None, loadHook=None, *args, **kwargs):
+    return CookieStore(
+        TimedPersistentDictionary(timeout, filename=filename, saveHook=saveHook, loadHook=loadHook),
+        timeout,
+        *args, **kwargs)
 
 class CookieStore(object):
     def __init__(self, store, timeout, name=None, secure=False, httpOnly=True,):

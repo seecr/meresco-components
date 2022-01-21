@@ -116,6 +116,30 @@ class TimedPersistentDictionaryTest(SeecrTestCase):
         self.assertEqual('value', timedDict2['key'])
         self.assertEqual(lrucache, type(timedDict2._dictionary))
 
+
+    def testPersistentLoadSaveHook(self):
+        def saveHook(value):
+            newValue = dict(value)
+            newValue['a'] = value['a'] * 2
+            newValue['b'] = value['b'] * 2
+            return newValue
+
+        def loadHook(value):
+            newValue = dict(value)
+            newValue['a'] = value['a'] / 2
+            newValue['b'] = value['b'] / 2
+            return newValue
+
+        timedDict = TimedPersistentDictionary(TWO_HOURS, filename=self._filename, saveHook=saveHook)
+        timedDict['key'] = {"a": 2, "b": 4, "C": "aap"}
+
+        timedDict2 = TimedPersistentDictionary(TWO_HOURS, filename=self._filename)
+        self.assertEqual({"a": 4, "b": 8, "C": "aap"}, timedDict2['key'])
+        self.assertEqual({"a": 2, "b": 4, "C": "aap"}, timedDict['key'])
+        
+        timedDict3 = TimedPersistentDictionary(TWO_HOURS, filename=self._filename, loadHook=loadHook)
+        self.assertEqual({"a": 2, "b": 4, "C": "aap"}, timedDict3['key'])
+
     def testBasicGetAndPut(self):
         self.timedDict['key'] = 'value'
         self.assertEqual('value', self.timedDict['key'])
