@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2015, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2012-2015, 2020, 2022 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2014, 2020 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -29,36 +29,37 @@
 #
 ## end license ##
 
-from simplejson import dumps, dump, loads, load, JSONDecodeError
 from os import rename
+import pathlib, simplejson as json
 
 
 class _Json(object):
     def dumps(self, *args, **kwargs):
-        return dumps(self, *args, **kwargs)
+        return json.dumps(self, *args, **kwargs)
     __str__ = dumps
 
     def pretty_print(self, indent=4):
-        return dumps(self, indent=indent, sort_keys=True)
+        return json.dumps(self, indent=indent, sort_keys=True)
 
     def dump(self, fp, *args, **kwargs):
         if hasattr(fp, 'write'):
-            dump(self, fp, *args, **kwargs)
+            json.dump(self, fp, *args, **kwargs)
         else:
-            with open(fp+'~', 'w') as f:
-                dump(self, f, *args, **kwargs)
-            rename(fp+'~', fp)
+            fp = pathlib.Path(fp)
+            tmp = fp.with_name(fp.name + '~')
+            tmp.write_text(json.dumps(self, *args, **kwargs))
+            tmp.rename(fp)
 
     @classmethod
     def loads(clz, s, *args, **kwargs):
-        return clz(loads(s, *args, **kwargs))
+        return clz(json.loads(s, *args, **kwargs))
 
     @classmethod
     def load(clz, fp, emptyOnError=False, *args, **kwargs):
         def _inner(clz, fp, emptyOnError=False, *args, **kwargs):
             try:
-                return clz(load(fp, *args, **kwargs))
-            except JSONDecodeError:
+                return clz(json.load(fp, *args, **kwargs))
+            except json.JSONDecodeError:
                 if emptyOnError:
                     return clz()
                 raise

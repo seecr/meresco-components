@@ -3,7 +3,7 @@
 # "Meresco Components" are components to build searchengines, repositories
 # and archives, based on "Meresco Core".
 #
-# Copyright (C) 2012-2015, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2012-2015, 2020, 2022 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2012-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
@@ -34,9 +34,13 @@ from os.path import join
 from seecr.test import SeecrTestCase
 
 from meresco.components.json import JsonDict, JsonList, JsonToString, StringToJson, BytesToJson, JsonToBytes
-from simplejson import JSONDecodeError
+import pathlib, simplejson as json
 
 class JsonTest(SeecrTestCase):
+    def setUp(self):
+        SeecrTestCase.setUp(self)
+        self.tmp_path = pathlib.Path(self.tempdir)
+
     def testStr(self):
         jd = JsonDict({'hello': 'world'})
         self.assertEqual('{"hello": "world"}', str(jd))
@@ -52,35 +56,31 @@ class JsonTest(SeecrTestCase):
 
     def testLoad(self):
         jd = JsonDict({'hello': 'world'})
-        tempfile = join(self.tempdir, 'json.json')
+        tempfile = self.tmp_path / 'json.json'
         with open(tempfile, 'w') as fp:
             fp.write(str(jd))
         with open(tempfile) as fp:
             jd2 = JsonDict.load(fp)
+        jd3 = JsonDict.load(str(tempfile))
+        jd4 = JsonDict.load(tempfile)
         self.assertEqual(jd, jd2)
-
-    def testLoadFromFilename(self):
-        jd = JsonDict({'hello': 'world'})
-        tempfile = join(self.tempdir, 'json.json')
-        with open(tempfile, 'w') as fp:
-            fp.write(str(jd))
-        jd2 = JsonDict.load(tempfile)
-        self.assertEqual(jd, jd2)
+        self.assertEqual(jd, jd3)
+        self.assertEqual(jd, jd4)
 
     def testDump(self):
         jd = JsonDict({'hello': 'world'})
-        tempfile = join(self.tempdir, 'json.json')
+        tempfile = self.tmp_path / 'json.json'
         with open(tempfile, 'w') as f:
             jd.dump(f)
-        with open(tempfile) as fp:
-            self.assertEqual('{"hello": "world"}', fp.read())
+        self.assertEqual('{"hello": "world"}', tempfile.read_text())
 
-    def testDumpWithFilename(self):
-        jd = JsonDict({'hello': 'world'})
-        tempfile = join(self.tempdir, 'json.json')
+        jd['hello'] = 'World'
+        jd.dump(str(tempfile))
+        self.assertEqual('{"hello": "World"}', tempfile.read_text())
+
+        jd['hello'] = 'World!'
         jd.dump(tempfile)
-        with open(tempfile) as fp:
-            self.assertEqual('{"hello": "world"}', fp.read())
+        self.assertEqual('{"hello": "World!"}', tempfile.read_text())
 
     def testStrList(self):
         jl = JsonList(['hello', 'world'])
@@ -110,9 +110,9 @@ class JsonTest(SeecrTestCase):
         tempfile = join(self.tempdir, 'json.json')
         with open(tempfile, 'w') as fp:
             pass
-        self.assertRaises(JSONDecodeError, lambda: JsonDict.load(tempfile))
+        self.assertRaises(json.JSONDecodeError, lambda: JsonDict.load(tempfile))
         self.assertEqual({}, JsonDict.load(tempfile, emptyOnError=True))
-        self.assertRaises(JSONDecodeError, lambda: JsonList.load(tempfile))
+        self.assertRaises(json.JSONDecodeError, lambda: JsonList.load(tempfile))
         self.assertEqual([], JsonList.load(tempfile, emptyOnError=True))
 
     def testConvert(self):
