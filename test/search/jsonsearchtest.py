@@ -5,10 +5,10 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
-# Copyright (C) 2015-2017, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015-2017, 2020-2022 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020 SURF https://www.surf.nl
-# Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2020-2022 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
@@ -32,6 +32,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from weightless.core import be, asString, local
+from decimal import Decimal
 from meresco.components import lxmltostring
 from meresco.components.http.utils import CRLF
 from meresco.components.log import LogCollectorScope, LogCollector
@@ -79,18 +80,24 @@ class JsonSearchTest(SeecrTestCase):
         self.observer = CallTrace(methods=dict(
             executeQuery=executeQuery,
             retrieveData=retrieveData))
+        self.logs = []
         self._buildDna()
 
     def _buildDna(self, defaultRecordSchema="rdf", **kwargs):
-        jsonSearch = JsonSearch(defaultRecordSchema=defaultRecordSchema, **kwargs)
+        jsonSearch = JsonSearch(defaultRecordSchema=defaultRecordSchema, enableCollectLog=True, **kwargs)
         jsonSearch._timeNow = self._timeNow
+
+        class WriteLog:
+            def writeLog(mii, collectedLog):
+                self.logs.append(collectedLog)
 
         self.dna = be(
             (Observable(),
                 (LogCollector(),
                     (jsonSearch,
                         (self.observer, )
-                    )
+                    ),
+                    (WriteLog(),),
                 )
             )
         )
@@ -549,6 +556,22 @@ class JsonSearchTest(SeecrTestCase):
                 'message': "Invalid argument: 'facet-filter', expected <field>=<value> as a filter",
                 'type': 'InvalidArgument',
             }, response['error'])
+
+    def testLogging(self):
+        response = self.request(query='fiets')
+        self.assertEqual(1, len(self.logs))
+        self.assertEqual({
+            'search': {
+                'handlingTime': [Decimal('0.200')],
+                'queryTime': [Decimal('0.100')],
+                'indexTime': [Decimal('0.030')],
+                'numberOfRecords': [2],
+                'arguments': [{
+                    'query': 'fiets',
+                }],
+            }
+        }, self.logs[-1])
+
 
     ## hellpers
 

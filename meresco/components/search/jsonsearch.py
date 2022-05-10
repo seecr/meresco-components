@@ -5,10 +5,10 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2015-2016 Drents Archief http://www.drentsarchief.nl
-# Copyright (C) 2015-2018, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015-2018, 2020-2022 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017, 2020 SURF https://www.surf.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
-# Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2020-2022 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Components"
@@ -55,6 +55,7 @@ class JsonSearch(Observable):
             useOriginalPath=False,
             getItemsFromObserver=False,
             version=VERSION,
+            enableCollectLog=False,
             **kwargs
         ):
         Observable.__init__(self, **kwargs)
@@ -73,6 +74,7 @@ class JsonSearch(Observable):
         if useOriginalPath:
             self._determinePath = lambda **kwargs:kwargs.get('originalPath', kwargs['path'])
         self._getItems = self._observerGetItems if getItemsFromObserver else self._defaultGetItems
+        self._collectLogForScope = collectLogForScope if enableCollectLog else lambda **kwargs: None
 
     def handleRequest(self, arguments, *args, **kwargs):
         path = self._determinePath(**kwargs)
@@ -85,8 +87,9 @@ class JsonSearch(Observable):
                 args = _Arguments(arguments, **self._argumentLimits)
 
                 jsonResult.setdefault('request', args.request)
+                logDict['arguments'] = args.request
 
-                jsonResponse = yield self.jsonResponse(args)
+                jsonResponse = yield self.jsonResponse(args, logDict)
                 if args.stop - args.start and jsonResponse["total"] > args.stop:
                     jsonResponse['next'] = args.pageDict(1, path=path)
                 if args.stop - args.start and args.start > 0:
@@ -114,15 +117,16 @@ class JsonSearch(Observable):
             yield CRLF
             yield dumps(jsonResult, item_sort_key=_item_sort_key, indent=2)
         finally:
-            collectLogForScope(search=logDict)
+            self._collectLogForScope(search=logDict)
 
-    def jsonResponse(self, args):
+    def jsonResponse(self, args, logDict):
         t0 = self._timeNow()
         result = yield self.any.executeQuery(**args.queryKwargs)
 
         queryTime = self._timeNow() - t0
         total, hits = result.total, result.hits
         jsonResponse = JsonDict({'total': total})
+        logDict['numberOfRecords'] = total
 
         if hits:
             if hasattr(result, 'items'):
@@ -141,8 +145,11 @@ class JsonSearch(Observable):
             'handlingTime': self._querytime(searchTime),
             'queryTime': self._querytime(queryTime),
         }
+        logDict['handlingTime'] = self._querytime(searchTime)
+        logDict['queryTime'] = self._querytime(queryTime)
         if result.queryTime:
             jsonResponse["querytimes"]["indexTime"] = self._querytime(result.queryTime/1000.0)
+            logDict["indexTime"] = self._querytime(result.queryTime/1000.0)
 
         return jsonResponse
 
