@@ -147,7 +147,7 @@ class JsonSearch(Observable):
         }
         logDict['handlingTime'] = self._querytime(searchTime)
         logDict['queryTime'] = self._querytime(queryTime)
-        if result.queryTime:
+        if not result.queryTime is None:
             jsonResponse["querytimes"]["indexTime"] = self._querytime(result.queryTime/1000.0)
             logDict["indexTime"] = self._querytime(result.queryTime/1000.0)
 

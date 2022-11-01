@@ -61,12 +61,13 @@ class JsonSearchTest(SeecrTestCase):
         self.total = 2
         self.hits = [1,2]
         self.drilldownData = None
+        self.indexQueryTime = 30
 
         def executeQuery(*args, **kwargs):
             result = LuceneResponse(
                     total=self.total,
                     hits=[MockHit('id:%s' % i) for i in self.hits],
-                    queryTime=30
+                    queryTime=self.indexQueryTime
                 )
             if self.drilldownData:
                 result.drilldownData = self.drilldownData
@@ -129,6 +130,13 @@ class JsonSearchTest(SeecrTestCase):
         self.assertEqual({
             'handlingTime': 0.2,
             'indexTime': 0.03,
+            'queryTime': 0.1
+            }, json['response']['querytimes'])
+        self.indexQueryTime = 0
+        json = self.request()
+        self.assertEqual({
+            'handlingTime': 0.2,
+            'indexTime': 0,
             'queryTime': 0.1
             }, json['response']['querytimes'])
 
