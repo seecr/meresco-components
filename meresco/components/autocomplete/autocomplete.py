@@ -5,7 +5,7 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
@@ -32,11 +32,12 @@ from xml.sax.saxutils import escape as escapeXml
 from meresco.core import Observable
 from meresco.components.http.utils import okXml
 from meresco.components.http import FileServer
-from os.path import join
+from os.path import join, isfile
 from warnings import warn
 from meresco.components import usrSharePath
 
 filesDir = join(usrSharePath, 'autocomplete')
+jqueryDir = '/usr/share/javascript/jquery'
 
 class Autocomplete(Observable):
     def __init__(self, host, port, path, templateQuery, shortname, description, htmlTemplateQuery=None, name=None, **kwargs):
@@ -49,6 +50,9 @@ class Autocomplete(Observable):
         self._shortname = shortname
         self._description = description
         self._fileServer = FileServer(documentRoot=filesDir)
+        self._jfileServer = FileServer(documentRoot=jqueryDir)
+        if not isfile(join(jqueryDir, 'jquery.js')):
+            warn('Missing dependency for jquery.js')
         if 'defaultField' in kwargs:
             warn("Using old-style Autocomplete, please use PrefixBasedSuggest as observer.", DeprecationWarning)
             from .prefixbasedsuggest import PrefixBasedSuggest
@@ -96,6 +100,9 @@ class Autocomplete(Observable):
         }
 
     def _files(self, filename, **kwargs):
-        yield self._fileServer.handleRequest(path=filename, **kwargs)
+        fileServer = self._fileServer
+        if filename == 'jquery.js':
+            fileServer = self._jfileServer
+        yield fileServer.handleRequest(path=filename, **kwargs)
 
 CONTENT_TYPE_JSON_SUGGESTIONS = "application/x-suggestions+json"
