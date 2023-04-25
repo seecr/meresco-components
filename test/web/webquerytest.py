@@ -9,7 +9,7 @@
 # Copyright (C) 2007-2009 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
-# Copyright (C) 2012, 2015, 2017-2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2012, 2015, 2017-2018, 2020, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2015, 2020 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2017, 2020 SURF https://www.surf.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
@@ -36,7 +36,7 @@
 from unittest import TestCase
 
 from meresco.components.web import WebQuery
-from meresco.components.web.webquery import _feelsLikePlusMinusQuery, _feelsLikeBooleanQuery
+from meresco.components.web.webquery import _feelsLikePlusMinusQuery, _feelsLikeBooleanQuery, OTHER_QUOTES, nice_quote_trans
 from cqlparser import parseString as parseCql, cqlToExpression
 
 class WebQueryTest(TestCase):
@@ -212,7 +212,7 @@ class WebQueryTest(TestCase):
         wq = WebQuery('transport=fiets')
         newWq = wq.replaceTerm('fiets', 'bike')
         self.assertEqual('transport=bike', newWq.original)
-    
+
     def testReplaceIndex(self):
         wq = WebQuery('transport=fiets')
         newWq = wq.replaceIndex(dict(transport="vervoer"))
@@ -231,6 +231,15 @@ class WebQueryTest(TestCase):
         self.assertEqual('fiets kaart', wq.original)
         self.assertEqual('bike AND kaart', newWq.original)
         self.assertCql(parseCql('(bike AND kaart) AND label exact value'), newWq.ast)
+
+    def testReplaceQuotes(self):
+        wq = WebQuery('field=“value”')
+        self.assertCql(parseCql('field = value'), wq.ast)
+        # illegal quotes are completely stripped away
+        self.assertEqual('field="value"', wq.original)
+        self.assertEqual('“”„‘’‚‛', OTHER_QUOTES)
+        self.assertEqual('"""', '“”„'.translate(nice_quote_trans))
+        self.assertEqual("''''", '‘’‚‛'.translate(nice_quote_trans))
 
     def testHasFilters(self):
         wq = WebQuery('fiets kaart')

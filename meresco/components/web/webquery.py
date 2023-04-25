@@ -10,7 +10,7 @@
 # Copyright (C) 2009 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009 Tilburg University http://www.uvt.nl
 # Copyright (C) 2011, 2015, 2020 Stichting Kennisnet https://www.kennisnet.nl
-# Copyright (C) 2012, 2015, 2017-2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2012, 2015, 2017-2018, 2020, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017, 2020 SURF https://www.surf.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
@@ -41,14 +41,28 @@ STRINGS = [QUOTED_LABEL_STRING ,QUOTED_STRING, UNQUOTED_STRING]
 
 SPLITTED_STRINGS = re.compile(r'\s*(%s)' % '|'.join(STRINGS))
 
+import unicodedata
+OTHER_QUOTES = ''.join(unicodedata.lookup(name) for name in (
+    'LEFT DOUBLE QUOTATION MARK',
+    'RIGHT DOUBLE QUOTATION MARK',
+    'DOUBLE LOW-9 QUOTATION MARK',
+    'LEFT SINGLE QUOTATION MARK',
+    'RIGHT SINGLE QUOTATION MARK',
+    'SINGLE LOW-9 QUOTATION MARK',
+    'SINGLE HIGH-REVERSED-9 QUOTATION MARK',
+))
+nice_quote_trans = str.maketrans(OTHER_QUOTES, '"""'+"''''")
+
 from cqlparser import parseString, CQLParseException, cql2string, CqlIdentityVisitor, cqlToExpression, CQLTokenizerException, quotTerm
 from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, SEARCH_TERM, TERM, BOOLEAN, INDEX, RELATION, COMPARITOR
 
 DEFAULT_KIND, PLUSMINUS_KIND, BOOLEAN_KIND = list(range(3))
 
+
 class WebQuery(object):
 
     def __init__(self, aString, antiUnaryClause=""):
+        aString = aString.translate(nice_quote_trans)
         self.original = aString
         try:
             plusminus = _feelsLikePlusMinusQuery(aString)
@@ -158,7 +172,7 @@ class CqlReplaceIndex(CqlIdentityVisitor):
     def visitINDEX(self, node):
         indexTerm = node.children[0].children[0]
         if indexTerm in self._mapping:
-            return INDEX(TERM(self._mapping[indexTerm])) 
+            return INDEX(TERM(self._mapping[indexTerm]))
         return CqlIdentityVisitor.visitINDEX(self, node)
 
 def _feelsLikePlusMinusQuery(aString):
