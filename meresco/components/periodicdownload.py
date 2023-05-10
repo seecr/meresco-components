@@ -5,8 +5,8 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011, 2013-2014, 2020 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2020, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011, 2013-2014, 2020, 2023 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
@@ -147,17 +147,19 @@ class PeriodicDownload(Observable):
             additionalHeaders['Accept-Encoding'] = ', '.join(sorted([each.decode() for each in SUPPORTED_COMPRESSION_CONTENT_ENCODINGS.keys()]))
         request = self.call.buildRequest(additionalHeaders=additionalHeaders)
         proxyServer = None
+        retryAfter = 1
         if type(request) is dict:
-            host = request['host']
-            port = request['port']
+            host = request.get('host', self._host)
+            port = request.get('port', self._port)
             requestString = request['request']
             proxyServer = request.get('proxyServer')
+            retryAfter = request.get('retryAfter', retryAfter)
         else:
             host = self._host
             port = self._port
             requestString = request
         if requestString is None:
-            self._startTimer(retryAfter=1)
+            self._startTimer(retryAfter=retryAfter)
             yield
             return
         self._sok = yield self._tryConnect(host, port, proxyServer=proxyServer)

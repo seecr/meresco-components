@@ -5,8 +5,8 @@
 #
 # Copyright (C) 2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2010 Stichting Kennisnet Ict op school. http://www.kennisnetictopschool.nl
-# Copyright (C) 2011-2016, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011, 2013-2014, 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2020-2021, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011, 2013-2014, 2020-2021, 2023 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012, 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
@@ -1245,6 +1245,17 @@ For request: GET /path?argument=value HTTP/1.0\r\n\r\n""" % repr(downloader) % f
 
         downloader._startProcess()
         self.assertEqual(['addTimer'], reactor.calledMethodNames())
+        self.assertEqual([(1, downloader._startProcess)], [m.args for m in reactor.calledMethods])
+
+    def testNoBuildRequestSleepsGivenTime(self):
+        reactor = CallTrace('reactor')
+        observer = CallTrace('observer', returnValues={'buildRequest': {'request': None, 'retryAfter': 42}})
+        downloader = PeriodicDownload(reactor, host='localhost', port=9999, err=StringIO())
+        downloader.addObserver(observer)
+
+        downloader._startProcess()
+        self.assertEqual(['addTimer'], reactor.calledMethodNames())
+        self.assertEqual([(42, downloader._startProcess)], [m.args for m in reactor.calledMethods])
 
     def testUseBuildRequestHostAndPort(self):
         with server([RESPONSE_ONE_RECORD]) as (port, msgs):
