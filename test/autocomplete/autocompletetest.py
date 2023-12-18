@@ -6,8 +6,8 @@
 #
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2016, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011, 2014, 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2011-2016, 2020-2021, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2011, 2014, 2020-2021, 2023 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 # Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
@@ -52,8 +52,7 @@ class AutocompleteTest(SeecrTestCase):
         queryTemplate = '/sru?version=1.1&operation=searchRetrieve&query={searchTerms}'
         htmlQueryTemplate = '/demo?q={searchTerms}'
         self.auto = be((Autocomplete(
-                host='localhost',
-                port=8000,
+                baseUrl='https://auto.example.org',
                 path='/some/path',
                 templateQuery=queryTemplate,
                 htmlTemplateQuery=htmlQueryTemplate,
@@ -173,9 +172,9 @@ class AutocompleteTest(SeecrTestCase):
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>Web Search</ShortName>
     <Description>Use this web search to search something</Description>
-    <Url type="text/xml" method="get" template="http://localhost:8000/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
-    <Url type="text/html" method="get" template="http://localhost:8000/demo?q={searchTerms}"/>
-    <Url type="application/x-suggestions+json" template="http://localhost:8000/some/path?prefix={searchTerms}"/>
+    <Url type="text/xml" method="get" template="https://auto.example.org/sru?version=1.1&amp;operation=searchRetrieve&amp;query={searchTerms}"/>
+    <Url type="text/html" method="get" template="https://auto.example.org/demo?q={searchTerms}"/>
+    <Url type="application/x-suggestions+json" template="https://auto.example.org/some/path?prefix={searchTerms}"/>
 </OpenSearchDescription>""", body)
 
     def testOpenSearchWithoutHtmlAndPort80(self):

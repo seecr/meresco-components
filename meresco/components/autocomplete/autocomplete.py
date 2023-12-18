@@ -6,7 +6,7 @@
 # Copyright (C) 2009-2011 Delft University of Technology http://www.tudelft.nl
 # Copyright (C) 2009-2011 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2011-2016, 2023 Seecr (Seek You Too B.V.) https://seecr.nl
-# Copyright (C) 2011, 2014 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2011, 2014, 2023 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2012 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015-2016 Koninklijke Bibliotheek (KB) http://www.kb.nl
 #
@@ -40,10 +40,12 @@ filesDir = join(usrSharePath, 'autocomplete')
 jqueryDir = '/usr/share/javascript/jquery'
 
 class Autocomplete(Observable):
-    def __init__(self, host, port, path, templateQuery, shortname, description, htmlTemplateQuery=None, name=None, **kwargs):
+    def __init__(self, host=None, port=None, path=None, templateQuery=None, shortname=None, description=None, htmlTemplateQuery=None, baseUrl=None, name=None, **kwargs):
         Observable.__init__(self, name=name)
-        self._host = host
-        self._port = port
+        self._baseUrl = baseUrl
+        if baseUrl is None:
+            server = host if str(port) == "80" else "{}:{}".format(host, port)
+            self._baseUrl = f'http://{server}'
         self._path = path
         self._xmlTemplateQuery = templateQuery
         self._htmlTemplateQuery = htmlTemplateQuery
@@ -79,23 +81,22 @@ class Autocomplete(Observable):
         return self.call.templateQueryForSuggest()
 
     def _openSearchDescription(self, **kwargs):
-        server = self._host if str(self._port) == "80" else "{}:{}".format(self._host, self._port)
         yield okXml
         yield """<?xml version="1.0" encoding="UTF-8"?>"""
         yield """<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>%(shortname)s</ShortName>
     <Description>%(description)s</Description>
-    <Url type="text/xml" method="get" template="http://%(server)s%(xmlTemplateQuery)s"/>
+    <Url type="text/xml" method="get" template="%(baseUrl)s%(xmlTemplateQuery)s"/>
     %(htmlUrl)s
-    <Url type="%(contentTypeSuggest)s" template="http://%(server)s%(path)s?%(templateQueryForSuggest)s"/>
+    <Url type="%(contentTypeSuggest)s" template="%(baseUrl)s%(path)s?%(templateQueryForSuggest)s"/>
 </OpenSearchDescription>""" % {
             'contentTypeSuggest': CONTENT_TYPE_JSON_SUGGESTIONS,
             'shortname': self._shortname,
             'description': self._description,
-            'server': server,
+            'baseUrl': self._baseUrl,
             'path': self._path,
             'xmlTemplateQuery': escapeXml(self._xmlTemplateQuery),
-            'htmlUrl': '<Url type="text/html" method="get" template="http://{server}{template}"/>'.format(server=server, template=escapeXml(self._htmlTemplateQuery)) if self._htmlTemplateQuery else '',
+            'htmlUrl': '<Url type="text/html" method="get" template="{baseUrl}{template}"/>'.format(baseUrl=self._baseUrl, template=escapeXml(self._htmlTemplateQuery)) if self._htmlTemplateQuery else '',
             'templateQueryForSuggest': escapeXml(self._templateQueryForSuggest()),
         }
 
