@@ -101,7 +101,7 @@ class PersistLog(Observable):
             finally:
                 self._rotating = False
         self._thread = Thread(target=do)
-        self._thread.setDaemon(True)
+        self._thread.daemon = True
         self._thread.start()
 
     def commit(self):

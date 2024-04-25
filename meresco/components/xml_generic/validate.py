@@ -32,26 +32,43 @@
 #
 ## end license ##
 
-from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree, XML
+from lxml.etree import parse, XMLSchema, XMLSchemaParseError, _ElementTree, XML, XMLParser, Resolver
 from io import StringIO
 
 from weightless.core import NoneOfTheObserversRespond, DeclineMessage
 from meresco.core import Observable
 from meresco.components import lxmltostring
 
+from meresco.components import usrSharePath
+import pathlib
+
 class ValidateException(Exception):
     pass
+
+class XSD_Resolver(Resolver):
+    def __init__(self):
+        self._xsd_path = pathlib.Path(usrSharePath) / "xsd" / "schemas"
+
+    def resolve(self, url, id, context):
+        _, fname = url.rsplit("/", 1)
+        xsd_filename = self._xsd_path / fname
+        if xsd_filename.is_file():
+            return self.resolve_filename(xsd_filename.as_posix(), context)
+        return Resolver.resolve(self, url, id, context)
+
 
 class Validate(Observable):
     def __init__(self, schemaPath):
         Observable.__init__(self)
+        self._parser = XMLParser()
+        self._parser.resolvers.add(XSD_Resolver())
+
         try:
             with open(schemaPath) as fp:
-                self._schema = XMLSchema(parse(fp))
+                self._schema = XMLSchema(parse(fp, self._parser))
         except XMLSchemaParseError as e:
             print(e.error_log.last_error)
             raise
-
 
     def all_unknown(self, message, *args, **kwargs):
         self._detectAndValidate(*args, **kwargs)

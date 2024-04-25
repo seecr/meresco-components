@@ -72,7 +72,7 @@ def server(responses, bufsize=4096, sleepWhile=None):
             s.bind(('127.0.0.1', port))
             s.listen(0)
             start.set()
-            while not end.isSet():
+            while not end.is_set():
                 try:
                     connection, address = s.accept()
                     socksToClose.append(connection)
@@ -91,6 +91,7 @@ def server(responses, bufsize=4096, sleepWhile=None):
                 except:
                     from traceback import print_exc; print_exc()
                     pass
+            s.close()
     thread = Thread(None, serverThread)
     thread.daemon = True
     thread.start()
@@ -487,7 +488,7 @@ class PeriodicDownloadTest(SeecrTestCase):
         downloader, observer, reactor = self._prepareDownloader("some.nl", 'no-port')
         callback = reactor.calledMethods[0].args[1]
         callback() # connect
-        self.assertEqual("%s: an integer is required (got type str)\n" % repr(downloader), downloader._err.getvalue())
+        self.assertEqual("%s: 'str' object cannot be interpreted as an integer\n" % repr(downloader), downloader._err.getvalue())
         self.assertReactorStateClean(reactor)
 
     def testNoConnectionPossible(self):
@@ -652,6 +653,7 @@ class PeriodicDownloadTest(SeecrTestCase):
     raise exception[1].with_traceback(exception[2])
   File "_observable.py", line [#], in all
     c, v, t = exc_info(); raise v.with_traceback(t.tb_next)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "%%(__file__)s", line 243, in handleGenerator
     raise Exception('xcptn')
 Exception: xcptn
