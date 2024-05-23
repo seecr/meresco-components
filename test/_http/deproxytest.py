@@ -143,6 +143,18 @@ class DeproxyTest(TestCase):
         handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
         self.assertEqual("4.4.4.4:44444", handleRequestCallKwargs['Headers']['Host'])
 
+    def testHostIPv6(self):
+        self.createTree(deproxyForIpRanges=[
+            ('9.9.9.0', '9.9.9.255')])
+        Headers={
+                "Host": ["[2001:88:99::11:22]:12345"],
+        }
+        consume(self.top.all.handleRequest(Client=("9.9.9.9", 9999), port=11111, Headers=Headers))
+
+        self.assertEqual(1, len(self.observer.calledMethods))
+        handleRequestCallKwargs = self.observer.calledMethods[0].kwargs
+        self.assertEqual("[2001:88:99::11:22]:12345", handleRequestCallKwargs['Headers']['Host'])
+
     def testDeproxyForIps(self):
         self.createTree(deproxyForIps=['3.3.3.3'])
         consume(self.top.all.handleRequest(
