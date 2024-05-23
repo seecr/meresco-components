@@ -51,7 +51,8 @@ class Deproxy(Observable):
             host = _lastFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
             if host != '':
                 Headers['Host'] = host
-                port = int(host.partition(':')[2] or '80')
+                _, colon, portnr = host.rpartition(':')
+                port = int(portnr) if colon == ':' else 80
         yield self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, port=port, OriginalClient=OriginalClient, **kwargs)
 
     def updateIps(self, ipAddresses=None, ipRanges=None):
