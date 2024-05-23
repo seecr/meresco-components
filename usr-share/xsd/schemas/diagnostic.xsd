@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 2 U (http://www.xmlspy.com) by Matthew Dovey (Oxford University) -->
+<!-- ZiNG SRU/SRW WSDL Specification                   -->
+<!-- Version 1.1                                       -->
+<!--                                                   -->
+<xsd:schema targetNamespace="http://www.loc.gov/zing/srw/diagnostic/" xmlns="http://www.loc.gov/zing/srw/diagnostic/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:element name="diagnostic" type="diagnosticType" nillable="false"/>
+  <xsd:complexType name="diagnosticType">
+    <xsd:all>
+      <xsd:element ref="uri"/>
+      <xsd:element ref="details" minOccurs="0"/>
+      <xsd:element ref="message" minOccurs="0"/>
+    </xsd:all>
+  </xsd:complexType>
+  <xsd:element name="uri" type="xsd:anyURI" nillable="false"/>
+  <xsd:element name="details" type="xsd:string" nillable="false"/>
+  <xsd:element name="message" type="xsd:string" nillable="false"/>
+</xsd:schema>
