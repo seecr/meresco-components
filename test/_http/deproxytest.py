@@ -291,3 +291,11 @@ class DeproxyTest(TestCase):
             ],
             dep.current_config,
         )
+        dep.updateIps(ipAddresses=["2.3.4.5"], ipRanges=["3.4.0.0/16"])
+        self.assertEqual(
+            [
+                "IPAddress('2.3.4.5')",
+                "IPNetwork('3.4.0.0/16')",
+            ],
+            dep.current_config,
+        )

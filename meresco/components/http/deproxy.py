@@ -43,7 +43,6 @@ class Deproxy(Observable):
         self._ipfilter = IpFilter(
             allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges
         )
-        self.current_config = self._ipfilter.current_config
 
     def handleRequest(self, Client, Headers, port=80, **kwargs):
         clientHost, clientPort = Client
@@ -70,6 +69,10 @@ class Deproxy(Observable):
 
     def updateIps(self, ipAddresses=None, ipRanges=None):
         self._ipfilter.updateIps(ipAddresses=ipAddresses, ipRanges=ipRanges)
+
+    @property
+    def current_config(self):
+        return self._ipfilter.current_config
 
 
 class OnlyDeproxied(HandleRequestFilter):
