@@ -37,16 +37,17 @@ from .handlerequestfilter import HandleRequestFilter
 from netaddr import IPAddress, IPRange, IPNetwork
 import os
 
+
 class IpFilter(HandleRequestFilter):
     def __init__(self, name=None, allowedIps=None, allowedIpRanges=None):
         super(IpFilter, self).__init__(name=name, filterMethod=self._filter)
         self.updateIps(ipAddresses=allowedIps, ipRanges=allowedIpRanges)
         self._ipaddress = self._defaultIpaddress
-        if os.environ.get('TESTMODE', '').upper() == 'TRUE':
+        if os.environ.get("TESTMODE", "").upper() == "TRUE":
             self._ipaddress = self._fakeIpaddress
 
     def _filter(self, Client, Headers, **kwargs):
-        return self.filterIpAddress(Client[0] if Client != None else '0.0.0.0', Headers)
+        return self.filterIpAddress(Client[0] if Client != None else "0.0.0.0", Headers)
 
     def filterIpAddress(self, ipaddress, Headers=None):
         ipaddress = IPAddress(self._ipaddress(ipaddress, Headers))
@@ -63,10 +64,30 @@ class IpFilter(HandleRequestFilter):
         return ipaddress
 
     def _fakeIpaddress(self, ipaddress, Headers):
-        if Headers and 'X-Meresco-Ipfilter-Fake-Ip' in Headers and ipaddress in ['127.0.0.1', '::1']:
-            return Headers['X-Meresco-Ipfilter-Fake-Ip']
+        if (
+            Headers
+            and "X-Meresco-Ipfilter-Fake-Ip" in Headers
+            and ipaddress in ["127.0.0.1", "::1"]
+        ):
+            return Headers["X-Meresco-Ipfilter-Fake-Ip"]
         return ipaddress
 
     def updateIps(self, ipAddresses=None, ipRanges=None):
-        self._allowedIps = set(IPAddress(allowedIp) for allowedIp in ipAddresses) if ipAddresses else set()
-        self._allowedIpRanges = set(IPRange(*each) if type(each) is tuple else IPNetwork(each) for each in ipRanges) if ipRanges else set()
+        self._allowedIps = (
+            set(IPAddress(allowedIp) for allowedIp in ipAddresses)
+            if ipAddresses
+            else set()
+        )
+        self._allowedIpRanges = (
+            set(
+                IPRange(*each) if type(each) is tuple else IPNetwork(each)
+                for each in ipRanges
+            )
+            if ipRanges
+            else set()
+        )
+
+    @property
+    def current_config(self):
+        r = list(map(repr, self._allowedIps)) + list(map(repr, self._allowedIpRanges))
+        return sorted(r)

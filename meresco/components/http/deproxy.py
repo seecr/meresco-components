@@ -40,23 +40,37 @@ from .handlerequestfilter import HandleRequestFilter
 class Deproxy(Observable):
     def __init__(self, deproxyForIps=None, deproxyForIpRanges=None, name=None):
         Observable.__init__(self, name=name)
-        self._ipfilter = IpFilter(allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges)
+        self._ipfilter = IpFilter(
+            allowedIps=deproxyForIps, allowedIpRanges=deproxyForIpRanges
+        )
+        self.current_config = self._ipfilter.current_config
 
     def handleRequest(self, Client, Headers, port=80, **kwargs):
         clientHost, clientPort = Client
         OriginalClient = None
         if self._ipfilter.filterIpAddress(ipaddress=clientHost, Headers=Headers):
             OriginalClient = clientHost, clientPort
-            clientHost = _lastFromCommaSeparated(Headers.get("X-Forwarded-For", clientHost))
-            host = _lastFromCommaSeparated(Headers.get("X-Forwarded-Host",  Headers.get('Host', '')))
-            if host != '':
-                Headers['Host'] = host
-                _, colon, portnr = host.rpartition(':')
-                port = int(portnr) if colon == ':' else 80
-        yield self.all.handleRequest(Client=(clientHost, clientPort), Headers=Headers, port=port, OriginalClient=OriginalClient, **kwargs)
+            clientHost = _lastFromCommaSeparated(
+                Headers.get("X-Forwarded-For", clientHost)
+            )
+            host = _lastFromCommaSeparated(
+                Headers.get("X-Forwarded-Host", Headers.get("Host", ""))
+            )
+            if host != "":
+                Headers["Host"] = host
+                _, colon, portnr = host.rpartition(":")
+                port = int(portnr) if colon == ":" else 80
+        yield self.all.handleRequest(
+            Client=(clientHost, clientPort),
+            Headers=Headers,
+            port=port,
+            OriginalClient=OriginalClient,
+            **kwargs
+        )
 
     def updateIps(self, ipAddresses=None, ipRanges=None):
         self._ipfilter.updateIps(ipAddresses=ipAddresses, ipRanges=ipRanges)
+
 
 class OnlyDeproxied(HandleRequestFilter):
     def __init__(self, **kwargs):
@@ -65,8 +79,9 @@ class OnlyDeproxied(HandleRequestFilter):
     def _filter(self, OriginalClient=None, **kwargs):
         return OriginalClient is not None
 
+
 def _lastFromCommaSeparated(sorl):
     s = sorl
     if isinstance(sorl, list):
         s = sorl[-1]
-    return ''.join([p.strip() for p in s.split(',') if p.strip()][-1:])
+    return "".join([p.strip() for p in s.split(",") if p.strip()][-1:])
