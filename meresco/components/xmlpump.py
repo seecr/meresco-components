@@ -35,14 +35,15 @@
 ## end license ##
 
 from io import BytesIO
-from lxml.etree import parse, tostring, XMLParser, _ElementStringResult
+from lxml.etree import parse, tostring, XMLParser
 
 from .converter import Converter
 from re import compile as compileRe
 
 
 def lxmltostring(lxmlNode, **kwargs):
-    return str(lxmltobytes(lxmlNode, **kwargs), encoding='utf-8')
+    return str(lxmltobytes(lxmlNode, **kwargs), encoding="utf-8")
+
 
 def lxmltobytes(lxmlNode, **kwargs):
     return _fixLxmltostringRootElement(tostring(lxmlNode, encoding="UTF-8", **kwargs))
@@ -56,7 +57,7 @@ class FileParseLxml(Converter):
 class XmlParseLxml(Converter):
     def __init__(self, parseOptions=None, **kwargs):
         """When provided, parserOptions must contain arguments to lxml.etree.XMLParser,
-e.g. parseOptions=dict(huge_tree=True, remove_blank_text=True)"""
+        e.g. parseOptions=dict(huge_tree=True, remove_blank_text=True)"""
         Converter.__init__(self, **kwargs)
         self._parseOptions = parseOptions
 
@@ -65,7 +66,7 @@ e.g. parseOptions=dict(huge_tree=True, remove_blank_text=True)"""
         if not self._parseOptions is None:
             parseKwargs = dict(parser=XMLParser(**self._parseOptions))
         if isinstance(anObject, str):
-            anObject = bytes(anObject, encoding='utf-8')
+            anObject = bytes(anObject, encoding="utf-8")
         return parse(BytesIO(bytes(anObject)), **parseKwargs)
 
 
@@ -78,14 +79,17 @@ class XmlPrintLxml(Converter):
         return lxmltobytes(anObject, pretty_print=self._pretty_print)
 
 
-_CHAR_REF = compileRe(rb'\&\#(?P<code>x?[0-9a-fA-F]+);')
+_CHAR_REF = compileRe(rb"\&\#(?P<code>x?[0-9a-fA-F]+);")
+
+
 def _replCharRef(matchObj):
-    code = matchObj.groupdict()['code']
-    code = int(code[1:], base=16) if b'x' in code else int(code)
-    return bytes(chr(code), encoding='utf-8')
+    code = matchObj.groupdict()["code"]
+    code = int(code[1:], base=16) if b"x" in code else int(code)
+    return bytes(chr(code), encoding="utf-8")
+
 
 def _fixLxmltostringRootElement(value):
-    firstGt = value.find(b'>')
-    if value.find(b'&#', 0, firstGt) > -1:
+    firstGt = value.find(b">")
+    if value.find(b"&#", 0, firstGt) > -1:
         return _CHAR_REF.sub(_replCharRef, value[:firstGt]) + value[firstGt:]
     return value
