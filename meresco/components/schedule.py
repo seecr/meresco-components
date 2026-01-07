@@ -27,21 +27,34 @@
 #
 ## end license ##
 
-from datetime import datetime
+from datetime import datetime, timezone
 from time import time
 
 
 class Schedule(object):
-    def __init__(self, period=None, timeOfDay=None, dayOfWeek=None, secondsSinceEpoch=None):
-        if (not period is None and not timeOfDay and not dayOfWeek and not secondsSinceEpoch) or \
-            (period is None and not timeOfDay is None and not secondsSinceEpoch) or \
-            (period is None and not timeOfDay and not dayOfWeek and secondsSinceEpoch):
+    def __init__(
+        self, period=None, timeOfDay=None, dayOfWeek=None, secondsSinceEpoch=None
+    ):
+        if (
+            (
+                not period is None
+                and not timeOfDay
+                and not dayOfWeek
+                and not secondsSinceEpoch
+            )
+            or (period is None and not timeOfDay is None and not secondsSinceEpoch)
+            or (
+                period is None and not timeOfDay and not dayOfWeek and secondsSinceEpoch
+            )
+        ):
             self.period = period
             self.timeOfDay = timeOfDay
             self.dayOfWeek = dayOfWeek
             self.secondsSinceEpoch = secondsSinceEpoch
         else:
-            raise ValueError("specify either 'period' or 'timeOfDay' with optional 'dayOfWeek' or 'secondsSinceEpoch'")
+            raise ValueError(
+                "specify either 'period' or 'timeOfDay' with optional 'dayOfWeek' or 'secondsSinceEpoch'"
+            )
 
     def secondsFromNow(self):
         if self.period is not None:
@@ -53,7 +66,9 @@ class Schedule(object):
             return delta
         targetTime = datetime.strptime(self.timeOfDay, "%H:%M")
         time = self._utcnow()
-        currentTime = datetime.strptime("%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S")
+        currentTime = datetime.strptime(
+            "%s:%s:%s" % (time.hour, time.minute, time.second), "%H:%M:%S"
+        )
         timeDelta = targetTime - currentTime
         daysDelta = 0
         if self.dayOfWeek:
@@ -66,24 +81,27 @@ class Schedule(object):
         return seconds
 
     def _utcnow(self):
-        return datetime.utcnow()
+        return datetime.now(tz=timezone.utc)
 
     def _time(self):
         return time()
 
     def __repr__(self):
-        return "Schedule(%s)" % ', '.join('%s=%s' % (
-            k,repr(v))
-            for (k,v) in sorted(self.__dict__.items())
-            if v is not None)
+        return "Schedule(%s)" % ", ".join(
+            "%s=%s" % (k, repr(v))
+            for (k, v) in sorted(self.__dict__.items())
+            if v is not None
+        )
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return False
-        return self.period == other.period and \
-            self.timeOfDay == other.timeOfDay and \
-            self.dayOfWeek == other.dayOfWeek and \
-            self.secondsSinceEpoch == other.secondsSinceEpoch
+        return (
+            self.period == other.period
+            and self.timeOfDay == other.timeOfDay
+            and self.dayOfWeek == other.dayOfWeek
+            and self.secondsSinceEpoch == other.secondsSinceEpoch
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
