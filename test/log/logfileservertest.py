@@ -5,8 +5,8 @@
 # and archives, based on "Meresco Core".
 #
 # Copyright (C) 2006-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2006-2011, 2020 Stichting Kennisnet https://www.kennisnet.nl
-# Copyright (C) 2012, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2006-2011, 2020, 2026 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2012, 2020, 2026 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2020 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020 SURF https://www.surf.nl
 # Copyright (C) 2020 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
@@ -39,55 +39,73 @@ from meresco.components.http.utils import CRLF, notFoundHtml
 
 from meresco.components.log import LogFileServer, DirectoryLog
 
+
 class LogFileServerTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        
-        self.logDir = join(self.tempdir, 'log')
+
+        self.logDir = join(self.tempdir, "log")
         directoryLog = DirectoryLog(self.logDir)
-        self.qlfs = LogFileServer("Fancy <name>", directoryLog, basepath='/log')
-    
+        self.qlfs = LogFileServer("Fancy <name>", directoryLog, basepath="/log")
+
     def testGenerateEmptyHtmlFileLinkListing(self):
-        headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF+CRLF)
-        
-        self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
-        self.assertTrue(body.startswith('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html>'), body)
-        self.assertTrue(body.rfind('</body>\n</html>') != -1, body)
-        
+        headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF + CRLF)
+
+        self.assertEqual(
+            "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8", headers
+        )
+        self.assertTrue(
+            body.startswith(
+                '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n<html>'
+            ),
+            body,
+        )
+        self.assertTrue(body.rfind("</body>\n</html>") != -1, body)
+
         self.assertTrue('<title>"Fancy &lt;name&gt;" Logging</title>' in body, body)
-        self.assertTrue('Logging - logfile listing' in body, body)
-    
+        self.assertTrue("Logging - logfile listing" in body, body)
+
     def testEmptyDirectoryEmptyHtmlResult(self):
-        headers, body = "".join(self.qlfs.handleRequest(path="/")).split(CRLF+CRLF)
-        self.assertFalse('<li>' in body)
-        
+        headers, body = "".join(self.qlfs.handleRequest(path="/")).split(CRLF + CRLF)
+        self.assertFalse("<li>" in body)
+
     def testDirectoryHtmlResult(self):
-        filename = '2009-11-10-afile.1'
-        open(join(self.logDir, filename), 'w').close()
-        
-        headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF+CRLF)
-        self.assertTrue('<li>' in body)
+        filename = "2009-11-10-afile-query.log"
+        open(join(self.logDir, filename), "w").close()
+
+        headers, body = "".join(self.qlfs.handleRequest(path="/log")).split(CRLF + CRLF)
+        self.assertTrue("<li>" in body)
         self.assertTrue('<a href="/log/%s"' % filename in body, body)
-        
-        filename2 = '2009-11-22-yet_another_file.txt'
-        open(join(self.logDir, filename2), 'w').close()
-        headers, body = "".join(self.qlfs.handleRequest(path="/log/")).split(CRLF+CRLF)
+
+        filename2 = "2009-11-22-yet_another_file-query.log"
+        open(join(self.logDir, filename2), "w").close()
+        headers, body = "".join(self.qlfs.handleRequest(path="/log/")).split(
+            CRLF + CRLF
+        )
         self.assertTrue('<a href="/log/%s"' % filename in body, body)
         self.assertTrue('<a href="/log/%s"' % filename2 in body, body)
-        self.assertTrue(body.index(filename) > body.index(filename2), 'The files should be sorted.')
-        
+        self.assertTrue(
+            body.index(filename) > body.index(filename2), "The files should be sorted."
+        )
+
     def testPathNotSpecifiedAsIndexEffectivelyUsesMerescoFileServer(self):
-        headers, body = "".join(self.qlfs.handleRequest(path="/thisIsWrongMister")).split(CRLF+CRLF)
+        headers, body = "".join(
+            self.qlfs.handleRequest(path="/thisIsWrongMister")
+        ).split(CRLF + CRLF)
         self.assertTrue("HTTP/1.0 404 Not Found" in headers, headers)
-        
+
     def testPathIsASubDir(self):
         aSubDirCalled = "subdir"
         mkdir(join(self.logDir, aSubDirCalled))
-        
-        headers, body = "".join(self.qlfs.handleRequest(path="/%s" % aSubDirCalled)).split(CRLF+CRLF)
-        
+
+        headers, body = "".join(
+            self.qlfs.handleRequest(path="/%s" % aSubDirCalled)
+        ).split(CRLF + CRLF)
+
         self.assertTrue("HTTP/1.0 404 Not Found" in headers, headers)
 
     def testGetNonExistingLogFile(self):
-        headers, body = "".join(self.qlfs.handleRequest(path="/log/thisIsWrongMister")).split(CRLF+CRLF)
+        headers, body = "".join(
+            self.qlfs.handleRequest(path="/log/thisIsWrongMister")
+        ).split(CRLF + CRLF)
         self.assertTrue("HTTP/1.0 404 Not Found" in headers, headers)
