@@ -43,7 +43,7 @@ class DirectoryLogRotate(object):
         self._previousLog = None
         self._logpath = pathlib.Path(logdir)
         if not self._logpath.is_dir():
-            self._logpath.mkdir()
+            self._logpath.mkdir(parents=True)
         self._filenameExtension = extension
         self._nrOfFilesKept = nrOfFilesKept
         self._now = time
